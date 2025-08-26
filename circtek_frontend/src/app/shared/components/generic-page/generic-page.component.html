@@ -113,7 +113,7 @@
         </section>
 
         <!-- Table Card -->
-        <div class="">
+        <div class="relative">
           <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
             <table class=" w-full table table-zebra">
               <thead>
@@ -122,18 +122,22 @@
                     @for (header of headerGroup.headers; track header.id) {
                       <th>
                         @if (!header.isPlaceholder) {
-                          <button class="header-sort-btn" (click)="header.column.getToggleSortingHandler()?.($event)">
+                                                    @if (header.column.getCanSort()) {
+                            <button class="header-sort-btn" (click)="header.column.getToggleSortingHandler()?.($event)">
+                              <span>{{ headerLabel(header) }}</span>
+                              <span class="ml-2 w-4 inline-flex justify-center items-center">
+                                @if (header.column.getIsSorted() === 'asc') {
+                                  <span>▲</span>
+                                } @else if (header.column.getIsSorted() === 'desc') {
+                                  <span>▼</span>
+                                } @else {
+                                  <span class="text-base-content/30">↕</span>
+                                }
+                              </span>
+                            </button>
+                          } @else {
                             <span>{{ headerLabel(header) }}</span>
-                            <span class="ml-2 w-4 inline-flex justify-center items-center">
-                              @if (header.column.getIsSorted() === 'asc') {
-                                <span>↕</span>
-                              } @else if (header.column.getIsSorted() === 'desc') {
-                                <span>↕</span>
-                              } @else {
-                                <span class="text-base-content/30">↕</span>
-                              }
-                            </span>
-                          </button>
+                          }
                         }
                       </th>
                     }
@@ -144,8 +148,30 @@
                 @for (row of table().getRowModel().rows; track row.id) {
                   <tr>
                     @for (cell of row.getVisibleCells(); track cell.id) {
-                      <td>
-                        {{ cellText(cell) }}
+                                                                  <td [class]="getCellClass(cell)">
+                        @if (getCellComponent(cell); as componentType) {
+                          <ng-container 
+                            [appCellHost]="componentType" 
+                            [componentData]="getCellComponentData(cell)">
+                          </ng-container>
+                        } @else if (getCellActions(cell); as actions) {
+                          <div class="dropdown dropdown-end">
+                            <button class="btn btn-ghost btn-xs">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
+                                <path d="M8 2a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM2.5 8a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0ZM8 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
+                              </svg>
+                            </button>
+                            <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                              @for (action of actions; track action.key) {
+                                <li>
+                                  <a (click)="onCellAction(action.key, row)" [class]="action.class">{{ action.label }}</a>
+                                </li>
+                              }
+                            </ul>
+                          </div>
+                        } @else {
+                          {{ cellText(cell) }}
+                        }
                       </td>
                     }
                   </tr>
@@ -164,6 +190,12 @@
               </tbody>
             </table>
           </div>
+
+          @if (loading()) {
+            <div class="absolute inset-0 bg-base-100/50 backdrop-blur-sm flex items-center justify-center z-10">
+              <span class="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+          }
 
           <!-- Pagination -->
           <div class="flex flex-wrap items-center justify-between gap-4 p-6 border-t border-base-300">

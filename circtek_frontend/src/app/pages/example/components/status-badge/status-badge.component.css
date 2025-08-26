@@ -1,0 +1,23 @@
+.badge {
+  padding: 0.5em 0.75em;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: white;
+}
+
+.badge-success {
+  background-color: #22c55e; /* green-500 */
+}
+
+.badge-warning {
+  background-color: #f59e0b; /* amber-500 */
+}
+
+.badge-error {
+  background-color: #ef4444; /* red-500 */
+}
+
+.badge-ghost {
+  background-color: #6b7280; /* gray-500 */
+}

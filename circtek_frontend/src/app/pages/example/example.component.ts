@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ColumnDef, createAngularTable } from '@tanstack/angular-table';
-import { GenericPageComponent, GenericTab, Facet } from '../../shared/components/generic-page/generic-page.component';
+import { GenericPageComponent, GenericTab, Facet, CellAction } from '../../shared/components/generic-page/generic-page.component';
+import { StatusBadgeComponent } from './components/status-badge/status-badge.component';
 
 interface PersonRow {
   id: number;
@@ -19,6 +20,8 @@ interface PersonRow {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExampleComponent {
+  // Loading state
+  protected readonly loading = signal(false);
   // Tabs (optional)
   protected readonly tabs: GenericTab[] = [
     { key: 'all', label: 'All' },
@@ -58,28 +61,61 @@ export class ExampleComponent {
   protected readonly columns: ColumnDef<PersonRow, any>[] = [
     { accessorKey: 'name', header: 'Header' },
     { accessorKey: 'role', header: 'Section Type' },
-    { accessorKey: 'status', header: 'Status' },
+            {
+      accessorKey: 'status',
+      header: 'Status',
+      enableSorting: false,
+      meta: {
+        cellComponent: StatusBadgeComponent,
+        cellComponentData: (row: PersonRow) => ({ status: row.status }),
+      },
+    },
     { accessorKey: 'limit', header: 'Limit' },
+        {
+      id: 'actions',
+      header: 'Actions',
+      enableSorting: false,
+      cell: (info) => '',
+      meta: {
+        actions: [
+          { key: 'edit', label: 'Edit' },
+          { key: 'delete', label: 'Delete', class: 'text-error' },
+        ] as CellAction[],
+      },
+    },
   ];
 
-  // Derived filtered data using tabs and basic filters
+  // Data fetching and filtering
   private readonly activeTab = signal<string>('all');
   private readonly search = signal<string>('');
   private readonly facetState = signal<Record<string, string>>({});
+  protected readonly data = signal<PersonRow[]>([]);
 
-  protected readonly data = computed(() => {
-    const term = this.search().toLowerCase();
-    const facets = this.facetState();
-    const tab = this.activeTab();
+  constructor() {
+    this.fetchData();
+  }
 
-    return this.source().filter(r => {
-      const matchesSearch = !term || Object.values(r).some(v => String(v).toLowerCase().includes(term));
-      const roleOk = !facets['role'] || r.role === facets['role'];
-      const statusOk = !facets['status'] || r.status === (facets['status'] as any);
-      const tabOk = tab === 'all' || r.status.toLowerCase() === tab;
-      return matchesSearch && roleOk && statusOk && tabOk;
-    });
-  });
+  private fetchData() {
+    this.loading.set(true);
+
+    // Simulate API call
+    setTimeout(() => {
+      const term = this.search().toLowerCase();
+      const facets = this.facetState();
+      const tab = this.activeTab();
+
+      const filteredData = this.source().filter(r => {
+        const matchesSearch = !term || Object.values(r).some(v => String(v).toLowerCase().includes(term));
+        const roleOk = !facets['role'] || r.role === facets['role'];
+        const statusOk = !facets['status'] || r.status === (facets['status'] as any);
+        const tabOk = tab === 'all' || r.status.toLowerCase() === tab;
+        return matchesSearch && roleOk && statusOk && tabOk;
+      });
+
+      this.data.set(filteredData);
+      this.loading.set(false);
+    }, 500); // 500ms delay to simulate network latency
+  }
 
   // Header actions
   protected readonly subtitle = 'Manage your product catalog and inventory';
@@ -90,9 +126,20 @@ export class ExampleComponent {
   }
 
   // Event handlers from GenericPageComponent
-  onTabChange = (key: string | null) => this.activeTab.set(key ?? 'all');
+  onTabChange = (key: string | null) => {
+    this.activeTab.set(key ?? 'all');
+    this.fetchData();
+  };
+
   onFiltersChange = (f: { search: string; facets: Record<string, string> }) => {
     this.search.set(f.search);
     this.facetState.set(f.facets);
+    this.fetchData();
   };
+
+  onCellAction(event: { action: string; row: PersonRow }) {
+    // In a real app, you'd open a modal, navigate, or call a service
+    alert(`Action: '${event.action}' on row:
+${JSON.stringify(event.row, null, 2)}`);
+  }
 }

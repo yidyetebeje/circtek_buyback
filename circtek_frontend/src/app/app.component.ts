@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
 import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
+import { ThemeService } from './shared/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +19,8 @@ import { SidebarComponent } from './shared/components/sidebar/sidebar.component'
 })
 export class AppComponent {
   title = 'circtek_frontend';
-  
+
+  private readonly themeService = inject(ThemeService);
   private sidebar = viewChild.required<SidebarComponent>('sidebar');
 
   onSidebarToggle() {

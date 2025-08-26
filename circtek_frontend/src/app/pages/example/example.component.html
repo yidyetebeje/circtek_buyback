@@ -8,7 +8,9 @@
     (tabChange)="onTabChange($event)"
     [facets]="facets"
     (filtersChange)="onFiltersChange($event)"
+    (cellAction)="onCellAction($event)"
     [columns]="columns"
     [data]="data()"
+    [loading]="loading()"
   />
 </section>

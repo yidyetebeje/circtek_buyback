@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, output } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-navbar',
@@ -9,24 +9,17 @@ import { DOCUMENT } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NavbarComponent {
-  // Theme toggle (dim/light)
-  protected readonly theme = signal<'dim' | 'light'>('dim');
-  protected readonly isDarkMode = computed(() => this.theme() === 'dim');
-  private readonly document = inject(DOCUMENT);
+  protected readonly themeService = inject(ThemeService);
+  protected readonly isDarkMode = computed(() => this.themeService.theme() === 'dim');
 
   // Mobile menu toggle
   sidebarToggle = output<void>();
 
-  private _themeEffect = effect(() => {
-    const t = this.theme();
-    this.document?.documentElement?.setAttribute('data-theme', t);
-  });
-
-  toggleTheme() {
-    this.theme.update((t) => (t === 'dim' ? 'light' : 'dim'));
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
 
-  onSidebarToggle() {
+  onSidebarToggle(): void {
     this.sidebarToggle.emit();
   }
 }

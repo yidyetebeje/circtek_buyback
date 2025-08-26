@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal, inject } from '@angular/core';
-import { CommonModule, DOCUMENT } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { CellHostDirective } from './directives/cell-host.directive';
 import { FormsModule } from '@angular/forms';
 import { ColumnDef, createAngularTable, getCoreRowModel, getPaginationRowModel, getSortedRowModel, SortingState } from '@tanstack/angular-table';
 
@@ -28,9 +29,16 @@ export type SelectFacet = {
 
 export type Facet = TextFacet | SelectFacet;
 
+export type CellAction = {
+  key: string;
+  label: string;
+  icon?: string;
+  class?: string;
+};
+
 @Component({
   selector: 'app-generic-page',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CellHostDirective],
   templateUrl: './generic-page.component.html',
   styleUrl: './generic-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,14 +52,9 @@ export class GenericPageComponent<TData extends object> {
   primaryAction = input<{ label: string; icon?: string } | null>(null);
   primaryActionClick = output<void>();
 
-  // Theme toggle (dim/light)
-  protected readonly theme = signal<'dim' | 'light'>('dim');
-  protected readonly isDarkMode = computed(() => this.theme() === 'dim');
-  private readonly document = inject(DOCUMENT);
-  private _themeEffect = effect(() => {
-    const t = this.theme();
-    this.document?.documentElement?.setAttribute('data-theme', t);
-  });
+  // Loading state
+  loading = input<boolean>(false);
+
 
   // Tabs (optional)
   tabs = input<GenericTab[] | null>(null);
@@ -77,6 +80,7 @@ export class GenericPageComponent<TData extends object> {
   pageSize = signal(10);
   total = input<number | null>(null); // if null uses data().length
   pageChange = output<{ pageIndex: number; pageSize: number }>();
+  cellAction = output<{ action: string; row: TData }>();
 
   // Table instance
   table = computed(() =>
@@ -113,9 +117,6 @@ export class GenericPageComponent<TData extends object> {
     this.filtersChange.emit({ search, facets });
   });
 
-  toggleTheme() {
-    this.theme.update((t) => (t === 'dim' ? 'light' : 'dim'));
-  }
 
   // Tabs initialization
   private _tabsInit = effect(() => {
@@ -166,5 +167,33 @@ export class GenericPageComponent<TData extends object> {
   cellText(cell: any): string {
     const v = cell?.getValue?.();
     return v == null ? '' : String(v);
+  }
+
+  getCellActions(cell: any): CellAction[] | undefined {
+    return cell.column.columnDef.meta?.actions;
+  }
+
+  onCellAction(action: string, row: any) {
+    this.cellAction.emit({ action, row: row.original as TData });
+  }
+
+  getCellClass(cell: any): string {
+    const cellClassFn = cell.column.columnDef.meta?.cellClass;
+    if (typeof cellClassFn === 'function') {
+      return cellClassFn(cell.row.original as TData);
+    }
+    return '';
+  }
+
+  getCellComponent(cell: any): any | undefined {
+    return cell.column.columnDef.meta?.cellComponent;
+  }
+
+  getCellComponentData(cell: any): any {
+    const cellComponentDataFn = cell.column.columnDef.meta?.cellComponentData;
+    if (typeof cellComponentDataFn === 'function') {
+      return cellComponentDataFn(cell.row.original as TData);
+    }
+    return cell.row.original;
   }
 }
