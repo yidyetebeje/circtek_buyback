@@ -1,0 +1,26 @@
+<aside class="sidebar" [class.sidebar-open]="isOpen()">
+  <div class="sidebar-content">
+    <div class="logo-container">
+      <img src="img/brand/icon1.png" alt="Circtek Logo" class="sidebar-logo">
+    </div>
+    
+    <!-- Mobile navigation menu -->
+    <nav class="mobile-nav">
+      <ul class="mobile-nav-links">
+        <li><a href="#" (click)="closeSidebar()">Dashboard</a></li>
+        <li><a href="#" (click)="closeSidebar()">Device Records</a></li>
+        <li><a href="#" (click)="closeSidebar()">Repair</a></li>
+        <li><a href="#" (click)="closeSidebar()">Stock</a></li>
+        <li><a href="#" (click)="closeSidebar()">Configuration</a></li>
+        <li><a href="#" (click)="closeSidebar()">Settings</a></li>
+        <li><a href="#" (click)="closeSidebar()">User</a></li>
+        <li><a href="#" (click)="closeSidebar()">License</a></li>
+      </ul>
+    </nav>
+  </div>
+</aside>
+
+<!-- Mobile overlay -->
+@if (isOpen()) {
+  <div class="sidebar-overlay" (click)="closeSidebar()"></div>
+}

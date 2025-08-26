@@ -1,0 +1,363 @@
+:host {
+  display: block;
+  --primary-rgb: 153, 248, 152; /* #99F898 in RGB */
+}
+
+/* Modern admin table styling - Based on Material Design & Ant Design principles */
+.table {
+  background-color: transparent;
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Header styling - Clean and professional */
+.table thead {
+  background: oklch(var(--b2) / 0.4);
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.custom-table thead th {
+  font-weight: 600;
+  font-size: 1rem;
+  color: oklch(var(--bc) / 0.8);
+  padding: 1rem 1.5rem;
+  text-align: left;
+  border: 0;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.custom-table thead th:first-child {
+  border-radius: 0.75rem 0 0 0;
+}
+
+.custom-table thead th:last-child {
+  border-radius: 0 0.75rem 0 0;
+}
+
+/* Body styling - Zebra striping for better readability */
+.custom-table tbody {
+  background: oklch(var(--b1));
+}
+
+.custom-table tbody tr {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid oklch(var(--b2));
+}
+
+.custom-table tbody tr:nth-child(even) {
+  background: oklch(var(--b2) / 0.2);
+}
+
+.custom-table tbody tr:hover {
+  background: oklch(var(--p) / 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px oklch(var(--b3) / 0.2);
+}
+
+.custom-table tbody tr:last-child {
+  border-bottom: 0;
+}
+
+.custom-table tbody tr:last-child td:first-child {
+  border-radius: 0 0 0 0.75rem;
+}
+
+.custom-table tbody tr:last-child td:last-child {
+  border-radius: 0 0 0.75rem 0;
+}
+
+.custom-table tbody td {
+  padding: 1rem 1.5rem;
+  font-weight: 400;
+  color: oklch(var(--bc) / 0.9);
+  font-size: 0.875rem;
+  border: 0;
+  vertical-align: middle;
+}
+
+.custom-table tbody td:first-child {
+  font-weight: 500;
+  color: oklch(var(--bc));
+}
+
+/* Custom styling for header sort button */
+.header-sort-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.header-sort-btn:hover {
+  color: inherit;
+  opacity: 0.7;
+}
+
+.header-sort-btn.text-primary {
+  color: oklch(var(--p));
+}
+
+/* Clean primary accent elements */
+.primary-accent {
+  background: oklch(var(--p));
+  color: oklch(var(--pc));
+}
+
+/* Enhanced input focus states */
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: oklch(var(--p));
+  box-shadow: 0 0 0 3px oklch(var(--p) / 0.1), 0 1px 3px oklch(var(--p) / 0.1);
+  background: oklch(var(--b1));
+}
+
+.search-input {
+  transition: all 0.2s ease;
+  border: 1px solid oklch(var(--b3) / 0.3);
+}
+
+.search-input:focus {
+  border-color: oklch(var(--p));
+  box-shadow: 0 0 0 3px oklch(var(--p) / 0.2);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+[data-theme="dim"] .search-input {
+  border-color: oklch(var(--b3));
+}
+
+[data-theme="dim"] .search-input:focus {
+  outline: 2px solid oklch(var(--p));
+  border-color: oklch(var(--p));
+}
+
+/* Professional scrollbar styling */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 6px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: oklch(var(--b2) / 0.3);
+  border-radius: 3px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: oklch(var(--p) / 0.4);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: oklch(var(--p) / 0.6);
+}
+
+/* Table container enhancements */
+.table-container {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px oklch(var(--b3) / 0.1), 0 1px 2px oklch(var(--b3) / 0.06);
+  border: 1px solid oklch(var(--b3) / 0.2);
+}
+
+/* Clean button states */
+.btn:hover {
+  transition: all 0.15s ease;
+}
+
+.btn-primary {
+  background: oklch(var(--p));
+  border: none;
+  color: oklch(var(--pc));
+}
+
+.btn-primary:hover {
+  background: oklch(var(--p) / 0.9);
+}
+
+/* Clean tab styling */
+.tabs-boxed .tab-active {
+  background: oklch(var(--p));
+  color: oklch(var(--pc));
+}
+
+/* Clean filter card */
+.filter-card {
+  background: oklch(var(--b1));
+  border: 1px solid oklch(var(--b3) / 0.2);
+}
+
+/* Clean search input */
+.search-input {
+  background: oklch(var(--b1));
+  border: 1px solid oklch(var(--b3) / 0.3);
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  border-color: oklch(var(--p));
+  background: oklch(var(--b1));
+  box-shadow: 0 0 0 3px oklch(var(--p) / 0.1);
+}
+
+/* Clean pagination info */
+.pagination-info {
+  background: oklch(var(--b2) / 0.3);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+}
+
+/* Loading states */
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+.loading-shimmer {
+  background: linear-gradient(90deg, transparent, oklch(var(--b3) / 0.2), transparent);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Row selection styling */
+.table tbody tr.selected {
+  background: oklch(var(--p) / 0.08);
+  border-color: oklch(var(--p) / 0.2);
+}
+
+.table tbody tr.selected:hover {
+  background: oklch(var(--p) / 0.12);
+}
+
+/* Responsive table improvements */
+@media (max-width: 768px) {
+  .custom-table thead th,
+  .custom-table tbody td {
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+  }
+  
+  .custom-table thead th:first-child,
+  .custom-table tbody td:first-child {
+    padding-left: 1rem;
+  }
+  
+  .custom-table thead th:last-child,
+  .custom-table tbody td:last-child {
+    padding-right: 1rem;
+  }
+}
+
+/* Theme-specific styling */
+[data-theme="dim"] .custom-table thead {
+  background: oklch(var(--b2) / 0.6);
+}
+
+[data-theme="dim"] .custom-table tbody tr:nth-child(even) {
+  background: oklch(var(--b2) / 0.3);
+}
+
+[data-theme="dim"] .filter-card {
+  background: oklch(var(--b1));
+  border: 1px solid oklch(var(--b3) / 0.3);
+}
+
+[data-theme="light"] .custom-table thead {
+  background: oklch(var(--b2) / 0.3);
+}
+
+[data-theme="light"] .custom-table tbody tr:nth-child(even) {
+  background: oklch(var(--b2) / 0.15);
+}
+
+[data-theme="light"] .filter-card {
+  background: oklch(var(--b1));
+  border: 1px solid oklch(var(--b3) / 0.15);
+}
+
+/* Status indicators and badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-active {
+  background: oklch(var(--su) / 0.1);
+  color: oklch(var(--su));
+}
+
+.status-inactive {
+  background: oklch(var(--er) / 0.1);
+  color: oklch(var(--er));
+}
+
+.status-pending {
+  background: oklch(var(--wa) / 0.1);
+  color: oklch(var(--wa));
+}
+
+/* Action buttons in table */
+.table-action-btn {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.table-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px oklch(var(--b3) / 0.2);
+}
+
+/* Empty state styling */
+.table-empty {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: oklch(var(--bc) / 0.5);
+}
+
+.table-empty svg {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 1rem;
+  opacity: 0.3;
+}
+
+/* Container and Layout */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Card Container */
+.card-container {
+  background: oklch(var(--b1));
+  border: 1px solid oklch(var(--b3) / 0.6);
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 0 1px oklch(var(--b3) / 0.1);
+}
+
+.card-container:hover {
+  border-color: oklch(var(--b3) / 0.8);
+  box-shadow: 0 0 0 1px oklch(var(--b3) / 0.2);
+}

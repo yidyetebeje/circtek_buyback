@@ -1,0 +1,14 @@
+<section class="p-4">
+  <app-generic-page
+    [title]="'Product Inventory'"
+    [subtitle]="subtitle"
+    [primaryAction]="primaryAction"
+    (primaryActionClick)="onPrimaryActionClick()"
+    [tabs]="tabs"
+    (tabChange)="onTabChange($event)"
+    [facets]="facets"
+    (filtersChange)="onFiltersChange($event)"
+    [columns]="columns"
+    [data]="data()"
+  />
+</section>

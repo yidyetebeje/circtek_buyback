@@ -1,0 +1,224 @@
+<!-- Main Container -->
+<div class="min-h-screen bg-base-200 transition-colors duration-300 flex flex-col items-center">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Card Container -->
+    <div class="card-container rounded-2xl border border-base-300/50 max-w-7xl mx-auto">
+      <div class="p-6 md:p-8">
+        <!-- Header Section -->
+        <div class="flex justify-between items-start mb-8">
+          <div>
+            <h1 class="text-3xl font-bold text-base-content">{{ title() }}</h1>
+            @if (subtitle()) {
+              <p class="text-base-content/60 mt-1">{{ subtitle() }}</p>
+            }
+          </div>
+
+          @if (primaryAction()) {
+            <button class="btn btn-accent" (click)="primaryActionClick.emit()">
+              @if (primaryAction()?.icon) {
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="primaryAction()?.icon" />
+                </svg>
+              }
+              <span>{{ primaryAction()?.label }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- Tabs (optional) -->
+        @if (tabs(); as t) {
+          <nav class="mb-8 overflow-x-auto">
+            <div role="tablist" class="tabs tabs-boxed bg-base-100 p-1 rounded-xl w-fit">
+              @for (tab of t; track tab.key) {
+                <button
+                  role="tab"
+                  class="tab whitespace-nowrap transition-all duration-200 hover:bg-primary/10 rounded-xl"
+                  [class.bg-primary]="activeTabKey() === tab.key"
+                  [class.text-primary-content]="activeTabKey() === tab.key"
+                  (click)="setActiveTab(tab.key)"
+                >
+                  <span>{{ tab.label }}</span>
+                  @if (tab.badge != null) {
+                    <span class="ml-2 badge" [class.badge-primary]="activeTabKey() !== tab.key" [class.badge-neutral]="activeTabKey() === tab.key" [class.badge-sm]="true">{{ tab.badge }}</span>
+                  }
+                </button>
+              }
+            </div>
+          </nav>
+        }
+
+        <!-- Filters and Search -->
+        <section class="mb-8">
+          <div class="flex flex-wrap justify-between items-center gap-4">
+            <!-- Filters -->
+            <div class="flex flex-wrap items-center gap-x-6 gap-y-4">
+              @if (facets(); as f) {
+                @for (f of f; track f.key) {
+                  <div class="flex items-center gap-2">
+                    <label class="label-text font-medium text-base-content/80">{{ f.label }}:</label>
+                    @if (f.type === 'text') {
+                      <input 
+                        class="input input-sm input-bordered bg-base-50 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        type="text" 
+                        [placeholder]="facetPlaceholder(f)"
+                        [ngModel]="facetValue(f.key)" 
+                        (ngModelChange)="updateFacet(f.key, $event)" 
+                      />
+                    } @else {
+                      <select 
+                        class="select select-sm select-bordered bg-base-50 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        [ngModel]="facetValue(f.key)" 
+                        (ngModelChange)="updateFacet(f.key, $event)"
+                      >
+                        <option value="">All</option>
+                        @if (isSelectFacet(f)) {
+                          @for (opt of f.options; track opt.value) {
+                            <option [ngValue]="opt.value">{{ opt.label }}</option>
+                          }
+                        }
+                      </select>
+                    }
+                  </div>
+                }
+              }
+            </div>
+
+            <!-- Search -->
+            <div class="relative bg-base-100 rounded-xl">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4 text-primary">
+                  <path fill-rule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.061l-2.755-2.755ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <input 
+                type="text" 
+                class="search-input input input-bordered w-full pl-10 pr-4" 
+                [placeholder]="searchPlaceholder()" 
+                [ngModel]="searchQuery()" 
+                (ngModelChange)="onSearchInput($event)" 
+              />
+              @if (searchQuery()) {
+                <button 
+                  type="button" 
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center text-base-content/60 hover:text-primary transition-colors" 
+                  (click)="searchQuery.set('')"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
+                    <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
+                  </svg>
+                </button>
+              }
+            </div>
+          </div>
+        </section>
+
+        <!-- Table Card -->
+        <div class="">
+          <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
+            <table class=" w-full table table-zebra">
+              <thead>
+                @for (headerGroup of table().getHeaderGroups(); track headerGroup.id) {
+                  <tr>
+                    @for (header of headerGroup.headers; track header.id) {
+                      <th>
+                        @if (!header.isPlaceholder) {
+                          <button class="header-sort-btn" (click)="header.column.getToggleSortingHandler()?.($event)">
+                            <span>{{ headerLabel(header) }}</span>
+                            <span class="ml-2 w-4 inline-flex justify-center items-center">
+                              @if (header.column.getIsSorted() === 'asc') {
+                                <span>↕</span>
+                              } @else if (header.column.getIsSorted() === 'desc') {
+                                <span>↕</span>
+                              } @else {
+                                <span class="text-base-content/30">↕</span>
+                              }
+                            </span>
+                          </button>
+                        }
+                      </th>
+                    }
+                  </tr>
+                }
+              </thead>
+              <tbody>
+                @for (row of table().getRowModel().rows; track row.id) {
+                  <tr>
+                    @for (cell of row.getVisibleCells(); track cell.id) {
+                      <td>
+                        {{ cellText(cell) }}
+                      </td>
+                    }
+                  </tr>
+                }
+                @if (!table().getRowModel().rows.length) {
+                  <tr>
+                    <td class="table-empty" [attr.colspan]="table().getAllColumns().length">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 0A2.25 2.25 0 0 1 5.625 3.375h13.5a2.25 2.25 0 0 1 2.25 2.25v13.5a2.25 2.25 0 0 1-2.25 2.25H5.625a2.25 2.25 0 0 1-2.25-2.25V5.625Z" />
+                      </svg>
+                      <div class="text-base-content/60 font-medium">No data available</div>
+                      <div class="text-base-content/40 text-sm mt-1">There are no records to display at this time</div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="flex flex-wrap items-center justify-between gap-4 p-6 border-t border-base-300">
+            <div class="flex items-center gap-2">
+              <button 
+                class="btn btn-sm" 
+                [class.btn-primary]="table().getCanPreviousPage()"
+                [class.btn-disabled]="!table().getCanPreviousPage()"
+                [disabled]="!table().getCanPreviousPage()" 
+                (click)="table().previousPage()"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
+                  <path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
+                </svg>
+                Previous
+              </button>
+              <button 
+                class="btn btn-sm" 
+                [class.btn-primary]="table().getCanNextPage()"
+                [class.btn-disabled]="!table().getCanNextPage()"
+                [disabled]="!table().getCanNextPage()" 
+                (click)="table().nextPage()"
+              >
+                Next
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
+                  <path fill-rule="evenodd" d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            
+            <div class="flex items-center gap-4">
+              <div class="pagination-info">
+                <span class="text-sm text-base-content/80">
+                  Page <span class="font-semibold text-primary">{{ table().getState().pagination.pageIndex + 1 }}</span> of 
+                  <span class="font-semibold">{{ Math.max(1, Math.ceil((total() ?? data().length) / table().getState().pagination.pageSize)) }}</span>
+                </span>
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-base-content/80 whitespace-nowrap">Rows per page</span>
+                <select 
+                  class="select select-bordered select-sm bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
+                  [ngModel]="table().getState().pagination.pageSize"
+                  (ngModelChange)="table().setPageSize($event)"
+                >
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="20">20</option>
+                  <option [ngValue]="50">50</option>
+                  <option [ngValue]="100">100</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

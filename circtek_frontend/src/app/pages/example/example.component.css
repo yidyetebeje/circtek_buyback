@@ -1,0 +1,3 @@
+/* Demo page spacing only */
+:host { display: block; }
+section { padding: 0; }

@@ -1,0 +1,14 @@
+.main-content {
+  margin-left: 80px;
+  padding-top: 60px;
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding-top: 60px;
+  }
+}

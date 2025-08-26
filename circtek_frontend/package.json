@@ -1,0 +1,53 @@
+{
+  "name": "circtek-frontend",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "nx serve",
+    "build": "nx build",
+    "watch": "nx build --watch --configuration development",
+    "test": "nx test"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/cdk": "^20.2.0",
+    "@angular/common": "20.2.1",
+    "@angular/compiler": "20.2.1",
+    "@angular/core": "20.2.1",
+    "@angular/forms": "20.2.1",
+    "@angular/material": "^20.2.0",
+    "@angular/platform-browser": "20.2.1",
+    "@angular/platform-browser-dynamic": "20.2.1",
+    "@angular/router": "20.2.1",
+    "@tanstack/angular-form": "^1.19.2",
+    "@tanstack/angular-table": "^8.21.3",
+    "daisyui": "^5.0.51",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.15.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "20.2.0",
+    "@angular-devkit/core": "20.2.0",
+    "@angular-devkit/schematics": "20.2.0",
+    "@angular/cli": "20.2.0",
+    "@angular/compiler-cli": "20.2.1",
+    "@nx/angular": "21.4.1",
+    "@nx/workspace": "21.4.1",
+    "@schematics/angular": "^19.2.4",
+    "@tailwindcss/postcss": "^4",
+    "@types/jasmine": "~5.1.0",
+    "autoprefixer": "^10.4.0",
+    "jasmine-core": "~5.6.0",
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "nx": "21.4.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.12",
+    "typescript": "~5.8.2"
+  },
+  "packageManager": "pnpm@10.6.2+sha512.47870716bea1572b53df34ad8647b42962bc790ce2bf4562ba0f643237d7302a3d6a8ecef9e4bdfc01d23af1969aa90485d4cebb0b9638fa5ef1daef656f6c1b"
+}
