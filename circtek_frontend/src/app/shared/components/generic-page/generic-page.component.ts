@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, output, si
 import { CommonModule } from '@angular/common';
 import { CellHostDirective } from './directives/cell-host.directive';
 import { FormsModule } from '@angular/forms';
-import { ColumnDef, createAngularTable, getCoreRowModel, getPaginationRowModel, getSortedRowModel, SortingState } from '@tanstack/angular-table';
+import { ColumnDef, createAngularTable, getCoreRowModel, SortingState } from '@tanstack/angular-table';
 
 // Reusable Generic Page composed with Tailwind + DaisyUI
 // - Header title
@@ -59,6 +59,8 @@ export class GenericPageComponent<TData extends object> {
   // Tabs (optional)
   tabs = input<GenericTab[] | null>(null);
   activeTabKey = signal<string | null>(null);
+  // Optional external control of active tab (e.g., from URL)
+  activeTabKeyInput = input<string | null>(null);
   tabChange = output<string | null>();
 
   // Filters
@@ -74,33 +76,51 @@ export class GenericPageComponent<TData extends object> {
 
   // Sorting
   sorting = signal<SortingState>([]);
+  sortingChange = output<SortingState>();
 
   // Pagination
   pageIndex = signal(0);
   pageSize = signal(10);
+  // Optional external pagination inputs to hydrate/sync
+  pageIndexInput = input<number | null>(null);
+  pageSizeInput = input<number | null>(null);
   total = input<number | null>(null); // if null uses data().length
   pageChange = output<{ pageIndex: number; pageSize: number }>();
   cellAction = output<{ action: string; row: TData }>();
 
   // Table instance
+  private _paginationInitialized = false;
+  private _skipNextPaginationEmit = false;
+
   table = computed(() =>
     createAngularTable<TData>(() => ({
       data: this.data(),
       columns: this.columns(),
-      state: { sorting: this.sorting() },
+      // Keep state in sync with our signals
+      state: {
+        sorting: this.sorting(),
+        pagination: { pageIndex: this.pageIndex(), pageSize: this.pageSize() },
+      },
       getCoreRowModel: getCoreRowModel(),
-      getSortedRowModel: getSortedRowModel(),
-      getPaginationRowModel: getPaginationRowModel(),
+      // Use manual pagination: server provides paginated data, and we pass pageCount below
+      manualPagination: true,
+      pageCount: Math.max(1, Math.ceil((this.total() ?? this.data().length) / Math.max(1, this.pageSize()))),
       onSortingChange: (updater: any) => {
         const next = typeof updater === 'function' ? updater(this.sorting()) : updater;
         this.sorting.set(next);
-      },
-      initialState: {
-        pagination: { pageIndex: this.pageIndex(), pageSize: this.pageSize() },
+        this.sortingChange.emit(this.sorting());
       },
       onPaginationChange: (updater: any) => {
         const current = { pageIndex: this.pageIndex(), pageSize: this.pageSize() };
         const next = typeof updater === 'function' ? updater(current) : updater;
+        // Ignore the very first pagination callback from TanStack and controlled updates
+        if (!this._paginationInitialized || this._skipNextPaginationEmit) {
+          this._paginationInitialized = true;
+          this._skipNextPaginationEmit = false;
+          this.pageIndex.set(next.pageIndex ?? 0);
+          this.pageSize.set(next.pageSize ?? 10);
+          return;
+        }
         this.pageIndex.set(next.pageIndex ?? 0);
         this.pageSize.set(next.pageSize ?? 10);
         this.pageChange.emit({ pageIndex: this.pageIndex(), pageSize: this.pageSize() });
@@ -110,11 +130,44 @@ export class GenericPageComponent<TData extends object> {
   );
 
   // Emit filters when search/facets change
+  private _filtersInitialized = false;
   private _filtersEffect = effect(() => {
     // read signals to subscribe
     const search = this.searchQuery();
     const facets = this.facetModel();
+    // Skip the very first run to avoid resetting page via initial mount
+    if (!this._filtersInitialized) {
+      this._filtersInitialized = true;
+      return;
+    }
+    // Reset pagination to first page on any filter change
+    this.pageIndex.set(0);
+    try {
+      this.table().setPageIndex(0);
+    } catch {}
     this.filtersChange.emit({ search, facets });
+  });
+
+  // Sync external pagination inputs into internal state without emitting pageChange
+  private _syncPaginationInputs = effect(() => {
+    const extIndex = this.pageIndexInput();
+    const extSize = this.pageSizeInput();
+    let changed = false;
+    if (extIndex != null && extIndex !== this.pageIndex()) {
+      this.pageIndex.set(extIndex);
+      changed = true;
+    }
+    if (extSize != null && extSize !== this.pageSize()) {
+      this.pageSize.set(extSize);
+      changed = true;
+    }
+    if (changed) {
+      this._skipNextPaginationEmit = true;
+      try {
+        this.table().setPageIndex(this.pageIndex());
+        this.table().setPageSize(this.pageSize());
+      } catch {}
+    }
   });
 
 
@@ -123,6 +176,15 @@ export class GenericPageComponent<TData extends object> {
     const t = this.tabs();
     if (t && t.length && !this.activeTabKey()) {
       this.activeTabKey.set(t[0].key);
+    }
+  });
+
+  // Sync external active tab into internal state without emitting tabChange
+  private _syncActiveTabInput = effect(() => {
+    const ext = this.activeTabKeyInput();
+    const current = this.activeTabKey();
+    if (ext != null && ext !== current) {
+      this.activeTabKey.set(ext);
     }
   });
 
@@ -166,7 +228,8 @@ export class GenericPageComponent<TData extends object> {
 
   cellText(cell: any): string {
     const v = cell?.getValue?.();
-    return v == null ? '' : String(v);
+    const s = v == null ? '' : String(v);
+    return s.trim().length ? s : 'N/A';
   }
 
   getCellActions(cell: any): CellAction[] | undefined {
@@ -192,8 +255,39 @@ export class GenericPageComponent<TData extends object> {
   getCellComponentData(cell: any): any {
     const cellComponentDataFn = cell.column.columnDef.meta?.cellComponentData;
     if (typeof cellComponentDataFn === 'function') {
-      return cellComponentDataFn(cell.row.original as TData);
+      // Pass both the row and the cell for richer context (row index, column id, etc.)
+      // Existing callbacks that only accept one arg will ignore the 2nd.
+      return cellComponentDataFn(cell.row.original as TData, cell);
     }
     return cell.row.original;
+  }
+
+  // Pagination helpers for template
+  totalPages = computed(() => Math.max(1, Math.ceil((this.total() ?? this.data().length) / Math.max(1, this.pageSize()))));
+  currentPage = computed(() => this.pageIndex() + 1);
+  canPrev = computed(() => this.pageIndex() > 0);
+  canNext = computed(() => this.currentPage() < this.totalPages());
+
+  // Pagination actions
+  prevPage() {
+    if (!this.canPrev()) return;
+    try {
+      this.table().previousPage();
+    } catch {}
+  }
+
+  nextPage() {
+    if (!this.canNext()) return;
+    try {
+      this.table().nextPage();
+    } catch {}
+  }
+
+  updatePageSize(size: number) {
+    const n = Number(size) || 10;
+    try {
+      this.table().setPageSize(n);
+      this.table().setPageIndex(0);
+    } catch {}
   }
 }

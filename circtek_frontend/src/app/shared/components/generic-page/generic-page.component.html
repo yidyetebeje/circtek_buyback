@@ -115,14 +115,14 @@
         <!-- Table Card -->
         <div class="relative">
           <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
-            <table class=" w-full table table-zebra">
+            <table class="w-full table">
               <thead>
                 @for (headerGroup of table().getHeaderGroups(); track headerGroup.id) {
                   <tr>
                     @for (header of headerGroup.headers; track header.id) {
-                      <th>
+                      <th class="whitespace-nowrap px-4 py-3">
                         @if (!header.isPlaceholder) {
-                                                    @if (header.column.getCanSort()) {
+                          @if (header.column.getCanSort()) {
                             <button class="header-sort-btn" (click)="header.column.getToggleSortingHandler()?.($event)">
                               <span>{{ headerLabel(header) }}</span>
                               <span class="ml-2 w-4 inline-flex justify-center items-center">
@@ -148,7 +148,7 @@
                 @for (row of table().getRowModel().rows; track row.id) {
                   <tr>
                     @for (cell of row.getVisibleCells(); track cell.id) {
-                                                                  <td [class]="getCellClass(cell)">
+                                                                  <td class="whitespace-nowrap px-4 py-3" [ngClass]="getCellClass(cell)">
                         @if (getCellComponent(cell); as componentType) {
                           <ng-container 
                             [appCellHost]="componentType" 
@@ -202,10 +202,10 @@
             <div class="flex items-center gap-2">
               <button 
                 class="btn btn-sm" 
-                [class.btn-primary]="table().getCanPreviousPage()"
-                [class.btn-disabled]="!table().getCanPreviousPage()"
-                [disabled]="!table().getCanPreviousPage()" 
-                (click)="table().previousPage()"
+                [class.btn-primary]="canPrev()"
+                [class.btn-disabled]="!canPrev()"
+                [disabled]="!canPrev()" 
+                (click)="prevPage()"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
                   <path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
@@ -214,10 +214,10 @@
               </button>
               <button 
                 class="btn btn-sm" 
-                [class.btn-primary]="table().getCanNextPage()"
-                [class.btn-disabled]="!table().getCanNextPage()"
-                [disabled]="!table().getCanNextPage()" 
-                (click)="table().nextPage()"
+                [class.btn-primary]="canNext()"
+                [class.btn-disabled]="!canNext()"
+                [disabled]="!canNext()" 
+                (click)="nextPage()"
               >
                 Next
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
@@ -229,8 +229,8 @@
             <div class="flex items-center gap-4">
               <div class="pagination-info">
                 <span class="text-sm text-base-content/80">
-                  Page <span class="font-semibold text-primary">{{ table().getState().pagination.pageIndex + 1 }}</span> of 
-                  <span class="font-semibold">{{ Math.max(1, Math.ceil((total() ?? data().length) / table().getState().pagination.pageSize)) }}</span>
+                  Page <span class="font-semibold text-primary">{{ currentPage() }}</span> of 
+                  <span class="font-semibold">{{ totalPages() }}</span>
                 </span>
               </div>
               
@@ -238,8 +238,8 @@
                 <span class="text-sm text-base-content/80 whitespace-nowrap">Rows per page</span>
                 <select 
                   class="select select-bordered select-sm bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
-                  [ngModel]="table().getState().pagination.pageSize"
-                  (ngModelChange)="table().setPageSize($event)"
+                  [ngModel]="pageSize()"
+                  (ngModelChange)="updatePageSize($event)"
                 >
                   <option [ngValue]="10">10</option>
                   <option [ngValue]="20">20</option>

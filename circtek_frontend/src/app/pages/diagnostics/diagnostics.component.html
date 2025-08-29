@@ -1,0 +1,93 @@
+<app-generic-page
+  [title]="'Device Diagnostics'"
+  [loading]="loading()"
+  [tabs]="tabs()"
+  [facets]="facets()"
+  [columns]="columns()"
+  [data]="data()"
+  [total]="total()"
+  [pageIndexInput]="pageIndex()"
+  [pageSizeInput]="pageSize()"
+  [searchPlaceholder]="'Search by IMEI, Serial, or LPN'"
+  (pageChange)="onPageChange($event)"
+  (filtersChange)="onFiltersChange($event)"
+  (sortingChange)="onSortingChange($event)"
+  (tabChange)="onTabChange($event)"
+></app-generic-page>
+
+@if (isModalOpen()) {
+  <div class="modal modal-open">
+    <div class="modal-box max-w-5xl">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div class="space-y-1">
+          <h3 class="font-bold text-lg">Diagnostic Details</h3>
+          <p class="text-sm text-base-content/60">
+            @if (selected(); as r) {
+              <span>
+                LPN: <span class="font-medium">{{ r.lpn || r.device_lpn || 'N/A' }}</span>
+                • Serial: <span class="font-medium">{{ r.serial_number || r.device_serial || 'N/A' }}</span>
+                • IMEI: <span class="font-medium">{{ r.imei || r.device_imei || 'N/A' }}</span>
+              </span>
+            }
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="badge" [class]="'badge ' + selectedBadgeClass()">{{ selectedStatusLabel() }}</div>
+          <button class="btn btn-sm btn-ghost" (click)="closeModal()">✕</button>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2 mb-4">
+        <div class="badge badge-success badge-outline">Passed: {{ passedComponents().length }}</div>
+        <div class="badge badge-warning badge-outline">Pending: {{ pendingComponents().length }}</div>
+        <div class="badge badge-error badge-outline">Failed: {{ failedComponents().length }}</div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <section class="p-4 rounded-box border border-base-300/50">
+          <h4 class="font-semibold mb-2">Passed Components <span class="badge badge-success badge-sm ml-2">{{ passedComponents().length }}</span></h4>
+          @if (passedComponents().length) {
+            <ul class="list-disc pl-5 space-y-1">
+              @for (c of passedComponents(); track c) {
+                <li class="text-success">{{ c }}</li>
+              }
+            </ul>
+          } @else {
+            <div class="text-base-content/60">No passed components listed.</div>
+          }
+        </section>
+
+        <section class="p-4 rounded-box border border-base-300/50">
+          <h4 class="font-semibold mb-2">Pending Components <span class="badge badge-warning badge-sm ml-2">{{ pendingComponents().length }}</span></h4>
+          @if (pendingComponents().length) {
+            <ul class="list-disc pl-5 space-y-1">
+              @for (c of pendingComponents(); track c) {
+                <li class="text-warning">{{ c }}</li>
+              }
+            </ul>
+          } @else {
+            <div class="text-base-content/60">No pending components listed.</div>
+          }
+        </section>
+
+        <section class="p-4 rounded-box border border-base-300/50">
+          <h4 class="font-semibold mb-2">Failed Components <span class="badge badge-error badge-sm ml-2">{{ failedComponents().length }}</span></h4>
+          @if (failedComponents().length) {
+            <ul class="list-disc pl-5 space-y-1">
+              @for (c of failedComponents(); track c) {
+                <li class="text-error">{{ c }}</li>
+              }
+            </ul>
+          } @else {
+            <div class="text-base-content/60">No failed components listed.</div>
+          }
+        </section>
+      </div>
+
+      <div class="modal-action">
+        <button class="btn" (click)="closeModal()">Close</button>
+      </div>
+    </div>
+    <div class="modal-backdrop" (click)="closeModal()"></div>
+  </div>
+}

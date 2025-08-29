@@ -1,0 +1,17 @@
+<app-generic-page
+  [title]="'Management'"
+  [loading]="loading()"
+  [tabs]="tabs()"
+  [activeTabKeyInput]="activeTab()"
+  [facets]="facets()"
+  [columns]="columns()"
+  [data]="data()"
+  [total]="total()"
+  [pageIndexInput]="pageIndex()"
+  [pageSizeInput]="pageSize()"
+  [searchPlaceholder]="searchPlaceholder()"
+  (pageChange)="onPageChange($event)"
+  (filtersChange)="onFiltersChange($event)"
+  (sortingChange)="onSortingChange($event)"
+  (tabChange)="onTabChange($event)"
+></app-generic-page>

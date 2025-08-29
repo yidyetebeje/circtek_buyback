@@ -1,0 +1,50 @@
+import { ApiResponse } from './api';
+
+export interface Diagnostic {
+  id: number;
+  created_at: string | null;
+  updated_at: string | null;
+  tenant_id: number;
+  warehouse_id: number;
+  tester_id: number;
+  device_id: number;
+  lpn: string | null;
+  serial_number: string | null;
+  imei: string | null;
+  passed_components: string | null;
+  failed_components: string | null;
+  pending_components: string | null;
+  oem_status: string | null;
+  battery_info: any | null;
+  oem_info: any | null;
+  label_printed: boolean | null;
+  status: boolean | null;
+  os_version: string | null;
+  device_lock: string | null;
+  carrier_lock: any | null;
+  sim_lock: any | null;
+  ESN: string | null;
+  iCloud: any | null;
+  eSIM: boolean | null;
+  eSIM_erasure: boolean | null;
+  make: string | null;
+  model_no: string | null;
+  model_name: string | null;
+  device_type: string | null;
+  device_serial: string | null;
+  device_imei: string | null;
+  device_lpn: string | null;
+  device_sku: string | null;
+  device_imei2: string | null;
+  device_guid: string | null;
+  device_description: string | null;
+  device_storage: string | null;
+  device_memory: string | null;
+  device_color: string | null;
+  device_created_at: string | null;
+  device_status: boolean | null;
+  warehouse_name: string | null;
+  tester_username: string | null;
+}
+
+export type DiagnosticListResponse = ApiResponse<Diagnostic[]>;

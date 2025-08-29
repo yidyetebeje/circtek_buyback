@@ -1,0 +1,45 @@
+<div class="login-container">
+  <div class="login-box">
+    <h1 class="text-3xl font-bold text-center mb-2">Welcome Back!</h1>
+    <p class="text-center text-base-content/70 mb-8">Sign in to continue to Circtek</p>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text">Username or Email</span>
+        </label>
+        <input type="text" placeholder="yourname or you@example.com" class="input input-bordered" formControlName="identifier" />
+      </div>
+
+      <div class="form-control mt-4">
+        <label class="label">
+          <span class="label-text">Password</span>
+        </label>
+        <input type="password" placeholder="••••••••" class="input input-bordered" formControlName="password" />
+      </div>
+
+      @if (error()) {
+        <div role="alert" class="alert alert-error mt-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <span>{{ error() }}</span>
+        </div>
+      }
+
+      <div class="form-control mt-8">
+        <button type="submit" class="btn btn-primary" [disabled]="loading()">
+          @if (loading()) {
+            <span class="loading loading-spinner"></span>
+            Signing In...
+          } @else {
+            Sign In
+          }
+        </button>
+      </div>
+
+      <div class="text-center mt-6">
+        <a routerLink="/forgot-password" class="link link-hover text-sm">Forgot password?</a>
+      </div>
+
+    </form>
+  </div>
+</div>

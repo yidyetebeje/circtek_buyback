@@ -4,13 +4,13 @@
 }
 
 /* Modern admin table styling - Based on Material Design & Ant Design principles */
-.table {
+/* .table {
   background-color: transparent;
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
   font-variant-numeric: tabular-nums;
-}
+} */
 
 /* Header styling - Clean and professional */
 .table thead {
