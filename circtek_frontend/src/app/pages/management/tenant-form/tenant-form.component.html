@@ -1,0 +1,14 @@
+<app-generic-form-page
+  [title]="title()"
+  [subtitle]="subtitle()"
+  [form]="tenantForm()"
+  [fields]="fields()"
+  [actions]="actions()"
+  [loading]="loading()"
+  [submitting]="submitting()"
+  [error]="errorMessage()"
+  [submitLabel]="submitLabel()"
+  (formSubmit)="onFormSubmit($event)"
+  (actionClick)="onActionClick($event)"
+  (backClick)="onActionClick({ action: 'Cancel' })"
+></app-generic-form-page>

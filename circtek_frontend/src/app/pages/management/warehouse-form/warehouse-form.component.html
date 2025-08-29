@@ -1,0 +1,15 @@
+<app-generic-form-page
+  [title]="title()"
+  [subtitle]="subtitle()"
+  [form]="warehouseForm()"
+  [fields]="fields()"
+  [actions]="actions()"
+  [loading]="loading()"
+  [submitting]="submitting()"
+  [error]="errorMessage()"
+  [showBackButton]="true"
+  [submitLabel]="submitLabel()"
+  backUrl="/management"
+  (formSubmit)="onFormSubmit($event)"
+  (actionClick)="onActionClick($event)"
+></app-generic-form-page>

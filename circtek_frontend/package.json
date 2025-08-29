@@ -23,6 +23,7 @@
     "@tanstack/angular-form": "^1.19.2",
     "@tanstack/angular-table": "^8.21.3",
     "daisyui": "^5.0.51",
+    "lucide-angular": "^0.542.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

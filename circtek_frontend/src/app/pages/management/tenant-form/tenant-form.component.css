@@ -1,0 +1,4 @@
+/* Tenant form specific styles (kept minimal as layout is handled by GenericFormPage) */
+:host {
+  display: block;
+}

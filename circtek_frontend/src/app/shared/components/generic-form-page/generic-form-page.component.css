@@ -1,0 +1,105 @@
+/* Container and Layout - matching generic page */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Card Container - matching generic page styling */
+.card-container {
+  background: oklch(var(--b1));
+  border: 1px solid oklch(var(--b3) / 0.6);
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+
+}
+
+.card-container:hover {
+  border-color: oklch(var(--b3) / 0.8);
+  
+}
+
+/* Form Card - Flat design matching table */
+.form-card {
+  border: 1px solid oklch(var(--bc) / 0.05);
+  transition: all 0.3s ease;
+}
+
+.form-card:hover {
+  border-color: oklch(var(--bc) / 0.1);
+}
+
+/* Form styling */
+.form-control .label {
+  padding: 0;
+}
+
+/* Enhanced input focus states - matching generic page */
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: oklch(var(--p));
+ 
+  background: oklch(var(--b1));
+}
+
+.input-error,
+.select-error,
+.textarea-error {
+  border-color: oklch(var(--er));
+}
+
+.input-error:focus,
+.select-error:focus,
+.textarea-error:focus {
+  outline-color: oklch(var(--er));
+  border-color: oklch(var(--er));
+
+}
+
+/* Clean button states - matching generic page */
+.btn:hover {
+  transition: all 0.15s ease;
+}
+
+.btn-primary {
+  background: oklch(var(--p));
+  border: none;
+  color: oklch(var(--pc));
+}
+
+.btn-primary:hover {
+  background: oklch(var(--p) / 0.9);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading-overlay {
+  backdrop-filter: blur(4px);
+}
+
+/* Theme-specific styling - matching generic page */
+[data-theme="dim"] .card-container {
+  background: oklch(var(--b1));
+  border: 1px solid oklch(var(--b3) / 0.3);
+}
+
+[data-theme="light"] .card-container {
+  background: oklch(var(--b1));
+  border: 1px solid oklch(var(--b3) / 0.15);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .grid-cols-1.md\\:grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .md\\:col-span-2 {
+    grid-column: span 1;
+  }
+}

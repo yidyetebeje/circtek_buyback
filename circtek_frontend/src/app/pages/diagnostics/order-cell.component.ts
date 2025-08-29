@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-order-cell',
-  standalone: true,
   imports: [CommonModule],
   template: `
     <span class="text-sm text-base-content/70">{{ displayIndex() }}</span>

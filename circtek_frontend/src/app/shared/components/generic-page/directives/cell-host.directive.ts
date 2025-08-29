@@ -2,7 +2,6 @@ import { Directive, Input, OnChanges, SimpleChanges, ViewContainerRef, Component
 
 @Directive({
   selector: '[appCellHost]',
-  standalone: true,
 })
 export class CellHostDirective implements OnChanges {
   @Input('appCellHost') componentType: Type<any> | undefined;

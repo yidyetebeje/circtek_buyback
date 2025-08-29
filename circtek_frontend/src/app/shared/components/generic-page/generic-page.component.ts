@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { CellHostDirective } from './directives/cell-host.directive';
 import { FormsModule } from '@angular/forms';
 import { ColumnDef, createAngularTable, getCoreRowModel, SortingState } from '@tanstack/angular-table';
+import { LucideAngularModule, Edit, Trash2, UserPlus, Users } from 'lucide-angular';
 
 // Reusable Generic Page composed with Tailwind + DaisyUI
 // - Header title
@@ -38,7 +39,7 @@ export type CellAction = {
 
 @Component({
   selector: 'app-generic-page',
-  imports: [CommonModule, FormsModule, CellHostDirective],
+  imports: [CommonModule, FormsModule, CellHostDirective, LucideAngularModule],
   templateUrl: './generic-page.component.html',
   styleUrl: './generic-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -237,7 +238,9 @@ export class GenericPageComponent<TData extends object> {
   }
 
   onCellAction(action: string, row: any) {
-    this.cellAction.emit({ action, row: row.original as TData });
+    // Support both TanStack Row objects and plain row data
+    const data = row && typeof row === 'object' && 'original' in row ? (row as any).original : row;
+    this.cellAction.emit({ action, row: data as TData });
   }
 
   getCellClass(cell: any): string {
@@ -260,6 +263,19 @@ export class GenericPageComponent<TData extends object> {
       return cellComponentDataFn(cell.row.original as TData, cell);
     }
     return cell.row.original;
+  }
+
+  // Icons for actions
+  private readonly ACTION_ICONS: Record<string, any> = {
+    edit: Edit,
+    delete: Trash2,
+    assign: UserPlus,
+    'view-assigned': Users,
+  };
+
+  getActionIcon(a: CellAction): any {
+    const key = (a.icon ?? a.key) || '';
+    return this.ACTION_ICONS[key] ?? Edit;
   }
 
   // Pagination helpers for template

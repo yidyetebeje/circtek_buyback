@@ -4,7 +4,6 @@ import { Diagnostic } from '../../core/models/diagnostic';
 
 @Component({
   selector: 'app-result-cell',
-  standalone: true,
   imports: [CommonModule],
   template: `
     <button

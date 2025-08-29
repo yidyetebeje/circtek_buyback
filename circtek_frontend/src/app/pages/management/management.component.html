@@ -10,8 +10,129 @@
   [pageIndexInput]="pageIndex()"
   [pageSizeInput]="pageSize()"
   [searchPlaceholder]="searchPlaceholder()"
+  [primaryAction]="primaryAction()"
+  (primaryActionClick)="onPrimaryActionClick()"
   (pageChange)="onPageChange($event)"
   (filtersChange)="onFiltersChange($event)"
   (sortingChange)="onSortingChange($event)"
   (tabChange)="onTabChange($event)"
+  (cellAction)="onCellAction($event)"
 ></app-generic-page>
+
+<!-- Assign Tester Modal -->
+@if (isAssignModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-base-300/60" (click)="closeAssignModal()"></div>
+    <div class="relative bg-base-100 rounded-xl shadow-xl w-full max-w-md p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Assign Tester</h3>
+        <button class="btn btn-ghost btn-sm" (click)="closeAssignModal()">✕</button>
+      </div>
+      <div class="space-y-4">
+        <div class="text-sm text-base-content/70">
+          @if (selectedWifiProfile(); as p) {
+            <div><span class="font-medium">Profile:</span> {{ p.name }} (SSID: {{ p.ssid }})</div>
+          }
+        </div>
+        @if (!selectedWifiProfile()) {
+          <div class="form-control">
+            <label class="label"><span class="label-text">WiFi Profile</span></label>
+            <select class="select select-bordered" (change)="onAssignProfileSelect($event)">
+              <option [value]="''">Select WiFi profile…</option>
+              @for (opt of wifiOptions(); track opt.value) {
+                <option [value]="opt.value">{{ opt.label }}</option>
+              }
+            </select>
+          </div>
+        }
+        <div class="form-control">
+          <label class="label"><span class="label-text">Tester</span></label>
+          <select class="select select-bordered" (change)="onAssignTesterSelect($event)">
+            <option [value]="''">Select tester…</option>
+            @for (opt of testerOptions(); track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button class="btn" (click)="closeAssignModal()">Cancel</button>
+        <button class="btn btn-primary" [class.btn-disabled]="selectedAssignTesterId() == null || (!selectedWifiProfile() && selectedAssignProfileId() == null)" [disabled]="selectedAssignTesterId() == null || (!selectedWifiProfile() && selectedAssignProfileId() == null)" (click)="submitAssign()">
+          Assign
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- View Assigned Testers Modal -->
+@if (isAssignedModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-base-300/60" (click)="closeAssignedModal()"></div>
+    <div class="relative bg-base-100 rounded-xl shadow-xl w-full max-w-lg p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Assigned Testers</h3>
+        <button class="btn btn-ghost btn-sm" (click)="closeAssignedModal()">✕</button>
+      </div>
+      <div class="text-sm text-base-content/70 mb-3">
+        @if (selectedWifiProfile(); as p) {
+          <div><span class="font-medium">Profile:</span> {{ p.name }} (SSID: {{ p.ssid }})</div>
+        }
+      </div>
+      <div class="overflow-x-auto border rounded-box">
+        <table class="table w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Username</th>
+              <th>Name</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of assignedTesters(); track u.id) {
+              <tr>
+                <td>{{ u.id }}</td>
+                <td>{{ u.user_name }}</td>
+                <td>{{ u.name }}</td>
+                <td class="text-right">
+                  <button class="btn btn-ghost btn-xs text-error" (click)="unassignTester(u.id)">Unassign</button>
+                </td>
+              </tr>
+            }
+            @if (!assignedTesters().length) {
+              <tr>
+                <td colspan="4" class="text-center py-4 text-base-content/60">No testers assigned.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-4 flex justify-end">
+        <button class="btn" (click)="closeAssignedModal()">Close</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (isDeleteModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-base-300/60" (click)="closeDeleteModal()"></div>
+    <div class="relative bg-base-100 rounded-xl shadow-xl w-full max-w-md p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Confirm Deletion</h3>
+        <button class="btn btn-ghost btn-sm" (click)="closeDeleteModal()">✕</button>
+      </div>
+      <div class="text-sm text-base-content/70">
+        @if (deleteContext(); as ctx) {
+          <p>Are you sure you want to delete this {{ ctx.tab.slice(0, -1) }}? This action cannot be undone.</p>
+        }
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button class="btn" (click)="closeDeleteModal()">Cancel</button>
+        <button class="btn btn-error" (click)="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+}
