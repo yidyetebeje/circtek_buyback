@@ -155,7 +155,7 @@
                             [componentData]="getCellComponentData(cell)">
                           </ng-container>
                         } @else if (getCellActions(cell); as actions) {
-                          <div class="flex items-center justify-end gap-2">
+                          <div class="flex items-center justify-start gap-2">
                             @for (action of actions; track action.key) {
                               <button
                                 type="button"

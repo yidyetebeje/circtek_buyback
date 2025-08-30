@@ -101,6 +101,13 @@ export const routes: Routes = [
       import('./pages/transfer-form/transfer-form.component').then((m) => m.TransferFormComponent),
   },
 
+  // Purchase detail routes
+  {
+    path: 'stock-management/purchases/:id',
+    loadComponent: () =>
+      import('./pages/purchase-detail/purchase-detail.component').then((m) => m.PurchaseDetailComponent),
+  },
+
   // Purchase receiving routes
   {
     path: 'stock-management/purchases/:id/receive',
@@ -108,11 +115,32 @@ export const routes: Routes = [
       import('./pages/purchase-receiving/purchase-receiving.component').then((m) => m.PurchaseReceivingComponent),
   },
 
+  // Receive items routes
+  {
+    path: 'stock-management/receive-items',
+    loadComponent: () =>
+      import('./pages/receive-items/receive-items.component').then((m) => m.ReceiveItemsComponent),
+  },
+
   // Transfer completion routes
   {
     path: 'stock-management/transfers/:id/complete',
     loadComponent: () =>
       import('./pages/transfer-completion/transfer-completion.component').then((m) => m.TransferCompletionComponent),
+  },
+
+  // Repair form routes
+  {
+    path: 'stock-management/repairs/add',
+    loadComponent: () =>
+      import('./pages/repair-form/repair-form.component').then((m) => m.RepairFormComponent),
+  },
+
+  // Repair consume parts routes
+  {
+    path: 'stock-management/repairs/:id/consume',
+    loadComponent: () =>
+      import('./pages/repair-consume/repair-consume.component').then((m) => m.RepairConsumeComponent),
   },
 
   // Fallback

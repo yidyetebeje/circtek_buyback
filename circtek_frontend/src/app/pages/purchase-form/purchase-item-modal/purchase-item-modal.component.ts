@@ -31,6 +31,7 @@ export class PurchaseItemModalComponent {
 
   // State
   form = signal<FormGroup>(this.createForm());
+  formValid = signal<boolean>(false);
 
   // Computed
   title = computed(() => this.editingItem() ? 'Edit Item' : 'Add Item');
@@ -45,7 +46,7 @@ export class PurchaseItemModalComponent {
     {
       label: this.submitLabel(),
       variant: 'accent',
-      disabled: this.form().invalid,
+      disabled: !this.formValid(),
       action: 'submit'
     }
   ]);
@@ -58,7 +59,16 @@ export class PurchaseItemModalComponent {
       
       // Recreate form when modal opens or editing item changes
       if (isOpen) {
-        this.form.set(this.createForm());
+        const newForm = this.createForm();
+        this.form.set(newForm);
+        
+        // Set initial validity
+        this.formValid.set(newForm.valid);
+        
+        // Subscribe to form status changes
+        newForm.statusChanges.subscribe(() => {
+          this.formValid.set(newForm.valid);
+        });
       }
     });
   }

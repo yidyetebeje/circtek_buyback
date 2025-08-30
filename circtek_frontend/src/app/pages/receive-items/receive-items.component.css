@@ -1,0 +1,65 @@
+/* Receive Items Component Styles */
+
+/* Scanner container - left aligned and full width */
+.scanner-container {
+  width: 100%;
+}
+
+/* Barcode scanner component alignment */
+app-barcode-scanner {
+  display: block;
+  width: 100%;
+}
+
+/* Enhanced form inputs */
+.input:focus,
+.select:focus {
+  box-shadow: 0 0 0 3px hsl(var(--p) / 0.2);
+  border-color: hsl(var(--p));
+}
+
+/* Enhanced buttons */
+.btn-primary {
+  background: linear-gradient(135deg, hsl(var(--p)), hsl(var(--p) / 0.8));
+  border: none;
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, hsl(var(--p) / 0.9), hsl(var(--p) / 0.7));
+  transform: translateY(-1px);
+}
+
+/* Enhanced stats */
+.stats .stat {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stats .stat:hover {
+  background: hsl(var(--b2) / 0.5);
+  transform: scale(1.02);
+}
+
+/* Enhanced badges */
+.badge {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.badge:hover {
+  transform: scale(1.05);
+}
+
+/* Focus states for accessibility */
+.btn:focus-visible,
+.input:focus-visible,
+.select:focus-visible {
+  outline: 2px solid hsl(var(--p));
+  outline-offset: 2px;
+}
+
+/* Responsive enhancements */
+@media (max-width: 768px) {
+  .scanner-container {
+    padding: 1rem;
+  }
+}

@@ -1,0 +1,14 @@
+<app-generic-form-page
+  [title]="title"
+  [subtitle]="subtitle"
+  [form]="form"
+  [fields]="fields()"
+  [actions]="actions()"
+  [loading]="loading()"
+  [submitting]="submitting()"
+  [error]="error()"
+  [submitLabel]="submitLabel()"
+  (formSubmit)="onSubmit()"
+  (actionClick)="onActionClick($event)"
+>
+</app-generic-form-page>

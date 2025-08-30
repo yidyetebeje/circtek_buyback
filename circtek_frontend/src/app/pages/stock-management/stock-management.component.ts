@@ -9,9 +9,10 @@ import { ApiService } from '../../core/services/api.service';
 import { StockWithWarehouse } from '../../core/models/stock';
 import { PurchaseRecord } from '../../core/models/purchase';
 import { TransferWithDetails } from '../../core/models/transfer';
+import { RepairRecord } from '../../core/models/repair';
 
 // Union type for table rows across tabs
-export type StockMgmtRow = StockWithWarehouse | PurchaseRecord | TransferWithDetails;
+export type StockMgmtRow = StockWithWarehouse | PurchaseRecord | TransferWithDetails | RepairRecord;
 
 @Component({
   selector: 'app-stock-management',
@@ -31,7 +32,7 @@ export class StockManagementComponent {
   total = signal(0);
 
   // Tabs & pagination
-  activeTab = signal<'stock' | 'purchases' | 'transfers'>('stock');
+  activeTab = signal<'stock' | 'purchases' | 'transfers' | 'repairs'>('stock');
   pageIndex = signal(0);
   pageSize = signal(10);
 
@@ -59,6 +60,7 @@ export class StockManagementComponent {
     { key: 'stock', label: 'Stock' },
     { key: 'purchases', label: 'Purchases' },
     { key: 'transfers', label: 'Transfers' },
+    { key: 'repairs', label: 'Repairs' },
   ]);
 
   // Header
@@ -70,6 +72,8 @@ export class StockManagementComponent {
       return { label: 'Add Purchase' };
     } else if (tab === 'transfers') {
       return { label: 'Add Transfer' };
+    } else if (tab === 'repairs') {
+      return { label: 'Add Repair' };
     }
     return null;
   });
@@ -133,16 +137,16 @@ export class StockManagementComponent {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
               actions: [
-                { key: 'receive', label: 'Receive Items', class: 'text-secondary' },
-                { key: 'edit', label: 'Edit', class: 'text-primary' },
-                { key: 'delete', label: 'Delete', class: 'text-error' },
+                { key: 'detail', label: 'Detail', class: 'text-info', icon: 'eye' },
+                { key: 'receive', label: 'Receive Items', class: 'text-secondary', icon: 'package-plus' },
+                { key: 'edit', label: 'Edit', class: 'text-primary', icon: 'edit' },
+                { key: 'delete', label: 'Delete', class: 'text-error', icon: 'trash-2' },
               ],
               cellClass: () => 'text-right'
             }
           } as any,
         ];
       case 'transfers':
-      default:
         return [
           { header: 'ID', accessorKey: 'id' as any },
           { header: 'From', accessorKey: 'from_warehouse_name' as any },
@@ -161,6 +165,28 @@ export class StockManagementComponent {
             }
           } as any,
         ];
+      case 'repairs':
+      default:
+        return [
+          { header: 'ID', accessorKey: 'id' as any },
+          { header: 'Device ID', accessorKey: 'device_id' as any },
+          { header: 'Device SKU', accessorKey: 'device_sku' as any },
+          { header: 'Reason ID', accessorKey: 'reason_id' as any },
+          { header: 'Remarks', accessorKey: 'remarks' as any },
+          { header: 'Status', id: 'status', accessorFn: (r: any) => (r.status ? 'Active' : 'Inactive') },
+          { header: 'Created', accessorKey: 'created_at' as any },
+          {
+            header: 'Actions', id: 'actions' as any, enableSorting: false as any,
+            meta: {
+              actions: [
+                { key: 'consume', label: 'Consume Parts', class: 'text-secondary' },
+                { key: 'edit', label: 'Edit', class: 'text-primary' },
+                { key: 'delete', label: 'Delete', class: 'text-error' },
+              ],
+              cellClass: () => 'text-right'
+            }
+          } as any,
+        ];
     }
   });
 
@@ -169,7 +195,9 @@ export class StockManagementComponent {
     switch (this.activeTab()) {
       case 'stock': return 'Search SKU';
       case 'purchases': return 'Search PO, supplier, tracking';
-      default: return 'Search transfers';
+      case 'transfers': return 'Search transfers';
+      case 'repairs': return 'Search device SKU, remarks';
+      default: return 'Search';
     }
   });
 
@@ -181,7 +209,7 @@ export class StockManagementComponent {
     const str = (k: string, d = '') => qp.get(k) ?? d;
 
     const tab = str('tab', 'stock');
-    if (tab === 'stock' || tab === 'purchases' || tab === 'transfers') this.activeTab.set(tab as any);
+    if (tab === 'stock' || tab === 'purchases' || tab === 'transfers' || tab === 'repairs') this.activeTab.set(tab as any);
     else this.activeTab.set('stock');
 
     this.pageIndex.set(Math.max(0, num('page', 1) - 1));
@@ -315,15 +343,32 @@ export class StockManagementComponent {
       return;
     }
 
-    // transfers
+    if (tab === 'transfers') {
+      let params = new HttpParams()
+        .set('page', String(this.pageIndex() + 1))
+        .set('limit', String(this.pageSize()));
+      const s = this.search().trim(); if (s) params = params.set('search', s);
+      const fw = this.fromWarehouseId(); if (fw != null) params = params.set('from_warehouse_id', String(fw));
+      const tw = this.toWarehouseId(); if (tw != null) params = params.set('to_warehouse_id', String(tw));
+      const st = this.transferStatus(); if (st !== 'any') params = params.set('status', st);
+      this.api.getTransfers(params).subscribe({
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
+          this.data.set(res.data ?? []);
+          this.total.set(res.meta?.total ?? 0);
+          this.loading.set(false);
+        },
+        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
+      });
+      return;
+    }
+
+    // repairs
     let params = new HttpParams()
       .set('page', String(this.pageIndex() + 1))
       .set('limit', String(this.pageSize()));
     const s = this.search().trim(); if (s) params = params.set('search', s);
-    const fw = this.fromWarehouseId(); if (fw != null) params = params.set('from_warehouse_id', String(fw));
-    const tw = this.toWarehouseId(); if (tw != null) params = params.set('to_warehouse_id', String(tw));
-    const st = this.transferStatus(); if (st !== 'any') params = params.set('status', st);
-    this.api.getTransfers(params).subscribe({
+    this.api.getRepairs(params).subscribe({
       next: (res) => {
         if (seq !== this.requestSeq) return;
         this.data.set(res.data ?? []);
@@ -369,7 +414,7 @@ export class StockManagementComponent {
   }
 
   onTabChange(key: string | null) {
-    const k = (key ?? 'stock') as 'stock' | 'purchases' | 'transfers';
+    const k = (key ?? 'stock') as 'stock' | 'purchases' | 'transfers' | 'repairs';
     if (k !== this.activeTab()) {
       this.activeTab.set(k);
       // reset filters per tab
@@ -385,6 +430,8 @@ export class StockManagementComponent {
       this.router.navigate(['/stock-management/purchases/add']);
     } else if (tab === 'transfers') {
       this.router.navigate(['/stock-management/transfers/add']);
+    } else if (tab === 'repairs') {
+      this.router.navigate(['/stock-management/repairs/add']);
     }
   }
 
@@ -397,8 +444,13 @@ export class StockManagementComponent {
       return;
     }
 
+    if (tab === 'purchases' && event.action === 'detail') {
+      this.router.navigate(['/stock-management/purchases', row.id]);
+      return;
+    }
+
     if (tab === 'purchases' && event.action === 'receive') {
-      this.router.navigate(['/stock-management/purchases', row.id, 'receive']);
+      this.router.navigate(['/stock-management/receive-items'], { queryParams: { purchaseId: row.id } });
       return;
     }
 
@@ -407,14 +459,19 @@ export class StockManagementComponent {
       return;
     }
 
+    if (tab === 'repairs' && event.action === 'consume') {
+      this.router.navigate(['/stock-management/repairs', row.id, 'consume']);
+      return;
+    }
+
     // edit actions/forms will be added later
   }
 
   // Delete confirmation modal state
   isDeleteModalOpen = signal(false);
-  deleteContext = signal<{ tab: 'stock' | 'purchases' | 'transfers'; row: StockMgmtRow } | null>(null);
+  deleteContext = signal<{ tab: 'stock' | 'purchases' | 'transfers' | 'repairs'; row: StockMgmtRow } | null>(null);
 
-  openDeleteModal(tab: 'stock' | 'purchases' | 'transfers', row: StockMgmtRow) {
+  openDeleteModal(tab: 'stock' | 'purchases' | 'transfers' | 'repairs', row: StockMgmtRow) {
     this.deleteContext.set({ tab, row });
     this.isDeleteModalOpen.set(true);
   }
@@ -432,7 +489,8 @@ export class StockManagementComponent {
     let obs: any;
     if (ctx.tab === 'stock') obs = this.api.deleteStock((ctx.row as any).id);
     else if (ctx.tab === 'purchases') obs = this.api.deletePurchase((ctx.row as any).id);
-    else obs = this.api.deleteTransfer((ctx.row as any).id);
+    else if (ctx.tab === 'transfers') obs = this.api.deleteTransfer((ctx.row as any).id);
+    else obs = this.api.deleteRepair((ctx.row as any).id);
 
     obs.subscribe({
       next: () => { this.loading.set(false); this.closeDeleteModal(); this.fetchData(); },

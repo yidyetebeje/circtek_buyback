@@ -1,0 +1,86 @@
+<app-generic-form-page
+  [title]="title()"
+  [subtitle]="subtitle()"
+  [form]="form"
+  [fields]="fields()"
+  [actions]="actions()"
+  [loading]="loading()"
+  [submitting]="submitting()"
+  [error]="error()"
+  [submitLabel]="submitLabel()"
+  (formSubmit)="onSubmit()"
+  (actionClick)="onActionClick($event)"
+>
+  <!-- Custom section for dynamic items -->
+  <div class="space-y-4">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-medium text-base-content">Parts to Consume</h3>
+      <button
+        type="button"
+        (click)="addItem()"
+        class="btn btn-primary btn-sm"
+      >
+        Add Part
+      </button>
+    </div>
+
+    @if (itemsArray.length === 0) {
+      <div class="text-center py-6 text-base-content/60">
+        No parts added yet. Click "Add Part" to start.
+      </div>
+    }
+
+    @for (itemGroup of itemsArray.controls; track $index) {
+      <div class="card bg-base-200 p-4" [formGroup]="$any(itemGroup)">
+        <div class="flex items-end gap-4">
+          <div class="flex-1">
+            <label class="label">
+              <span class="label-text font-medium">SKU *</span>
+            </label>
+            <input
+              type="text"
+              formControlName="sku"
+              placeholder="Enter part SKU"
+              class="input input-bordered w-full"
+              [class.input-error]="itemGroup.get('sku')?.invalid && itemGroup.get('sku')?.touched"
+            />
+          </div>
+          
+          <div class="w-32">
+            <label class="label">
+              <span class="label-text font-medium">Quantity *</span>
+            </label>
+            <input
+              type="number"
+              formControlName="quantity"
+              min="1"
+              placeholder="1"
+              class="input input-bordered w-full"
+              [class.input-error]="itemGroup.get('quantity')?.invalid && itemGroup.get('quantity')?.touched"
+            />
+          </div>
+          
+          <button
+            type="button"
+            (click)="removeItem($index)"
+            class="btn btn-ghost btn-sm"
+          >
+            Remove
+          </button>
+        </div>
+        
+        @if (itemGroup.get('sku')?.invalid && itemGroup.get('sku')?.touched) {
+          <div class="label">
+            <span class="label-text-alt text-error">SKU is required</span>
+          </div>
+        }
+        
+        @if (itemGroup.get('quantity')?.invalid && itemGroup.get('quantity')?.touched) {
+          <div class="label">
+            <span class="label-text-alt text-error">Quantity must be at least 1</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</app-generic-form-page>

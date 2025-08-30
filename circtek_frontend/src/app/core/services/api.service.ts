@@ -12,6 +12,7 @@ import { WiFiProfile } from '../models/wifi-profile';
 import { StockWithWarehouse, StockSummary } from '../models/stock';
 import { PurchaseRecord, PurchaseWithItemsAndReceived, ReceivingResult, ReceiveItemsRequest } from '../models/purchase';
 import { TransferWithDetails, TransferCompletionResult, TransferSummary } from '../models/transfer';
+import { RepairRecord, RepairWithItems, RepairCreateInput, RepairQueryInput, RepairConsumeItemsInput, RepairConsumeResult } from '../models/repair';
 
 @Injectable({
   providedIn: 'root',
@@ -194,35 +195,35 @@ export class ApiService {
 
   // ===== Purchases =====
   getPurchases(params: HttpParams = new HttpParams()): Observable<ApiResponse<PurchaseRecord[]>> {
-    return this.get<ApiResponse<PurchaseRecord[]>>('/purchases', params);
+    return this.get<ApiResponse<PurchaseRecord[]>>('/stock/purchases', params);
   }
 
   getPurchase(id: number): Observable<ApiResponse<PurchaseWithItemsAndReceived | null>> {
-    return this.get<ApiResponse<PurchaseWithItemsAndReceived | null>>(`/purchases/${id}`);
+    return this.get<ApiResponse<PurchaseWithItemsAndReceived | null>>(`/stock/purchases/${id}`);
   }
 
   getPurchaseStatus(id: number): Observable<ApiResponse<any>> {
-    return this.get<ApiResponse<any>>(`/purchases/${id}/status`);
+    return this.get<ApiResponse<any>>(`/stock/purchases/${id}/status`);
   }
 
   getPurchaseReceivedItems(id: number): Observable<ApiResponse<any[]>> {
-    return this.get<ApiResponse<any[]>>(`/purchases/${id}/received`);
+    return this.get<ApiResponse<any[]>>(`/stock/purchases/${id}/received`);
   }
 
   createPurchase(payload: any): Observable<ApiResponse<PurchaseRecord | null>> {
-    return this.post<ApiResponse<PurchaseRecord | null>>('/purchases', payload);
+    return this.post<ApiResponse<PurchaseRecord | null>>('/stock/purchases', payload);
   }
 
   createPurchaseWithItems(payload: any): Observable<ApiResponse<PurchaseWithItemsAndReceived | null>> {
-    return this.post<ApiResponse<PurchaseWithItemsAndReceived | null>>('/purchases/with-items', payload);
+    return this.post<ApiResponse<PurchaseWithItemsAndReceived | null>>('/stock/purchases/with-items', payload);
   }
 
   receivePurchaseItems(id: number, payload: Omit<ReceiveItemsRequest, 'purchase_id'>): Observable<ApiResponse<ReceivingResult | null>> {
-    return this.post<ApiResponse<ReceivingResult | null>>(`/purchases/${id}/receive`, payload);
+    return this.post<ApiResponse<ReceivingResult | null>>(`/stock/purchases/${id}/receive`, payload);
   }
 
   deletePurchase(id: number): Observable<ApiResponse<{ id: number } | null>> {
-    return this.delete<ApiResponse<{ id: number } | null>>(`/purchases/${id}`);
+    return this.delete<ApiResponse<{ id: number } | null>>(`/stock/purchases/${id}`);
   }
 
   // ===== Transfers =====
@@ -261,6 +262,59 @@ export class ApiService {
 
   findDeviceByImeiOrSerial(identifier: string): Observable<ApiResponse<any | null>> {
     return this.get<ApiResponse<any | null>>(`/transfers/device-lookup/${encodeURIComponent(identifier)}`);
+  }
+
+  // ===== Repairs =====
+  getRepairs(params: HttpParams = new HttpParams()): Observable<ApiResponse<RepairRecord[]>> {
+    return this.get<ApiResponse<RepairRecord[]>>('/repairs', params);
+  }
+
+  getRepair(id: number): Observable<ApiResponse<RepairWithItems | null>> {
+    return this.get<ApiResponse<RepairWithItems | null>>(`/repairs/${id}`);
+  }
+
+  createRepair(payload: RepairCreateInput): Observable<ApiResponse<RepairRecord | null>> {
+    return this.post<ApiResponse<RepairRecord | null>>('/repairs', payload);
+  }
+
+  consumeRepairItems(id: number, payload: RepairConsumeItemsInput): Observable<ApiResponse<RepairConsumeResult | null>> {
+    return this.post<ApiResponse<RepairConsumeResult | null>>(`/repairs/${id}/consume`, payload);
+  }
+
+  deleteRepair(id: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/repairs/${id}`);
+  }
+
+  // File Upload Methods
+  uploadFile(file: File, folder?: string): Observable<ApiResponse<{ url: string; fileName: string; originalName: string; size: number; type: string } | null>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (folder) {
+      formData.append('folder', folder);
+    }
+    
+    return this.http.post<ApiResponse<{ url: string; fileName: string; originalName: string; size: number; type: string } | null>>(
+      `${this.apiUrl}/uploads`, 
+      formData, 
+      { withCredentials: true }
+    );
+  }
+
+  getSignedUrl(key: string, expiresIn?: number): Observable<ApiResponse<{ signedUrl: string; expiresIn: number } | null>> {
+    const params = new HttpParams().set('expiresIn', (expiresIn || 3600).toString());
+    return this.get<ApiResponse<{ signedUrl: string; expiresIn: number } | null>>(`/uploads/signed-url/${encodeURIComponent(key)}`, params);
+  }
+
+  getUploadUrl(key: string, contentType?: string, expiresIn?: number): Observable<ApiResponse<{ uploadUrl: string; key: string; expiresIn: number } | null>> {
+    let params = new HttpParams().set('key', key);
+    if (contentType) params = params.set('contentType', contentType);
+    if (expiresIn) params = params.set('expiresIn', expiresIn.toString());
+    
+    return this.get<ApiResponse<{ uploadUrl: string; key: string; expiresIn: number } | null>>('/uploads/upload-url', params);
+  }
+
+  deleteFile(key: string): Observable<ApiResponse<{ deleted: boolean; key: string } | null>> {
+    return this.delete<ApiResponse<{ deleted: boolean; key: string } | null>>(`/uploads/${encodeURIComponent(key)}`);
   }
 }
 

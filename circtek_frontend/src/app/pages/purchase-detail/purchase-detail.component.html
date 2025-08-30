@@ -1,0 +1,245 @@
+<!-- Main Container -->
+<div class="min-h-screen bg-base-200 transition-colors duration-300 flex flex-col items-center">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Card Container -->
+    <div class="card-container rounded-2xl border border-base-300/50 max-w-7xl mx-auto">
+      <div class="p-6 md:p-8">
+        <!-- Header Section -->
+        <div class="flex justify-between items-start mb-8">
+          <div class="flex items-center gap-4">
+            <button 
+              type="button" 
+              class="btn btn-ghost btn-sm" 
+              (click)="navigateBack()"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+              Back
+            </button>
+            <div>
+              <h1 class="text-3xl font-bold text-base-content">{{ title() }}</h1>
+              @if (purchase()) {
+                <p class="text-base-content/60 mt-1">
+                  Supplier: {{ purchase()!.purchase.supplier_name }} • 
+                  Expected: {{ purchase()!.purchase.expected_delivery_date | date:'mediumDate' }}
+                </p>
+              }
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="flex gap-3">
+            @if (purchase() && availableDocuments().length > 0) {
+              <button 
+                type="button" 
+                class="btn btn-outline btn-primary gap-2"
+                (click)="toggleDocuments()"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Documents ({{ availableDocuments().length }})
+              </button>
+            }
+            @if (purchase() && !purchase()!.is_fully_received) {
+              <button 
+                type="button" 
+                class="btn btn-primary gap-2"
+                (click)="navigateToReceiving()"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                </svg>
+                Receive Items
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Error Alert -->
+        @if (error()) {
+          <div class="alert alert-error mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>{{ error() }}</span>
+          </div>
+        }
+
+        <!-- Loading State -->
+        @if (loading()) {
+          <div class="flex flex-col justify-center items-center py-20">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+            <p class="text-base-content/60 mt-4">Loading purchase details...</p>
+          </div>
+        } @else if (purchase()) {
+          <!-- Purchase Info Card -->
+          <div class="bg-base-100 rounded-xl border border-base-300/20 p-6 md:p-8 mb-8">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-2xl font-semibold">Purchase Order Details</h2>
+              <div class="badge badge-primary badge-lg">
+                {{ progressPercentage() }}% Complete
+              </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="w-full bg-base-300 rounded-full h-3 mb-6">
+              <div 
+                class="bg-primary h-3 rounded-full transition-all duration-500 ease-out"
+                [style.width.%]="progressPercentage()"
+              ></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div class="stat">
+                <div class="stat-title">PO Number</div>
+                <div class="stat-value text-lg">{{ purchase()!.purchase.purchase_order_no }}</div>
+              </div>
+              <div class="stat">
+                <div class="stat-title">Supplier</div>
+                <div class="stat-value text-lg">{{ purchase()!.purchase.supplier_name }}</div>
+              </div>
+              <div class="stat">
+                <div class="stat-title">Expected Delivery</div>
+                <div class="stat-value text-lg">{{ purchase()!.purchase.expected_delivery_date | date:'MMM d, y' }}</div>
+              </div>
+              <div class="stat">
+                <div class="stat-title">Items Progress</div>
+                <div class="stat-value text-lg">{{ purchase()!.total_received }} / {{ purchase()!.total_items }}</div>
+                <div class="stat-desc">items received</div>
+              </div>
+              @if (purchase()!.purchase.tracking_number) {
+                <div class="stat">
+                  <div class="stat-title">Tracking</div>
+                  <div class="stat-value text-lg">{{ purchase()!.purchase.tracking_number }}</div>
+                  @if (purchase()!.purchase.tracking_url) {
+                    <div class="stat-actions">
+                      <a [href]="purchase()!.purchase.tracking_url" target="_blank" class="btn btn-xs btn-outline">Track</a>
+                    </div>
+                  }
+                </div>
+              }
+              @if (purchase()!.purchase.remarks) {
+                <div class="stat">
+                  <div class="stat-title">Remarks</div>
+                  <div class="stat-desc text-sm">{{ purchase()!.purchase.remarks }}</div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Items Table -->
+          <div class="bg-base-100 rounded-xl border border-base-300/20 p-6 md:p-8">
+            <h2 class="text-2xl font-semibold mb-6">Purchase Items</h2>
+            
+            <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
+              <table class="w-full table">
+                <thead>
+                  <tr>
+                    <th class="whitespace-nowrap px-4 py-3">SKU</th>
+                    <th class="whitespace-nowrap px-4 py-3">Ordered</th>
+                    <th class="whitespace-nowrap px-4 py-3">Received</th>
+                    <th class="whitespace-nowrap px-4 py-3">Remaining</th>
+                    <th class="whitespace-nowrap px-4 py-3">Unit Price</th>
+                    <th class="whitespace-nowrap px-4 py-3">Total Price</th>
+                    <th class="whitespace-nowrap px-4 py-3">Type</th>
+                    <th class="whitespace-nowrap px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of tableData(); track item.id) {
+                    <tr>
+                      <td class="whitespace-nowrap px-4 py-3 font-medium">{{ item.sku }}</td>
+                      <td class="whitespace-nowrap px-4 py-3">{{ item.ordered_quantity }}</td>
+                      <td class="whitespace-nowrap px-4 py-3">{{ item.received_quantity }}</td>
+                      <td class="whitespace-nowrap px-4 py-3 text-primary font-medium">{{ item.remaining_quantity }}</td>
+                      <td class="whitespace-nowrap px-4 py-3">{{ item.unit_price }}</td>
+                      <td class="whitespace-nowrap px-4 py-3 font-medium">{{ item.total_price }}</td>
+                      <td class="whitespace-nowrap px-4 py-3">
+                        <span class="badge {{ item.type === 'Part' ? 'badge-secondary' : 'badge-accent' }} badge-sm">
+                          {{ item.type }}
+                        </span>
+                      </td>
+                      <td class="whitespace-nowrap px-4 py-3">
+                        <span class="badge {{ getStatusBadgeClass(item.status) }} badge-sm">
+                          {{ item.status }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Documents Modal -->
+@if (showDocuments()) {
+  <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-base-100 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+      <div class="flex items-center justify-between p-6 border-b border-base-300">
+        <h2 class="text-xl font-bold">Purchase Documents</h2>
+        <button 
+          type="button" 
+          class="btn btn-ghost btn-circle"
+          (click)="toggleDocuments()"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          @for (doc of availableDocuments(); track doc.name) {
+            <div class="bg-base-200 rounded-lg border border-base-300/20 hover:border-primary/30 transition-colors">
+              <div class="p-6">
+                <div class="flex items-center gap-3">
+                  <div class="avatar placeholder">
+                    <div class="bg-primary text-primary-content rounded-full w-12">
+                      @switch (doc.type) {
+                        @case ('invoice') {
+                          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                          </svg>
+                        }
+                        @case ('image') {
+                          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                          </svg>
+                        }
+                        @default {
+                          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                          </svg>
+                        }
+                      }
+                    </div>
+                  </div>
+                  <div class="flex-1">
+                    <h3 class="font-semibold">{{ doc.name }}</h3>
+                    <p class="text-sm text-base-content/60">Click to view document</p>
+                  </div>
+                </div>
+                <div class="flex justify-end mt-4">
+                  <button 
+                    type="button" 
+                    class="btn btn-primary btn-sm"
+                    (click)="viewDocument(doc)"
+                  >
+                    View
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

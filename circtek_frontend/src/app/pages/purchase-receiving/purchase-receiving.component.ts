@@ -6,10 +6,11 @@ import { GenericFormPageComponent } from '../../shared/components/generic-form-p
 import { ApiService } from '../../core/services/api.service';
 import { PurchaseWithItemsAndReceived, ReceiveItemsRequest } from '../../core/models/purchase';
 import { BarcodeScannerComponent, type ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
+import { FileUploadComponent } from '../../shared/components/file-upload/file-upload.component';
 
 @Component({
   selector: 'app-purchase-receiving',
-  imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent, BarcodeScannerComponent],
+  imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent, BarcodeScannerComponent, FileUploadComponent],
   templateUrl: './purchase-receiving.component.html',
   styleUrls: ['./purchase-receiving.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,6 +27,9 @@ export class PurchaseReceivingComponent {
   submitting = signal<boolean>(false);
   error = signal<string>('');
   form = signal<FormGroup>(this.createForm());
+  showDocuments = signal<boolean>(false);
+  selectedDocument = signal<string | null>(null);
+  warehouses = signal<any[]>([]);
 
   // Computed
   title = computed(() => {
@@ -38,10 +42,35 @@ export class PurchaseReceivingComponent {
     return p?.purchase.id || 0;
   });
 
+  progressPercentage = computed(() => {
+    const p = this.purchase();
+    if (!p || p.total_items === 0) return 0;
+    return Math.round((p.total_received / p.total_items) * 100);
+  });
+
+  availableDocuments = computed(() => {
+    const p = this.purchase();
+    if (!p) return [];
+    
+    const docs = [];
+    if (p.purchase.invoice) docs.push({ name: 'Invoice', url: p.purchase.invoice, type: 'invoice' });
+    if (p.purchase.transport_doc) docs.push({ name: 'Transport Document', url: p.purchase.transport_doc, type: 'transport' });
+    if (p.purchase.receiving_picture) docs.push({ name: 'Receiving Picture', url: p.purchase.receiving_picture, type: 'image' });
+    if (p.purchase.order_confirmation_doc) docs.push({ name: 'Order Confirmation', url: p.purchase.order_confirmation_doc, type: 'confirmation' });
+    
+    return docs;
+  });
+
+  totalItemsToReceive = computed(() => {
+    const items = this.form().get('items')?.value || [];
+    return items.reduce((total: number, item: any) => total + (item.quantity_received || 0), 0);
+  });
+
   constructor() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadPurchase(parseInt(id));
+      this.loadWarehouses();
     } else {
       this.error.set('Purchase ID is required');
       this.loading.set(false);
@@ -77,14 +106,28 @@ export class PurchaseReceivingComponent {
     });
   }
 
+  private loadWarehouses(): void {
+    this.api.getWarehouses().subscribe({
+      next: (response) => {
+        if (response.status === 200 && response.data) {
+          this.warehouses.set(response.data);
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load warehouses:', error);
+      }
+    });
+  }
+
   private setupForm(purchase: PurchaseWithItemsAndReceived): void {
     const itemsArray = this.fb.array(
-      purchase.items.map(item => this.createItemFormGroup(item))
+      purchase.items.filter(item => item.remaining_quantity > 0).map(item => this.createItemFormGroup(item))
     );
 
     this.form.set(this.fb.group({
       warehouse_id: [purchase.purchase.warehouse_id, Validators.required],
-      items: itemsArray
+      items: itemsArray,
+      receiving_picture: [null]
     }));
   }
 
@@ -229,5 +272,47 @@ export class PurchaseReceivingComponent {
       if (field.errors?.['min']) return `${fieldName} must be greater than ${field.errors['min'].min}`;
     }
     return null;
+  }
+
+  // Document handling methods
+  toggleDocuments(): void {
+    this.showDocuments.update(show => !show);
+  }
+
+  viewDocument(doc: any): void {
+    this.selectedDocument.set(doc.url);
+    // Open in new tab
+    window.open(doc.url, '_blank');
+  }
+
+
+  // Enhanced validation methods
+  getTotalQuantityError(itemIndex: number): string | null {
+    const itemForm = this.getItemFormGroup(itemIndex);
+    const quantityReceived = itemForm.get('quantity_received')?.value || 0;
+    const remainingQuantity = itemForm.get('remaining_quantity')?.value || 0;
+    
+    if (quantityReceived > remainingQuantity) {
+      return `Cannot receive more than ${remainingQuantity} items`;
+    }
+    return null;
+  }
+
+  isFormValid(): boolean {
+    const form = this.form();
+    if (!form.valid) return false;
+    
+    // Check if at least one item has quantity > 0
+    const items = form.get('items')?.value || [];
+    return items.some((item: any) => (item.quantity_received || 0) > 0);
+  }
+
+  getFormSummary(): { totalItems: number; totalQuantity: number; itemsWithQuantity: number } {
+    const items = this.form().get('items')?.value || [];
+    return {
+      totalItems: items.length,
+      totalQuantity: items.reduce((sum: number, item: any) => sum + (item.quantity_received || 0), 0),
+      itemsWithQuantity: items.filter((item: any) => (item.quantity_received || 0) > 0).length
+    };
   }
 }

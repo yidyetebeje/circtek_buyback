@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { CellHostDirective } from './directives/cell-host.directive';
 import { FormsModule } from '@angular/forms';
 import { ColumnDef, createAngularTable, getCoreRowModel, SortingState } from '@tanstack/angular-table';
-import { LucideAngularModule, Edit, Trash2, UserPlus, Users } from 'lucide-angular';
+import { LucideAngularModule, Edit, Trash2, UserPlus, Users, Eye, PackagePlus } from 'lucide-angular';
 
 // Reusable Generic Page composed with Tailwind + DaisyUI
 // - Header title
@@ -263,6 +263,11 @@ export class GenericPageComponent<TData extends object> {
     delete: Trash2,
     assign: UserPlus,
     'view-assigned': Users,
+    eye: Eye,
+    'package-plus': PackagePlus,
+    detail: Eye,
+    receive: PackagePlus,
+    'trash-2': Trash2,
   };
 
   getActionIcon(a: CellAction): any {

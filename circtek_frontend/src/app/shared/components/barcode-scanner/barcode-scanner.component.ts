@@ -139,6 +139,7 @@ export class BarcodeScannerComponent {
   onInputKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Enter') {
       event.preventDefault();
+      event.stopPropagation();
       const value = this.inputValue();
       if (value.trim()) {
         this.validateInput(value.trim());

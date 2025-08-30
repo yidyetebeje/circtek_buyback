@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LucideAngularModule, ArrowLeft, Save, Edit, Share } from 'lucide-angular';
+import { FileUploadComponent } from '../file-upload/file-upload.component';
 
 export interface FormField {
   key: string;
@@ -31,7 +32,7 @@ export interface FormAction {
 
 @Component({
   selector: 'app-generic-form-page',
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, FileUploadComponent],
   templateUrl: './generic-form-page.component.html',
   styleUrls: ['./generic-form-page.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -67,13 +68,26 @@ export class GenericFormPageComponent {
   readonly Share = Share;
 
   // Computed values
-  submitAction = computed(() => 
-    this.actions().find(action => action.type === 'submit')
-  );
+  submitAction = computed(() => {
+    const actions = this.actions();
+    for (let i = 0; i < actions.length; i++) {
+      if (actions[i].type === 'submit') {
+        return actions[i];
+      }
+    }
+    return undefined;
+  });
 
-  otherActions = computed(() => 
-    this.actions().filter(action => action.type !== 'submit')
-  );
+  otherActions = computed(() => {
+    const actions = this.actions();
+    const result: FormAction[] = [];
+    for (let i = 0; i < actions.length; i++) {
+      if (actions[i].type !== 'submit') {
+        result.push(actions[i]);
+      }
+    }
+    return result;
+  });
 
   onSubmit() {
     if (this.form().valid) {

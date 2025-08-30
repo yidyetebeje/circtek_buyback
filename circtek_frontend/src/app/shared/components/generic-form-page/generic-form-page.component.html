@@ -89,14 +89,11 @@
                     </div>
                   }
                   @case ('file') {
-                    <input 
-                      type="file"
+                    <app-file-upload
                       [formControlName]="field.key"
-                      class="file-input file-input-bordered w-full"
-                      [class.file-input-error]="isFieldInvalid(field)"
-                      [disabled]="field.disabled || loading() || submitting()"
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
-                    />
+                      [accept]="field.validation?.pattern || '.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif'"
+                      [folder]="'purchases'"
+                    ></app-file-upload>
                   }
                   @default {
                     <input 

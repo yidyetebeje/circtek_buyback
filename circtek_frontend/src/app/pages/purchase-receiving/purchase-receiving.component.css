@@ -1,40 +1,190 @@
-/* Purchase Receiving Component Styles */
+/* Purchase Receiving Component Enhanced Styles */
 
+/* Enhanced progress animations */
 .progress-bar {
   width: 100%;
   background-color: hsl(var(--b3));
   border-radius: 9999px;
-  height: 0.5rem;
+  height: 0.75rem;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .progress-fill {
-  background-color: hsl(var(--p));
-  height: 0.5rem;
+  background: linear-gradient(90deg, hsl(var(--p)), hsl(var(--p) / 0.8));
+  height: 0.75rem;
   border-radius: 9999px;
-  transition: all 300ms;
+  transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Enhanced item cards */
 .item-card {
   border: 1px solid hsl(var(--b3));
-  border-radius: 0.5rem;
-  padding: 1rem;
-  background-color: hsl(var(--b1));
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, hsl(var(--b1)), hsl(var(--b2) / 0.5));
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.item-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, hsl(var(--p)), hsl(var(--s)));
+  opacity: 0;
+  transition: opacity 300ms;
 }
 
 .item-card:hover {
-  border-color: hsl(var(--bc) / 0.4);
+  border-color: hsl(var(--p) / 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
-.identifier-input {
-  flex: 1;
+.item-card:hover::before {
+  opacity: 1;
 }
 
+/* Enhanced scanner container */
 .scanner-container {
   border: 2px dashed hsl(var(--b3));
-  border-radius: 0.5rem;
-  padding: 1rem;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, hsl(var(--b1)), hsl(var(--b2) / 0.3));
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.scanner-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 1rem;
+  padding: 2px;
+  background: linear-gradient(45deg, hsl(var(--p)), hsl(var(--s)));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  opacity: 0;
+  transition: opacity 300ms;
 }
 
 .scanner-container:hover {
-  border-color: hsl(var(--p) / 0.5);
+  border-color: hsl(var(--p) / 0.6);
+  background: linear-gradient(135deg, hsl(var(--b1)), hsl(var(--p) / 0.05));
+}
+
+.scanner-container:hover::before {
+  opacity: 1;
+}
+
+/* Enhanced form inputs */
+.input:focus,
+.select:focus {
+  box-shadow: 0 0 0 3px hsl(var(--p) / 0.2);
+  border-color: hsl(var(--p));
+}
+
+/* Enhanced buttons */
+.btn-primary {
+  background: linear-gradient(135deg, hsl(var(--p)), hsl(var(--p) / 0.8));
+  border: none;
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, hsl(var(--p) / 0.9), hsl(var(--p) / 0.7));
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px hsl(var(--p) / 0.3);
+}
+
+/* Enhanced stats */
+.stats .stat {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stats .stat:hover {
+  background: hsl(var(--b2) / 0.5);
+  transform: scale(1.02);
+}
+
+/* Enhanced badges */
+.badge {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.badge:hover {
+  transform: scale(1.05);
+}
+
+/* Enhanced modal backdrop */
+.fixed.inset-0.bg-black\/50 {
+  backdrop-filter: blur(4px);
+  animation: fadeIn 300ms ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Enhanced document cards */
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced avatar icons */
+.avatar.placeholder .bg-primary {
+  background: linear-gradient(135deg, hsl(var(--p)), hsl(var(--p) / 0.8));
+}
+
+/* Loading states */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive enhancements */
+@media (max-width: 768px) {
+  .item-card {
+    padding: 1rem;
+  }
+  
+  .scanner-container {
+    padding: 1rem;
+  }
+}
+
+/* Focus states for accessibility */
+.btn:focus-visible,
+.input:focus-visible,
+.select:focus-visible {
+  outline: 2px solid hsl(var(--p));
+  outline-offset: 2px;
 }
