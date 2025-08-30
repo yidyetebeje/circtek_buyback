@@ -1,0 +1,50 @@
+<!-- Modal Backdrop -->
+@if (isOpen()) {
+  <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <!-- Modal Container -->
+    <div 
+      class="bg-base-100 rounded-box shadow-xl w-full transform transition-all duration-200 ease-out scale-100"
+      [class]="getModalSizeClass()"
+    >
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-base-content/10">
+        <h3 class="text-lg font-semibold text-base-content">{{ title() }}</h3>
+        @if (closable()) {
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm btn-circle"
+            (click)="onClose()"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        }
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6">
+        <ng-content></ng-content>
+      </div>
+
+      <!-- Modal Actions -->
+      @if (actions().length > 0) {
+        <div class="flex justify-end gap-3 p-6 pt-0">
+          @for (action of actions(); track action.label) {
+            <button
+              type="button"
+              [class]="getButtonClass(action)"
+              [disabled]="action.disabled"
+              (click)="onActionClick(action.action)"
+            >
+              @if (action.loading) {
+                <span class="loading loading-spinner loading-sm"></span>
+              }
+              {{ action.label }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

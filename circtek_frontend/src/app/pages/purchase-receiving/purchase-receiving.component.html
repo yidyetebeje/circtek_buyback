@@ -1,0 +1,203 @@
+<div class="min-h-screen bg-base-100">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-4">
+        <button 
+          type="button" 
+          class="btn btn-ghost btn-sm"
+          (click)="onCancel()"
+        >
+          ← Back
+        </button>
+        <h1 class="text-2xl font-bold">{{ title() }}</h1>
+      </div>
+    </div>
+
+    <!-- Error Alert -->
+    @if (error()) {
+      <div class="alert alert-error mb-6">
+        <span>{{ error() }}</span>
+      </div>
+    }
+
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="flex justify-center items-center py-12">
+        <span class="loading loading-spinner loading-lg"></span>
+      </div>
+    } @else if (purchase()) {
+    <form [formGroup]="form()" class="space-y-6">
+      <!-- Purchase Info -->
+      <div class="bg-base-200 p-4 rounded-lg">
+        <h3 class="text-lg font-semibold mb-3">Purchase Order Details</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <span class="font-medium">PO Number:</span> {{ purchase()!.purchase.purchase_order_no }}
+          </div>
+          <div>
+            <span class="font-medium">Supplier:</span> {{ purchase()!.purchase.supplier_name }}
+          </div>
+          <div>
+            <span class="font-medium">Expected Delivery:</span> 
+            {{ purchase()!.purchase.expected_delivery_date | date:'mediumDate' }}
+          </div>
+          <div>
+            <span class="font-medium">Progress:</span>
+            {{ purchase()!.total_received }} / {{ purchase()!.total_items }} items received
+          </div>
+        </div>
+      </div>
+
+      <!-- Warehouse Selection -->
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-medium">Receiving Warehouse <span class="text-error">*</span></span>
+        </label>
+        <select
+          formControlName="warehouse_id"
+          class="select select-bordered w-full"
+          [class.select-error]="isFieldInvalid('warehouse_id')"
+        >
+          <option value="">Select warehouse</option>
+          <!-- This should be populated with warehouses from API -->
+          <option [value]="purchase()!.purchase.warehouse_id">
+            Warehouse {{ purchase()!.purchase.warehouse_id }}
+          </option>
+        </select>
+        @if (isFieldInvalid('warehouse_id')) {
+          <div class="label">
+            <span class="label-text-alt text-error">{{ getFieldError('warehouse_id') }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Items to Receive -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold">Items to Receive</h3>
+        
+        <div formArrayName="items" class="space-y-6">
+          @for (item of itemsFormArray.controls; track $index) {
+            <div [formGroupName]="$index" class="border border-base-300 rounded-lg p-4">
+              <div class="flex justify-between items-start mb-4">
+                <div>
+                  <h4 class="font-semibold">{{ getItemFormGroup($index).get('sku')?.value }}</h4>
+                  <div class="text-sm text-base-content/70 space-y-1">
+                    <div>Ordered: {{ getItemFormGroup($index).get('ordered_quantity')?.value }}</div>
+                    <div>Already Received: {{ getItemFormGroup($index).get('already_received')?.value }}</div>
+                    <div>Remaining: {{ getItemFormGroup($index).get('remaining_quantity')?.value }}</div>
+                  </div>
+                </div>
+                <div class="badge badge-outline">
+                  {{ isItemPart($index) ? 'Part' : 'Device' }}
+                </div>
+              </div>
+
+              <!-- Quantity to Receive -->
+              <div class="form-control mb-4">
+                <label class="label">
+                  <span class="label-text font-medium">Quantity to Receive <span class="text-error">*</span></span>
+                </label>
+                <input
+                  type="number"
+                  formControlName="quantity_received"
+                  class="input input-bordered w-full"
+                  [class.input-error]="isItemFieldInvalid($index, 'quantity_received')"
+                  min="0"
+                  [max]="getItemFormGroup($index).get('remaining_quantity')?.value"
+                  (change)="onQuantityChange($index)"
+                />
+                @if (isItemFieldInvalid($index, 'quantity_received')) {
+                  <div class="label">
+                    <span class="label-text-alt text-error">Quantity is required</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Device Scanner (for devices only) -->
+              @if (!isItemPart($index)) {
+                <div class="form-control mb-4">
+                  <label class="label">
+                    <span class="label-text font-medium">Scan Device IMEI/Serial</span>
+                  </label>
+                  <app-barcode-scanner
+                    label=""
+                    placeholder="Scan or enter IMEI/Serial"
+                    [autoClear]="true"
+                    (scanned)="onDeviceScan($event, $index)"
+                  />
+                </div>
+              }
+
+              <!-- Identifiers List -->
+              @if (getIdentifiersArray($index).length > 0) {
+                <div class="form-control">
+                  <label class="label">
+                    <span class="label-text font-medium">
+                      {{ isItemPart($index) ? 'Part Identifiers' : 'Device Identifiers' }}
+                    </span>
+                  </label>
+                  <div class="space-y-2" [formArrayName]="'identifiers'">
+                    @for (identifier of getIdentifiersArray($index).controls; track $index) {
+                      <div class="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          [formControlName]="$index"
+                          class="input input-bordered flex-1"
+                          [placeholder]="isItemPart($index) ? 'Part identifier' : 'IMEI/Serial'"
+                        />
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-sm text-error"
+                          (click)="removeIdentifier($any($index), $any($index))"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Add Identifier Button (for parts) -->
+              @if (isItemPart($index)) {
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm mt-2"
+                  (click)="addIdentifier($index)"
+                >
+                  + Add Identifier
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </form>
+    }
+
+    <!-- Submit Button -->
+    @if (!loading() && purchase()) {
+      <div class="flex justify-end gap-4 mt-8">
+        <button 
+          type="button" 
+          class="btn btn-ghost"
+          (click)="onCancel()"
+        >
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-primary"
+          [disabled]="form().invalid || submitting()"
+          (click)="onSubmit()"
+        >
+          @if (submitting()) {
+            <span class="loading loading-spinner loading-sm"></span>
+          }
+          Receive Items
+        </button>
+      </div>
+    }
+  </div>
+</div>

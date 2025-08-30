@@ -7,7 +7,7 @@ import { LucideAngularModule, ArrowLeft, Save, Edit, Share } from 'lucide-angula
 export interface FormField {
   key: string;
   label: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'select' | 'textarea' | 'checkbox';
+  type: 'text' | 'email' | 'password' | 'number' | 'select' | 'textarea' | 'checkbox' | 'date' | 'file';
   placeholder?: string;
   required?: boolean;
   options?: Array<{ label: string; value: any }>;

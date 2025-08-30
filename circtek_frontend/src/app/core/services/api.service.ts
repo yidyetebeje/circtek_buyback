@@ -9,6 +9,9 @@ import { ApiResponse } from '../models/api';
 import { User } from '../models/user';
 import { Role } from '../models/role';
 import { WiFiProfile } from '../models/wifi-profile';
+import { StockWithWarehouse, StockSummary } from '../models/stock';
+import { PurchaseRecord, PurchaseWithItemsAndReceived, ReceivingResult, ReceiveItemsRequest } from '../models/purchase';
+import { TransferWithDetails, TransferCompletionResult, TransferSummary } from '../models/transfer';
 
 @Injectable({
   providedIn: 'root',
@@ -153,6 +156,111 @@ export class ApiService {
   // List assigned testers for a WiFi profile
   getWifiProfileTesters(profileId: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<User[]>> {
     return this.get<ApiResponse<User[]>>(`/configuration/wifi-profiles/${profileId}/testers`, params);
+  }
+
+  // ===== Stock =====
+  getStock(params: HttpParams = new HttpParams()): Observable<ApiResponse<StockWithWarehouse[]>> {
+    return this.get<ApiResponse<StockWithWarehouse[]>>('/stock', params);
+  }
+
+  getStockSummary(): Observable<ApiResponse<StockSummary | null>> {
+    return this.get<ApiResponse<StockSummary | null>>('/stock/summary');
+  }
+
+  getLowStock(threshold?: number): Observable<ApiResponse<StockWithWarehouse[]>> {
+    const params = typeof threshold === 'number' ? new HttpParams().set('threshold', String(threshold)) : new HttpParams();
+    return this.get<ApiResponse<StockWithWarehouse[]>>('/stock/low-stock', params);
+  }
+
+  getStockById(id: number): Observable<ApiResponse<StockWithWarehouse | null>> {
+    return this.get<ApiResponse<StockWithWarehouse | null>>(`/stock/${id}`);
+  }
+
+  getStockBySkuWarehouse(sku: string, warehouseId: number): Observable<ApiResponse<StockWithWarehouse | null>> {
+    return this.get<ApiResponse<StockWithWarehouse | null>>(`/stock/sku/${encodeURIComponent(sku)}/warehouse/${warehouseId}`);
+  }
+
+  createStock(payload: any): Observable<ApiResponse<StockWithWarehouse | null>> {
+    return this.post<ApiResponse<StockWithWarehouse | null>>('/stock', payload);
+  }
+
+  updateStock(id: number, payload: any): Observable<ApiResponse<StockWithWarehouse | null>> {
+    return this.patch<ApiResponse<StockWithWarehouse | null>>(`/stock/${id}`, payload);
+  }
+
+  deleteStock(id: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/stock/${id}`);
+  }
+
+  // ===== Purchases =====
+  getPurchases(params: HttpParams = new HttpParams()): Observable<ApiResponse<PurchaseRecord[]>> {
+    return this.get<ApiResponse<PurchaseRecord[]>>('/purchases', params);
+  }
+
+  getPurchase(id: number): Observable<ApiResponse<PurchaseWithItemsAndReceived | null>> {
+    return this.get<ApiResponse<PurchaseWithItemsAndReceived | null>>(`/purchases/${id}`);
+  }
+
+  getPurchaseStatus(id: number): Observable<ApiResponse<any>> {
+    return this.get<ApiResponse<any>>(`/purchases/${id}/status`);
+  }
+
+  getPurchaseReceivedItems(id: number): Observable<ApiResponse<any[]>> {
+    return this.get<ApiResponse<any[]>>(`/purchases/${id}/received`);
+  }
+
+  createPurchase(payload: any): Observable<ApiResponse<PurchaseRecord | null>> {
+    return this.post<ApiResponse<PurchaseRecord | null>>('/purchases', payload);
+  }
+
+  createPurchaseWithItems(payload: any): Observable<ApiResponse<PurchaseWithItemsAndReceived | null>> {
+    return this.post<ApiResponse<PurchaseWithItemsAndReceived | null>>('/purchases/with-items', payload);
+  }
+
+  receivePurchaseItems(id: number, payload: Omit<ReceiveItemsRequest, 'purchase_id'>): Observable<ApiResponse<ReceivingResult | null>> {
+    return this.post<ApiResponse<ReceivingResult | null>>(`/purchases/${id}/receive`, payload);
+  }
+
+  deletePurchase(id: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/purchases/${id}`);
+  }
+
+  // ===== Transfers =====
+  getTransfers(params: HttpParams = new HttpParams()): Observable<ApiResponse<TransferWithDetails[]>> {
+    return this.get<ApiResponse<TransferWithDetails[]>>('/transfers', params);
+  }
+
+  getTransferSummary(): Observable<ApiResponse<TransferSummary | null>> {
+    return this.get<ApiResponse<TransferSummary | null>>('/transfers/summary');
+  }
+
+  getPendingTransfers(): Observable<ApiResponse<TransferWithDetails[]>> {
+    return this.get<ApiResponse<TransferWithDetails[]>>('/transfers/pending');
+  }
+
+  getTransfer(id: number): Observable<ApiResponse<TransferWithDetails | null>> {
+    return this.get<ApiResponse<TransferWithDetails | null>>(`/transfers/${id}`);
+  }
+
+  createTransfer(payload: any): Observable<ApiResponse<any>> {
+    return this.post<ApiResponse<any>>('/transfers', payload);
+  }
+
+  createTransferWithItems(payload: any): Observable<ApiResponse<TransferWithDetails | null>> {
+    return this.post<ApiResponse<TransferWithDetails | null>>('/transfers/with-items', payload);
+  }
+
+  completeTransfer(id: number): Observable<ApiResponse<TransferCompletionResult | null>> {
+    // Backend fills transfer_id from route and actor_id from session; body can be empty
+    return this.post<ApiResponse<TransferCompletionResult | null>>(`/transfers/${id}/complete`, {});
+  }
+
+  deleteTransfer(id: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/transfers/${id}`);
+  }
+
+  findDeviceByImeiOrSerial(identifier: string): Observable<ApiResponse<any | null>> {
+    return this.get<ApiResponse<any | null>>(`/transfers/device-lookup/${encodeURIComponent(identifier)}`);
   }
 }
 

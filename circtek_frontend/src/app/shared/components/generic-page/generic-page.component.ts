@@ -91,7 +91,7 @@ export class GenericPageComponent<TData extends object> {
 
   // Table instance
   private _paginationInitialized = false;
-  private _skipNextPaginationEmit = false;
+  private _skipPaginationEmits = 0;
 
   table = computed(() =>
     createAngularTable<TData>(() => ({
@@ -114,16 +114,21 @@ export class GenericPageComponent<TData extends object> {
       onPaginationChange: (updater: any) => {
         const current = { pageIndex: this.pageIndex(), pageSize: this.pageSize() };
         const next = typeof updater === 'function' ? updater(current) : updater;
-        // Ignore the very first pagination callback from TanStack and controlled updates
-        if (!this._paginationInitialized || this._skipNextPaginationEmit) {
+        const nextIndex = next.pageIndex ?? 0;
+        const nextSize = next.pageSize ?? 10;
+        const isSame = nextIndex === current.pageIndex && nextSize === current.pageSize;
+        // Ignore the very first pagination callback and a controlled number of emits
+        if (!this._paginationInitialized || this._skipPaginationEmits > 0 || isSame) {
           this._paginationInitialized = true;
-          this._skipNextPaginationEmit = false;
-          this.pageIndex.set(next.pageIndex ?? 0);
-          this.pageSize.set(next.pageSize ?? 10);
+          if (this._skipPaginationEmits > 0) this._skipPaginationEmits--;
+          if (!isSame) {
+            this.pageIndex.set(nextIndex);
+            this.pageSize.set(nextSize);
+          }
           return;
         }
-        this.pageIndex.set(next.pageIndex ?? 0);
-        this.pageSize.set(next.pageSize ?? 10);
+        this.pageIndex.set(nextIndex);
+        this.pageSize.set(nextSize);
         this.pageChange.emit({ pageIndex: this.pageIndex(), pageSize: this.pageSize() });
       },
       debugAll: false,
@@ -143,9 +148,6 @@ export class GenericPageComponent<TData extends object> {
     }
     // Reset pagination to first page on any filter change
     this.pageIndex.set(0);
-    try {
-      this.table().setPageIndex(0);
-    } catch {}
     this.filtersChange.emit({ search, facets });
   });
 
@@ -153,21 +155,11 @@ export class GenericPageComponent<TData extends object> {
   private _syncPaginationInputs = effect(() => {
     const extIndex = this.pageIndexInput();
     const extSize = this.pageSizeInput();
-    let changed = false;
     if (extIndex != null && extIndex !== this.pageIndex()) {
       this.pageIndex.set(extIndex);
-      changed = true;
     }
     if (extSize != null && extSize !== this.pageSize()) {
       this.pageSize.set(extSize);
-      changed = true;
-    }
-    if (changed) {
-      this._skipNextPaginationEmit = true;
-      try {
-        this.table().setPageIndex(this.pageIndex());
-        this.table().setPageSize(this.pageSize());
-      } catch {}
     }
   });
 

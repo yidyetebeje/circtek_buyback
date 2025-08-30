@@ -80,6 +80,41 @@ export const routes: Routes = [
       import('./pages/management/tenant-form/tenant-form.component').then((m) => m.TenantFormComponent),
   },
 
+  // Stock Management page route (lazy-loaded component)
+  {
+    path: 'stock-management',
+    loadComponent: () =>
+      import('./pages/stock-management/stock-management.component').then((m) => m.StockManagementComponent),
+  },
+
+  // Purchase form routes
+  {
+    path: 'stock-management/purchases/add',
+    loadComponent: () =>
+      import('./pages/purchase-form/purchase-form.component').then((m) => m.PurchaseFormComponent),
+  },
+
+  // Transfer form routes
+  {
+    path: 'stock-management/transfers/add',
+    loadComponent: () =>
+      import('./pages/transfer-form/transfer-form.component').then((m) => m.TransferFormComponent),
+  },
+
+  // Purchase receiving routes
+  {
+    path: 'stock-management/purchases/:id/receive',
+    loadComponent: () =>
+      import('./pages/purchase-receiving/purchase-receiving.component').then((m) => m.PurchaseReceivingComponent),
+  },
+
+  // Transfer completion routes
+  {
+    path: 'stock-management/transfers/:id/complete',
+    loadComponent: () =>
+      import('./pages/transfer-completion/transfer-completion.component').then((m) => m.TransferCompletionComponent),
+  },
+
   // Fallback
   { path: '**', redirectTo: 'login' },
 ];

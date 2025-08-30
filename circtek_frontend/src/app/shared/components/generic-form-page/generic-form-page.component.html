@@ -88,6 +88,16 @@
                       </label>
                     </div>
                   }
+                  @case ('file') {
+                    <input 
+                      type="file"
+                      [formControlName]="field.key"
+                      class="file-input file-input-bordered w-full"
+                      [class.file-input-error]="isFieldInvalid(field)"
+                      [disabled]="field.disabled || loading() || submitting()"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+                    />
+                  }
                   @default {
                     <input 
                       [type]="field.type"
@@ -108,6 +118,9 @@
               </div>
             }
           </div>
+
+          <!-- Custom Content Projection -->
+          <ng-content></ng-content>
 
           <!-- Action Buttons -->
           <div class="flex justify-end gap-4 pt-6">

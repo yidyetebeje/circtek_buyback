@@ -1,0 +1,119 @@
+<app-generic-form-page
+  [title]="title()"
+  [subtitle]="subtitle()"
+  [loading]="loading()"
+  [submitting]="submitting()"
+  [error]="error()"
+  [form]="form()"
+  [fields]="fields()"
+  [actions]="actions()"
+  [submitLabel]="submitLabel()"
+  (formSubmit)="onSubmit()"
+  (actionClick)="onActionClick($event)"
+>
+  <!-- Transfer Items Section -->
+  <div class="mt-8">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h3 class="text-lg font-semibold text-base-content">Transfer Items</h3>
+        <p class="text-sm text-base-content/60 mt-1">
+          {{ totalItems() }} items • Total quantity: {{ totalQuantity() }}
+        </p>
+      </div>
+      <button 
+        type="button" 
+        class="btn btn-accent btn-sm"
+        (click)="openAddItemModal()"
+        [disabled]="loading() || submitting()"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        Add Item
+      </button>
+    </div>
+
+    <!-- Items Table -->
+    @if (items().length > 0) {
+      <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
+        <table class="w-full table">
+          <thead>
+            <tr>
+              <th class="whitespace-nowrap px-4 py-3">SKU</th>
+              <th class="whitespace-nowrap px-4 py-3">Device ID</th>
+              <th class="whitespace-nowrap px-4 py-3">Quantity</th>
+              <th class="whitespace-nowrap px-4 py-3">Type</th>
+              <th class="whitespace-nowrap px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              <tr>
+                <td class="whitespace-nowrap px-4 py-3 font-medium">{{ item.sku }}</td>
+                <td class="whitespace-nowrap px-4 py-3">{{ item.device_id }}</td>
+                <td class="whitespace-nowrap px-4 py-3">{{ item.quantity }}</td>
+                <td class="whitespace-nowrap px-4 py-3">
+                  @if (item.is_part) {
+                    <span class="badge badge-primary badge-sm">Part</span>
+                  } @else {
+                    <span class="badge badge-ghost badge-sm">Product</span>
+                  }
+                </td>
+                <td class="whitespace-nowrap px-4 py-3">
+                  <div class="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-xs"
+                      title="Edit item"
+                      (click)="openEditItemModal(item)"
+                      [disabled]="loading() || submitting()"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-xs text-error"
+                      title="Remove item"
+                      (click)="removeItem(item.id!)"
+                      [disabled]="loading() || submitting()"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="text-center py-12 bg-base-100 rounded-box border border-base-content/5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+        <h3 class="text-lg font-medium text-base-content/60 mb-2">No items added</h3>
+        <p class="text-base-content/40 mb-4">Add items to your transfer order to get started.</p>
+        <button 
+          type="button" 
+          class="btn btn-accent btn-sm"
+          (click)="openAddItemModal()"
+          [disabled]="loading() || submitting()"
+        >
+          Add First Item
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- Transfer Item Modal -->
+  <app-transfer-item-modal
+    [isOpen]="isModalOpen()"
+    [editingItem]="editingItem()"
+    (close)="closeModal()"
+    (save)="saveItem($event)"
+  ></app-transfer-item-modal>
+</app-generic-form-page>

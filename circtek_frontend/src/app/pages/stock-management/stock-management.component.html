@@ -1,0 +1,43 @@
+<app-generic-page
+  [title]="title"
+  [subtitle]="subtitle"
+  [loading]="loading()"
+  [tabs]="tabs()"
+  [activeTabKeyInput]="activeTab()"
+  [facets]="facets()"
+  [columns]="columns()"
+  [data]="data()"
+  [total]="total()"
+  [pageIndexInput]="pageIndex()"
+  [pageSizeInput]="pageSize()"
+  [searchPlaceholder]="searchPlaceholder()"
+  [primaryAction]="primaryAction()"
+  (primaryActionClick)="onPrimaryActionClick()"
+  (pageChange)="onPageChange($event)"
+  (filtersChange)="onFiltersChange($event)"
+  (sortingChange)="onSortingChange($event)"
+  (tabChange)="onTabChange($event)"
+  (cellAction)="onCellAction($event)"
+></app-generic-page>
+
+<!-- Delete Confirmation Modal -->
+@if (isDeleteModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-base-300/60" (click)="closeDeleteModal()"></div>
+    <div class="relative bg-base-100 rounded-xl shadow-xl w-full max-w-md p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Confirm Deletion</h3>
+        <button class="btn btn-ghost btn-sm" (click)="closeDeleteModal()">✕</button>
+      </div>
+      <div class="text-sm text-base-content/70">
+        @if (deleteContext(); as ctx) {
+          <p>Are you sure you want to delete this {{ ctx.tab.slice(0, -1) }}? This action cannot be undone.</p>
+        }
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <button class="btn" (click)="closeDeleteModal()">Cancel</button>
+        <button class="btn btn-error" (click)="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+}

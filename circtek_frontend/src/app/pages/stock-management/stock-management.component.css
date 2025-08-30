@@ -1,0 +1,4 @@
+/* Basic spacing; inherits GenericPage styles */
+:host {
+  display: block;
+}

@@ -1,0 +1,19 @@
+/* Transfer form specific styles */
+.card {
+  transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+  border-color: hsl(var(--bc) / 0.1);
+}
+
+.grid {
+  align-items: end;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,56 @@
+.scanner-input {
+  transition: all 0.2s ease-in-out;
+}
+
+.scanner-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+}
+
+.scanner-input.valid {
+  border-color: hsl(var(--success));
+  background-color: hsl(var(--success) / 0.05);
+}
+
+.scanner-input.invalid {
+  border-color: hsl(var(--error));
+  background-color: hsl(var(--error) / 0.05);
+}
+
+.scanner-input.scanning {
+  border-color: hsl(var(--primary));
+  background-color: hsl(var(--primary) / 0.05);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.validation-icon {
+  pointer-events: none;
+}
+
+/* Ensure proper spacing for icons */
+.scanner-input {
+  padding-right: 2.5rem;
+}
+
+/* Loading spinner animation */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

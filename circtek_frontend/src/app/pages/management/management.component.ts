@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GenericPageComponent, type Facet, type GenericTab } from '../../shared/components/generic-page/generic-page.component';
+import { GenericModalComponent, type ModalAction } from '../../shared/components/generic-modal/generic-modal.component';
 import { ColumnDef } from '@tanstack/angular-table';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -16,7 +17,7 @@ export type MgmtRow = User | Warehouse | WiFiProfile | Tenant;
 
 @Component({
   selector: 'app-management',
-  imports: [CommonModule, GenericPageComponent],
+  imports: [CommonModule, GenericPageComponent, GenericModalComponent],
   templateUrl: './management.component.html',
   styleUrls: ['./management.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -110,6 +111,19 @@ export class ManagementComponent {
   // Delete confirmation modal state
   isDeleteModalOpen = signal(false);
   deleteContext = signal<{ tab: 'tenants' | 'users' | 'warehouses' | 'wifi'; row: MgmtRow } | null>(null);
+  
+  deleteModalActions = computed<ModalAction[]>(() => [
+    {
+      label: 'Cancel',
+      variant: 'ghost',
+      action: 'cancel'
+    },
+    {
+      label: 'Delete',
+      variant: 'error',
+      action: 'delete'
+    }
+  ]);
 
   openDeleteModal(tab: 'tenants' | 'users' | 'warehouses' | 'wifi', row: MgmtRow) {
     this.deleteContext.set({ tab, row });
@@ -119,6 +133,14 @@ export class ManagementComponent {
   closeDeleteModal() {
     this.isDeleteModalOpen.set(false);
     this.deleteContext.set(null);
+  }
+
+  onDeleteModalAction(action: string): void {
+    if (action === 'delete') {
+      this.confirmDelete();
+    } else if (action === 'cancel') {
+      this.closeDeleteModal();
+    }
   }
 
   confirmDelete() {
@@ -515,6 +537,20 @@ export class ManagementComponent {
   selectedWifiProfile = signal<WiFiProfile | null>(null);
   selectedAssignTesterId = signal<number | null>(null);
   selectedAssignProfileId = signal<number | null>(null);
+  
+  assignModalActions = computed<ModalAction[]>(() => [
+    {
+      label: 'Cancel',
+      variant: 'ghost',
+      action: 'cancel'
+    },
+    {
+      label: 'Assign',
+      variant: 'primary',
+      disabled: this.selectedAssignTesterId() == null || (!this.selectedWifiProfile() && this.selectedAssignProfileId() == null),
+      action: 'assign'
+    }
+  ]);
 
   private loadTesterOptionsForTenant() {
     let params = new HttpParams().set('limit', '1000');
@@ -566,6 +602,14 @@ export class ManagementComponent {
     this.selectedAssignProfileId.set(null);
   }
 
+  onAssignModalAction(action: string): void {
+    if (action === 'assign') {
+      this.submitAssign();
+    } else if (action === 'cancel') {
+      this.closeAssignModal();
+    }
+  }
+
   submitAssign() {
     const profile = this.selectedWifiProfile();
     const testerId = this.selectedAssignTesterId();
@@ -593,6 +637,14 @@ export class ManagementComponent {
   // View assigned testers modal
   isAssignedModalOpen = signal(false);
   assignedTesters = signal<User[]>([]);
+  
+  assignedModalActions = computed<ModalAction[]>(() => [
+    {
+      label: 'Close',
+      variant: 'ghost',
+      action: 'close'
+    }
+  ]);
 
   openAssignedModal(row: WiFiProfile) {
     this.selectedWifiProfile.set(row);
@@ -632,5 +684,11 @@ export class ManagementComponent {
   closeAssignedModal() {
     this.isAssignedModalOpen.set(false);
     this.assignedTesters.set([]);
+  }
+
+  onAssignedModalAction(action: string): void {
+    if (action === 'close') {
+      this.closeAssignedModal();
+    }
   }
 }

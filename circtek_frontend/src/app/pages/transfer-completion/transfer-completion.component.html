@@ -1,0 +1,212 @@
+<div class="min-h-screen bg-base-100">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-4">
+        <button 
+          type="button" 
+          class="btn btn-ghost btn-sm"
+          (click)="onCancel()"
+        >
+          ← Back
+        </button>
+        <h1 class="text-2xl font-bold">{{ title() }}</h1>
+      </div>
+    </div>
+
+    <!-- Error Alert -->
+    @if (error()) {
+      <div class="alert alert-error mb-6">
+        <span>{{ error() }}</span>
+      </div>
+    }
+
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="flex justify-center items-center py-12">
+        <span class="loading loading-spinner loading-lg"></span>
+      </div>
+    } @else if (transfer()) {
+    <div class="space-y-6">
+      <!-- Transfer Info -->
+      <div class="bg-base-200 p-4 rounded-lg">
+        <h3 class="text-lg font-semibold mb-3">Transfer Details</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <span class="font-medium">Transfer ID:</span> #{{ transfer()!.id }}
+          </div>
+          <div>
+            <span class="font-medium">Status:</span>
+            <span class="badge ml-2" [class]="transfer()!.is_completed ? 'badge-success' : 'badge-warning'">
+              {{ transfer()!.is_completed ? 'Completed' : 'Pending' }}
+            </span>
+          </div>
+          <div>
+            <span class="font-medium">From Warehouse:</span> 
+            {{ transfer()!.from_warehouse_name || 'Warehouse ' + transfer()!.from_warehouse_id }}
+          </div>
+          <div>
+            <span class="font-medium">To Warehouse:</span> 
+            {{ transfer()!.to_warehouse_name || 'Warehouse ' + transfer()!.to_warehouse_id }}
+          </div>
+          <div>
+            <span class="font-medium">Created:</span> 
+            {{ transfer()!.created_at | date:'medium' }}
+          </div>
+          <div>
+            <span class="font-medium">Total Items:</span> 
+            {{ transfer()!.total_items }} ({{ getTotalQuantity() }} units)
+          </div>
+        </div>
+      </div>
+
+      <!-- Completion Warning -->
+      @if (canComplete()) {
+        <div class="alert alert-warning">
+          <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L3.316 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+          <div>
+            <h3 class="font-bold">Complete Transfer</h3>
+            <div class="text-xs">
+              This action will:
+              <ul class="list-disc list-inside mt-1">
+                <li>Remove items from the source warehouse stock</li>
+                <li>Add items to the destination warehouse stock</li>
+                <li>Create stock movement records</li>
+                <li>Generate device events for tracked devices</li>
+                <li>Mark the transfer as completed (cannot be undone)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      } @else if (transfer()!.is_completed) {
+        <div class="alert alert-info">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <div>
+            <h3 class="font-bold">Transfer Completed</h3>
+            <div class="text-xs">
+              This transfer was completed on {{ transfer()!.completed_at | date:'medium' }}
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Items Summary -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold">Items to Transfer</h3>
+        
+        <!-- Device Items -->
+        @if (getDeviceItems().length > 0) {
+          <div class="border border-base-300 rounded-lg p-4">
+            <h4 class="font-semibold mb-3 flex items-center gap-2">
+              <span class="badge badge-outline">Devices</span>
+              {{ getDeviceItems().length }} items
+            </h4>
+            <div class="space-y-2">
+              @for (item of getDeviceItems(); track item.id) {
+                <div class="flex justify-between items-center p-2 bg-base-100 rounded">
+                  <div>
+                    <div class="font-medium">{{ item.sku }}</div>
+                    @if (item.device_sku) {
+                      <div class="text-sm text-base-content/70">Device SKU: {{ item.device_sku }}</div>
+                    }
+                    @if (item.device_model) {
+                      <div class="text-sm text-base-content/70">Model: {{ item.device_model }}</div>
+                    }
+                  </div>
+                  <div class="text-right">
+                    <div class="font-medium">Qty: {{ item.quantity || 1 }}</div>
+                    <div class="text-xs text-base-content/70">Device ID: {{ item.device_id }}</div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Part Items -->
+        @if (getPartItems().length > 0) {
+          <div class="border border-base-300 rounded-lg p-4">
+            <h4 class="font-semibold mb-3 flex items-center gap-2">
+              <span class="badge badge-outline">Parts</span>
+              {{ getPartItems().length }} items
+            </h4>
+            <div class="space-y-2">
+              @for (item of getPartItems(); track item.id) {
+                <div class="flex justify-between items-center p-2 bg-base-100 rounded">
+                  <div>
+                    <div class="font-medium">{{ item.sku }}</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="font-medium">Qty: {{ item.quantity || 1 }}</div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Stock Impact Preview -->
+      <div class="bg-base-200 p-4 rounded-lg">
+        <h3 class="text-lg font-semibold mb-3">Stock Impact Preview</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="border border-base-300 rounded p-3">
+            <h4 class="font-medium text-error mb-2">
+              {{ transfer()!.from_warehouse_name || 'Source Warehouse' }} (Outbound)
+            </h4>
+            <div class="text-sm space-y-1">
+              @for (item of transfer()!.items; track item.id) {
+                <div class="flex justify-between">
+                  <span>{{ item.sku }}</span>
+                  <span class="text-error">-{{ item.quantity || 1 }}</span>
+                </div>
+              }
+            </div>
+          </div>
+          <div class="border border-base-300 rounded p-3">
+            <h4 class="font-medium text-success mb-2">
+              {{ transfer()!.to_warehouse_name || 'Destination Warehouse' }} (Inbound)
+            </h4>
+            <div class="text-sm space-y-1">
+              @for (item of transfer()!.items; track item.id) {
+                <div class="flex justify-between">
+                  <span>{{ item.sku }}</span>
+                  <span class="text-success">+{{ item.quantity || 1 }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    @if (!loading() && transfer()) {
+      <div class="flex justify-end gap-4 mt-8">
+        <button 
+          type="button" 
+          class="btn btn-ghost"
+          (click)="onCancel()"
+        >
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-primary"
+          [disabled]="!canComplete() || submitting()"
+          (click)="onSubmit()"
+        >
+          @if (submitting()) {
+            <span class="loading loading-spinner loading-sm"></span>
+          }
+          Complete Transfer
+        </button>
+      </div>
+    }
+    }
+  </div>
+</div>

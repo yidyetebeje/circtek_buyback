@@ -1,0 +1,109 @@
+<app-generic-modal
+  [isOpen]="isOpen()"
+  [title]="title()"
+  [actions]="actions()"
+  size="md"
+  (close)="onClose()"
+  (actionClick)="onActionClick($event)"
+>
+  <form [formGroup]="form()" class="space-y-4">
+        <!-- Type Selection -->
+        <div class="form-control">
+          <label class="cursor-pointer label justify-start gap-3">
+            <input
+              type="checkbox"
+              class="checkbox checkbox-primary"
+              formControlName="is_part"
+              (change)="onIsPartChange()"
+            />
+            <span class="label-text font-medium">This is a part</span>
+          </label>
+        </div>
+
+        <!-- Device IMEI/Serial Scanner (only for devices) -->
+        @if (!isPartItem()) {
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium">Device IMEI/Serial <span class="text-error">*</span></span>
+            </label>
+            <app-barcode-scanner
+              label=""
+              placeholder="Scan or enter IMEI/Serial"
+              [required]="true"
+              [autoClear]="false"
+              (scanned)="onDeviceScan($event)"
+            />
+            
+            @if (deviceLookupError()) {
+              <label class="label">
+                <span class="label-text-alt text-error">{{ deviceLookupError() }}</span>
+              </label>
+            }
+            
+            @if (foundDevice()) {
+              <div class="mt-2 p-3 bg-success/10 border border-success/20 rounded-lg">
+                <h4 class="font-semibold text-success mb-2">Device Found:</h4>
+                <div class="text-sm space-y-1">
+                  <p><strong>SKU:</strong> {{ foundDevice().sku }}</p>
+                  <p><strong>Type:</strong> {{ foundDevice().device_type }}</p>
+                  <p><strong>Make:</strong> {{ foundDevice().make }}</p>
+                  @if (foundDevice().model_name) {
+                    <p><strong>Model:</strong> {{ foundDevice().model_name }}</p>
+                  }
+                  @if (foundDevice().storage) {
+                    <p><strong>Storage:</strong> {{ foundDevice().storage }}</p>
+                  }
+                  @if (foundDevice().color) {
+                    <p><strong>Color:</strong> {{ foundDevice().color }}</p>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        } 
+
+        <!-- Part Fields (only for parts) -->
+        @if (isPartItem()) {
+          <!-- SKU Field -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium">SKU <span class="text-error">*</span></span>
+            </label>
+            <input
+              type="text"
+              formControlName="sku"
+              class="input input-bordered w-full"
+              [class.input-error]="isFieldInvalid('sku')"
+              placeholder="e.g., IPH-14-128-BLK"
+            />
+            @if (isFieldInvalid('sku')) {
+              <div class="label">
+                <span class="label-text-alt text-error">{{ getFieldError('sku') }}</span>
+              </div>
+            }
+          </div>
+
+
+          <!-- Quantity Field -->
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text font-medium">Quantity <span class="text-error">*</span></span>
+            </label>
+            <input
+              type="number"
+              formControlName="quantity"
+              class="input input-bordered w-full"
+              [class.input-error]="isFieldInvalid('quantity')"
+              min="1"
+              placeholder="Enter quantity"
+            />
+            @if (isFieldInvalid('quantity')) {
+              <div class="label">
+                <span class="label-text-alt text-error">{{ getFieldError('quantity') }}</span>
+              </div>
+            }
+          </div>
+        }
+
+  </form>
+</app-generic-modal>

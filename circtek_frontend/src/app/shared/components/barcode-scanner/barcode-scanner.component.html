@@ -1,0 +1,149 @@
+<div class="form-control w-full">
+  @if (label()) {
+    <label class="label">
+      <span class="label-text">
+        {{ label() }}
+        @if (required()) {
+          <span class="text-error">*</span>
+        }
+      </span>
+    </label>
+  }
+  
+  <div class="relative">
+    <!-- Camera Scanner Button -->
+    @if (enableCamera() && hasCamera() && !isCameraScanning()) {
+      <button
+        type="button"
+        class="absolute left-3 top-1/2 transform -translate-y-1/2 z-10 btn btn-ghost btn-xs"
+        (click)="startCameraScanning()"
+        [disabled]="disabled()"
+        title="Scan with camera"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+      </button>
+    }
+    
+    <input
+      #scannerInput
+      type="text"
+      [value]="inputValue()"
+      [placeholder]="placeholder()"
+      [disabled]="disabled()"
+      [class]="getInputClasses()"
+      [style.padding-left]="enableCamera() && hasCamera() ? '2.5rem' : '0.75rem'"
+      (input)="onInputChange($event)"
+      (keydown)="onInputKeyDown($event)"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    
+    <!-- Scanner status indicator -->
+    @if (isScanning()) {
+      <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
+        <div class="flex items-center gap-2 text-primary">
+          <div class="loading loading-spinner loading-xs"></div>
+          <span class="text-xs">Scanning...</span>
+        </div>
+      </div>
+    }
+    
+    <!-- Camera scanning indicator -->
+    @if (isCameraScanning()) {
+      <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
+        <div class="flex items-center gap-2 text-accent">
+          <svg class="w-4 h-4 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
+          </svg>
+          <span class="text-xs">Camera</span>
+        </div>
+      </div>
+    }
+    
+    <!-- Validation status icon -->
+    @if (!isScanning() && inputValue() && isValid() !== null) {
+      <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
+        @if (isValid()) {
+          <div class="flex items-center gap-1 text-success">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+            </svg>
+            <span class="text-xs capitalize">{{ validationType() }}</span>
+          </div>
+        } @else {
+          <div class="text-error">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+            </svg>
+          </div>
+        }
+      </div>
+    }
+  </div>
+  
+  <!-- Error message -->
+  @if (errorMessage()) {
+    <label class="label">
+      <span class="label-text-alt text-error">{{ errorMessage() }}</span>
+    </label>
+  }
+  
+</div>
+
+<!-- Camera Modal -->
+@if (isCameraScanning()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+    <div class="relative bg-base-100 rounded-xl shadow-xl w-full max-w-md mx-4">
+      <div class="flex items-center justify-between p-4 border-b">
+        <h3 class="text-lg font-semibold">Scan Barcode</h3>
+        <button class="btn btn-ghost btn-sm" (click)="stopCameraScanning()">
+          ✕
+        </button>
+      </div>
+      
+      <div class="p-4">
+        @if (cameraError()) {
+          <div class="alert alert-error mb-4">
+            <span>{{ cameraError() }}</span>
+          </div>
+        } @else {
+          <div class="relative bg-black rounded-lg overflow-hidden">
+            <video
+              #cameraVideo
+              class="w-full h-64 object-cover"
+              autoplay
+              playsinline
+              muted
+            ></video>
+            
+            <!-- Scanning overlay -->
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="border-2 border-primary w-48 h-32 rounded-lg relative">
+                <div class="absolute inset-0 border border-primary/30 rounded-lg animate-pulse"></div>
+                <div class="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-primary"></div>
+                <div class="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-primary"></div>
+                <div class="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary"></div>
+                <div class="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4 text-center">
+            <p class="text-sm text-base-content/70 mb-4">
+              Position the barcode within the frame and click capture
+            </p>
+            <button
+              class="btn btn-primary"
+              (click)="captureFromCamera()"
+            >
+              Capture Barcode
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

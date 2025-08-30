@@ -1,0 +1,41 @@
+/* Transfer Completion Component Styles */
+
+.transfer-card {
+  border: 1px solid hsl(var(--b3));
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background-color: hsl(var(--b1));
+}
+
+.transfer-card:hover {
+  border-color: hsl(var(--bc) / 0.4);
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: hsl(var(--b1));
+  border-radius: 0.25rem;
+}
+
+.item-row:hover {
+  background-color: hsl(var(--b2));
+}
+
+.stock-impact-card {
+  border: 1px solid hsl(var(--b3));
+  border-radius: 0.25rem;
+  padding: 0.75rem;
+}
+
+.outbound-card {
+  border-color: hsl(var(--er) / 0.2);
+  background-color: hsl(var(--er) / 0.05);
+}
+
+.inbound-card {
+  border-color: hsl(var(--su) / 0.2);
+  background-color: hsl(var(--su) / 0.05);
+}
