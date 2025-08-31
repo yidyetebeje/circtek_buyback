@@ -31,7 +31,6 @@ export class ReceiveItemsComponent {
   protected readonly warehouses = signal<Warehouse[]>([]);
   protected readonly selectedPurchase = signal<PurchaseWithItemsAndReceived | null>(null);
   protected readonly availableItems = signal<any[]>([]);
-  protected readonly receivingBatch = signal<any[]>([]);
   
 
   // Computed
@@ -81,50 +80,29 @@ export class ReceiveItemsComponent {
     });
   }
 
-  addToBatch(): void {
-    if (!this.isCurrentItemValid()) return;
 
-    const formValue = this.form().value;
-    const selectedItem = this.getSelectedItem();
-    
-    if (!selectedItem) return;
 
-    const batchItem = {
-      purchase_item_id: selectedItem.id,
-      sku: selectedItem.sku,
-      quantity_received: formValue.quantity_received,
-      device_id: formValue.device_id,
-      identifiers: formValue.identifiers?.length > 0 ? formValue.identifiers : undefined,
-      item_name: selectedItem.sku,
-      is_part: selectedItem.is_part
-    };
-
-    this.receivingBatch.update(batch => [...batch, batchItem]);
-    this.resetItemForm();
-  }
-
-  removeFromBatch(index: number): void {
-    this.receivingBatch.update(batch => batch.filter((_, i) => i !== index));
-  }
-
-  private resetItemForm(): void {
-    this.form().patchValue({
-      selected_item_id: null,
-      quantity_received: 0,
-      device_id: null,
-      receiving_picture: null
-    });
-    this.clearIdentifiers();
-  }
 
   protected isCurrentItemValid(): boolean {
-    const requiredFields = ['selected_item_id', 'quantity_received'];
-    const formValue = this.form().value;
-    
-    return requiredFields.every(field => {
-      const value = formValue[field];
-      return value !== null && value !== undefined && value !== '' && value > 0;
-    });
+    const formValue = this.form().value as any;
+    const itemId = formValue.selected_item_id;
+    const qty = Number(formValue.quantity_received || 0);
+    if (!itemId || qty <= 0) return false;
+
+    const selectedItem = this.getSelectedItem();
+    if (!selectedItem) return false;
+
+    if (qty > selectedItem.remaining_quantity) return false;
+
+    if (!selectedItem.is_part) {
+      const ids: string[] = (this.identifiersArray.value as string[]).map(v => (v || '').trim()).filter(Boolean);
+      // quantity must match identifiers count for devices
+      if (ids.length !== qty) return false;
+      // ensure no duplicates within current identifiers
+      const set = new Set(ids);
+      if (set.size !== ids.length) return false;
+    }
+    return true;
   }
 
   private loadInitialData(): void {
@@ -175,6 +153,7 @@ export class ReceiveItemsComponent {
 
   onPurchaseSelected(purchaseId: number): void {
     this.loading.set(true);
+    this.error.set(''); // Clear any previous errors
     
     // Fetch detailed purchase with items
     this.api.getPurchase(purchaseId).subscribe({
@@ -209,11 +188,12 @@ export class ReceiveItemsComponent {
     const item = this.availableItems().find(i => i.id === itemId);
     if (item) {
       this.form().patchValue({ 
-        quantity_received: item.remaining_quantity 
+        quantity_received: item.is_part ? item.remaining_quantity : 0 
       });
       
       // Clear and setup identifiers based on item type
       this.clearIdentifiers();
+      this.error.set('');
       if (!item.is_part) {
         // For devices, prepare for scanning
         this.addIdentifier();
@@ -245,15 +225,47 @@ export class ReceiveItemsComponent {
     const selectedItem = this.getSelectedItem();
     if (!selectedItem || selectedItem.is_part) return;
 
-    // Add scanned identifier
-    this.addIdentifier();
-    const lastIndex = this.identifiersArray.length - 1;
-    this.identifiersArray.at(lastIndex).setValue(result.value);
+    const value = (result.value || '').trim();
+    if (!value) return;
 
-    // Update quantity to match number of identifiers
+    // Prevent duplicates in current list
+    const inCurrent = (this.identifiersArray.value as string[]).some(v => (v || '').trim() === value);
+    if (inCurrent) {
+      this.error.set('Duplicate identifier scanned');
+      return;
+    }
+
+    // Prevent exceeding remaining quantity
+    const nextCount = this.identifiersArray.length + 1;
+    if (nextCount > selectedItem.remaining_quantity) {
+      this.error.set(`Cannot scan more than remaining quantity (${selectedItem.remaining_quantity})`);
+      return;
+    }
+
+    // Fill first empty slot if exists, else add new
+    let placed = false;
+    for (let i = 0; i < this.identifiersArray.length; i++) {
+      const curr = (this.identifiersArray.at(i).value || '').trim();
+      if (!curr) {
+        this.identifiersArray.at(i).setValue(value);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      this.addIdentifier();
+      const lastIndex = this.identifiersArray.length - 1;
+      this.identifiersArray.at(lastIndex).setValue(value);
+    }
+
+    // Update quantity to match number of non-empty identifiers
+    const nonEmptyCount = (this.identifiersArray.value as string[]).map(v => (v || '').trim()).filter(Boolean).length;
     this.form().patchValue({ 
-      quantity_received: this.identifiersArray.length 
+      quantity_received: nonEmptyCount 
     });
+
+    // Clear any previous errors since we have valid scan data
+    this.error.set('');
   }
 
   onQuantityChange(): void {
@@ -285,33 +297,69 @@ export class ReceiveItemsComponent {
     return this.availableItems().find(item => item.id === itemId);
   }
 
+
   isItemPart(): boolean {
     const selectedItem = this.getSelectedItem();
     return selectedItem?.is_part === true;
   }
 
   onSubmit(): void {
-    if (this.receivingBatch().length === 0 || this.submitting()) {
-      this.error.set('Please add at least one item to the batch before submitting');
+    if (this.submitting()) return;
+
+    const formValue = this.form().value;
+    if (!formValue.purchase_id || !formValue.warehouse_id || !formValue.selected_item_id) {
+      this.error.set('Please select purchase order, warehouse, and item');
       return;
     }
 
-    const formValue = this.form().value;
-    if (!formValue.purchase_id || !formValue.warehouse_id) {
-      this.error.set('Please select purchase order and warehouse');
+    const selectedItem = this.getSelectedItem();
+    if (!selectedItem) {
+      this.error.set('Selected item not found');
       return;
+    }
+
+    const qty = Number(formValue.quantity_received || 0);
+    if (qty <= 0) {
+      this.error.set('Please enter a valid quantity');
+      return;
+    }
+
+    if (qty > selectedItem.remaining_quantity) {
+      this.error.set(`Cannot receive more than remaining quantity (${selectedItem.remaining_quantity})`);
+      return;
+    }
+
+    // Validate identifiers for devices
+    const ids: string[] = (formValue.identifiers || []).map((v: string) => (v || '').trim()).filter(Boolean);
+    if (!selectedItem.is_part) {
+      if (ids.length !== qty) {
+        this.error.set('Identifiers count must match quantity for devices');
+        return;
+      }
+      const set = new Set(ids);
+      if (set.size !== ids.length) {
+        this.error.set('Duplicate identifiers found');
+        return;
+      }
     }
 
     this.submitting.set(true);
     this.error.set('');
 
-    const payload: Omit<ReceiveItemsRequest, 'purchase_id'> = {
-      items: this.receivingBatch(),
+    const payload = {
+      purchase_id: formValue.purchase_id,
+      items: [{
+        purchase_item_id: selectedItem.id,
+        sku: selectedItem.sku,
+        quantity_received: qty,
+        device_id: formValue.device_id,
+        identifiers: ids.length > 0 ? ids : undefined
+      }],
       warehouse_id: formValue.warehouse_id,
       actor_id: 1 // This should come from auth service
     };
 
-    this.api.receivePurchaseItems(formValue.purchase_id, payload).subscribe({
+    this.api.receivePurchaseItems(payload).subscribe({
       next: (response) => {
         if (response.status === 200) {
           this.router.navigate(['/stock-management/purchases', formValue.purchase_id]);

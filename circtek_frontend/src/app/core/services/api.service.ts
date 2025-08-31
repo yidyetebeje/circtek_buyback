@@ -161,7 +161,7 @@ export class ApiService {
 
   // ===== Stock =====
   getStock(params: HttpParams = new HttpParams()): Observable<ApiResponse<StockWithWarehouse[]>> {
-    return this.get<ApiResponse<StockWithWarehouse[]>>('/stock', params);
+    return this.get<ApiResponse<StockWithWarehouse[]>>('/stock/stock/', params);
   }
 
   getStockSummary(): Observable<ApiResponse<StockSummary | null>> {
@@ -182,7 +182,7 @@ export class ApiService {
   }
 
   createStock(payload: any): Observable<ApiResponse<StockWithWarehouse | null>> {
-    return this.post<ApiResponse<StockWithWarehouse | null>>('/stock', payload);
+    return this.post<ApiResponse<StockWithWarehouse | null>>('/stock/stock', payload);
   }
 
   updateStock(id: number, payload: any): Observable<ApiResponse<StockWithWarehouse | null>> {
@@ -218,8 +218,8 @@ export class ApiService {
     return this.post<ApiResponse<PurchaseWithItemsAndReceived | null>>('/stock/purchases/with-items', payload);
   }
 
-  receivePurchaseItems(id: number, payload: Omit<ReceiveItemsRequest, 'purchase_id'>): Observable<ApiResponse<ReceivingResult | null>> {
-    return this.post<ApiResponse<ReceivingResult | null>>(`/stock/purchases/${id}/receive`, payload);
+  receivePurchaseItems(payload: ReceiveItemsRequest): Observable<ApiResponse<ReceivingResult | null>> {
+    return this.post<ApiResponse<ReceivingResult | null>>(`/stock/purchases/${payload.purchase_id}/receive`, payload);
   }
 
   deletePurchase(id: number): Observable<ApiResponse<{ id: number } | null>> {
@@ -228,61 +228,61 @@ export class ApiService {
 
   // ===== Transfers =====
   getTransfers(params: HttpParams = new HttpParams()): Observable<ApiResponse<TransferWithDetails[]>> {
-    return this.get<ApiResponse<TransferWithDetails[]>>('/transfers', params);
+    return this.get<ApiResponse<TransferWithDetails[]>>('/stock/transfers', params);
   }
 
   getTransferSummary(): Observable<ApiResponse<TransferSummary | null>> {
-    return this.get<ApiResponse<TransferSummary | null>>('/transfers/summary');
+    return this.get<ApiResponse<TransferSummary | null>>('/stock/transfers/summary');
   }
 
   getPendingTransfers(): Observable<ApiResponse<TransferWithDetails[]>> {
-    return this.get<ApiResponse<TransferWithDetails[]>>('/transfers/pending');
+    return this.get<ApiResponse<TransferWithDetails[]>>('/stock/transfers/pending');
   }
 
   getTransfer(id: number): Observable<ApiResponse<TransferWithDetails | null>> {
-    return this.get<ApiResponse<TransferWithDetails | null>>(`/transfers/${id}`);
+    return this.get<ApiResponse<TransferWithDetails | null>>(`/stock/transfers/${id}`);
   }
 
   createTransfer(payload: any): Observable<ApiResponse<any>> {
-    return this.post<ApiResponse<any>>('/transfers', payload);
+    return this.post<ApiResponse<any>>('/stock/transfers', payload);
   }
 
   createTransferWithItems(payload: any): Observable<ApiResponse<TransferWithDetails | null>> {
-    return this.post<ApiResponse<TransferWithDetails | null>>('/transfers/with-items', payload);
+    return this.post<ApiResponse<TransferWithDetails | null>>('/stock/transfers/with-items', payload);
   }
 
   completeTransfer(id: number): Observable<ApiResponse<TransferCompletionResult | null>> {
     // Backend fills transfer_id from route and actor_id from session; body can be empty
-    return this.post<ApiResponse<TransferCompletionResult | null>>(`/transfers/${id}/complete`, {});
+    return this.post<ApiResponse<TransferCompletionResult | null>>(`/stock/transfers/${id}/complete`, {});
   }
 
   deleteTransfer(id: number): Observable<ApiResponse<{ id: number } | null>> {
-    return this.delete<ApiResponse<{ id: number } | null>>(`/transfers/${id}`);
+    return this.delete<ApiResponse<{ id: number } | null>>(`/såtock/transfers/${id}`);
   }
 
   findDeviceByImeiOrSerial(identifier: string): Observable<ApiResponse<any | null>> {
-    return this.get<ApiResponse<any | null>>(`/transfers/device-lookup/${encodeURIComponent(identifier)}`);
+    return this.get<ApiResponse<any | null>>(`/stock/transfers/device-lookup/${encodeURIComponent(identifier)}`);
   }
 
   // ===== Repairs =====
   getRepairs(params: HttpParams = new HttpParams()): Observable<ApiResponse<RepairRecord[]>> {
-    return this.get<ApiResponse<RepairRecord[]>>('/repairs', params);
+    return this.get<ApiResponse<RepairRecord[]>>('/stock/repairs', params);
   }
 
   getRepair(id: number): Observable<ApiResponse<RepairWithItems | null>> {
-    return this.get<ApiResponse<RepairWithItems | null>>(`/repairs/${id}`);
+    return this.get<ApiResponse<RepairWithItems | null>>(`/såtock/repairs/${id}`);
   }
 
   createRepair(payload: RepairCreateInput): Observable<ApiResponse<RepairRecord | null>> {
-    return this.post<ApiResponse<RepairRecord | null>>('/repairs', payload);
+    return this.post<ApiResponse<RepairRecord | null>>('/stock/repairs', payload);
   }
 
   consumeRepairItems(id: number, payload: RepairConsumeItemsInput): Observable<ApiResponse<RepairConsumeResult | null>> {
-    return this.post<ApiResponse<RepairConsumeResult | null>>(`/repairs/${id}/consume`, payload);
+    return this.post<ApiResponse<RepairConsumeResult | null>>(`/såtock/repairs/${id}/consume`, payload);
   }
 
   deleteRepair(id: number): Observable<ApiResponse<{ id: number } | null>> {
-    return this.delete<ApiResponse<{ id: number } | null>>(`/repairs/${id}`);
+    return this.delete<ApiResponse<{ id: number } | null>>(`/stock/repairs/${id}`);
   }
 
   // File Upload Methods

@@ -137,7 +137,7 @@ export class PurchaseReceivingComponent {
     return this.fb.group({
       purchase_item_id: [item.id],
       sku: [item.sku],
-      quantity_received: [remainingQty > 0 ? remainingQty : 0, [Validators.required, Validators.min(0)]],
+      quantity_received: [item.is_part ? (remainingQty > 0 ? remainingQty : 0) : 0, [Validators.required, Validators.min(0)]],
       device_id: [null],
       identifiers: this.fb.array([]),
       is_part: [item.is_part || false],
@@ -176,12 +176,33 @@ export class PurchaseReceivingComponent {
     const identifiersArray = this.getIdentifiersArray(itemIndex);
     const itemForm = this.getItemFormGroup(itemIndex);
     
+    const value = (result.value || '').trim();
+    if (!value) return;
+
+    // Prevent duplicates within the item or across all items
+    const currentVals = (identifiersArray.value as string[]).map(v => (v || '').trim());
+    if (currentVals.includes(value) || this.getAllIdentifiers().includes(value)) {
+      this.error.set('Duplicate identifier scanned');
+      return;
+    }
+
+    // Prevent exceeding remaining quantity
+    const remaining = Number(itemForm.get('remaining_quantity')?.value || 0);
+    const nextCount = identifiersArray.length + 1;
+    if (nextCount > remaining) {
+      this.error.set(`Cannot scan more than remaining quantity (${remaining})`);
+      return;
+    }
+
     // Add the scanned identifier
-    identifiersArray.push(this.fb.control(result.value, Validators.required));
+    identifiersArray.push(this.fb.control(value, Validators.required));
     
     // Update quantity received to match number of identifiers
     const newQuantity = identifiersArray.length;
     itemForm.patchValue({ quantity_received: newQuantity });
+
+    // Clear any previous errors since we have valid scan data
+    this.error.set('');
   }
 
   onQuantityChange(itemIndex: number): void {
@@ -203,6 +224,17 @@ export class PurchaseReceivingComponent {
           identifiersArray.removeAt(i);
         }
       }
+    } else {
+      // For devices, quantity mirrors identifiers count
+      const adjusted = identifiersArray.length;
+      if (newQuantity !== adjusted) {
+        itemForm.patchValue({ quantity_received: adjusted }, { emitEvent: false });
+      }
+    }
+
+    // Clear errors when quantity is changed to a valid value
+    if (newQuantity > 0) {
+      this.error.set('');
     }
   }
 
@@ -213,23 +245,68 @@ export class PurchaseReceivingComponent {
   onSubmit(): void {
     if (this.form().invalid || this.submitting()) return;
 
+    // Check if at least one item has quantity > 0
+    const formValue = this.form().value;
+    const items = (formValue.items || []) as any[];
+    const selected = items.filter((item: any) => (item.quantity_received || 0) > 0);
+    if (selected.length === 0) {
+      this.error.set('Please add at least one item with quantity greater than 0 before submitting');
+      return;
+    }
+
+    // Validate per-item remaining and identifiers consistency
+    const globalIds = new Set<string>();
+    for (let idx = 0; idx < items.length; idx++) {
+      const item = items[idx];
+      const qty = Number(item.quantity_received || 0);
+      if (qty <= 0) continue;
+      const remaining = Number(item.remaining_quantity || 0);
+      if (qty > remaining) {
+        this.error.set(`Cannot receive more than remaining quantity (${remaining}) for SKU ${item.sku}`);
+        return;
+      }
+      const isPart = !!item.is_part;
+      const ids: string[] = (item.identifiers || []).map((v: string) => (v || '').trim()).filter(Boolean);
+      if (!isPart) {
+        if (ids.length !== qty) {
+          this.error.set(`Identifiers count must match quantity for device SKU ${item.sku}`);
+          return;
+        }
+        const localSet = new Set(ids);
+        if (localSet.size !== ids.length) {
+          this.error.set(`Duplicate identifiers found for device SKU ${item.sku}`);
+          return;
+        }
+        // Global uniqueness across all items
+        for (const id of ids) {
+          if (globalIds.has(id)) {
+            this.error.set('An identifier appears in multiple items. Please ensure uniqueness.');
+            return;
+          }
+          globalIds.add(id);
+        }
+      }
+    }
+
     this.submitting.set(true);
     this.error.set('');
 
-    const formValue = this.form().value;
-    const payload: Omit<ReceiveItemsRequest, 'purchase_id'> = {
-      items: formValue.items.map((item: any) => ({
+    const payload: ReceiveItemsRequest = {
+      purchase_id: this.purchaseId(),
+      items: selected.map((item: any) => ({
         purchase_item_id: item.purchase_item_id,
         sku: item.sku,
         quantity_received: item.quantity_received,
         device_id: item.device_id,
-        identifiers: item.identifiers?.length > 0 ? item.identifiers : undefined
+        identifiers: (item.identifiers || []).map((v: string) => (v || '').trim()).filter((v: string) => !!v).length > 0
+          ? (item.identifiers || []).map((v: string) => (v || '').trim()).filter((v: string) => !!v)
+          : undefined
       })),
       warehouse_id: formValue.warehouse_id,
       actor_id: 1 // This should come from auth service
     };
 
-    this.api.receivePurchaseItems(this.purchaseId(), payload).subscribe({
+    this.api.receivePurchaseItems(payload).subscribe({
       next: (response) => {
         if (response.status === 200) {
           this.router.navigate(['/stock-management'], { 
@@ -314,5 +391,20 @@ export class PurchaseReceivingComponent {
       totalQuantity: items.reduce((sum: number, item: any) => sum + (item.quantity_received || 0), 0),
       itemsWithQuantity: items.filter((item: any) => (item.quantity_received || 0) > 0).length
     };
+  }
+
+  // Helpers
+  private getAllIdentifiers(): string[] {
+    const items = (this.form().get('items') as FormArray)?.value as any[] || [];
+    const result: string[] = [];
+    for (const it of items) {
+      if (Array.isArray(it?.identifiers)) {
+        for (const v of it.identifiers) {
+          const t = (v || '').trim();
+          if (t) result.push(t);
+        }
+      }
+    }
+    return result;
   }
 }

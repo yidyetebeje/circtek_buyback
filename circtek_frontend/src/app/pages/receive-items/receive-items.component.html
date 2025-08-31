@@ -106,55 +106,7 @@
         </div>
       }
 
-      <!-- Add to Batch Button -->
-      @if (form().get('selected_item_id')?.value) {
-        <div class="flex justify-center">
-          <button
-            type="button"
-            class="btn btn-primary gap-2"
-            (click)="addToBatch()"
-            [disabled]="!isCurrentItemValid()"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Add to Batch
-          </button>
-        </div>
-      }
 
-      <!-- Receiving Batch -->
-      @if (receivingBatch().length > 0) {
-        <div class="bg-base-100 rounded-xl border border-base-300/20 p-4">
-          <h3 class="text-base font-semibold mb-3">Items to Receive ({{ receivingBatch().length }})</h3>
-          <div class="space-y-2">
-            @for (item of receivingBatch(); track $index) {
-              <div class="flex items-center justify-between p-3 bg-base-200/50 rounded-lg">
-                <div class="flex items-center gap-4">
-                  <span class="font-medium">{{ item.sku }}</span>
-                  <span class="badge {{ item.is_part ? 'badge-secondary' : 'badge-accent' }} badge-sm">
-                    {{ item.is_part ? 'Part' : 'Device' }}
-                  </span>
-                  <span class="text-sm text-base-content/70">Qty: {{ item.quantity_received }}</span>
-                  @if (item.identifiers?.length) {
-                    <span class="text-sm text-base-content/70">IDs: {{ item.identifiers.length }}</span>
-                  }
-                </div>
-                <button
-                  type="button"
-                  class="btn btn-ghost btn-sm text-error"
-                  (click)="removeFromBatch($index)"
-                  title="Remove from batch"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                  </svg>
-                </button>
-              </div>
-            }
-          </div>
-        </div>
-      }
 
       <!-- Receiving Picture Upload -->
       <div class="bg-base-100 rounded-xl border border-base-300/20 p-4" [formGroup]="form()">

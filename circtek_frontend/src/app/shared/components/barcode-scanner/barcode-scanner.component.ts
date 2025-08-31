@@ -125,7 +125,7 @@ export class BarcodeScannerComponent {
     if (inputElement) {
       inputElement.focus();
       this.inputValue.set(scannedValue.trim());
-      this.validateInput(scannedValue.trim());
+      this.validateAndEmit(scannedValue.trim());
     }
   }
   
@@ -133,7 +133,8 @@ export class BarcodeScannerComponent {
     const target = event.target as HTMLInputElement;
     const value = target.value;
     this.inputValue.set(value);
-    this.validateInput(value);
+    // Only show visual feedback, don't emit scan result until Enter is pressed
+    this.validateInputVisual(value);
   }
   
   onInputKeyDown(event: KeyboardEvent): void {
@@ -142,12 +143,12 @@ export class BarcodeScannerComponent {
       event.stopPropagation();
       const value = this.inputValue();
       if (value.trim()) {
-        this.validateInput(value.trim());
+        this.validateAndEmit(value.trim());
       }
     }
   }
   
-  private validateInput(value: string): void {
+  private validateInputVisual(value: string): void {
     if (!value.trim()) {
       this.isValid.set(null);
       this.validationType.set('unknown');
@@ -165,7 +166,28 @@ export class BarcodeScannerComponent {
       this.errorMessage.set('');
     }
     
-    // Emit the scan result
+    // Don't emit scan result here - only show visual feedback
+  }
+
+  private validateAndEmit(value: string): void {
+    if (!value.trim()) {
+      this.isValid.set(null);
+      this.validationType.set('unknown');
+      this.errorMessage.set('');
+      return;
+    }
+    
+    const result = this.validateIMEIOrSerial(value.trim());
+    this.isValid.set(result.isValid);
+    this.validationType.set(result.type);
+    
+    if (!result.isValid) {
+      this.errorMessage.set(this.getErrorMessage(value.trim()));
+    } else {
+      this.errorMessage.set('');
+    }
+    
+    // Emit the scan result only when Enter is pressed or barcode is scanned
     this.scanned.emit(result);
     
     // Auto clear if enabled and valid
