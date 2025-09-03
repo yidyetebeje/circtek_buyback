@@ -46,7 +46,7 @@ export interface ReceivedItemRecord {
   updated_at: string | null;
 }
 
-export interface PurchaseWithItemsAndReceived {
+export interface PurchaseWithItems {
   purchase: PurchaseRecord;
   items: Array<PurchaseItemRecord & {
     received_quantity: number;

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GenericFormPageComponent } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { TransferWithDetails } from '../../core/models/transfer';
 
 @Component({
@@ -14,6 +15,7 @@ import { TransferWithDetails } from '../../core/models/transfer';
 })
 export class TransferCompletionComponent {
   private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -78,10 +80,16 @@ export class TransferCompletionComponent {
   onSubmit(): void {
     if (!this.canComplete() || this.submitting()) return;
 
+    const currentUser = this.auth.currentUser();
+    if (!currentUser) {
+      this.error.set('User not authenticated');
+      return;
+    }
+
     this.submitting.set(true);
     this.error.set('');
 
-    this.api.completeTransfer(this.transferId()).subscribe({
+    this.api.completeTransfer(this.transferId(), currentUser.id).subscribe({
       next: (response) => {
         if (response.status === 200) {
           this.router.navigate(['/stock-management'], { 

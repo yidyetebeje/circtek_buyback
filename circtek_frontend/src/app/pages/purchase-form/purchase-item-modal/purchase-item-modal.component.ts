@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, ou
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { GenericModalComponent, type ModalAction } from '../../../shared/components/generic-modal/generic-modal.component';
+import { SkuAutocompleteComponent, type SkuOption } from '../../../shared/components/sku-autocomplete/sku-autocomplete.component';
+import { SkuSpecsCreateModalComponent } from '../../../shared/components/sku-specs-create-modal/sku-specs-create-modal.component';
 
 export interface PurchaseItem {
   id?: string;
@@ -13,7 +15,7 @@ export interface PurchaseItem {
 
 @Component({
   selector: 'app-purchase-item-modal',
-  imports: [CommonModule, ReactiveFormsModule, GenericModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, GenericModalComponent, SkuAutocompleteComponent, SkuSpecsCreateModalComponent],
   templateUrl: './purchase-item-modal.component.html',
   styleUrls: ['./purchase-item-modal.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,6 +34,8 @@ export class PurchaseItemModalComponent {
   // State
   form = signal<FormGroup>(this.createForm());
   formValid = signal<boolean>(false);
+  isSkuCreateModalOpen = signal<boolean>(false);
+  suggestedSku = signal<string>('');
 
   // Computed
   title = computed(() => this.editingItem() ? 'Edit Item' : 'Add Item');
@@ -125,5 +129,35 @@ export class PurchaseItemModalComponent {
       if (field.errors?.['min']) return `${fieldName} must be greater than ${field.errors['min'].min}`;
     }
     return null;
+  }
+
+  // SKU autocomplete handlers
+  onSkuChange(sku: string): void {
+    this.form().patchValue({ sku });
+  }
+
+  onSkuSelected(option: SkuOption): void {
+    this.form().patchValue({ 
+      sku: option.sku,
+      is_part: option.is_part || false
+    });
+  }
+
+  onCreateNewSku(suggestedSku: string): void {
+    this.suggestedSku.set(suggestedSku);
+    this.isSkuCreateModalOpen.set(true);
+  }
+
+  onSkuCreated(createdSku: { sku: string; model_name: string | null; is_part: boolean | null }): void {
+    this.form().patchValue({ 
+      sku: createdSku.sku,
+      is_part: createdSku.is_part || false
+    });
+    this.isSkuCreateModalOpen.set(false);
+  }
+
+  onSkuCreateModalClose(): void {
+    this.isSkuCreateModalOpen.set(false);
+    this.suggestedSku.set('');
   }
 }

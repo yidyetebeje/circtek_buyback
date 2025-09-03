@@ -1,0 +1,349 @@
+<!-- Main Container -->
+<div class="min-h-screen bg-base-200 transition-colors duration-300 flex flex-col items-center">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Card Container -->
+    <div class="card-container rounded-2xl border border-base-300/50 max-w-7xl mx-auto">
+      <div class="p-6 md:p-8">
+        <!-- Header Section -->
+        <div class="mb-6">
+          <!-- Title, Back Button, and Save Button Row -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-4">
+              <button
+                class="btn btn-ghost btn-sm"
+                (click)="goBack()"
+              >
+                <lucide-icon [img]="ArrowLeft" class="size-4"></lucide-icon>
+                Back
+              </button>
+              <div>
+                <h1 class="text-2xl font-bold text-base-content">
+                  {{ isEditingDocument ? "Edit Label" : "New Label" }}
+                </h1>
+                <p class="text-base-content/60 text-sm">Document Editor</p>
+              </div>
+            </div>
+            
+            <button
+              class="btn btn-accent"
+              (click)="openSaveModal()"
+              [disabled]="isLoading"
+            >
+              <lucide-icon [img]="Save" class="size-4"></lucide-icon>
+              {{ isEditingDocument ? "Update" : "Save" }}
+            </button>
+          </div>
+
+          <!-- Compact Document Controls Row -->
+          <div class="flex flex-wrap items-center gap-4 p-3 bg-base-50 rounded-lg border border-base-300/20">
+            <!-- Paper Size -->
+            <div class="flex items-center gap-2">
+              <label class="text-xs font-medium text-base-content/70">Size:</label>
+              <select
+                class="select select-bordered select-sm w-32"
+                [value]="selectedPaperSize"
+                (change)="onPaperSizeChange($event)"
+              >
+                <option value="Label_4x6">Label 4" x 6"</option>
+                <option value="Label_4x3">Label 4" x 3"</option>
+                <option value="Label_4x2">Label 4" x 2"</option>
+                <option value="Label_3x2">Label 3" x 2"</option>
+                <option value="Label_2.25x1.25">Label 2.25" x 1.25"</option>
+                <option value="Letter">Letter (8.5" x 11")</option>
+                <option value="A4">A4 (8.27" x 11.69")</option>
+                <option value="Custom">Custom</option>
+              </select>
+            </div>
+
+            <!-- Orientation -->
+            <div class="flex items-center gap-2">
+              <label class="text-xs font-medium text-base-content/70">Orientation:</label>
+              <select class="select select-bordered select-sm w-24"
+                [(ngModel)]="paperOrientation" (ngModelChange)="setPaperOrientation($event)">
+                <option value="portrait">Portrait</option>
+                <option value="landscape">Landscape</option>
+              </select>
+            </div>
+
+            <!-- DPI -->
+            <div class="flex items-center gap-2">
+              <label class="text-xs font-medium text-base-content/70">DPI:</label>
+              <input 
+                type="number" 
+                min="50" 
+                max="1200" 
+                step="1"
+                class="input input-bordered input-sm w-20" 
+                [ngModel]="DPI"
+                (ngModelChange)="onDpiInputChange($event)" 
+              />
+            </div>
+
+            <!-- List Mode Toggle -->
+            <button
+              class="btn btn-sm"
+              [ngClass]="{
+                'btn-primary': isListModeActive,
+                'btn-outline btn-primary': !isListModeActive
+              }"
+              (click)="toggleListMode()"
+            >
+              <lucide-icon [img]="List" class="size-4"></lucide-icon>
+              List Mode
+            </button>
+
+            <!-- Dimensions Display/Input -->
+            @if (selectedPaperSize !== 'Custom') {
+              <div class="text-xs text-base-content/60">
+                {{ canvasWidthMm | number: "1.1-1" }} x {{ canvasHeightMm | number: "1.1-1" }} mm
+              </div>
+            } @else {
+              <div class="flex items-center gap-2">
+                <label class="text-xs font-medium text-base-content/70">W:</label>
+                <input
+                  type="number"
+                  step="1"
+                  min="10"
+                  max="1000"
+                  class="input input-bordered input-sm w-16"
+                  [ngModel]="canvasWidthMm"
+                  (ngModelChange)="canvasWidthMm = $event; onMmInputChange()"
+                  (wheel)="$event.preventDefault()"
+                  placeholder="mm"
+                />
+                <label class="text-xs font-medium text-base-content/70">H:</label>
+                <input
+                  type="number"
+                  step="1"
+                  min="10"
+                  max="1000"
+                  class="input input-bordered input-sm w-16"
+                  [ngModel]="canvasHeightMm"
+                  (ngModelChange)="canvasHeightMm = $event; onMmInputChange()"
+                  (wheel)="$event.preventDefault()"
+                  placeholder="mm"
+                />
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Main Editor Layout -->
+        <div class="flex flex-grow gap-4 lg:gap-6">
+          <!-- Sidebar -->
+          <div class="w-1/4 lg:w-1/6 flex-shrink-0">
+            <div class="card bg-base-100 rounded-xl border border-base-300/20 shadow h-[calc(100vh-12rem)] sticky top-4 overflow-hidden">
+              <div class="p-4 border-b border-base-300">
+                <h5 class="text-base font-semibold text-base-content">
+                  <lucide-icon [img]="Circle" class="size-4 mr-2" style="color: #a7d48e"></lucide-icon>Elements
+                </h5>
+              </div>
+              <div class="p-2 element-list h-full overflow-y-auto">
+                <!-- Standard Elements -->
+                <div class="element-item mb-3 p-2 flex items-center justify-center rounded bg-base-200 hover:bg-base-300 transition-all cursor-grab min-h-10"
+                  draggable="true" (dragstart)="onDragStart($event, 'text')">
+                  <div style="font-weight: 500; font-size: 0.9rem">Text</div>
+                </div>
+                <div class="element-item mb-3 p-2 flex items-center justify-center rounded bg-base-200 hover:bg-base-300 transition-all cursor-grab min-h-10"
+                  draggable="true" (dragstart)="onDragStart($event, 'image')">
+                  <div style="font-weight: 500; font-size: 0.9rem">Image</div>
+                </div>
+
+                <!-- Shapes -->
+                <h6 class="uppercase text-base-content/60 mb-2 mt-4 text-xs">Shapes</h6>
+                <div class="element-item mb-2 p-2 flex items-center justify-center rounded bg-base-200 hover:bg-base-300 transition-all cursor-grab min-h-10"
+                  draggable="true" (dragstart)="onDragStart($event, 'filled-rectangle')">
+                  <div style="font-weight: 500; font-size: 0.9rem">Filled Rectangle</div>
+                </div>
+                <div class="element-item mb-2 p-2 flex items-center justify-center rounded bg-base-200 hover:bg-base-300 transition-all cursor-grab min-h-10"
+                  draggable="true" (dragstart)="onDragStart($event, 'outlined-rectangle')">
+                  <div style="font-weight: 500; font-size: 0.9rem">Outlined Rectangle</div>
+                </div>
+                <div class="element-item mb-3 p-2 flex items-center justify-center rounded bg-base-200 hover:bg-base-300 transition-all cursor-grab min-h-10"
+                  draggable="true" (dragstart)="onDragStart($event, 'line')">
+                  <div style="font-weight: 500; font-size: 0.9rem">Line</div>
+                </div>
+
+                <!-- Placeholders Section -->
+                <div class="mt-4">
+                  <h6 class="uppercase text-base-content/60 mb-3 text-xs">Placeholders</h6>
+                  <div class="mb-3">
+                    <input type="text" placeholder="Search placeholders..." class="input input-bordered input-sm w-full" [(ngModel)]="placeholderSearchTerm" (ngModelChange)="updateFilteredPlaceholders()" />
+                  </div>
+                  <div *ngIf="filteredCategorizedPlaceholders.length > 0; else noPlaceholdersFound">
+                    <div *ngFor="let group of filteredCategorizedPlaceholders" class="mb-3">
+                      <h6 class="text-base-content/70 font-semibold mb-2 text-sm">{{ group.category }}</h6>
+                      <div *ngFor="let placeholder of group.items" class="element-item bg-base-100 shadow mb-1 text-center p-1 rounded cursor-grab min-h-8 text-sm"
+                        draggable="true" (dragstart)="onDragStart($event, 'placeholder', placeholder.id)">
+                        <div class="placeholder-item flex items-center justify-center h-full">
+                          <span [textContent]="placeholder.name"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <ng-template #noPlaceholdersFound>
+                    <p class="text-base-content/60 text-sm text-center">No placeholders found.</p>
+                  </ng-template>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Canvas Area -->
+          <div class="flex-grow">
+            <div class="card bg-base-100 rounded-xl border border-base-300/20 shadow h-full">
+              <div class="p-3">
+                <!-- Properties Panel -->
+                <div class="card bg-base-50 rounded-lg border border-base-300/20 mb-3 min-h-12">
+                  <div class="p-3">
+                    <div *ngIf="!selectedShape" class="flex items-center justify-center text-gray-500" style="height: 30px">
+                      <lucide-icon [img]="Circle" class="size-4 mr-2" style="color: #a7d48e"></lucide-icon>
+                      <span style="font-size: 0.9rem">Select an element to edit its properties</span>
+                    </div>
+                    
+                    <div *ngIf="selectedShape" class="flex items-center gap-4">
+                      <!-- Element Header -->
+                      <div class="flex items-center">
+                        <span [ngClass]="{
+                          'ni-caps-small': selectedShape.name() === 'text',
+                          'ni-image': selectedShape.name() === 'image',
+                          'ni-vector': selectedShape.name() === 'shape',
+                          'ni-world': currentContextType === 'placeholder'
+                        }" class="ni mr-2" style="color: #a7d48e"></span>
+                        <span class="font-medium text-sm whitespace-nowrap">
+                          {{ currentContextType === "placeholder" ? "Placeholder" : (selectedShape.name() | titlecase) }} Selected
+                        </span>
+                      </div>
+
+                      <!-- Text Properties -->
+                      <div *ngIf="currentContextType === 'text' || selectedShape.name() === 'placeholder-text' || selectedShape.name() === 'placeholder-group' || (isListModeActive && listSelectedNodes.length > 0)" 
+                           class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                          <label for="font-size-input" class="text-xs font-medium text-base-content/70 whitespace-nowrap">Font Size:</label>
+                          <input id="font-size-input" type="number" min="8" max="72" class="input input-bordered input-xs w-16" [value]="getSelectedShapeFontSize()" (input)="setFontSize($event)" />
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <label class="text-xs font-medium text-base-content/70 whitespace-nowrap">Style:</label>
+                          <div class="join">
+                            <button type="button" class="btn btn-xs join-item" [ngClass]="isBold(selectedShape) ? 'btn-primary' : 'btn-ghost'" (click)="setFontWeight('bold')" title="Bold"><b>B</b></button>
+                            <button type="button" class="btn btn-xs join-item" [ngClass]="!isBold(selectedShape) ? 'btn-primary' : 'btn-ghost'" (click)="setFontWeight('normal')" title="Normal">N</button>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <label class="text-xs font-medium text-base-content/70 whitespace-nowrap">Color:</label>
+                          <div class="flex items-center gap-1">
+                            <input type="color" class="w-6 h-6 rounded border border-base-300" id="textColorPicker" title="Click to pick a color" [value]="getSelectedShapeFill('#000000')" (input)="onColorChange($event)" />
+                            <input type="text" class="input input-bordered input-xs w-16" aria-label="Hex color code" aria-describedby="textColorPicker" [value]="getSelectedShapeFill('#000000')" (input)="onHexInputChange($event)" placeholder="#000000" />
+                          </div>
+                        </div>
+                        <button *ngIf="selectedShape.name() === 'text' || selectedShape.name() === 'placeholder-text'" class="btn btn-xs btn-outline"
+                          (click)="safeStartTextEditing()">
+                          <lucide-icon [img]="Edit" class="size-3 mr-1"></lucide-icon> Edit Text
+                        </button>
+                      </div>
+
+                      <!-- Placeholder Properties -->
+                      <div *ngIf="selectedShape?.name() === 'placeholder'" 
+                           class="flex items-center gap-3">
+                        <span class="badge badge-info text-xs whitespace-nowrap">ID: {{ getPlaceholderId(selectedShape) }}</span>
+                        <div class="flex items-center gap-2">
+                          <label for="placeholder-width-input" class="text-xs font-medium text-base-content/70 whitespace-nowrap">W:</label>
+                          <input id="placeholder-width-input" type="number" min="50" max="500" class="input input-bordered input-xs w-16" [value]="getPlaceholderWidth()" (input)="setPlaceholderWidth($event)" />
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <label for="placeholder-height-input" class="text-xs font-medium text-base-content/70 whitespace-nowrap">H:</label>
+                          <input id="placeholder-height-input" type="number" min="50" max="500" class="input input-bordered input-xs w-16" [value]="getPlaceholderHeight()" (input)="setPlaceholderHeight($event)" />
+                        </div>
+                      </div>
+
+                      <!-- Image Properties -->
+                      <div *ngIf="selectedShape.name() === 'image'" 
+                           class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                          <label for="image-width-input" class="text-xs font-medium text-base-content/70 whitespace-nowrap">W:</label>
+                          <input id="image-width-input" type="number" min="10" max="1000" class="input input-bordered input-xs w-20" [value]="selectedShape.width()" (input)="setImageWidth($event)" />
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <label for="image-height-input" class="text-xs font-medium text-base-content/70 whitespace-nowrap">H:</label>
+                          <input id="image-height-input" type="number" min="10" max="1000" class="input input-bordered input-xs w-20" [value]="selectedShape.height()" (input)="setImageHeight($event)" />
+                        </div>
+                      </div>
+
+                      <!-- Shape Properties -->
+                      <div *ngIf="selectedShape.name() === 'shape'" 
+                           class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                          <label class="text-xs font-medium text-base-content/70 whitespace-nowrap">Color:</label>
+                          <div class="flex items-center gap-1">
+                            <input type="color" class="w-6 h-6 rounded border border-base-300" id="shapeColorPicker" title="Click to pick a color" [value]="getShapeDisplayColor('#000000')" (input)="onColorChange($event)" />
+                            <input type="text" class="input input-bordered input-xs w-16" aria-label="Hex color code" aria-describedby="shapeColorPicker" [value]="getShapeDisplayColor('#000000')" (input)="onHexInputChange($event)" placeholder="#000000" />
+                          </div>
+                        </div>
+                        <div *ngIf="getShapeType() === 'outlined-rectangle' || getShapeType() === 'line'" class="flex items-center gap-2">
+                          <label for="stroke-width-input" class="text-xs font-medium text-base-content/70 whitespace-nowrap">Stroke:</label>
+                          <input id="stroke-width-input" type="number" min="1" max="20" class="input input-bordered input-xs w-16" [value]="getShapeStrokeWidth()" (input)="setShapeStrokeWidth($event)" />
+                        </div>
+                      </div>
+
+                      <!-- Delete Button -->
+                      <div class="ml-auto">
+                        <button class="btn btn-xs btn-error btn-outline" (click)="deleteSelectedShape()">
+                          <lucide-icon [img]="Trash2" class="size-3 mr-1"></lucide-icon> Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- List Layout Controls -->
+                <div class="mb-3" *ngIf="isListModeActive">
+                  <div class="flex items-center flex-wrap gap-2">
+                    <label class="mr-2 mb-0 text-sm">Direction:</label>
+                    <select class="select select-bordered select-sm w-32 mr-2" [(ngModel)]="listOrientation">
+                      <option value="vertical">Vertical</option>
+                      <option value="horizontal">Horizontal</option>
+                    </select>
+                    <label class="mr-2 mb-0 text-sm">Spacing (px):</label>
+                    <input type="number" class="input input-bordered input-sm w-24 mr-2" [(ngModel)]="listSeparator" min="0" max="500" />
+                    <button class="btn btn-sm btn-primary text-white mr-2" (click)="applyListLayout()">Apply</button>
+                    <button class="btn btn-sm" (click)="undoListLayout()">Undo</button>
+                    <button class="btn btn-sm btn-outline" (click)="cancelListLayout()">Close</button>
+                  </div>
+                </div>
+                <div class="mb-3" *ngIf="!isListModeActive"></div>
+
+                <!-- Canvas Wrapper -->
+                <div class="relative min-h-[500px] border border-dashed border-base-300 p-2">
+                  <div id="konva-container" class="mx-auto"></div>
+                  <ng-container #placeholderContainer></ng-container>
+                  <div *ngIf="!hasElements" class="text-center text-base-content/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    <lucide-icon [img]="Lightbulb" class="size-8 block mb-2"></lucide-icon>
+                    <h6 class="text-lg font-semibold">Your Canvas is Empty</h6>
+                    <p class="text-sm">Drag elements from the sidebar to get started</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="isLoading" class="fixed inset-0 bg-base-100/80 z-50 flex items-center justify-center">
+    <div class="loading loading-spinner loading-md text-primary" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
+    <span class="ml-2">Loading Document...</span>
+  </div>
+
+  <!-- Save Modal -->
+  <app-document-save-modal
+    [visible]="isSaveModalVisible"
+    [isEditing]="isEditingDocument"
+    [documentData]="currentDocumentData"
+    (save)="handleSave($event)"
+    (cancel)="handleCancelSave()"
+  ></app-document-save-modal>
+</div>

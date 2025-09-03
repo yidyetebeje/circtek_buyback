@@ -7,17 +7,18 @@
   (actionClick)="onActionClick($event)"
 >
   <form [formGroup]="form()" class="space-y-4">
-        <!-- SKU Field -->
+        <!-- SKU Field with Autocomplete -->
         <div>
           <label class="label">
             <span class="label-text font-medium">SKU <span class="text-error">*</span></span>
           </label>
-          <input 
-            type="text" 
-            formControlName="sku"
-            class="input input-bordered w-full"
-            [class.input-error]="isFieldInvalid('sku')"
-            placeholder="e.g., IPH-14-128-BLK"
+          <app-sku-autocomplete
+            [value]="form().get('sku')?.value || ''"
+            [required]="true"
+            placeholder="Search or enter SKU..."
+            (valueChange)="onSkuChange($event)"
+            (skuSelected)="onSkuSelected($event)"
+            (createNew)="onCreateNewSku($event)"
           />
           @if (getFieldError('sku'); as error) {
             <div class="label">
@@ -85,3 +86,11 @@
         </div>
   </form>
 </app-generic-modal>
+
+<!-- SKU Specs Creation Modal -->
+<app-sku-specs-create-modal
+  [isOpen]="isSkuCreateModalOpen()"
+  [suggestedSku]="suggestedSku()"
+  (close)="onSkuCreateModalClose()"
+  (created)="onSkuCreated($event)"
+/>

@@ -11,9 +11,12 @@ import { User } from '../../core/models/user';
 import { Warehouse } from '../../core/models/warehouse';
 import { WiFiProfile } from '../../core/models/wifi-profile';
 import { Tenant } from '../../core/models/tenant';
+import { RepairReasonRecord } from '../../core/models/repair-reason';
+import { LabelTemplateRecord } from '../../core/models/label-template';
+import { WorkflowRecord } from '../../core/models/workflow';
 
 // Union to drive the generic table
-export type MgmtRow = User | Warehouse | WiFiProfile | Tenant;
+export type MgmtRow = User | Warehouse | WiFiProfile | Tenant | RepairReasonRecord | LabelTemplateRecord | WorkflowRecord;
 
 @Component({
   selector: 'app-management',
@@ -34,7 +37,7 @@ export class ManagementComponent {
   total = signal(0);
 
   // Tab & pagination
-  activeTab = signal<'tenants' | 'users' | 'warehouses' | 'wifi'>('users');
+  activeTab = signal<'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows'>('users');
   pageIndex = signal(0);
   pageSize = signal(10);
 
@@ -70,6 +73,8 @@ export class ManagementComponent {
       { key: 'users', label: 'Users' },
       { key: 'warehouses', label: 'Warehouses' },
       { key: 'wifi', label: 'WiFi Profiles' },
+      { key: 'labels', label: 'Label Templates' },
+      { key: 'workflows', label: 'Workflows' },
     ];
     // Show Tenants first, only for super_admin
     return this.isSuperAdmin() ? [{ key: 'tenants', label: 'Tenants' }, ...base] : base;
@@ -84,7 +89,11 @@ export class ManagementComponent {
         ? 'Add User'
         : t === 'warehouses'
           ? 'Add Warehouse'
-          : 'Add WiFi Profile';
+          : t === 'labels'
+            ? 'Add Label Template'
+            : t === 'workflows'
+              ? 'Add Workflow'
+              : 'Add WiFi Profile';
     return { label } as { label: string };
   });
 
@@ -110,7 +119,7 @@ export class ManagementComponent {
 
   // Delete confirmation modal state
   isDeleteModalOpen = signal(false);
-  deleteContext = signal<{ tab: 'tenants' | 'users' | 'warehouses' | 'wifi'; row: MgmtRow } | null>(null);
+  deleteContext = signal<{ tab: 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows'; row: MgmtRow } | null>(null);
   
   deleteModalActions = computed<ModalAction[]>(() => [
     {
@@ -125,7 +134,7 @@ export class ManagementComponent {
     }
   ]);
 
-  openDeleteModal(tab: 'tenants' | 'users' | 'warehouses' | 'wifi', row: MgmtRow) {
+  openDeleteModal(tab: 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows', row: MgmtRow) {
     this.deleteContext.set({ tab, row });
     this.isDeleteModalOpen.set(true);
   }
@@ -158,6 +167,10 @@ export class ManagementComponent {
       deleteObservable = this.api.deleteWifiProfile((ctx.row as any).id);
     } else if (ctx.tab === 'tenants') {
       deleteObservable = this.api.deleteTenant((ctx.row as any).id);
+    } else if (ctx.tab === 'labels') {
+      deleteObservable = this.api.deleteLabelTemplate((ctx.row as any).id);
+    } else if (ctx.tab === 'workflows') {
+      deleteObservable = this.api.deleteWorkflow((ctx.row as any).id);
     }
 
     if (deleteObservable) {
@@ -240,7 +253,7 @@ export class ManagementComponent {
             }
           } as any,
         ];
-      default:
+      case 'wifi':
         return [
           { header: 'ID', accessorKey: 'id' as any },
           { header: 'Name', accessorKey: 'name' as any },
@@ -263,6 +276,52 @@ export class ManagementComponent {
             }
           } as any,
         ];
+      case 'labels':
+        return [
+          { header: 'ID', accessorKey: 'id' as any },
+          { header: 'Name', accessorKey: 'name' as any },
+          { header: 'Description', accessorKey: 'description' as any },
+          { header: 'Tenant', accessorKey: 'tenant_name' as any },
+          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No') },
+          {
+            header: 'Actions',
+            id: 'actions' as any,
+            enableSorting: false as any,
+            meta: {
+              actions: [
+                { key: 'edit', label: 'Edit', class: 'text-primary' },
+                { key: 'assign', label: 'Assign tester', class: 'text-secondary' },
+                { key: 'view-assigned', label: 'View assigned testers' },
+                { key: 'delete', label: 'Delete', class: 'text-error' },
+              ],
+              cellClass: () => 'text-right'
+            }
+          } as any,
+        ];
+      case 'workflows':
+        return [
+          { header: 'ID', accessorKey: 'id' as any },
+          { header: 'Name', accessorKey: 'name' as any },
+          { header: 'Description', accessorKey: 'description' as any },
+          { header: 'Tenant', accessorKey: 'tenant_name' as any },
+          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No') },
+          {
+            header: 'Actions',
+            id: 'actions' as any,
+            enableSorting: false as any,
+            meta: {
+              actions: [
+                { key: 'edit', label: 'Edit', class: 'text-primary' },
+                { key: 'assign', label: 'Assign tester', class: 'text-secondary' },
+                { key: 'view-assigned', label: 'View assigned testers' },
+                { key: 'delete', label: 'Delete', class: 'text-error' },
+              ],
+              cellClass: () => 'text-right'
+            }
+          } as any,
+        ];
+      default:
+        return [] as any;
     }
   });
 
@@ -275,8 +334,14 @@ export class ManagementComponent {
         return 'Search by name, username, or email';
       case 'warehouses':
         return 'Search warehouses';
-      default:
+      case 'wifi':
         return 'Search WiFi profiles';
+      case 'labels':
+        return 'Search label templates';
+      case 'workflows':
+        return 'Search workflows';
+      default:
+        return '';
     }
   });
 
@@ -293,7 +358,7 @@ export class ManagementComponent {
 
     const tab = str('tab', 'users');
     if (tab === 'tenants' && this.isSuperAdmin()) this.activeTab.set('tenants');
-    else if (tab === 'warehouses' || tab === 'wifi' || tab === 'users') this.activeTab.set(tab as any);
+    else if (tab === 'warehouses' || tab === 'wifi' || tab === 'users' || tab === 'labels' || tab === 'workflows') this.activeTab.set(tab as any);
     else this.activeTab.set('users');
 
    
@@ -422,26 +487,69 @@ export class ManagementComponent {
       return;
     }
 
-    // wifi - no server pagination; client-side filter + paginate
+    // wifi/labels/workflows - no server pagination; client-side filter + paginate
     let params = new HttpParams();
     if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
-    this.api.getWifiProfiles(params).subscribe({
-      next: (res) => {
-        if (seq !== this.requestSeq) return;
-        const all = ((res.data ?? []) as WiFiProfile[]).map(p => ({
-          ...p,
-          tenant_name: p.tenant_name ?? String(p.tenant_id)
-        }));
-        const s = this.search().trim().toLowerCase();
-        const filtered = s ? all.filter(r => `${r.name} ${r.ssid}`.toLowerCase().includes(s)) : all;
-        this.total.set(filtered.length);
-        const start = this.pageIndex() * this.pageSize();
-        const paged = filtered.slice(start, start + this.pageSize());
-        this.data.set(paged);
-        this.loading.set(false);
-      },
-      error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
-    });
+    if (tab === 'wifi') {
+      this.api.getWifiProfiles(params).subscribe({
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
+          const all = ((res.data ?? []) as WiFiProfile[]).map(p => ({
+            ...p,
+            tenant_name: p.tenant_name ?? String(p.tenant_id)
+          }));
+          const s = this.search().trim().toLowerCase();
+          const filtered = s ? all.filter(r => `${r.name} ${r.ssid}`.toLowerCase().includes(s)) : all;
+          this.total.set(filtered.length);
+          const start = this.pageIndex() * this.pageSize();
+          const paged = filtered.slice(start, start + this.pageSize());
+          this.data.set(paged);
+          this.loading.set(false);
+        },
+        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
+      });
+      return;
+    }
+    if (tab === 'labels') {
+      this.api.getLabelTemplates(params).subscribe({
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
+          const all = ((res.data ?? []) as LabelTemplateRecord[]).map(r => ({
+            ...r,
+            tenant_name: (r as any).tenant_name ?? String(r.tenant_id)
+          }));
+          const s = this.search().trim().toLowerCase();
+          const filtered = s ? all.filter(r => `${r.name} ${r.description ?? ''}`.toLowerCase().includes(s)) : all;
+          this.total.set(filtered.length);
+          const start = this.pageIndex() * this.pageSize();
+          const paged = filtered.slice(start, start + this.pageSize());
+          this.data.set(paged);
+          this.loading.set(false);
+        },
+        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
+      });
+      return;
+    }
+    if (tab === 'workflows') {
+      this.api.getWorkflows(params).subscribe({
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
+          const all = ((res.data ?? []) as WorkflowRecord[]).map(r => ({
+            ...r,
+            tenant_name: (r as any).tenant_name ?? String(r.tenant_id)
+          }));
+          const s = this.search().trim().toLowerCase();
+          const filtered = s ? all.filter(r => `${r.name} ${r.description ?? ''}`.toLowerCase().includes(s)) : all;
+          this.total.set(filtered.length);
+          const start = this.pageIndex() * this.pageSize();
+          const paged = filtered.slice(start, start + this.pageSize());
+          this.data.set(paged);
+          this.loading.set(false);
+        },
+        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
+      });
+      return;
+    }
   }
 
   // Handlers from GenericPage
@@ -469,7 +577,7 @@ export class ManagementComponent {
   }
 
   onTabChange(key: string | null) {
-    const k = (key ?? 'users') as 'tenants' | 'users' | 'warehouses' | 'wifi';
+    const k = (key ?? 'users') as 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows';
     if (k !== this.activeTab()) {
       this.activeTab.set(k);
       // reset some filters per tab
@@ -487,8 +595,12 @@ export class ManagementComponent {
       this.router.navigate(['/management/users/add']);
     } else if (t === 'warehouses') {
       this.router.navigate(['/management/warehouses/add']);
-    } else {
+    } else if (t === 'wifi') {
       this.router.navigate(['/management/wifi-profiles/add']);
+    } else if (t === 'labels') {
+      this.router.navigate(['/label']);
+    } else if (t === 'workflows') {
+      this.router.navigate(['/workflow-editor']);
     }
   }
 
@@ -508,6 +620,10 @@ export class ManagementComponent {
         this.router.navigate(['/management/warehouses/edit', row.id]);
       } else if (tab === 'wifi') {
         this.router.navigate(['/management/wifi-profiles/edit', row.id]);
+      } else if (tab === 'labels') {
+        this.router.navigate(['/label', row.id]);
+      } else if (tab === 'workflows') {
+        this.router.navigate(['/workflow-editor', row.id]);
       }
       return;
     }
@@ -519,14 +635,14 @@ export class ManagementComponent {
     }
 
     // WiFi-specific actions
-    if (tab === 'wifi') {
+    if (tab === 'wifi' || tab === 'labels' || tab === 'workflows') {
       const wifiRow = row as WiFiProfile;
       if (event.action === 'assign') {
-        this.openAssignModal(wifiRow);
+        this.openAssignModal(wifiRow as any);
         return;
       }
       if (event.action === 'view-assigned') {
-        this.openAssignedModal(wifiRow);
+        this.openAssignedModal(wifiRow as any);
         return;
       }
     }
@@ -535,6 +651,8 @@ export class ManagementComponent {
   // Assign tester modal state
   isAssignModalOpen = signal(false);
   selectedWifiProfile = signal<WiFiProfile | null>(null);
+  selectedLabelTemplate = signal<LabelTemplateRecord | null>(null);
+  selectedWorkflow = signal<WorkflowRecord | null>(null);
   selectedAssignTesterId = signal<number | null>(null);
   selectedAssignProfileId = signal<number | null>(null);
   
@@ -547,7 +665,9 @@ export class ManagementComponent {
     {
       label: 'Assign',
       variant: 'primary',
-      disabled: this.selectedAssignTesterId() == null || (!this.selectedWifiProfile() && this.selectedAssignProfileId() == null),
+      disabled: this.selectedAssignTesterId() == null || (
+        (this.activeTab() === 'wifi' && !this.selectedWifiProfile() && this.selectedAssignProfileId() == null)
+      ),
       action: 'assign'
     }
   ]);
@@ -563,6 +683,10 @@ export class ManagementComponent {
     this.api.getUsers(params).subscribe(res => {
       const opts = (res.data ?? []).map(u => ({ label: u.user_name, value: String(u.id) }));
       this.testerOptions.set(opts);
+      // Auto-select first tester if available and no tester is currently selected
+      if (opts.length > 0 && this.selectedAssignTesterId() === null) {
+        this.selectedAssignTesterId.set(Number(opts[0].value));
+      }
     });
   }
 
@@ -578,8 +702,16 @@ export class ManagementComponent {
     });
   }
 
-  openAssignModal(row: WiFiProfile) {
-    this.selectedWifiProfile.set(row);
+
+
+  openAssignModal(row: WiFiProfile | LabelTemplateRecord | WorkflowRecord) {
+    if ((this.activeTab() as any) === 'wifi') {
+      this.selectedWifiProfile.set(row as WiFiProfile);
+    } else if ((this.activeTab() as any) === 'labels') {
+      this.selectedLabelTemplate.set(row as LabelTemplateRecord);
+    } else if ((this.activeTab() as any) === 'workflows') {
+      this.selectedWorkflow.set(row as WorkflowRecord);
+    }
     this.selectedAssignTesterId.set(null);
     this.selectedAssignProfileId.set(null);
     this.isAssignModalOpen.set(true);
@@ -588,16 +720,20 @@ export class ManagementComponent {
 
   openAssignModalNoProfile() {
     this.selectedWifiProfile.set(null);
+    this.selectedLabelTemplate.set(null);
+    this.selectedWorkflow.set(null);
     this.selectedAssignTesterId.set(null);
     this.selectedAssignProfileId.set(null);
     this.isAssignModalOpen.set(true);
-    this.loadWifiOptionsForTenant();
+    if (this.activeTab() === 'wifi') this.loadWifiOptionsForTenant();
     this.loadTesterOptionsForTenant();
   }
 
   closeAssignModal() {
     this.isAssignModalOpen.set(false);
     this.selectedWifiProfile.set(null);
+    this.selectedLabelTemplate.set(null);
+    this.selectedWorkflow.set(null);
     this.selectedAssignTesterId.set(null);
     this.selectedAssignProfileId.set(null);
   }
@@ -611,15 +747,27 @@ export class ManagementComponent {
   }
 
   submitAssign() {
-    const profile = this.selectedWifiProfile();
     const testerId = this.selectedAssignTesterId();
-    const profileId = profile ? profile.id : this.selectedAssignProfileId();
-    if (profileId == null || testerId == null) return;
+    if (testerId == null) return;
     this.loading.set(true);
-    this.api.assignWifiProfile(profileId, testerId).subscribe({
-      next: () => { this.loading.set(false); this.closeAssignModal(); },
-      error: () => { this.loading.set(false); },
-    });
+    if (this.activeTab() === 'wifi') {
+      const profile = this.selectedWifiProfile();
+      const profileId = profile ? profile.id : this.selectedAssignProfileId();
+      if (profileId == null) { this.loading.set(false); return; }
+      this.api.assignWifiProfile(profileId, testerId).subscribe({ next: () => { this.loading.set(false); this.closeAssignModal(); }, error: () => { this.loading.set(false); }, });
+      return;
+    }
+    if (this.activeTab() === 'labels') {
+      const rec = this.selectedLabelTemplate();
+      if (!rec) { this.loading.set(false); return; }
+      this.api.assignLabelTemplate(rec.id, testerId).subscribe({ next: () => { this.loading.set(false); this.closeAssignModal(); }, error: () => { this.loading.set(false); }, });
+      return;
+    }
+    if (this.activeTab() === 'workflows') {
+      const rec = this.selectedWorkflow();
+      if (!rec) { this.loading.set(false); return; }
+      this.api.assignWorkflow(rec.id, testerId).subscribe({ next: () => { this.loading.set(false); this.closeAssignModal(); }, error: () => { this.loading.set(false); }, });
+    }
   }
 
   onAssignTesterSelect(event: Event) {
@@ -634,6 +782,8 @@ export class ManagementComponent {
     this.selectedAssignProfileId.set(value ? Number(value) : null);
   }
 
+
+
   // View assigned testers modal
   isAssignedModalOpen = signal(false);
   assignedTesters = signal<User[]>([]);
@@ -646,39 +796,59 @@ export class ManagementComponent {
     }
   ]);
 
-  openAssignedModal(row: WiFiProfile) {
-    this.selectedWifiProfile.set(row);
+  openAssignedModal(row: WiFiProfile | LabelTemplateRecord | WorkflowRecord) {
     this.isAssignedModalOpen.set(true);
     let params = new HttpParams();
-    if (this.isSuperAdmin()) {
-      const tid = this.selectedTenantId();
-      if (tid != null) params = params.set('tenant_id', String(tid));
+    if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
+    if (this.activeTab() === 'wifi') {
+      this.selectedWifiProfile.set(row as WiFiProfile);
+      this.api.getWifiProfileTesters((row as WiFiProfile).id, params).subscribe({ next: (res) => { this.assignedTesters.set(res.data ?? []); }, error: () => { this.assignedTesters.set([]); }, });
+      return;
     }
-    this.api.getWifiProfileTesters(row.id, params).subscribe({
-      next: (res) => { this.assignedTesters.set(res.data ?? []); },
-      error: () => { this.assignedTesters.set([]); },
-    });
+    if (this.activeTab() === 'labels') {
+      this.selectedLabelTemplate.set(row as LabelTemplateRecord);
+      this.api.getLabelTemplateTesters((row as LabelTemplateRecord).id, params).subscribe({ next: (res) => { this.assignedTesters.set(res.data ?? []); }, error: () => { this.assignedTesters.set([]); }, });
+      return;
+    }
+    if (this.activeTab() === 'workflows') {
+      this.selectedWorkflow.set(row as WorkflowRecord);
+      this.api.getWorkflowTesters((row as WorkflowRecord).id, params).subscribe({ next: (res) => { this.assignedTesters.set(res.data ?? []); }, error: () => { this.assignedTesters.set([]); }, });
+    }
   }
 
   unassignTester(userId: number) {
-    const profile = this.selectedWifiProfile();
-    if (!profile) return;
     this.loading.set(true);
-    this.api.unassignWifiProfile(profile.id, userId).subscribe({
-      next: () => {
-        // refresh list
-        let params = new HttpParams();
-        if (this.isSuperAdmin()) {
-          const tid = this.selectedTenantId();
-          if (tid != null) params = params.set('tenant_id', String(tid));
-        }
-        this.api.getWifiProfileTesters(profile.id, params).subscribe({
-          next: (res) => { this.assignedTesters.set(res.data ?? []); this.loading.set(false); },
-          error: () => { this.loading.set(false); },
-        });
-      },
-      error: () => { this.loading.set(false); },
-    });
+    let params = new HttpParams();
+    if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
+    if (this.activeTab() === 'wifi' && this.selectedWifiProfile()) {
+      const profile = this.selectedWifiProfile()!;
+      this.api.unassignWifiProfile(profile.id, userId).subscribe({
+        next: () => {
+          this.api.getWifiProfileTesters(profile.id, params).subscribe({ next: (res) => { this.assignedTesters.set(res.data ?? []); this.loading.set(false); }, error: () => { this.loading.set(false); }, });
+        },
+        error: () => { this.loading.set(false); },
+      });
+      return;
+    }
+    if (this.activeTab() === 'labels' && this.selectedLabelTemplate()) {
+      const rec = this.selectedLabelTemplate()!;
+      this.api.unassignLabelTemplate(rec.id, userId).subscribe({
+        next: () => {
+          this.api.getLabelTemplateTesters(rec.id, params).subscribe({ next: (res) => { this.assignedTesters.set(res.data ?? []); this.loading.set(false); }, error: () => { this.loading.set(false); }, });
+        },
+        error: () => { this.loading.set(false); },
+      });
+      return;
+    }
+    if (this.activeTab() === 'workflows' && this.selectedWorkflow()) {
+      const rec = this.selectedWorkflow()!;
+      this.api.unassignWorkflow(rec.id, userId).subscribe({
+        next: () => {
+          this.api.getWorkflowTesters(rec.id, params).subscribe({ next: (res) => { this.assignedTesters.set(res.data ?? []); this.loading.set(false); }, error: () => { this.loading.set(false); }, });
+        },
+        error: () => { this.loading.set(false); },
+      });
+    }
   }
 
   closeAssignedModal() {

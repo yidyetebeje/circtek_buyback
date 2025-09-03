@@ -1,0 +1,391 @@
+<div class="min-h-screen bg-base-200 p-6">
+  <!-- Save Modal (Generic) -->
+  <app-generic-modal
+    [isOpen]="isSaveModalVisible"
+    [title]="currentWorkflowId ? 'Update Workflow' : 'Save Workflow'"
+    [actions]="modalActions"
+    (close)="closeSaveModal()"
+    (actionClick)="onModalAction($event)"
+  >
+    <form class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Workflow Name</label>
+        <input
+          type="text"
+          [value]="name()"
+          (input)="name.set(($any($event.target)?.value) || '')"
+          (blur)="nameTouched.set(true)"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          placeholder="Enter workflow name"
+        />
+        @if (nameTouched() && !isFormValid()) {
+          <div class="text-error text-sm mt-1">Name is required.</div>
+        }
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+        <textarea
+          [value]="description()"
+          (input)="description.set(($any($event.target)?.value) || '')"
+          rows="3"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          placeholder="Enter workflow description"
+        ></textarea>
+      </div>
+
+      @if (clientOptions && clientOptions.length > 0) {
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Client</label>
+          <select
+            [value]="clientIdSignal()"
+            (change)="clientIdSignal.set(($any($event.target)?.value) || '')"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          >
+            <option value="" disabled>Select a client</option>
+            @for (client of clientOptions; track client.id) {
+              <option [value]="client.id">{{ client.name }}</option>
+            }
+          </select>
+        </div>
+      }
+    </form>
+  </app-generic-modal>
+
+  <!-- Header Section -->
+  <div class="mb-6">
+    <!-- Title, Back Button, and Save Button Row -->
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-4">
+        <button
+          class="btn btn-ghost btn-sm"
+          (click)="goBack()"
+        >
+          <lucide-icon [img]="ArrowLeft" class="size-4"></lucide-icon>
+          Back
+        </button>
+        <div>
+          <h1 class="text-2xl font-bold text-base-content">
+            {{ currentWorkflowId ? "Edit Workflow" : "New Workflow" }}
+          </h1>
+          <p class="text-base-content/60 text-sm">Workflow Editor</p>
+        </div>
+      </div>
+      
+      <button
+        class="btn btn-accent"
+        (click)="openSaveModal()"
+      >
+        <lucide-icon [img]="Save" class="size-4"></lucide-icon>
+        {{ currentWorkflowId ? "Update" : "Save" }}
+      </button>
+    </div>
+
+    <!-- Compact Workflow Controls Row -->
+    <div class="flex flex-wrap items-center gap-4 p-3 bg-base-50 rounded-lg border border-base-300/20">
+      <!-- Delete Controls -->
+      <div class="flex items-center gap-2">
+        <button class="btn btn-outline btn-error btn-sm" [disabled]="!selectedEdge" (click)="deleteSelectedConnection()">
+          <lucide-icon [img]="Unlink" class="size-4 mr-2"></lucide-icon> Delete Connection
+        </button>
+        <button class="btn btn-outline btn-error btn-sm" [disabled]="!selectedNode" (click)="deleteSelectedNode()">
+          <lucide-icon [img]="Trash2" class="size-4 mr-2"></lucide-icon> Delete Node
+        </button>
+      </div>
+      
+      <!-- Viewport controls -->
+      <div class="join">
+        <button class="btn btn-sm join-item" (click)="fitToContent()" title="Fit to Content">
+          <lucide-icon [img]="Maximize2" class="size-4"></lucide-icon>
+        </button>
+        <button class="btn btn-sm join-item" (click)="resetViewport()" title="Reset Viewport">
+          <lucide-icon [img]="Home" class="size-4"></lucide-icon>
+        </button>
+        <button class="btn btn-sm join-item" [class.btn-active]="gridVisible" (click)="gridVisible = !gridVisible" title="Toggle Grid">
+          <lucide-icon [img]="Grid" class="size-4"></lucide-icon>
+        </button>
+      </div>
+      
+      <!-- Zoom controls -->
+      <div class="join">
+        <button class="btn btn-sm join-item" (click)="zoomOut()" title="Zoom Out" [disabled]="viewportScale <= minZoom">
+          <lucide-icon [img]="Minus" class="size-4"></lucide-icon>
+        </button>
+        <button class="btn btn-sm join-item" (click)="zoomIn()" title="Zoom In" [disabled]="viewportScale >= maxZoom">
+          <lucide-icon [img]="Plus" class="size-4"></lucide-icon>
+        </button>
+      </div>
+      
+      <!-- Zoom indicator -->
+      <div class="px-3 py-2 text-sm font-mono text-base-content bg-base-100 border border-base-300 rounded-md">
+        {{ (viewportScale * 100).toFixed(0) }}%
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Row -->
+  <div class="flex space-x-6">
+    <!-- Node Palette Column -->
+    <div class="w-80 flex-shrink-0">
+      <app-node-palette
+        [nodeTypes]="nodeTypes"
+        (nodeDragStart)="onNodeDragStart($event)"
+      ></app-node-palette>
+    </div>
+
+    <!-- Workflow Canvas Column -->
+    <div class="flex-1">
+      <div
+        class="flow-container relative w-full min-h-[70vh] border border-base-300 rounded-lg overflow-hidden bg-base-100 cursor-grab select-none shadow"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+        (click)="onCanvasClick($event)"
+        (mousedown)="onCanvasMouseDown($event)"
+        (wheel)="onWheel($event)"
+      >
+        <!-- Grid Background -->
+        <div
+          class="absolute pointer-events-none z-0 transition-opacity"
+          [class.opacity-0]="!gridVisible"
+          [class.opacity-100]="gridVisible"
+          [style.top.px]="-5000"
+          [style.left.px]="-5000"
+          [style.width.px]="10000"
+          [style.height.px]="10000"
+          [style.background-image]="'linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)'
+          "
+          [style.background-position]="'0 0, 0 0'"
+          [style.background-size]="gridSize + 'px ' + gridSize + 'px'"
+          [style.transform]="getCanvasTransform()"
+        ></div>
+
+        <!-- Canvas Content Layer -->
+        <div
+          class="relative w-full h-full z-10"
+          [style.transform]="getCanvasTransform()"
+          [style.transform-origin]="'0 0'"
+        >
+          <!-- Render Nodes -->
+          <ng-container *ngFor="let node of nodes">
+            <!-- Yes/No Decision Node (Check Restore Mode, OEM) -->
+            <ng-container
+              *ngIf="
+                node.data?.type === 'check_restore_mode' ||
+                  node.data?.type === 'airpods_oem_test';
+                else decisionNodeCheck
+              "
+            >
+              <app-yes-no-decision-node
+                [node]="node"
+                [isSelected]="selectedNode?.id === node.id"
+                (nodeMouseDown)="onNodeDragDown($event.event, $event.node)"
+                (handleMouseDown)="
+                  onConnectionHandleMouseDown(
+                    $event.event,
+                    node.id,
+                    $event.handleElement,
+                    $event.handleSuffix
+                  )
+                "
+                (click)="onNodeSelect($event, node)"
+                [id]="node.id + '_node'"
+                [style.left.px]="node.position.x"
+                [style.top.px]="node.position.y"
+                [style.position]="'absolute'"
+                [class.dragging]="draggedNodeId === node.id"
+              >
+              </app-yes-no-decision-node>
+            </ng-container>
+
+            <ng-template #decisionNodeCheck>
+              <!-- Existing 2-output decision nodes (Pass/Fail) -->
+              <ng-container
+                *ngIf="
+                  node.data?.type === 'start_test' ||
+                    node.data?.type === 'use_app' ||
+                    node.data?.type === 'airpods_audio_test';
+                  else checkTripleDecisionNode
+                "
+              >
+                <app-decision-node
+                  [node]="node"
+                  [isSelected]="selectedNode?.id === node.id"
+                  (nodeMouseDown)="onNodeDragDown($event.event, $event.node)"
+                  (handleMouseDown)="
+                    onConnectionHandleMouseDown(
+                      $event.event,
+                      node.id,
+                      $event.handleElement,
+                      $event.handleSuffix
+                    )
+                  "
+                  (click)="onNodeSelect($event, node)"
+                  [id]="node.id + '_node'"
+                  [style.left.px]="node.position.x"
+                  [style.top.px]="node.position.y"
+                  [style.position]="'absolute'"
+                  [class.dragging]="draggedNodeId === node.id"
+                >
+                </app-decision-node>
+              </ng-container>
+
+              <!-- Triple Decision Node (Check If Locked) -->
+              <ng-template #checkTripleDecisionNode>
+                <ng-container
+                  *ngIf="
+                    node.data?.type === 'check_if_locked';
+                    else standardNode
+                  "
+                >
+                  <app-triple-decision-node
+                    [node]="node"
+                    [isSelected]="selectedNode?.id === node.id"
+                    (nodeMouseDown)="onNodeDragDown($event.event, $event.node)"
+                    (handleMouseDown)="
+                      onConnectionHandleMouseDown(
+                        $event.event,
+                        node.id,
+                        $event.handleElement,
+                        $event.handleSuffix
+                      )
+                    "
+                    (click)="onNodeSelect($event, node)"
+                    [id]="node.id + '_node'"
+                    [style.left.px]="node.position.x"
+                    [style.top.px]="node.position.y"
+                    [style.position]="'absolute'"
+                    [class.dragging]="draggedNodeId === node.id"
+                  >
+                  </app-triple-decision-node>
+                </ng-container>
+              </ng-template>
+
+              <!-- Standard Nodes -->
+              <ng-template #standardNode>
+                <app-standard-node
+                  [node]="node"
+                  [isSelected]="selectedNode?.id === node.id"
+                  (nodeMouseDown)="onNodeDragDown($event.event, $event.node)"
+                  (handleMouseDown)="
+                    onConnectionHandleMouseDown(
+                      $event.event,
+                      node.id,
+                      $event.handleElement,
+                      $event.handleSuffix
+                    )
+                  "
+                  (click)="onNodeSelect($event, node)"
+                  [id]="node.id + '_node'"
+                  [style.left.px]="node.position.x"
+                  [style.top.px]="node.position.y"
+                  [style.position]="'absolute'"
+                  [class.dragging]="draggedNodeId === node.id"
+                >
+                  <span class="drag-handle"></span>
+                </app-standard-node>
+              </ng-template>
+            </ng-template>
+          </ng-container>
+
+          <!-- Render Connections (SVG Layer) -->
+          <svg
+            class="connections-layer absolute pointer-events-none z-10 overflow-visible"
+            [style.width.px]="5000"
+            [style.height.px]="5000"
+            [style.left.px]="0"
+            [style.top.px]="0"
+          >
+            <defs>
+              <!-- Basic Arrowhead Definition -->
+              <marker
+                id="arrowhead"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#555"></path>
+              </marker>
+              <!-- Selected Arrowhead -->
+              <marker
+                id="arrowhead-selected"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#a7d48e"></path>
+                <!-- Example selected color -->
+              </marker>
+              <!-- Add other markers as needed -->
+            </defs>
+            <g *ngFor="let edge of edges">
+              <path
+                class="transition-[stroke-width] duration-200"
+                [id]="'connection-' + edge.id"
+                [attr.stroke]="selectedEdge?.id === edge.id ? '#a7d48e' : '#555'"
+                [attr.stroke-width]="selectedEdge?.id === edge.id ? 3 : 2"
+                [attr.fill]="'none'"
+                [attr.data-source]="edge.source"
+                [attr.data-target]="edge.target"
+                (click)="onConnectionClick($event, edge)"
+                (mousedown)="onEdgeDragStart($event, edge)"
+                (contextmenu)="onConnectionContextMenu($event, edge)"
+                [attr.marker-end]="
+                  selectedEdge?.id === edge.id
+                    ? 'url(#arrowhead-selected)'
+                    : 'url(#arrowhead)'
+                "
+              >
+                <!-- Path 'd' attribute will be set dynamically by updateConnectionPath -->
+              </path>
+              <!-- Edge Label -->
+              <text
+                *ngIf="edge.data?.label"
+                class="connection-label"
+                dy="-5"
+                text-anchor="middle"
+              >
+                <textPath
+                  [attr.href]="'#connection-' + edge.id"
+                  startOffset="50%"
+                >
+                  {{ edge.data?.label }}
+                </textPath>
+              </text>
+            </g>
+            <!-- Temporary connection line (managed by component TS) will be appended here or absolutely positioned -->
+          </svg>
+        </div>
+        <!-- End canvas-content -->
+
+        <!-- Optional: Context Menu -->
+        <div
+          *ngIf="contextMenuVisible"
+          class="context-menu"
+          [style.left.px]="contextMenuPosition.x"
+          [style.top.px]="contextMenuPosition.y"
+        >
+          <ul>
+            <li
+              *ngFor="let item of contextMenuItems"
+              (click)="executeContextMenuAction(item.action)"
+            >
+              <i *ngIf="item.icon" [class]="'fas fa-' + item.icon"></i>
+              {{ item.label }}
+            </li>
+          </ul>
+        </div>
+      </div>
+      <!-- End flow-container -->
+    </div>
+    <!-- End workflow canvas -->
+  </div>
+  <!-- End main content -->
+</div>
+<!-- End workflow editor -->

@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import { RouterModule } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-navbar',
-  imports: [],
+  imports: [RouterModule],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

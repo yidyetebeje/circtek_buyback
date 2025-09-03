@@ -1,0 +1,220 @@
+<app-generic-form-page
+  title="Receive Product Order"
+  subtitle="Scan and receive items from purchase orders"
+  [form]="form"
+  [fields]="[]"
+  [loading]="loading()"
+  [submitting]="submitting()"
+  [error]="error()"
+  submitLabel="Submit Received Order"
+  (formSubmit)="onSubmit()"
+  (backClick)="onCancel()"
+>
+  <!-- Custom form content -->
+  <div class="space-y-6" [formGroup]="form">
+    <!-- Purchase Order Selection -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">Purchase Order No<span class="text-error">*</span></span>
+        </label>
+        <select 
+          formControlName="purchase_id"
+          class="select select-bordered w-full"
+          [class.select-error]="form.get('purchase_id')?.invalid && form.get('purchase_id')?.touched"
+          [disabled]="loading() || submitting()"
+        >
+          <option value="">Select Purchase Order</option>
+          @for (option of purchaseOptions(); track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+        @if (form.get('purchase_id')?.invalid && form.get('purchase_id')?.touched) {
+          <div class="label">
+            <span class="label-text-alt text-error">Purchase Order is required</span>
+          </div>
+        }
+      </div>
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">Warehouse<span class="text-error">*</span></span>
+        </label>
+        <select 
+          formControlName="warehouse_id"
+          class="select select-bordered w-full"
+          [class.select-error]="form.get('warehouse_id')?.invalid && form.get('warehouse_id')?.touched"
+          [disabled]="loading() || submitting()"
+        >
+          <option value="">Select Warehouse</option>
+          @for (warehouse of warehouses(); track warehouse.id) {
+            <option [value]="warehouse.id">{{ warehouse.name }}</option>
+          }
+        </select>
+        @if (form.get('warehouse_id')?.invalid && form.get('warehouse_id')?.touched) {
+          <div class="label">
+            <span class="label-text-alt text-error">Warehouse is required</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- SKU Selection -->
+    @if (selectedPurchase()) {
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">SKUs<span class="text-error">*</span></span>
+        </label>
+        <select 
+          class="select select-bordered w-full"
+          [disabled]="loading() || submitting()"
+          (change)="onSkuSelected(($any($event.target)).value || '')"
+        >
+          <option value="">Select SKU to add</option>
+          @for (sku of availableSkus(); track sku.value) {
+            <option [value]="sku.value">{{ sku.label }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    <!-- Selected Items -->
+    @if (itemsFormArray().length > 0) {
+      <div class="space-y-4" formArrayName="items">
+        <h3 class="text-lg font-semibold">Selected Items</h3>
+        
+        @for (itemControl of itemsFormArray().controls; track $index; let i = $index) {
+          <div class="card bg-base-100 border border-base-300 p-4" [formGroupName]="i">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h4 class="font-medium">{{ itemControl.get('sku')?.value }}</h4>
+                <p class="text-sm text-base-content/60">
+                  Remaining: {{ itemControl.get('remaining_quantity')?.value }}
+                  | Type: {{ itemControl.get('is_part')?.value ? 'Part' : 'Device' }}
+                </p>
+              </div>
+              <button 
+                type="button"
+                class="btn btn-ghost btn-sm text-error"
+                (click)="removeItem(i)"
+                [disabled]="loading() || submitting()"
+              >
+                <lucide-icon [img]="Trash2" class="size-4"></lucide-icon>
+              </button>
+            </div>
+
+            <!-- Received Amount (for parts only) -->
+            @if (itemControl.get('is_part')?.value) {
+              <div class="mb-4">
+                <label class="label">
+                  <span class="label-text font-medium">Received Amount<span class="text-error">*</span></span>
+                </label>
+                <input 
+                  type="number"
+                  formControlName="quantity_received"
+                  class="input input-bordered w-full"
+                  [class.input-error]="itemControl.get('quantity_received')?.invalid && itemControl.get('quantity_received')?.touched"
+                  placeholder="0"
+                  min="1"
+                  [max]="itemControl.get('remaining_quantity')?.value"
+                />
+                @if (itemControl.get('quantity_received')?.invalid && itemControl.get('quantity_received')?.touched) {
+                  <div class="label">
+                    <span class="label-text-alt text-error">
+                      @if (itemControl.get('quantity_received')?.errors?.['required']) {
+                        Received amount is required
+                      } @else if (itemControl.get('quantity_received')?.errors?.['min']) {
+                        Minimum quantity is 1
+                      } @else if (itemControl.get('quantity_received')?.errors?.['max']) {
+                        Cannot exceed remaining quantity
+                      }
+                    </span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <!-- IMEI/Serial Scanner for devices -->
+              <div class="space-y-4">
+                <!-- Info banner -->
+                <div class="alert alert-info">
+                  <lucide-icon [img]="QrCode" class="size-4"></lucide-icon>
+                  <span>Serial numbers are required for this purchase order.</span>
+                </div>
+
+                <!-- IMEI/Serial Scanner -->
+                <div>
+                  <app-barcode-scanner
+                    label="Scan IMEI/Serial"
+                    placeholder="Scan or enter IMEI/Serial number..."
+                    [disabled]="loading() || submitting()"
+                    [autoClear]="true"
+                    [enableCamera]="true"
+                    (scanned)="onScanResult(i, $event)"
+                  ></app-barcode-scanner>
+                  <p class="text-sm text-base-content/60 mt-1">
+                    Scan identifiers using the barcode scanner, or enter manually and press Enter to add.
+                    Scanner will automatically validate IMEI/Serial format.
+                  </p>
+                </div>
+
+                <!-- Scanned Identifiers -->
+                @if (getIdentifiersArray(i).length > 0) {
+                  <div>
+                    <label class="label">
+                      <span class="label-text font-medium">
+                        Scanned Identifiers ({{ getIdentifiersArray(i).length }})
+                      </span>
+                    </label>
+                    <div class="space-y-2 max-h-32 overflow-y-auto">
+                      @for (identifierControl of getIdentifiersArray(i).controls; track $index; let j = $index) {
+                        <div class="flex items-center justify-between bg-base-200 p-2 rounded">
+                          <span class="font-mono text-sm">{{ identifierControl.value }}</span>
+                          <button 
+                            type="button"
+                            class="btn btn-ghost btn-xs text-error"
+                            (click)="removeIdentifier(i, j)"
+                            [disabled]="loading() || submitting()"
+                          >
+                            <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Quantity Display for devices -->
+                <div>
+                  <label class="label">
+                    <span class="label-text font-medium">Received Amount</span>
+                  </label>
+                  <input 
+                    type="number"
+                    [value]="getIdentifiersArray(i).length"
+                    class="input input-bordered w-full"
+                    disabled
+                    readonly
+                  />
+                  <div class="label">
+                    <span class="label-text-alt">Automatically calculated from scanned identifiers</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Instructions -->
+    @if (!selectedPurchase()) {
+      <div class="alert alert-info">
+        <span>Please select a purchase order to begin receiving items.</span>
+      </div>
+    } @else if (itemsFormArray().length === 0) {
+      <div class="alert alert-info">
+        <span>Select SKUs from the dropdown above to start receiving items.</span>
+      </div>
+    }
+  </div>
+</app-generic-form-page>

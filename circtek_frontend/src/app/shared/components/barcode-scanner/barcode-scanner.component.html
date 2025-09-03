@@ -110,37 +110,13 @@
             <span>{{ cameraError() }}</span>
           </div>
         } @else {
-          <div class="relative bg-black rounded-lg overflow-hidden">
-            <video
-              #cameraVideo
-              class="w-full h-64 object-cover"
-              autoplay
-              playsinline
-              muted
-            ></video>
-            
-            <!-- Scanning overlay -->
-            <div class="absolute inset-0 flex items-center justify-center">
-              <div class="border-2 border-primary w-48 h-32 rounded-lg relative">
-                <div class="absolute inset-0 border border-primary/30 rounded-lg animate-pulse"></div>
-                <div class="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-primary"></div>
-                <div class="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-primary"></div>
-                <div class="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-primary"></div>
-                <div class="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-primary"></div>
-              </div>
-            </div>
-          </div>
+          <!-- Real barcode scanner container -->
+          <div id="qr-reader" class="w-full min-h-[300px]"></div>
           
           <div class="mt-4 text-center">
             <p class="text-sm text-base-content/70 mb-4">
-              Position the barcode within the frame and click capture
+              Position the barcode within the scanning area. The scanner will automatically detect and process barcodes.
             </p>
-            <button
-              class="btn btn-primary"
-              (click)="captureFromCamera()"
-            >
-              Capture Barcode
-            </button>
           </div>
         }
       </div>

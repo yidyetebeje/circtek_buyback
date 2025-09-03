@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormGroup } from '@angular/forms';
+import { ReactiveFormsModule, FormGroup, FormGroupDirective, ControlContainer } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LucideAngularModule, ArrowLeft, Save, Edit, Share } from 'lucide-angular';
 import { FileUploadComponent } from '../file-upload/file-upload.component';
@@ -35,6 +35,9 @@ export interface FormAction {
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, FileUploadComponent],
   templateUrl: './generic-form-page.component.html',
   styleUrls: ['./generic-form-page.component.css'],
+  viewProviders: [
+    { provide: ControlContainer, useExisting: FormGroupDirective }
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GenericFormPageComponent {

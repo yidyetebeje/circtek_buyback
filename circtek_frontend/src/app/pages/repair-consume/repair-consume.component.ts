@@ -49,7 +49,7 @@ export class RepairConsumeComponent implements OnInit {
   title = computed(() => `Consume Parts for Repair #${this.repairId()}`);
   subtitle = computed(() => {
     const r = this.repair();
-    return r ? `Device: ${r.repair.device_sku} (ID: ${r.repair.device_id})` : 'Loading repair details...';
+    return r ? `Device ID: ${r.repair.device_id}` : 'Loading repair details...';
   });
 
   fields = computed<FormField[]>(() => [

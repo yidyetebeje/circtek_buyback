@@ -1,0 +1,12 @@
+/* Repair Form styles (kept minimal; using utility classes in template)
+   Add any custom tweaks needed for the redesigned layout here. */
+
+:host {
+  display: block;
+}
+
+/* Example spacing tweaks if needed
+.section-title {
+  margin-bottom: 0.75rem;
+}
+*/

@@ -34,6 +34,7 @@ export class TransferItemModalComponent {
   save = output<TransferItem>();
 
   // State
+  formValid = signal<boolean>(false);
   form = signal<FormGroup>(this.createForm());
   deviceLookupLoading = signal<boolean>(false);
   deviceLookupError = signal<string>('');
@@ -51,7 +52,7 @@ export class TransferItemModalComponent {
     {
       label: this.submitLabel(),
       variant: 'accent',
-      disabled: this.form().invalid || this.deviceLookupLoading(),
+      disabled: !this.formValid() || this.deviceLookupLoading(),
       action: 'submit'
     }
   ]);
@@ -69,6 +70,8 @@ export class TransferItemModalComponent {
       // Recreate form when modal opens or editing item changes
       if (isOpen) {
         this.form.set(this.createForm());
+        // Set initial form validity after form is created
+        setTimeout(() => this.updateFormValiditySignal(), 0);
       }
     });
   }
@@ -82,11 +85,23 @@ export class TransferItemModalComponent {
       is_part: [item?.is_part || false]
     });
 
-    this.updateValidators(form, form.get('is_part')?.value ?? false);
+    this.updateValidators(form, form.get('is_part')?.value ?? false, false);
+    
+    // Subscribe to form value changes to update validity signal
+    form.valueChanges.subscribe(() => {
+      this.updateFormValiditySignal();
+    });
+    
     return form;
   }
 
-  private updateValidators(form: FormGroup, isPart: boolean): void {
+  private updateFormValiditySignal(): void {
+    if (this.formValid && this.form) {
+      this.formValid.set(this.form().valid);
+    }
+  }
+
+  private updateValidators(form: FormGroup, isPart: boolean, updateSignal: boolean = true): void {
     const skuControl = form.get('sku');
     const deviceIdControl = form.get('device_id');
     const quantityControl = form.get('quantity');
@@ -111,6 +126,11 @@ export class TransferItemModalComponent {
     skuControl?.updateValueAndValidity();
     deviceIdControl?.updateValueAndValidity();
     quantityControl?.updateValueAndValidity();
+    
+    // Update form validity signal only if requested (avoid during initialization)
+    if (updateSignal) {
+      this.updateFormValiditySignal();
+    }
   }
   
   onDeviceScan(result: ScanResult): void {
@@ -135,6 +155,8 @@ export class TransferItemModalComponent {
             quantity: 1 // Devices are always quantity 1
           });
           this.deviceLookupError.set('');
+          // Update form validity after patching values
+          this.updateFormValiditySignal();
         } else {
           this.deviceLookupError.set('Device not found with this IMEI/Serial');
         }
@@ -163,6 +185,9 @@ export class TransferItemModalComponent {
       quantity: 1
     });
 
+    // Update form validity after patching values
+    this.updateFormValiditySignal();
+    
     // Ensure template updates under OnPush
     this.cdr.markForCheck();
   }

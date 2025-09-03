@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
-import { PurchaseWithItemsAndReceived } from '../../core/models/purchase';
+import { PurchaseWithItems } from '../../core/models/purchase';
 
 @Component({
   selector: 'app-purchase-detail',
@@ -17,7 +17,7 @@ export class PurchaseDetailComponent {
   private readonly router = inject(Router);
 
   // State
-  purchase = signal<PurchaseWithItemsAndReceived | null>(null);
+  purchase = signal<PurchaseWithItems | null>(null);
   loading = signal<boolean>(true);
   error = signal<string>('');
   showDocuments = signal<boolean>(false);
@@ -52,7 +52,7 @@ export class PurchaseDetailComponent {
     const p = this.purchase();
     if (!p) return [];
     
-    return p.items.map(item => ({
+    return p.items.map((item: any) => ({
       id: item.id,
       sku: item.sku,
       ordered_quantity: item.quantity,
@@ -91,8 +91,8 @@ export class PurchaseDetailComponent {
     this.loading.set(true);
     this.error.set('');
 
-    this.api.getPurchase(id).subscribe({
-      next: (response) => {
+    this.api.getPurchaseWithItemsById(id).subscribe({
+      next: (response: any) => {
         if (response.status === 200 && response.data) {
           this.purchase.set(response.data);
         } else {
@@ -100,7 +100,7 @@ export class PurchaseDetailComponent {
         }
         this.loading.set(false);
       },
-      error: (error) => {
+      error: (error: any) => {
         this.error.set('Failed to load purchase');
         this.loading.set(false);
         console.error('Load purchase error:', error);

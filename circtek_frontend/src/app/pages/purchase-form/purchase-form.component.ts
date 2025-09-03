@@ -56,6 +56,13 @@ export class PurchaseFormComponent implements OnInit {
     this.items().reduce((sum, item) => sum + (item.quantity * item.price), 0)
   );
 
+  // Form validation
+  isFormValid = computed(() => {
+    const formValid = this.form().valid;
+    const hasItems = this.items().length > 0;
+    return formValid && hasItems;
+  });
+
   // Form configuration
   title = signal('Create Purchase Order');
   subtitle = signal('Add a new purchase order with items');

@@ -1,7 +1,6 @@
 export interface RepairRecord {
   id: number;
   device_id: number;
-  device_sku: string;
   reason_id: number;
   remarks: string | null;
   status: boolean;
@@ -34,7 +33,6 @@ export interface RepairWithItems {
 
 export interface RepairCreateInput {
   device_id: number;
-  device_sku: string;
   reason_id: number;
   remarks?: string;
   actor_id: number;
@@ -75,6 +73,26 @@ export interface RepairConsumeResult {
   total_quantity_consumed: number;
   total_cost: number;
   results: ConsumeResultItem[];
+}
+
+export interface RepairCreateWithConsumeInput {
+  // Repair information
+  device_id: number;
+  reason_id: number;
+  remarks?: string;
+  actor_id: number;
+  // Consumption information
+  warehouse_id: number;
+  items: Array<{
+    sku: string;
+    quantity: number;
+  }>;
+  notes?: string;
+}
+
+export interface RepairCreateWithConsumeResult {
+  repair: RepairRecord;
+  consume_result: RepairConsumeResult;
 }
 
 export interface RepairListResult {

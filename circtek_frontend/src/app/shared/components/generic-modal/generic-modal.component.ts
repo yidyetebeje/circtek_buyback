@@ -11,6 +11,7 @@ export interface ModalAction {
 
 @Component({
   selector: 'app-generic-modal',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './generic-modal.component.html',
   styleUrls: ['./generic-modal.component.css'],

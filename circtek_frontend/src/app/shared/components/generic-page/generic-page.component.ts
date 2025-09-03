@@ -115,7 +115,7 @@ export class GenericPageComponent<TData extends object> {
         const current = { pageIndex: this.pageIndex(), pageSize: this.pageSize() };
         const next = typeof updater === 'function' ? updater(current) : updater;
         const nextIndex = next.pageIndex ?? 0;
-        const nextSize = next.pageSize ?? 10;
+        const nextSize = next.pageSize || 10;
         const isSame = nextIndex === current.pageIndex && nextSize === current.pageSize;
         // Ignore the very first pagination callback and a controlled number of emits
         if (!this._paginationInitialized || this._skipPaginationEmits > 0 || isSame) {
@@ -159,7 +159,7 @@ export class GenericPageComponent<TData extends object> {
       this.pageIndex.set(extIndex);
     }
     if (extSize != null && extSize !== this.pageSize()) {
-      this.pageSize.set(extSize);
+      this.pageSize.set(extSize > 0 ? extSize : 10);
     }
   });
 

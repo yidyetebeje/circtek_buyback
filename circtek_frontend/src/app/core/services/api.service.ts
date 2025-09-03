@@ -10,9 +10,13 @@ import { User } from '../models/user';
 import { Role } from '../models/role';
 import { WiFiProfile } from '../models/wifi-profile';
 import { StockWithWarehouse, StockSummary } from '../models/stock';
-import { PurchaseRecord, PurchaseWithItemsAndReceived, ReceivingResult, ReceiveItemsRequest } from '../models/purchase';
+import { PurchaseRecord, PurchaseWithItems, ReceiveItemsRequest, ReceivingResult } from '../models/purchase';
 import { TransferWithDetails, TransferCompletionResult, TransferSummary } from '../models/transfer';
-import { RepairRecord, RepairWithItems, RepairCreateInput, RepairQueryInput, RepairConsumeItemsInput, RepairConsumeResult } from '../models/repair';
+import { RepairRecord, RepairWithItems, RepairCreateInput, RepairQueryInput, RepairConsumeItemsInput, RepairConsumeResult, RepairCreateWithConsumeInput, RepairCreateWithConsumeResult } from '../models/repair';
+import { SkuSpecsRecord, SkuSpecsCreateInput, SkuSpecsUpdateInput, SkuSpecsQueryInput, SkuSpecsListResponse } from '../models/sku-specs';
+import { RepairReasonRecord, RepairReasonCreateInput, RepairReasonUpdateInput, RepairReasonQueryInput, RepairReasonListResponse } from '../models/repair-reason';
+import { LabelTemplateRecord, LabelTemplateCreateInput, LabelTemplateUpdateInput, LabelTemplateListResponse } from '../models/label-template';
+import { WorkflowRecord, WorkflowCreateInput, WorkflowUpdateInput, WorkflowListResponse } from '../models/workflow';
 
 @Injectable({
   providedIn: 'root',
@@ -159,6 +163,72 @@ export class ApiService {
     return this.get<ApiResponse<User[]>>(`/configuration/wifi-profiles/${profileId}/testers`, params);
   }
 
+  // ===== Label Templates =====
+  getLabelTemplates(params: HttpParams = new HttpParams()): Observable<LabelTemplateListResponse> {
+    return this.get<LabelTemplateListResponse>('/configuration/label-templates', params);
+  }
+
+  getLabelTemplate(id: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<LabelTemplateRecord | null>> {
+    return this.get<ApiResponse<LabelTemplateRecord | null>>(`/configuration/label-templates/${id}`, params);
+  }
+
+  createLabelTemplate(payload: LabelTemplateCreateInput): Observable<ApiResponse<LabelTemplateRecord | null>> {
+    return this.post<ApiResponse<LabelTemplateRecord | null>>('/configuration/label-templates', payload as any);
+  }
+
+  updateLabelTemplate(id: number, payload: LabelTemplateUpdateInput): Observable<ApiResponse<LabelTemplateRecord | null>> {
+    return this.patch<ApiResponse<LabelTemplateRecord | null>>(`/configuration/label-templates/${id}`, payload as any);
+  }
+
+  deleteLabelTemplate(id: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/configuration/label-templates/${id}`);
+  }
+
+  assignLabelTemplate(templateId: number, userId: number): Observable<ApiResponse<{ user_id: number; label_template_id: number } | null>> {
+    return this.post<ApiResponse<{ user_id: number; label_template_id: number } | null>>(`/configuration/label-templates/${templateId}/assign/${userId}`);
+  }
+
+  unassignLabelTemplate(templateId: number, userId: number): Observable<ApiResponse<{ user_id: number; label_template_id: null } | null>> {
+    return this.post<ApiResponse<{ user_id: number; label_template_id: null } | null>>(`/configuration/label-templates/${templateId}/unassign/${userId}`);
+  }
+
+  getLabelTemplateTesters(templateId: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<User[]>> {
+    return this.get<ApiResponse<User[]>>(`/configuration/label-templates/${templateId}/testers`, params);
+  }
+
+  // ===== Workflows =====
+  getWorkflows(params: HttpParams = new HttpParams()): Observable<WorkflowListResponse> {
+    return this.get<WorkflowListResponse>('/configuration/workflows', params);
+  }
+
+  getWorkflow(id: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<WorkflowRecord | null>> {
+    return this.get<ApiResponse<WorkflowRecord | null>>(`/configuration/workflows/${id}`, params);
+  }
+
+  createWorkflow(payload: WorkflowCreateInput): Observable<ApiResponse<WorkflowRecord | null>> {
+    return this.post<ApiResponse<WorkflowRecord | null>>('/configuration/workflows', payload as any);
+  }
+
+  updateWorkflow(id: number, payload: WorkflowUpdateInput): Observable<ApiResponse<WorkflowRecord | null>> {
+    return this.patch<ApiResponse<WorkflowRecord | null>>(`/configuration/workflows/${id}`, payload as any);
+  }
+
+  deleteWorkflow(id: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/configuration/workflows/${id}`);
+  }
+
+  assignWorkflow(workflowId: number, userId: number): Observable<ApiResponse<{ user_id: number; workflow_id: number } | null>> {
+    return this.post<ApiResponse<{ user_id: number; workflow_id: number } | null>>(`/configuration/workflows/${workflowId}/assign/${userId}`);
+  }
+
+  unassignWorkflow(workflowId: number, userId: number): Observable<ApiResponse<{ user_id: number; workflow_id: null } | null>> {
+    return this.post<ApiResponse<{ user_id: number; workflow_id: null } | null>>(`/configuration/workflows/${workflowId}/unassign/${userId}`);
+  }
+
+  getWorkflowTesters(workflowId: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<User[]>> {
+    return this.get<ApiResponse<User[]>>(`/configuration/workflows/${workflowId}/testers`, params);
+  }
+
   // ===== Stock =====
   getStock(params: HttpParams = new HttpParams()): Observable<ApiResponse<StockWithWarehouse[]>> {
     return this.get<ApiResponse<StockWithWarehouse[]>>('/stock/stock/', params);
@@ -198,8 +268,12 @@ export class ApiService {
     return this.get<ApiResponse<PurchaseRecord[]>>('/stock/purchases', params);
   }
 
-  getPurchase(id: number): Observable<ApiResponse<PurchaseWithItemsAndReceived | null>> {
-    return this.get<ApiResponse<PurchaseWithItemsAndReceived | null>>(`/stock/purchases/${id}`);
+  getPurchasesWithItems(params: HttpParams = new HttpParams()): Observable<ApiResponse<PurchaseWithItems[]>> {
+    return this.get<ApiResponse<PurchaseWithItems[]>>('/stock/purchases/with-items', params);
+  }
+
+  getPurchaseWithItemsById(id: number): Observable<ApiResponse<PurchaseWithItems | null>> {
+    return this.get<ApiResponse<PurchaseWithItems | null>>(`/stock/purchases/${id}/with-items`);
   }
 
   getPurchaseStatus(id: number): Observable<ApiResponse<any>> {
@@ -214,8 +288,12 @@ export class ApiService {
     return this.post<ApiResponse<PurchaseRecord | null>>('/stock/purchases', payload);
   }
 
-  createPurchaseWithItems(payload: any): Observable<ApiResponse<PurchaseWithItemsAndReceived | null>> {
-    return this.post<ApiResponse<PurchaseWithItemsAndReceived | null>>('/stock/purchases/with-items', payload);
+  createPurchaseWithItems(payload: any): Observable<ApiResponse<PurchaseWithItems | null>> {
+    return this.post<ApiResponse<PurchaseWithItems | null>>('/stock/purchases/with-items', payload);
+  }
+
+  receiveItems(purchaseId: number, payload: ReceiveItemsRequest): Observable<ApiResponse<ReceivingResult | null>> {
+    return this.post<ApiResponse<ReceivingResult | null>>(`/stock/purchases/${purchaseId}/receive`, payload);
   }
 
   receivePurchaseItems(payload: ReceiveItemsRequest): Observable<ApiResponse<ReceivingResult | null>> {
@@ -251,9 +329,12 @@ export class ApiService {
     return this.post<ApiResponse<TransferWithDetails | null>>('/stock/transfers/with-items', payload);
   }
 
-  completeTransfer(id: number): Observable<ApiResponse<TransferCompletionResult | null>> {
-    // Backend fills transfer_id from route and actor_id from session; body can be empty
-    return this.post<ApiResponse<TransferCompletionResult | null>>(`/stock/transfers/${id}/complete`, {});
+  completeTransfer(id: number, actorId: number): Observable<ApiResponse<TransferCompletionResult | null>> {
+    const payload = {
+      transfer_id: id,
+      actor_id: actorId
+    };
+    return this.post<ApiResponse<TransferCompletionResult | null>>(`/stock/transfers/${id}/complete`, payload);
   }
 
   deleteTransfer(id: number): Observable<ApiResponse<{ id: number } | null>> {
@@ -279,6 +360,10 @@ export class ApiService {
 
   consumeRepairItems(id: number, payload: RepairConsumeItemsInput): Observable<ApiResponse<RepairConsumeResult | null>> {
     return this.post<ApiResponse<RepairConsumeResult | null>>(`/såtock/repairs/${id}/consume`, payload);
+  }
+
+  createRepairWithConsume(payload: RepairCreateWithConsumeInput): Observable<ApiResponse<RepairCreateWithConsumeResult | null>> {
+    return this.post<ApiResponse<RepairCreateWithConsumeResult | null>>('/stock/repairs/create-with-consume', payload);
   }
 
   deleteRepair(id: number): Observable<ApiResponse<{ id: number } | null>> {
@@ -316,6 +401,60 @@ export class ApiService {
   deleteFile(key: string): Observable<ApiResponse<{ deleted: boolean; key: string } | null>> {
     return this.delete<ApiResponse<{ deleted: boolean; key: string } | null>>(`/uploads/${encodeURIComponent(key)}`);
   }
+
+  // SKU Specs API methods
+  getSkuSpecs(params: HttpParams = new HttpParams()): Observable<SkuSpecsListResponse> {
+    return this.get<SkuSpecsListResponse>('/stock/sku-specs', params);
+  }
+
+  getSkuSpecsById(id: number): Observable<ApiResponse<SkuSpecsRecord | null>> {
+    return this.get<ApiResponse<SkuSpecsRecord | null>>(`/stock/sku-specs/${id}`);
+  }
+
+  getSkuSpecsBySku(sku: string): Observable<ApiResponse<SkuSpecsRecord | null>> {
+    return this.get<ApiResponse<SkuSpecsRecord | null>>(`/stock/sku-specs/sku/${sku}`);
+  }
+
+  createSkuSpecs(data: SkuSpecsCreateInput): Observable<ApiResponse<SkuSpecsRecord | null>> {
+    return this.post<ApiResponse<SkuSpecsRecord | null>>('/stock/sku-specs', data);
+  }
+
+  updateSkuSpecs(id: number, data: SkuSpecsUpdateInput): Observable<ApiResponse<SkuSpecsRecord | null>> {
+    return this.patch<ApiResponse<SkuSpecsRecord | null>>(`/stock/sku-specs/${id}`, data);
+  }
+
+  deleteSkuSpecs(id: number): Observable<ApiResponse<{ id: number }>> {
+    return this.delete<ApiResponse<{ id: number }>>(`/stock/sku-specs/${id}`);
+  }
+
+  searchSkuSpecsAutocomplete(query: string, limit: number = 10, is_part?: boolean): Observable<ApiResponse<Array<{ sku: string; model_name: string | null; is_part: boolean | null }>>> {
+    let params = new HttpParams()
+      .set('q', query)
+      .set('limit', limit.toString());
+    if (is_part !== undefined) {
+      params = params.set('is_part', String(is_part));
+    }
+    return this.get<ApiResponse<Array<{ sku: string; model_name: string | null; is_part: boolean | null }>>>(`/stock/sku-specs/search/autocomplete`, params);
+  }
+
+  // Repair Reasons API methods
+  getRepairReasons(params: HttpParams = new HttpParams()): Observable<RepairReasonListResponse> {
+    return this.get<RepairReasonListResponse>('/stock/repair-reasons', params);
+  }
+
+  getRepairReason(id: number): Observable<ApiResponse<RepairReasonRecord | null>> {
+    return this.get<ApiResponse<RepairReasonRecord | null>>(`/stock/repair-reasons/${id}`);
+  }
+
+  createRepairReason(data: RepairReasonCreateInput): Observable<ApiResponse<RepairReasonRecord | null>> {
+    return this.post<ApiResponse<RepairReasonRecord | null>>('/stock/repair-reasons', data);
+  }
+
+  updateRepairReason(id: number, data: RepairReasonUpdateInput): Observable<ApiResponse<RepairReasonRecord | null>> {
+    return this.put<ApiResponse<RepairReasonRecord | null>>(`/stock/repair-reasons/${id}`, data);
+  }
+
+  deleteRepairReason(id: number): Observable<ApiResponse<null>> {
+    return this.delete<ApiResponse<null>>(`/stock/repair-reasons/${id}`);
+  }
 }
-
-

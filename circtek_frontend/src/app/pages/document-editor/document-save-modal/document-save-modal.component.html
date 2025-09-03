@@ -1,0 +1,33 @@
+<app-generic-modal
+  [isOpen]="visible"
+  [title]="modalTitle"
+  [actions]="modalActions"
+  (close)="onModalClose()"
+  (actionClick)="onModalAction($event)"
+>
+  <form [formGroup]="documentForm" (ngSubmit)="submitForm()" novalidate>
+    <!-- Document Name -->
+    <div class="mb-4">
+      <label for="documentName" class="block text-sm font-medium text-gray-700">Document Name</label>
+      <input type="text" id="documentName" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" formControlName="name" placeholder="Enter document name">
+      <div *ngIf="f['name'].touched && f['name'].invalid" class="text-red-600 text-sm mt-1">
+        <div *ngIf="f['name'].errors?.['required']">Document name is required.</div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="mb-4">
+      <label for="documentDescription" class="block text-sm font-medium text-gray-700">Description</label>
+      <textarea id="documentDescription" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" formControlName="description" rows="3" placeholder="Enter document description"></textarea>
+    </div>
+
+    <!-- Client Selection (Optional) -->
+    <div *ngIf="clientOptions && clientOptions.length > 0" class="mb-4">
+      <label for="clientId" class="block text-sm font-medium text-gray-700">Assign to Client (Optional)</label>
+      <select id="clientId" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" formControlName="clientId">
+        <option value="" disabled>Select a client...</option>
+        <option *ngFor="let client of clientOptions" [value]="client.id">{{ client.name }}</option>
+      </select>
+    </div>
+  </form>
+</app-generic-modal>

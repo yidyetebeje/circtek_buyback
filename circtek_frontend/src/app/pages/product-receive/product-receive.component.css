@@ -1,0 +1,81 @@
+/* Product Receive Component Styles */
+
+.card-container {
+  background: linear-gradient(135deg, hsl(var(--b1)) 0%, hsl(var(--b2)) 100%);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.alert {
+  border-radius: 0.75rem;
+}
+
+.card {
+  transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: hsl(var(--p));
+  box-shadow: 0 0 0 3px hsl(var(--p) / 0.1);
+}
+
+.btn {
+  transition: all 0.2s ease-in-out;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* Scanner specific styles */
+.scanner-container {
+  position: relative;
+  border: 2px dashed hsl(var(--bc) / 0.2);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.scanner-container:hover {
+  border-color: hsl(var(--p) / 0.5);
+}
+
+.identifier-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.identifier-item {
+  background: hsl(var(--b2));
+  border: 1px solid hsl(var(--bc) / 0.1);
+  transition: all 0.2s ease-in-out;
+}
+
+.identifier-item:hover {
+  background: hsl(var(--b3));
+  border-color: hsl(var(--bc) / 0.2);
+}
+
+/* Loading states */
+.loading-overlay {
+  background: hsl(var(--b1) / 0.8);
+  backdrop-filter: blur(4px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-container {
+    margin: 0.5rem;
+    border-radius: 1rem;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

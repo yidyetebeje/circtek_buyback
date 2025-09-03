@@ -66,6 +66,30 @@ export const routes: Routes = [
       import('./pages/management/wifi-profile-form/wifi-profile-form.component').then((m) => m.WiFiProfileFormComponent),
   },
 
+  // Label Template form routes
+  {
+    path: 'management/label-templates/add',
+    loadComponent: () =>
+      import('./pages/management/label-template-form/label-template-form.component').then((m) => m.LabelTemplateFormComponent),
+  },
+  {
+    path: 'management/label-templates/edit/:id',
+    loadComponent: () =>
+      import('./pages/management/label-template-form/label-template-form.component').then((m) => m.LabelTemplateFormComponent),
+  },
+
+  // Workflow form routes
+  {
+    path: 'management/workflows/add',
+    loadComponent: () =>
+      import('./pages/management/workflow-form/workflow-form.component').then((m) => m.WorkflowFormComponent),
+  },
+  {
+    path: 'management/workflows/edit/:id',
+    loadComponent: () =>
+      import('./pages/management/workflow-form/workflow-form.component').then((m) => m.WorkflowFormComponent),
+  },
+
   // Tenant form routes (super_admin only; component self-guards)
   {
     path: 'management/tenants/add',
@@ -100,6 +124,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/transfer-form/transfer-form.component').then((m) => m.TransferFormComponent),
   },
+  // Purchase receiving route (new implementation)
+  {
+    path: 'stock-management/purchases/receive',
+    loadComponent: () =>
+      import('./pages/product-receive/product-receive.component').then((m) => m.ProductReceiveComponent),
+  },
 
   // Purchase detail routes
   {
@@ -107,20 +137,8 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/purchase-detail/purchase-detail.component').then((m) => m.PurchaseDetailComponent),
   },
+ 
 
-  // Purchase receiving routes
-  {
-    path: 'stock-management/purchases/:id/receive',
-    loadComponent: () =>
-      import('./pages/purchase-receiving/purchase-receiving.component').then((m) => m.PurchaseReceivingComponent),
-  },
-
-  // Receive items routes
-  {
-    path: 'stock-management/receive-items',
-    loadComponent: () =>
-      import('./pages/receive-items/receive-items.component').then((m) => m.ReceiveItemsComponent),
-  },
 
   // Transfer completion routes
   {
@@ -141,6 +159,64 @@ export const routes: Routes = [
     path: 'stock-management/repairs/:id/consume',
     loadComponent: () =>
       import('./pages/repair-consume/repair-consume.component').then((m) => m.RepairConsumeComponent),
+  },
+
+  // Repair Reasons form routes
+  {
+    path: 'stock-management/repair-reasons/add',
+    loadComponent: () =>
+      import('./pages/repair-reasons-form/repair-reasons-form.component').then((m) => m.RepairReasonsFormComponent),
+  },
+  {
+    path: 'stock-management/repair-reasons/:id/edit',
+    loadComponent: () =>
+      import('./pages/repair-reasons-form/repair-reasons-form.component').then((m) => m.RepairReasonsFormComponent),
+  },
+
+  // SKU Specs form routes
+  {
+    path: 'stock-management/sku-specs/add',
+    loadComponent: () =>
+      import('./pages/sku-specs-form/sku-specs-form.component').then((m) => m.SkuSpecsFormComponent),
+  },
+  {
+    path: 'stock-management/sku-specs/:id/edit',
+    loadComponent: () =>
+      import('./pages/sku-specs-form/sku-specs-form.component').then((m) => m.SkuSpecsFormComponent),
+  },
+
+  // Workflow Editor routes
+  {
+    path: 'workflow-editor',
+    loadComponent: () =>
+      import('./pages/workflow-editor/workflow-editor.component').then((m) => m.WorkflowEditorComponent),
+  },
+  {
+    path: 'workflow-editor/:id',
+    loadComponent: () =>
+      import('./pages/workflow-editor/workflow-editor.component').then((m) => m.WorkflowEditorComponent),
+  },
+
+  // Document Editor routes
+  {
+    path: 'labels',
+    loadComponent: () =>
+      import('./pages/document-editor/document-editor.component').then((m) => m.default),
+  },
+  {
+    path: 'label',
+    loadComponent: () =>
+      import('./pages/document-editor/document-editor.component').then((m) => m.default),
+  },
+  {
+    path: 'labels/:id',
+    loadComponent: () =>
+      import('./pages/document-editor/document-editor.component').then((m) => m.default),
+  },
+  {
+    path: 'label/:id',
+    loadComponent: () =>
+      import('./pages/document-editor/document-editor.component').then((m) => m.default),
   },
 
   // Fallback

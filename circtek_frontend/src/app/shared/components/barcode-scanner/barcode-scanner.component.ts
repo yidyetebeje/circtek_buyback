@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, input, output, signal, viewChild, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Html5QrcodeScanner, Html5QrcodeScanType, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
 export interface ScanResult {
   value: string;
@@ -50,6 +51,7 @@ export class BarcodeScannerComponent {
   // Camera scanning
   private currentStream: MediaStream | null = null;
   private animationFrame: number | null = null;
+  private html5QrcodeScanner: Html5QrcodeScanner | null = null;
   
   constructor() {
     // Listen for keyboard events to detect barcode scanner input
@@ -69,15 +71,26 @@ export class BarcodeScannerComponent {
       clearTimeout(this.scanTimeout);
     }
     this.stopCameraScanning();
+    if (this.html5QrcodeScanner) {
+      this.html5QrcodeScanner.clear();
+    }
   }
   
   private handleKeyDown(event: KeyboardEvent): void {
     const currentTime = Date.now();
     const timeDiff = currentTime - this.lastKeyTime;
     
-    // If input is focused, let normal typing work
-    const inputElement = this.inputRef()?.nativeElement;
-    if (document.activeElement === inputElement) {
+    // Check if any input field, textarea, or select is focused
+    const activeElement = document.activeElement;
+    const isInputFocused = activeElement && (
+      activeElement.tagName === 'INPUT' ||
+      activeElement.tagName === 'TEXTAREA' ||
+      activeElement.tagName === 'SELECT' ||
+      activeElement.getAttribute('contenteditable') === 'true'
+    );
+    
+    // If any input is focused, let normal typing work
+    if (isInputFocused) {
       return;
     }
     
@@ -339,22 +352,53 @@ export class BarcodeScannerComponent {
       this.cameraError.set('');
       this.isCameraScanning.set(true);
       
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment', // Use back camera if available
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      });
+      // Wait for modal to be fully rendered
+      await new Promise(resolve => setTimeout(resolve, 300));
       
-      this.currentStream = stream;
-      const videoElement = this.videoRef()?.nativeElement;
-      
-      if (videoElement) {
-        videoElement.srcObject = stream;
-        await videoElement.play();
-        this.startBarcodeDetection();
+      // Check if element exists with retry logic
+      let scannerElement = document.getElementById('qr-reader');
+      let retries = 0;
+      while (!scannerElement && retries < 10) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        scannerElement = document.getElementById('qr-reader');
+        retries++;
       }
+      
+      if (!scannerElement) {
+        throw new Error('Scanner container not found in DOM after retries');
+      }
+      
+      // Initialize html5-qrcode scanner
+      this.html5QrcodeScanner = new Html5QrcodeScanner(
+        "qr-reader",
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 150 },
+          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.QR_CODE
+          ]
+        },
+        false
+      );
+
+      // Start scanning
+      this.html5QrcodeScanner.render(
+        (decodedText, decodedResult) => {
+          this.processScan(decodedText);
+          this.stopCameraScanning();
+        },
+        (error) => {
+          // Ignore frequent scanning errors
+        }
+      );
+      
     } catch (error) {
       console.error('Camera access failed:', error);
       this.cameraError.set('Camera access denied or not available');
@@ -363,6 +407,13 @@ export class BarcodeScannerComponent {
   }
   
   stopCameraScanning(): void {
+    if (this.html5QrcodeScanner) {
+      this.html5QrcodeScanner.clear().catch(err => {
+        console.warn('Error clearing scanner:', err);
+      });
+      this.html5QrcodeScanner = null;
+    }
+    
     if (this.currentStream) {
       this.currentStream.getTracks().forEach(track => track.stop());
       this.currentStream = null;
@@ -377,39 +428,4 @@ export class BarcodeScannerComponent {
     this.cameraError.set('');
   }
   
-  private startBarcodeDetection(): void {
-    const videoElement = this.videoRef()?.nativeElement;
-    if (!videoElement) return;
-    
-    // Simple pattern detection for common barcode formats
-    // This is a basic implementation - for production, consider using a proper barcode library
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    const detectBarcode = () => {
-      if (!this.isCameraScanning() || !videoElement || !ctx) return;
-      
-      canvas.width = videoElement.videoWidth;
-      canvas.height = videoElement.videoHeight;
-      
-      ctx.drawImage(videoElement, 0, 0);
-      
-      // For now, we'll use a simple approach where user can click to capture
-      // In a real implementation, you'd use a barcode detection library here
-      
-      this.animationFrame = requestAnimationFrame(detectBarcode);
-    };
-    
-    detectBarcode();
-  }
-  
-  captureFromCamera(): void {
-    // This method would be called when user clicks to capture from camera
-    // For demo purposes, we'll simulate a successful scan
-    // In production, this would analyze the camera feed for barcodes
-    
-    const simulatedBarcode = '123456789012345'; // Example IMEI
-    this.processScan(simulatedBarcode);
-    this.stopCameraScanning();
-  }
 }

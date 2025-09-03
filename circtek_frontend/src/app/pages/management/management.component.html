@@ -29,12 +29,21 @@
   (actionClick)="onAssignModalAction($event)"
 >
   <div class="space-y-4">
+    <!-- Context information based on active tab -->
     <div class="text-sm text-base-content/70">
-      @if (selectedWifiProfile(); as p) {
+      @if (activeTab() === 'wifi' && selectedWifiProfile(); as p) {
         <div><span class="font-medium">Profile:</span> {{ p.name }} (SSID: {{ p.ssid }})</div>
       }
+      @if (activeTab() === 'labels' && selectedLabelTemplate(); as l) {
+        <div><span class="font-medium">Label Template:</span> {{ l.name }}</div>
+      }
+      @if (activeTab() === 'workflows' && selectedWorkflow(); as w) {
+        <div><span class="font-medium">Workflow:</span> {{ w.name }}</div>
+      }
     </div>
-    @if (!selectedWifiProfile()) {
+    
+    <!-- WiFi Profile dropdown only for wifi tab when no profile is selected -->
+    @if (activeTab() === 'wifi' && !selectedWifiProfile()) {
       <div class="form-control">
         <label class="label"><span class="label-text">WiFi Profile</span></label>
         <select class="select select-bordered" (change)="onAssignProfileSelect($event)">
@@ -45,10 +54,11 @@
         </select>
       </div>
     }
+    
+    <!-- Tester selection -->
     <div class="form-control">
       <label class="label"><span class="label-text">Tester</span></label>
       <select class="select select-bordered" (change)="onAssignTesterSelect($event)">
-        <option [value]="''">Select tester…</option>
         @for (opt of testerOptions(); track opt.value) {
           <option [value]="opt.value">{{ opt.label }}</option>
         }
@@ -67,8 +77,14 @@
   (actionClick)="onAssignedModalAction($event)"
 >
   <div class="text-sm text-base-content/70 mb-3">
-    @if (selectedWifiProfile(); as p) {
+    @if (activeTab() === 'wifi' && selectedWifiProfile(); as p) {
       <div><span class="font-medium">Profile:</span> {{ p.name }} (SSID: {{ p.ssid }})</div>
+    }
+    @if (activeTab() === 'labels' && selectedLabelTemplate(); as l) {
+      <div><span class="font-medium">Label Template:</span> {{ l.name }}</div>
+    }
+    @if (activeTab() === 'workflows' && selectedWorkflow(); as w) {
+      <div><span class="font-medium">Workflow:</span> {{ w.name }}</div>
     }
   </div>
   <div class="overflow-x-auto border rounded-box">

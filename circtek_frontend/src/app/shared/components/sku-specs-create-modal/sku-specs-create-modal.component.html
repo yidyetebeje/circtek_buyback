@@ -1,0 +1,158 @@
+<app-generic-modal
+  [isOpen]="isOpen()"
+  [title]="title()"
+  [actions]="actions()"
+  (actionClick)="onActionClick($event)"
+  (close)="onClose()">
+  
+  <form [formGroup]="form()" class="sku-specs-form">
+    @if (error()) {
+      <div class="error-banner">
+        {{ error() }}
+      </div>
+    }
+
+    <!-- Basic Information -->
+    <div class="form-section">
+      <h3 class="section-title">Basic Information</h3>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="sku" class="form-label required">SKU</label>
+          <input
+            id="sku"
+            type="text"
+            formControlName="sku"
+            class="form-input"
+            [class.error]="isFieldInvalid('sku')"
+            placeholder="Enter SKU code"
+          />
+          @if (isFieldInvalid('sku')) {
+            <span class="error-text">{{ getFieldError('sku') }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="make" class="form-label">Make</label>
+          <input
+            id="make"
+            type="text"
+            formControlName="make"
+            class="form-input"
+            placeholder="e.g., Apple, Samsung"
+          />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="model_no" class="form-label">Model Number</label>
+          <input
+            id="model_no"
+            type="text"
+            formControlName="model_no"
+            class="form-input"
+            placeholder="e.g., A2482, SM-G998B"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="model_name" class="form-label">Model Name</label>
+          <input
+            id="model_name"
+            type="text"
+            formControlName="model_name"
+            class="form-input"
+            placeholder="e.g., iPhone 15 Pro, Galaxy S24 Ultra"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            formControlName="is_part"
+            class="checkbox-input"
+          />
+          <span class="checkbox-text">This is a part/component</span>
+          <span class="checkbox-help">Check if this is a part rather than a complete device</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Device-Specific Information (only shown when is_part is false) -->
+    @if (isDeviceFieldsSection()) {
+      <div class="form-section">
+        <h3 class="section-title">Device Specifications</h3>
+        <p class="section-description">Optional fields for devices</p>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="device_type" class="form-label">Device Type</label>
+            <select
+              id="device_type"
+              formControlName="device_type"
+              class="form-select">
+              <option value="">Select device type</option>
+              <option value="iPhone">iPhone</option>
+              <option value="Android">Android</option>
+              <option value="Macbook">Macbook</option>
+              <option value="Airpods">Airpods</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="storage" class="form-label">Storage</label>
+            <input
+              id="storage"
+              type="text"
+              formControlName="storage"
+              class="form-input"
+              placeholder="e.g., 128GB, 256GB"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="memory" class="form-label">Memory</label>
+            <input
+              id="memory"
+              type="text"
+              formControlName="memory"
+              class="form-input"
+              placeholder="e.g., 8GB, 12GB"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="color" class="form-label">Color</label>
+            <input
+              id="color"
+              type="text"
+              formControlName="color"
+              class="form-input"
+              placeholder="e.g., Space Gray, Midnight Blue"
+            />
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Status -->
+    <div class="form-section">
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            formControlName="status"
+            class="checkbox-input"
+          />
+          <span class="checkbox-text">Active</span>
+          <span class="checkbox-help">Uncheck to create as inactive</span>
+        </label>
+      </div>
+    </div>
+  </form>
+</app-generic-modal>
