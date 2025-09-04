@@ -1,45 +1,71 @@
-<div class="login-container">
-  <div class="login-box">
-    <h1 class="text-3xl font-bold text-center mb-2">Welcome Back!</h1>
-    <p class="text-center text-base-content/70 mb-8">Sign in to continue to Circtek</p>
+<div class="min-h-screen flex items-center justify-center bg-base-200 p-4">
+  <div class="w-full max-w-md card bg-base-100 shadow-xl">
+    <div class="card-body">
 
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <div class="form-control">
-        <label class="label">
-          <span class="label-text">Username or Email</span>
-        </label>
-        <input type="text" placeholder="yourname or you@example.com" class="input input-bordered" formControlName="identifier" />
+      <div class="flex flex-col items-center mb-6">
+        <img ngSrc="/img/brand/logo.png" width="120" height="120" alt="Circtek" class="mb-2" />
+        <h1 class="text-2xl font-bold">Welcome Back</h1>
+        <p class="text-base-content/70">Sign in to continue to Circtek</p>
       </div>
 
-      <div class="form-control mt-4">
-        <label class="label">
-          <span class="label-text">Password</span>
-        </label>
-        <input type="password" placeholder="••••••••" class="input input-bordered" formControlName="password" />
-      </div>
-
-      @if (error()) {
-        <div role="alert" class="alert alert-error mt-6">
-          <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          <span>{{ error() }}</span>
-        </div>
-      }
-
-      <div class="form-control mt-8">
-        <button type="submit" class="btn btn-primary" [disabled]="loading()">
-          @if (loading()) {
-            <span class="loading loading-spinner"></span>
-            Signing In...
-          } @else {
-            Sign In
+      <form class="flex flex-col gap-4" [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Username or Email</span>
+          </label>
+          <input
+            type="text"
+            placeholder="yourname or you@example.com"
+            class="input input-bordered w-full"
+            formControlName="identifier"
+            [disabled]="loading()"
+            autocomplete="username"
+          />
+          @if (identifierControl.invalid && (identifierControl.dirty || identifierControl.touched)) {
+            <span class="text-error text-sm mt-1">
+              @if (identifierControl.errors?.['required']) { Identifier is required. }
+            </span>
           }
-        </button>
-      </div>
+        </div>
 
-      <div class="text-center mt-6">
-        <a routerLink="/forgot-password" class="link link-hover text-sm">Forgot password?</a>
-      </div>
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Password</span>
+          </label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            class="input input-bordered w-full"
+            formControlName="password"
+            [disabled]="loading()"
+            autocomplete="current-password"
+          />
+          @if (passwordControl.invalid && (passwordControl.dirty || passwordControl.touched)) {
+            <span class="text-error text-sm mt-1">
+              @if (passwordControl.errors?.['required']) { Password is required. }
+              @if (passwordControl.errors?.['minlength']) { Password must be at least 6 characters. }
+            </span>
+          }
+        </div>
 
-    </form>
+        @if (error()) {
+          <div role="alert" class="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span>{{ error() }}</span>
+          </div>
+        }
+
+        <div class="form-control mt-4">
+          <button type="submit" class="btn btn-primary" [disabled]="loading() || loginForm.invalid">
+            @if (loading()) {
+              <span class="loading loading-spinner"></span>
+              Signing In...
+            } @else {
+              Sign In
+            }
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>

@@ -1,6 +1,6 @@
 <app-generic-page
   [title]="'Device Diagnostics'"
-  [loading]="loading()"
+  [loading]="loading() || isExporting()"
   [tabs]="tabs()"
   [facets]="facets()"
   [columns]="columns()"
@@ -9,10 +9,12 @@
   [pageIndexInput]="pageIndex()"
   [pageSizeInput]="pageSize()"
   [searchPlaceholder]="'Search by IMEI, Serial, or LPN'"
+  [primaryAction]="primaryAction()"
   (pageChange)="onPageChange($event)"
   (filtersChange)="onFiltersChange($event)"
   (sortingChange)="onSortingChange($event)"
   (tabChange)="onTabChange($event)"
+  (primaryActionClick)="onExportClick()"
 ></app-generic-page>
 
 @if (isModalOpen()) {

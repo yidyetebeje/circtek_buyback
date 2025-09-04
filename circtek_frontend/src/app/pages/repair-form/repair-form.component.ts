@@ -35,9 +35,7 @@ export class RepairFormComponent implements OnInit {
   createForm() {
     return this.fb.group({
       device_id: [null as number | null],
-      reason_id: [null as number | null, Validators.required],
       remarks: [''],
-      actor_id: [null as number | null, Validators.required],
       identifier: ['', Validators.required],
       warehouse_id: [null as number | null, Validators.required],
       parts: this.fb.array([])
@@ -51,31 +49,56 @@ export class RepairFormComponent implements OnInit {
   submitLabel = 'Create Repair';
   fields = computed<FormField[]>(() => []);
   actions = computed<FormAction[]>(() => [
+   
     { 
       label: 'Cancel', 
       type: 'button', 
       variant: 'ghost' 
-    }
+    },
+    
   ]);
 
   // Computed form validation
-  isFormValid = computed(() => {
-    const formValid = this.form().valid;
+  isFormValid = () => {
+    const form = this.form();
     const hasParts = this.parts.length > 0;
     const allPartsValid = this.parts.controls.every(partGroup => partGroup.valid);
     
-    return formValid && hasParts && allPartsValid;
-  });
+    // Check required fields manually
+    const hasIdentifier = form.get('identifier')?.value?.trim();
+    const hasWarehouseId = form.get('warehouse_id')?.value;
+    const hasDeviceId = form.get('device_id')?.value;
+    console.log({
+      hasIdentifier,
+      hasWarehouseId,
+      hasDeviceId,
+      hasParts,
+      allPartsValid
+    })
+    
+    return hasIdentifier && hasWarehouseId && hasDeviceId && hasParts && allPartsValid;
+  };
 
 
 
   ngOnInit() {
-    const user = this.auth.currentUser();
-    if (user?.id) {
-      this.form().get('actor_id')?.setValue(user.id);
-    }
     this.loadWarehouses();
     this.loadRepairReasons();
+    
+    // Add default part
+    this.addPart();
+    
+    // Auto-fetch device details when identifier changes
+    this.form().get('identifier')?.valueChanges.subscribe((identifier: string) => {
+      if (identifier && identifier.trim().length > 0) {
+        // Debounce the API call to avoid too many requests
+        setTimeout(() => {
+          if (this.form().get('identifier')?.value === identifier) {
+            this.fetchDeviceDetails();
+          }
+        }, 500);
+      }
+    });
   }
 
   // Data for dropdowns
@@ -141,9 +164,12 @@ export class RepairFormComponent implements OnInit {
         const device = (res as any)?.data ?? null;
         this.deviceDetails.set(device);
         if (device) {
-          const deviceId = Number(device.id ?? device.device_id ?? 0);
-          if (deviceId > 0) this.form().get('device_id')?.setValue(deviceId);
 
+          console.log("device id", device);
+          const deviceId = Number(device.id ?? device.device_id ?? 0);
+          console.log("device id", deviceId);
+          if (deviceId > 0) this.form().get('device_id')?.setValue(deviceId);
+          console.log(this.form().value);
           const params = new HttpParams()
             .set('identifier', identifier)
             .set('page', '1')
@@ -223,18 +249,12 @@ export class RepairFormComponent implements OnInit {
   }
 
   onSubmit() {
-    console.log('onSubmit called!');
-    console.log('Form validation result:', this.isFormValid());
-    console.log('Form values:', this.form().value);
-    console.log('Parts:', this.parts.value);
-    
+    console.log(this.form().value, "submitting");
     if (!this.isFormValid()) {
-      console.log('Form validation failed!');
-      this.error.set('Please fill in all required fields and add at least one part');
+      this.error.set(this.getValidationErrorMessage());
       return;
     }
 
-    console.log('Form validation passed, proceeding with submission...');
     this.submitting.set(true);
     this.error.set(null);
 
@@ -244,9 +264,8 @@ export class RepairFormComponent implements OnInit {
     // Prepare the payload for the new endpoint
     const payload: RepairCreateWithConsumeInput = {
       device_id: formValue.device_id!,
-      reason_id: formValue.reason_id!,
+      reason_id: parts[0]?.reason_id || 1, // Use first part's reason or default
       remarks: formValue.remarks || undefined,
-      actor_id: formValue.actor_id!,
       warehouse_id: formValue.warehouse_id!,
       items: parts.map((part: any) => ({
         sku: part.sku,
@@ -255,11 +274,8 @@ export class RepairFormComponent implements OnInit {
       notes: undefined // Optional field
     };
 
-    console.log('Sending payload to API:', payload);
-
     this.api.createRepairWithConsume(payload).subscribe({
       next: (response: any) => {
-        console.log('API response:', response);
         this.submitting.set(false);
         if (response.status === 201) {
           // Success - navigate back to repairs list
@@ -271,7 +287,6 @@ export class RepairFormComponent implements OnInit {
         }
       },
       error: (err: any) => {
-        console.log('API error:', err);
         this.submitting.set(false);
         this.error.set(err.message || 'An error occurred while creating the repair');
       }
@@ -279,7 +294,12 @@ export class RepairFormComponent implements OnInit {
   }
 
   onActionClick(event: { action: string; data?: any }) {
-    if (event.action === 'Cancel') { this.onCancel(); }
+    console.log("event action", event.action)
+    if (event.action === 'Cancel') { 
+      this.onCancel(); 
+    } else if (event.action === 'Create Repair') {
+      this.onSubmit();
+    }
   }
 
   onCancel() {
@@ -293,5 +313,54 @@ export class RepairFormComponent implements OnInit {
   enableImeiScanner() {
     this.isImeiScannerDisabled.set(false);
   }
- 
+
+  private getValidationErrorMessage(): string {
+    const form = this.form();
+    const missingFields: string[] = [];
+    console.log(form, "validated form")
+    
+    if (!form.get('identifier')?.value?.trim()) {
+      missingFields.push('Device IMEI/Serial');
+    }
+    if (!form.get('warehouse_id')?.value) {
+      missingFields.push('Warehouse');
+    }
+    if (!form.get('device_id')?.value) {
+      missingFields.push('Device Details (fetch device details first)');
+    }
+    
+    // Check parts validation
+    const partsErrors: string[] = [];
+    if (this.parts.length === 0) {
+      partsErrors.push('at least one part');
+    } else {
+      this.parts.controls.forEach((partGroup, index) => {
+        const partErrors: string[] = [];
+        if (!partGroup.get('sku')?.value?.trim()) {
+          partErrors.push('SKU');
+        }
+        if (!partGroup.get('quantity')?.value || partGroup.get('quantity')?.value < 1) {
+          partErrors.push('quantity');
+        }
+        if (!partGroup.get('reason_id')?.value) {
+          partErrors.push('reason');
+        }
+        
+        if (partErrors.length > 0) {
+          partsErrors.push(`Part ${index + 1}: ${partErrors.join(', ')}`);
+        }
+      });
+    }
+    
+    let errorMessage = '';
+    if (missingFields.length > 0) {
+      errorMessage += `Missing required fields: ${missingFields.join(', ')}`;
+    }
+    if (partsErrors.length > 0) {
+      if (errorMessage) errorMessage += '. ';
+      errorMessage += `Parts issues: ${partsErrors.join('; ')}`;
+    }
+    
+    return errorMessage || 'Please fill in all required fields';
+  }
 }

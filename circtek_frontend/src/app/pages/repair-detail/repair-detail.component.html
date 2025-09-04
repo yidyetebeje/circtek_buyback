@@ -1,0 +1,115 @@
+<app-generic-form-page
+  [title]="title()"
+  [subtitle]="subtitle()"
+  [form]="form"
+  [fields]="fields()"
+  [actions]="actions()"
+  [loading]="loading()"
+  [error]="error()"
+  (actionClick)="onActionClick($event)"
+>
+  @if (repair(); as repairData) {
+    <div class="max-w-4xl mx-auto space-y-8">
+      <!-- Header Section -->
+      <div class="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-2xl font-bold text-base-content">Repair Details</h2>
+          <div class="badge badge-lg" [class.badge-success]="repairData.repair.status" [class.badge-error]="!repairData.repair.status">
+            {{ repairData.repair.status ? 'Active' : 'Inactive' }}
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Device Info -->
+          <div class="space-y-3">
+            <h3 class="text-lg font-semibold text-base-content/80">Device</h3>
+            @if (getDeviceProperty(repairData.repair, 'device_sku')) {
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-base-content/60">SKU:</span>
+                <span class="font-mono font-medium">{{ getDeviceProperty(repairData.repair, 'device_sku') }}</span>
+              </div>
+            }
+            @if (getDeviceProperty(repairData.repair, 'device_imei')) {
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-base-content/60">IMEI:</span>
+                <span class="font-mono">{{ getDeviceProperty(repairData.repair, 'device_imei') }}</span>
+              </div>
+            }
+            @if (getDeviceProperty(repairData.repair, 'device_serial')) {
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-base-content/60">Serial:</span>
+                <span class="font-mono">{{ getDeviceProperty(repairData.repair, 'device_serial') }}</span>
+              </div>
+            }
+          </div>
+          
+          <!-- Repair Info -->
+          <div class="space-y-3">
+            <h3 class="text-lg font-semibold text-base-content/80">Repair</h3>
+            @if (getDeviceProperty(repairData.repair, 'reason_name')) {
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-base-content/60">Reason:</span>
+                <span>{{ getDeviceProperty(repairData.repair, 'reason_name') }}</span>
+              </div>
+            }
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-base-content/60">Date:</span>
+              <span>{{ repairData.repair.created_at | date:'short' }}</span>
+            </div>
+          </div>
+        </div>
+        
+        @if (repairData.repair.remarks) {
+          <div class="mt-4 p-4 bg-base-200 rounded-lg">
+            <h4 class="font-medium text-base-content/80 mb-2">Remarks</h4>
+            <p class="text-base-content">{{ repairData.repair.remarks }}</p>
+          </div>
+        }
+      </div>
+
+      <!-- Parts Used -->
+      @if (repairData.items && repairData.items.length > 0) {
+        <div class="bg-base-100 rounded-lg p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-semibold">Parts Used</h3>
+            <div class="text-sm text-base-content/60">
+              {{ repairData.total_items }} items • {{ repairData.total_quantity }} total qty
+            </div>
+          </div>
+          
+          <div class="grid gap-4">
+            @for (item of repairData.items; track item.id) {
+              <div class="flex items-center justify-between p-4 bg-base-50 rounded-lg border border-base-300">
+                <div class="flex-1">
+                  <div class="font-mono font-medium text-lg">{{ item.sku }}</div>
+                  <div class="text-sm text-base-content/60 mt-1">
+                    Quantity: {{ item.quantity }} • Unit Cost: ${{ item.cost | number:'1.2-2' }}
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-lg font-semibold">${{ (item.cost * item.quantity) | number:'1.2-2' }}</div>
+                  <div class="badge badge-sm" [class.badge-success]="item.status" [class.badge-error]="!item.status">
+                    {{ item.status ? 'Active' : 'Inactive' }}
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+          
+          <div class="mt-6 pt-4 border-t border-base-300">
+            <div class="flex justify-between items-center">
+              <span class="text-lg font-medium">Total Cost</span>
+              <span class="text-2xl font-bold text-primary">${{ repairData.total_cost | number:'1.2-2' }}</span>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="bg-base-100 rounded-lg p-8 shadow-sm text-center">
+          <div class="text-6xl mb-4 opacity-50">🔧</div>
+          <h3 class="text-lg font-medium text-base-content/80 mb-2">No Parts Used</h3>
+          <p class="text-base-content/60">This repair hasn't consumed any parts yet</p>
+        </div>
+      }
+    </div>
+  }
+</app-generic-form-page>

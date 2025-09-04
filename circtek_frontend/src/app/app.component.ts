@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, viewChild } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
 import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
 import { ThemeService } from './shared/services/theme.service';
@@ -8,11 +8,15 @@ import { ThemeService } from './shared/services/theme.service';
   selector: 'app-root',
   imports: [RouterOutlet, NavbarComponent, SidebarComponent],
   template: `
-    <app-sidebar #sidebar></app-sidebar>
-    <app-navbar (sidebarToggle)="onSidebarToggle()"></app-navbar>
-    <main class="main-content">
+    @if (isChromelessRoute()) {
       <router-outlet />
-    </main>
+    } @else {
+      <app-sidebar #sidebar></app-sidebar>
+      <app-navbar (sidebarToggle)="onSidebarToggle()"></app-navbar>
+      <main class="main-content">
+        <router-outlet />
+      </main>
+    }
   `,
   styleUrl: './app.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,6 +26,25 @@ export class AppComponent {
 
   private readonly themeService = inject(ThemeService);
   private sidebar = viewChild.required<SidebarComponent>('sidebar');
+  private readonly router = inject(Router);
+
+  // Hide chrome on auth routes
+  isChromelessRoute = signal(false);
+
+  constructor() {
+    // Initial state
+    this.isChromelessRoute.set(this.checkChromelessRoute(this.router.url));
+
+    this.router.events.subscribe((event) => {
+      if (event instanceof NavigationEnd) {
+        this.isChromelessRoute.set(this.checkChromelessRoute(event.urlAfterRedirects));
+      }
+    });
+  }
+
+  private checkChromelessRoute(url: string): boolean {
+    return url.startsWith('/login') || url.startsWith('/forgot-password') || url.startsWith('/diagnostics/report');
+  }
 
   onSidebarToggle() {
     this.sidebar().toggleSidebar();

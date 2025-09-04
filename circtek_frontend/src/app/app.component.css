@@ -5,6 +5,12 @@
   transition: margin-left 0.3s ease;
 }
 
+/* Ensure auth routes (login/forgot-password) have zero chrome spacing */
+.main-full {
+  margin-left: 0;
+  padding-top: 0;
+}
+
 /* Mobile styles */
 @media (max-width: 768px) {
   .main-content {

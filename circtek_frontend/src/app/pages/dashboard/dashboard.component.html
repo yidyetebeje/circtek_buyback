@@ -1,0 +1,252 @@
+<div class="min-h-screen bg-base-200 p-6">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-base-content">Dashboard</h1>
+    <p class="text-base-content/70 mt-2">Welcome back! Here's what's happening with your operations.</p>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="flex items-center justify-center h-64">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+    </div>
+  } @else {
+    <!-- Overview Stats Cards -->
+    @if (overviewData(); as stats) {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Diagnostics Today -->
+        <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-base-content/70">Diagnostics Today</p>
+              <p class="text-3xl font-bold text-info">{{ stats.diagnostics_today }}</p>
+            </div>
+            <div class="bg-info/20 p-3 rounded-full">
+              <span class="text-2xl">🔍</span>
+            </div>
+          </div>
+          <div class="mt-4 text-sm text-base-content/60">
+            {{ stats.diagnostics_this_week }} this week • {{ stats.diagnostics_this_month }} this month
+          </div>
+        </div>
+
+        <!-- Total Devices -->
+        <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-base-content/70">Total Devices</p>
+              <p class="text-3xl font-bold text-success">{{ stats.total_devices }}</p>
+            </div>
+            <div class="bg-success/20 p-3 rounded-full">
+              <span class="text-2xl">📱</span>
+            </div>
+          </div>
+          <div class="mt-4 text-sm text-base-content/60">
+            Across {{ stats.total_warehouses }} warehouses
+          </div>
+        </div>
+
+        <!-- Stock Items -->
+        <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-base-content/70">Stock Items</p>
+              <p class="text-3xl font-bold text-secondary">{{ stats.total_stock_items }}</p>
+            </div>
+            <div class="bg-secondary/20 p-3 rounded-full">
+              <span class="text-2xl">📦</span>
+            </div>
+          </div>
+          <div class="mt-4 text-sm text-base-content/60">
+            @if (stats.low_stock_alerts > 0) {
+              <span class="text-error">{{ stats.low_stock_alerts }} low stock alerts</span>
+            } @else {
+              <span class="text-success">All stock levels healthy</span>
+            }
+          </div>
+        </div>
+
+        <!-- Active Users -->
+        <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-base-content/70">Active Users</p>
+              <p class="text-3xl font-bold text-warning">{{ stats.active_users }}</p>
+            </div>
+            <div class="bg-warning/20 p-3 rounded-full">
+              <span class="text-2xl">👥</span>
+            </div>
+          </div>
+          <div class="mt-4 text-sm text-base-content/60">
+            {{ stats.total_users }} total users
+            @if (isSuperAdmin() && stats.total_tenants) {
+              • {{ stats.total_tenants }} companies
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Secondary Stats Row -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Purchases -->
+        <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-base-content/70">Purchases</p>
+              <p class="text-2xl font-bold text-base-content">{{ stats.total_purchases }}</p>
+            </div>
+            <div class="bg-neutral/20 p-3 rounded-full">
+              <span class="text-xl">🛒</span>
+            </div>
+          </div>
+          <div class="mt-2 text-sm text-base-content/60">
+            {{ stats.pending_purchases }} pending
+          </div>
+        </div>
+
+        <!-- Transfers -->
+        <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-base-content/70">Transfers</p>
+              <p class="text-2xl font-bold text-base-content">{{ stats.total_transfers }}</p>
+            </div>
+            <div class="bg-neutral/20 p-3 rounded-full">
+              <span class="text-xl">🚚</span>
+            </div>
+          </div>
+          <div class="mt-2 text-sm text-base-content/60">
+            {{ stats.pending_transfers }} pending
+          </div>
+        </div>
+
+        <!-- Repairs -->
+        <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-base-content/70">Repairs</p>
+              <p class="text-2xl font-bold text-base-content">{{ stats.total_repairs }}</p>
+            </div>
+            <div class="bg-neutral/20 p-3 rounded-full">
+              <span class="text-xl">🔧</span>
+            </div>
+          </div>
+          <div class="mt-2 text-sm text-base-content/60">
+            {{ stats.active_repairs }} active
+          </div>
+        </div>
+
+        <!-- Total Diagnostics -->
+        <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-base-content/70">All-Time Diagnostics</p>
+              <p class="text-2xl font-bold text-base-content">{{ stats.total_diagnostics }}</p>
+            </div>
+            <div class="bg-neutral/20 p-3 rounded-full">
+              <span class="text-xl">📊</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <!-- Device Types Chart -->
+      <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+        <h3 class="text-lg font-semibold text-base-content mb-4">Device Types Distribution</h3>
+        <div class="h-64">
+          <canvas #deviceTypeChart></canvas>
+        </div>
+      </div>
+
+      <!-- Recent Activity Table -->
+      @if (recentActivity().length > 0) {
+        <div class="card-container rounded-2xl border border-base-300/50">
+          <div class="p-6">
+            <h3 class="text-lg font-semibold text-base-content mb-4">Recent Test Activity</h3>
+            <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
+              <table class="w-full table">
+                <thead>
+                  <tr>
+                    <th class="whitespace-nowrap px-4 py-3">Report</th>
+                    <th class="whitespace-nowrap px-4 py-3">Tested</th>
+                    <th class="whitespace-nowrap px-4 py-3">IMEI</th>
+                    <th class="whitespace-nowrap px-4 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (activity of recentActivity().slice(0, 5); track activity.id) {
+                    <tr>
+                      <td class="whitespace-nowrap px-4 py-3">
+                        <span class="badge badge-sm" [ngClass]="getReportBadgeClass(activity.report)">
+                          {{ activity.report }}
+                        </span>
+                      </td>
+                      <td class="whitespace-nowrap px-4 py-3 text-sm">{{ activity.tested }}</td>
+                      <td class="whitespace-nowrap px-4 py-3 text-sm">{{ activity.imei }}</td>
+                      <td class="whitespace-nowrap px-4 py-3">
+                        <button 
+                          class="btn btn-ghost btn-xs"
+                          (click)="navigateToReport(activity.id)"
+                          title="View Report"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
+                            <path fill-rule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v9A1.5 1.5 0 0 0 4.5 14h7a1.5 1.5 0 0 0 1.5-1.5V7.414a1.5 1.5 0 0 0-.44-1.06L9.647 3.439A1.5 1.5 0 0 0 8.586 3H4.5ZM9 5a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 0 1H9.5A.5.5 0 0 1 9 5Zm0 2a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 0 1H9.5A.5.5 0 0 1 9 7Zm-4.5.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5Zm0 2a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5Z" clip-rule="evenodd" />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Warehouse Performance Chart -->
+    @if (warehouseStats().length > 0) {
+      <div class="bg-base-100 rounded-xl p-6 border border-base-300 mb-8">
+        <h3 class="text-lg font-semibold text-base-content mb-4">Warehouse Diagnostics Performance</h3>
+        <div class="h-80">
+          <canvas #warehouseChart></canvas>
+        </div>
+      </div>
+    }
+
+    <!-- Monthly Trends Chart -->
+    <div class="bg-base-100 rounded-xl p-6 border border-base-300 mb-8">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-base-content">Monthly Diagnostics Trends</h3>
+        <div class="flex space-x-2">
+          <input 
+            type="date" 
+            class="input input-bordered input-sm"
+            placeholder="From Date"
+            (change)="onFromDateChange($event)"
+            [value]="getFromDate()"
+          />
+          <input 
+            type="date" 
+            class="input input-bordered input-sm"
+            placeholder="To Date"
+            (change)="onToDateChange($event)"
+            [value]="getToDate()"
+          />
+          <button 
+            class="btn btn-primary btn-sm"
+            (click)="resetDateRange()"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+      <div class="h-64">
+        <canvas #monthlyTrendsChart></canvas>
+      </div>
+    </div>
+  }
+</div>

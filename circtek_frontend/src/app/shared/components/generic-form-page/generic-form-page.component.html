@@ -123,26 +123,33 @@
           <div class="flex justify-end gap-4 pt-6">
             @for (action of actions(); track action.label) {
               <button 
-                type="button" 
+                [type]="action.type"
                 [class]="getButtonClass(action)"
                 [disabled]="loading() || submitting() || action.disabled"
                 (click)="onActionClick(action)"
               >
-                {{ action.label }}
+                @if (action.type === 'submit' && submitting()) {
+                  <span class="loading loading-spinner loading-sm"></span>
+                } @else {
+                  @if (action.type === 'submit') {
+                    <lucide-icon [img]="Save" class="size-4"></lucide-icon>
+                  }
+                  {{ action.label }}
+                }
               </button>
             }
-            
             <button 
-              type="submit" 
-              class="btn btn-accent"
-              [disabled]="loading() || submitting() || form().invalid"
+             type="submit"
+             [disabled]="loading() || submitting()"
+             (click)="onActionClick({ label: submitLabel(), type: 'submit', variant: 'primary' })"
+             [class]="getButtonClass({ label: submitLabel(), type: 'submit', variant: 'primary' })"
             >
-              @if (submitting()) {
-                <span class="loading loading-spinner loading-sm"></span>
-              } @else {
-                <lucide-icon [img]="Save" class="size-4"></lucide-icon>
-                {{ submitLabel() }}
-              }
+             @if (submitting()) {
+              <span class="loading loading-spinner loading-sm"></span>
+             } @else {
+              <lucide-icon [img]="Save" class="size-4"></lucide-icon>
+             {{ submitLabel()}}
+             }
             </button>
           </div>
         </form>

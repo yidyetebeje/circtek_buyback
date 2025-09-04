@@ -2,11 +2,16 @@ import { Routes } from '@angular/router';
 import { superAdminGuard } from './core/guards/super-admin.guard';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'login' },
+  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
 
   {
     path: 'login',
     loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent),
+  },
+
+  {
+    path: 'dashboard',
+    loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent),
   },
 
   // Example page route (lazy-loaded component)
@@ -21,6 +26,11 @@ export const routes: Routes = [
     path: 'diagnostics',
     loadComponent: () =>
       import('./pages/diagnostics/diagnostics.component').then((m) => m.DiagnosticsComponent),
+  },
+  {
+    path: 'diagnostics/report/:id',
+    loadComponent: () =>
+      import('./pages/diagnostics/diagnostic-report.component').then((m) => m.DiagnosticReportComponent),
   },
 
   // Management page route (lazy-loaded component)
@@ -154,12 +164,13 @@ export const routes: Routes = [
       import('./pages/repair-form/repair-form.component').then((m) => m.RepairFormComponent),
   },
 
-  // Repair consume parts routes
+  // Repair detail routes
   {
-    path: 'stock-management/repairs/:id/consume',
+    path: 'stock-management/repairs/:id',
     loadComponent: () =>
-      import('./pages/repair-consume/repair-consume.component').then((m) => m.RepairConsumeComponent),
+      import('./pages/repair-detail/repair-detail.component').then((m) => m.RepairDetailComponent),
   },
+
 
   // Repair Reasons form routes
   {

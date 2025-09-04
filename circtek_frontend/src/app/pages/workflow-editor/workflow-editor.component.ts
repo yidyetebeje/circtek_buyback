@@ -10,6 +10,7 @@ import {
   HostListener,
   signal,
   computed,
+  effect,
 } from "@angular/core";
 import { Location } from "@angular/common";
 import { ActivatedRoute, Router } from "@angular/router";
@@ -68,16 +69,23 @@ interface IWorkflow {
   id?: string | number;
   name?: string;
   description?: string;
-  canvasState?: IWorkflowState;
-  position?: IPoint;
+  canvas_state?: IWorkflowState;
+  position_x?: number;
+  position_y?: number;
   scale?: number;
-  clientId?: string | number;
-  isPublished?: boolean;
-  // New infinite canvas properties (optional for backward compatibility)
+  viewport_position_x?: number;
+  viewport_position_y?: number;
+  viewport_scale?: number;
+  grid_visible?: boolean;
+  grid_size?: number;
+  is_published?: boolean;
+  // Legacy properties for backward compatibility (will be removed)
+  position?: IPoint;
   viewportPosition?: IPoint;
   viewportScale?: number;
   gridVisible?: boolean;
   gridSize?: number;
+  isPublished?: boolean;
 }
 
 interface IContextMenuAction {
@@ -254,11 +262,11 @@ export class WorkflowEditorComponent
   isSaveModalVisible: boolean = false;
   currentWorkflowId: string | null = null;
   currentWorkflowData: IWorkflow | null = null;
-  clientOptions: any[] = []; // Will be populated with client options if needed
+  // Remove clientOptions since client ID is not necessary
   // Signal-based form state (no @angular/forms)
   name = signal<string>("");
   description = signal<string>("");
-  clientIdSignal = signal<string | number | "">("");
+  // Remove clientIdSignal since client ID is not necessary
   nameTouched = signal<boolean>(false);
   isFormValid = computed(() => this.name().trim().length > 0);
   modalActions: ModalAction[] = [];
@@ -397,9 +405,13 @@ export class WorkflowEditorComponent
     // Get actual node dimensions from DOM
     const actualDimensions = this.getActualNodeDimensions(node.id);
 
-    // Fallback dimensions if DOM element not found
-    const standardNodeWidth = actualDimensions?.width || 120;
-    const standardNodeHeight = actualDimensions?.height || 40;
+    // Unscale dimensions to get world-space size. Fallback values are already in world-space.
+    const standardNodeWidth = actualDimensions
+      ? actualDimensions.width / this.viewportScale
+      : 120;
+    const standardNodeHeight = actualDimensions
+      ? actualDimensions.height / this.viewportScale
+      : 40;
 
     // Decision node dimensions (diamond) - these are fixed since they're rotated squares
     const decisionNodeWidth = 100;
@@ -789,6 +801,16 @@ export class WorkflowEditorComponent
     this.viewportPosition = { ...position };
     this.viewportScale = Math.max(this.minZoom, Math.min(this.maxZoom, scale));
 
+    // Update currentWorkflowData with new snake_case fields if available
+    if (this.currentWorkflowData) {
+      this.currentWorkflowData.viewport_position_x = position.x;
+      this.currentWorkflowData.viewport_position_y = position.y;
+      this.currentWorkflowData.viewport_scale = this.viewportScale;
+      this.currentWorkflowData.position_x = position.x;
+      this.currentWorkflowData.position_y = position.y;
+      this.currentWorkflowData.scale = this.viewportScale;
+    }
+
     if (updateUI) {
       this.updateCanvasTransform();
     }
@@ -828,25 +850,59 @@ export class WorkflowEditorComponent
     private documentService: DocumentService, // Inject DocumentService
   ) {
     console.log("WorkflowEditorComponent: Constructor called");
+    effect(() => {
+      // This effect will automatically run when any of its dependencies (signals) change.
+      // Dependencies: this.isFormValid() (which depends on this.name()) and this.isSaveModalVisible.
+      if (!this.isSaveModalVisible) return;
+
+      const isValid = this.isFormValid();
+      console.log('Form validity changed:', isValid, 'Name value:', this.name());
+      
+      // Update modal actions with current validation state
+      this.updateModalActionsValidation(isValid);
+    });
+  }
+
+  /**
+   * Update modal actions validation state
+   */
+  private updateModalActionsValidation(isValid: boolean): void {
+    if (this.modalActions.length === 0) return;
+    
+    const saveIndex = this.modalActions.findIndex(a => a.action === 'save');
+    if (saveIndex > -1) {
+      // Create new array to trigger change detection
+      const newActions = [...this.modalActions];
+      newActions[saveIndex] = { ...newActions[saveIndex], disabled: !isValid };
+      this.modalActions = newActions;
+      this.changeDetectorRef.detectChanges();
+    }
+  }
+
+  /**
+   * Handle name input changes and update validation state
+   */
+  onNameInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.name.set(target.value || '');
+    
+    // Update validation state immediately
+    if (this.isSaveModalVisible) {
+      this.updateModalActionsValidation(this.isFormValid());
+    }
+  }
+
+  /**
+   * Handle description input changes
+   */
+  onDescriptionInput(event: Event): void {
+    const target = event.target as HTMLTextAreaElement;
+    this.description.set(target.value || '');
   }
 
   ngOnInit(): void {
     console.log("WorkflowEditorComponent: ngOnInit started");
     this.renderer.addClass(document.body, "workflow-editor-fullscreen");
-
-    // Keep modal Save/Update button enabled state in sync with form validity (signals)
-    const updateActions = () => {
-      if (!this.isSaveModalVisible) return;
-      const saveIndex = this.modalActions.findIndex(a => a.action === 'save');
-      if (saveIndex > -1) {
-        const next = [...this.modalActions];
-        next[saveIndex] = { ...next[saveIndex], disabled: !this.isFormValid() };
-        this.modalActions = next;
-        this.changeDetectorRef.detectChanges();
-      }
-    };
-    // initial sync
-    updateActions();
 
     const clientId = localStorage.getItem("clientId");
     console.log(
@@ -916,13 +972,8 @@ export class WorkflowEditorComponent
             }
           });
 
-          // Update connection paths (might need a slight delay for nodes to render fully after load)
-          setTimeout(() => {
-            console.log(
-              "WorkflowEditorComponent: ngAfterViewInit - Running initial connection path update after timeout",
-            );
-            this.updateConnectionPaths();
-          }, 100); // Delay ensures nodes/edges from load are rendered
+          // Note: Connection paths will be updated after workflow loading is complete
+          // No need to call updateConnectionPaths here as it's handled in loadWorkflowFromServer
         })
         .catch((error) => {
           // Handle initialization error (e.g., container still not found for some reason)
@@ -1087,7 +1138,7 @@ export class WorkflowEditorComponent
     this.currentWorkflowId = null; // Ensure ID is reset for new workflow
     this.currentWorkflowData = {
       // Initialize minimal data for a new workflow
-      canvasState: { nodes: [], edges: [] },
+      canvas_state: { nodes: [], edges: [] },
       position: { x: 0, y: 0 },
       scale: 1,
     };
@@ -1931,6 +1982,13 @@ export class WorkflowEditorComponent
   // --- Connection Path Updates ---
   updateConnectionPaths(): void {
     console.log(`Updating ${this.edges.length} connection paths.`);
+    console.log('Current edges:', this.edges);
+    console.log('Current nodes:', this.nodes);
+    
+    // Check if SVG layer exists
+    const svgLayer = document.querySelector('.connections-layer');
+    console.log('SVG connections layer found:', svgLayer);
+    
     this.edges.forEach((edge) => this.updateConnectionPath(edge));
     this.changeDetectorRef.detectChanges(); // Necessary if path data is bound in template
   }
@@ -1984,6 +2042,8 @@ export class WorkflowEditorComponent
   }
 
   updateConnectionPath(edge: IEdge): void {
+    console.log(`Updating connection path for edge: ${edge.id}, source: ${edge.source}, target: ${edge.target}`);
+    
     const sourceNode = this.nodes.find((n) => n.id === edge.source);
     const targetNode = this.nodes.find((n) => n.id === edge.target);
 
@@ -2030,7 +2090,10 @@ export class WorkflowEditorComponent
     const pathData = this.calculatePathData(sourcePosition, targetPosition);
 
     const pathElement = document.getElementById("connection-" + edge.id);
+    console.log(`Looking for path element with ID: connection-${edge.id}, found:`, pathElement);
+    
     if (pathElement) {
+      console.log(`Setting path data for edge ${edge.id}:`, pathData);
       pathElement.setAttribute("d", pathData);
       // Update styles based on selection/dragging state
       pathElement.classList.toggle(
@@ -2042,6 +2105,10 @@ export class WorkflowEditorComponent
       console.warn(
         `Path element 'connection-${edge.id}' not found for edge ${edge.id}. Ensure SVG elements are rendered before path updates.`,
       );
+      
+      // Let's check what SVG elements are actually in the DOM
+      const allPaths = document.querySelectorAll('.connections-layer path');
+      console.log(`Found ${allPaths.length} path elements in connections layer:`, Array.from(allPaths).map(p => p.id));
     }
   }
 
@@ -2151,7 +2218,6 @@ export class WorkflowEditorComponent
       this.handleSaveWorkflow({
         name: this.name(),
         description: this.description() || '',
-        clientId: this.clientIdSignal() || undefined,
       });
     }
   }
@@ -2245,14 +2311,22 @@ export class WorkflowEditorComponent
     // Initialize signal form values
     this.name.set(this.currentWorkflowData.name || "");
     this.description.set(this.currentWorkflowData.description || "");
-    this.clientIdSignal.set(this.currentWorkflowData.clientId || "");
+  
     this.nameTouched.set(false);
-    // Configure modal actions
+    
+    // Configure modal actions with initial validation state
     this.modalActions = [
       { label: "Cancel", variant: "ghost", action: "cancel" },
       { label: this.currentWorkflowId ? "Update" : "Save", variant: "primary", action: "save", disabled: !this.isFormValid() },
     ];
+    
+    // Show modal after actions are configured
     this.isSaveModalVisible = true;
+    
+    // Force validation update after modal is shown
+    setTimeout(() => {
+      this.updateModalActionsValidation(this.isFormValid());
+    }, 0);
   }
 
   closeSaveModal(): void {
@@ -2291,25 +2365,32 @@ export class WorkflowEditorComponent
         this.viewportScale;
 
       const existingData = this.currentWorkflowData || {
-        canvasState: { nodes: [], edges: [] },
+        canvas_state: { nodes: [], edges: [] },
       }; // Base existing data
 
       this.currentWorkflowData = {
         ...existingData, // Preserve existing name, desc, client_id etc.
         id: this.currentWorkflowId || undefined,
-        // Backward compatibility properties
-        position: currentPosition,
+        // New snake_case properties for database
+        position_x: currentPosition.x,
+        position_y: currentPosition.y,
         scale: currentScale,
-        // New infinite canvas properties
+        viewport_position_x: this.viewportPosition.x,
+        viewport_position_y: this.viewportPosition.y,
+        viewport_scale: this.viewportScale,
+        grid_visible: this.gridVisible,
+        grid_size: this.gridSize,
+        is_published: true,
+        // Backward compatibility properties (legacy)
+        position: currentPosition,
         viewportPosition: { ...this.viewportPosition },
         viewportScale: this.viewportScale,
         gridVisible: this.gridVisible,
         gridSize: this.gridSize,
-        canvasState: {
+        canvas_state: {
           nodes: nodesSnapshot,
           edges: edgesSnapshot,
         },
-        // is_published and client_id are handled during save
       };
       console.log(
         "Prepared workflow data for saving",
@@ -2332,14 +2413,13 @@ export class WorkflowEditorComponent
   handleSaveWorkflow(formData: {
     name: string;
     description: string;
-    clientId?: string | number | undefined;
   }): void {
     if (!formData.name) {
       this.showToast("Workflow name is required.", "error");
       return;
     }
     console.log("Handling workflow save:", formData);
-    if (!this.currentWorkflowData || !this.currentWorkflowData.canvasState) {
+    if (!this.currentWorkflowData || !this.currentWorkflowData.canvas_state) {
       // Check canvas_state too
       this.showToast("Workflow data not prepared correctly", "error");
       return;
@@ -2349,20 +2429,24 @@ export class WorkflowEditorComponent
     const saveData: IWorkflow = {
       name: formData.name,
       description: formData.description,
-      canvasState: this.currentWorkflowData.canvasState,
-      // Backward compatibility properties
-      position: this.currentWorkflowData.position || { x: 0, y: 0 },
+      canvas_state: this.currentWorkflowData.canvas_state,
+      // New snake_case properties for database
+      position_x: this.currentWorkflowData.position_x ?? 0,
+      position_y: this.currentWorkflowData.position_y ?? 0,
       scale: this.currentWorkflowData.scale || 1,
-      // New infinite canvas properties
-      viewportPosition: this.currentWorkflowData.viewportPosition || {
-        x: 0,
-        y: 0,
-      },
+      viewport_position_x: this.currentWorkflowData.viewport_position_x ?? 0,
+      viewport_position_y: this.currentWorkflowData.viewport_position_y ?? 0,
+      viewport_scale: this.currentWorkflowData.viewport_scale || 1,
+      grid_visible: this.currentWorkflowData.grid_visible ?? true,
+      grid_size: this.currentWorkflowData.grid_size || 20,
+      is_published: true,
+      // Backward compatibility properties (legacy)
+      position: this.currentWorkflowData.position || { x: 0, y: 0 },
+      viewportPosition: this.currentWorkflowData.viewportPosition || { x: 0, y: 0 },
       viewportScale: this.currentWorkflowData.viewportScale || 1,
       gridVisible: this.currentWorkflowData.gridVisible ?? true,
       gridSize: this.currentWorkflowData.gridSize || 20,
       isPublished: true,
-      clientId: formData.clientId || this.currentWorkflowData.clientId,
     };
 
     if (this.currentWorkflowId) {
@@ -2417,31 +2501,67 @@ export class WorkflowEditorComponent
     // Use the updated IWorkflow interface for the subscription type
     this.workflowService.getWorkflow(id).subscribe({
       next: (workflow: IWorkflow | null) => {
+        console.log('✅ HTTP Response received:', workflow);
+        console.log('Response type:', typeof workflow);
+        console.log('Response keys:', workflow ? Object.keys(workflow) : 'null');
         // Use adjusted IWorkflow
         // Check for workflow AND canvas_state before proceeding
-        if (!workflow || !workflow.canvasState) {
+        if (!workflow || !workflow.canvas_state) {
           this.showToast("Workflow not found or has invalid data", "error");
           this.loadWorkflow(); // fallback: load an empty workflow
           return;
         }
 
+        // Check if this is actually label template data (not workflow data)
+        const canvasState = workflow.canvas_state as any; // Type assertion to handle different data structures
+        if (canvasState.version && canvasState.canvas && 
+            (!canvasState.nodes || !Array.isArray(canvasState.nodes))) {
+          console.warn('Detected label template data instead of workflow data');
+          this.showToast("This appears to be label template data, not workflow data. Please use the label template editor.", "warning");
+          this.loadWorkflow(); // fallback: load an empty workflow
+          return;
+        }
+
+        // Validate that canvas_state has the expected workflow structure
+        if (!canvasState.nodes || !Array.isArray(canvasState.nodes) ||
+            !canvasState.edges || !Array.isArray(canvasState.edges)) {
+          console.warn('Canvas state does not have expected workflow structure:', canvasState);
+          this.showToast("Invalid workflow data structure. Canvas state must contain nodes and edges arrays.", "error");
+          this.loadWorkflow(); // fallback: load an empty workflow
+          return;
+        }
+
         this.currentWorkflowId = workflow.id?.toString() ?? null;
-        this.currentClientId = workflow.clientId?.toString() ?? null;
-        this.loadLabelNodes(); // Load labels based on client ID
+        // Note: clientId is not part of the workflow schema, it's stored in localStorage
+        this.loadLabelNodes(); // Load labels based on client ID from localStorage
 
         // Now safe to access canvas_state
-        this.nodes = workflow.canvasState.nodes.map((node) => ({ ...node }));
-        this.edges = workflow.canvasState.edges.map((edge) => ({ ...edge }));
+        console.log('Loading canvas state:', canvasState);
+        this.nodes = canvasState.nodes.map((node: any) => ({ ...node }));
+        this.edges = canvasState.edges.map((edge: any) => ({ ...edge }));
+        
+        console.log(`Loaded ${this.nodes.length} nodes:`, this.nodes);
+        console.log(`Loaded ${this.edges.length} edges:`, this.edges);
 
         // Store the loaded data
         this.currentWorkflowData = { ...workflow };
 
-        // Load viewport settings (prefer new properties, fallback to old ones)
-        const viewportPosition = workflow.viewportPosition ||
-          workflow.position || { x: 0, y: 0 };
-        const viewportScale = workflow.viewportScale || workflow.scale || 1;
-        const gridVisible = workflow.gridVisible ?? true;
-        const gridSize = workflow.gridSize || 20;
+        // Load viewport settings (prefer new snake_case properties, fallback to old ones)
+        let viewportPosition: IPoint;
+        if (workflow.viewport_position_x !== null && workflow.viewport_position_x !== undefined && 
+            workflow.viewport_position_y !== null && workflow.viewport_position_y !== undefined) {
+          viewportPosition = { x: workflow.viewport_position_x, y: workflow.viewport_position_y };
+        } else if (workflow.viewportPosition) {
+          viewportPosition = workflow.viewportPosition;
+        } else if (workflow.position) {
+          viewportPosition = workflow.position;
+        } else {
+          viewportPosition = { x: 0, y: 0 };
+        }
+        
+        const viewportScale = (workflow.viewport_scale !== null ? workflow.viewport_scale : workflow.viewportScale || workflow.scale) || 1;
+        const gridVisible = (workflow.grid_visible !== null ? workflow.grid_visible : workflow.gridVisible) ?? true;
+        const gridSize = (workflow.grid_size !== null ? workflow.grid_size : workflow.gridSize) || 20;
 
         // Update viewport state
         this.gridVisible = gridVisible;
@@ -2455,23 +2575,59 @@ export class WorkflowEditorComponent
           `Loaded ${this.nodes.length} nodes and ${this.edges.length} edges`,
         );
 
-        // Observe existing nodes for resize changes
+        // Force change detection to ensure nodes are rendered
+        this.changeDetectorRef.detectChanges();
+        
+        // Wait for DOM to be fully rendered before setting up observers and connections
         setTimeout(() => {
+          // First, ensure all nodes are properly rendered
           this.nodes.forEach((node) => {
             const nodeElement = document.getElementById(node.id + "_node");
             if (nodeElement && this.resizeObserver) {
               this.resizeObserver.observe(nodeElement);
             }
           });
-          console.log("Updating connection paths after load...");
-          this.updateConnectionPaths();
-        }, 100);
+          
+          // Force another change detection to ensure everything is rendered
+          this.changeDetectorRef.detectChanges();
+          
+          // Wait a bit more for any final rendering
+          setTimeout(() => {
+            console.log("Updating connection paths after load...");
+            
+            // Check if SVG layer is ready
+            const svgLayer = document.querySelector('.connections-layer');
+            if (svgLayer) {
+              console.log('SVG layer is ready, updating connections...');
+              this.updateConnectionPaths();
+            } else {
+              console.warn('SVG layer not ready yet, retrying...');
+              // Retry after a bit more time
+              setTimeout(() => {
+                this.updateConnectionPaths();
+              }, 100);
+            }
+            
+            // Final change detection to ensure connections are visible
+            this.changeDetectorRef.detectChanges();
+          }, 100);
+        }, 200);
       },
       error: (error: any) => {
-        console.error("Error loading workflow from server:", error);
+        console.error("❌ Error loading workflow from server:", error);
+        console.error("Error details:", {
+          message: error?.message,
+          status: error?.status,
+          statusText: error?.statusText,
+          url: error?.url,
+          response: error?.error
+        });
         this.showToast("Error loading workflow from server", "error");
         this.loadWorkflow();
       },
+      complete: () => {
+        console.log("✅ Observable completed");
+      }
     });
   }
 
@@ -2488,6 +2644,13 @@ export class WorkflowEditorComponent
       // Also update the new properties for consistency
       this.currentWorkflowData.viewportPosition = { ...position };
       this.currentWorkflowData.viewportScale = scale;
+      
+      // Update new snake_case properties
+      this.currentWorkflowData.position_x = position.x;
+      this.currentWorkflowData.position_y = position.y;
+      this.currentWorkflowData.viewport_position_x = position.x;
+      this.currentWorkflowData.viewport_position_y = position.y;
+      this.currentWorkflowData.viewport_scale = scale;
 
       console.log("Applying loaded transform:", { position, scale });
       this.updateCanvasTransform(); // Use the new method

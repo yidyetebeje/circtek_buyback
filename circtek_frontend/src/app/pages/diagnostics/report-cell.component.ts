@@ -1,18 +1,16 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { Diagnostic } from '../../core/models/diagnostic';
-import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-report-cell',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <a
       class="btn btn-ghost btn-xs"
-      [href]="reportUrl"
-      target="_blank"
-      rel="noopener noreferrer"
-      [attr.aria-label]="'Open detailed report for #' + (row?.id ?? '')"
+      [routerLink]="['/diagnostics/report', row.id]"
+      [attr.aria-label]="'Open detailed report for #' + row.id"
       title="Open detailed report"
     >
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
@@ -24,7 +22,4 @@ import { environment } from '../../../environments/environment';
 })
 export class ReportCellComponent {
   @Input() row!: Diagnostic;
-  get reportUrl(): string {
-    return `${environment.apiUrl}/diagnostics/public/tests/${this.row?.id ?? ''}`;
-  }
 }

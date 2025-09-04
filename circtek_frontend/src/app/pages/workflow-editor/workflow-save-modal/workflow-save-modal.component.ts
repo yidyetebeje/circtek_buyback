@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 
 // Interface matching expected input
@@ -37,8 +37,16 @@ export class WorkflowSaveModalComponent implements OnInit, OnChanges {
   constructor(private fb: FormBuilder) {
     this.workflowForm = this.fb.group({
       name: ['', Validators.required],
-      description: [''],
-      clientId: ['']
+      description: ['']
+    });
+
+    // Debug form status changes
+    this.workflowForm.statusChanges.subscribe(status => {
+      console.log('Form status changed:', status, 'Valid:', this.workflowForm.valid);
+    });
+
+    this.workflowForm.valueChanges.subscribe(value => {
+      console.log('Form value changed:', value, 'Form valid:', this.workflowForm.valid);
     });
   }
 
@@ -93,7 +101,7 @@ export class WorkflowSaveModalComponent implements OnInit, OnChanges {
     this.isSaving = true;
     // Prepare form data (canvas_state is handled by the parent)
     const formData = {
-      name: this.workflowForm.value.name,
+      name: this.workflowForm.value.name.trim(), // Trim the name before saving
       description: this.workflowForm.value.description || '',
       clientId: this.workflowForm.value.clientId || undefined // Send undefined if empty
     };

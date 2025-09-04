@@ -13,7 +13,7 @@
         <input
           type="text"
           [value]="name()"
-          (input)="name.set(($any($event.target)?.value) || '')"
+          (input)="onNameInput($event)"
           (blur)="nameTouched.set(true)"
           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
           placeholder="Enter workflow name"
@@ -27,28 +27,14 @@
         <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
         <textarea
           [value]="description()"
-          (input)="description.set(($any($event.target)?.value) || '')"
+          (input)="onDescriptionInput($event)"
           rows="3"
           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
           placeholder="Enter workflow description"
         ></textarea>
       </div>
 
-      @if (clientOptions && clientOptions.length > 0) {
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Client</label>
-          <select
-            [value]="clientIdSignal()"
-            (change)="clientIdSignal.set(($any($event.target)?.value) || '')"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            <option value="" disabled>Select a client</option>
-            @for (client of clientOptions; track client.id) {
-              <option [value]="client.id">{{ client.name }}</option>
-            }
-          </select>
-        </div>
-      }
+      <!-- Client ID field removed as it's not necessary -->
     </form>
   </app-generic-modal>
 

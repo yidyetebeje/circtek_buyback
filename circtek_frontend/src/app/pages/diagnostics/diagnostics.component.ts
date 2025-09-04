@@ -55,6 +55,15 @@ export class DiagnosticsComponent {
   // Role checks
   isSuperAdmin = computed(() => this.auth.currentUser()?.role_id === 1);
 
+  // Export functionality
+  isExporting = signal<boolean>(false);
+  
+  // Primary action for export
+  primaryAction = computed(() => ({
+    label: 'Export CSV',
+    icon: 'download'
+  }));
+
   // Tabs: filter by device type
   tabs = computed<GenericTab[]>(() => [
     { key: '', label: 'All' },
@@ -398,5 +407,72 @@ export class DiagnosticsComponent {
       if (info.capacity) parts.push(`Cap: ${info.capacity}`);
     }
     return parts.length ? parts.join(' · ') : 'N/A';
+  }
+
+  onExportClick() {
+    this.exportData();
+  }
+
+  private exportData() {
+    this.isExporting.set(true);
+    
+    // Build the same parameters used for fetching data
+    let params = new HttpParams();
+    
+    const idf = this.identifier().trim();
+    if (idf) params = params.set('identifier', idf);
+    const sb = this.sortBy();
+    const sd = this.sortDir();
+    if (sb) params = params.set('sort_by', sb);
+    if (sd) params = params.set('sort_dir', sd);
+    const dt = this.deviceType();
+    if (dt) params = params.set('device_type', dt);
+
+    const wid = this.selectedWarehouseId();
+    if (wid != null) params = params.set('warehouse_id', String(wid));
+    const tidTester = this.selectedTesterId();
+    if (tidTester != null) params = params.set('tester_id', String(tidTester));
+    if (this.isSuperAdmin()) {
+      const tenantId = this.selectedTenantId();
+      if (tenantId != null) params = params.set('tenant_id', String(tenantId));
+    }
+
+    // Call the export endpoint
+    this.apiService.exportDiagnostics(params).subscribe({
+      next: (blob: Blob) => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // Generate filename with timestamp and filters
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+        let filename = `test_results_${timestamp}`;
+        
+        // Add filter info to filename if any filters are applied
+        const filterParts: string[] = [];
+        if (idf) filterParts.push(`search-${idf.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (dt) filterParts.push(`type-${dt}`);
+        if (wid != null) filterParts.push(`warehouse-${wid}`);
+        if (tidTester != null) filterParts.push(`tester-${tidTester}`);
+        
+        if (filterParts.length > 0) {
+          filename += `_${filterParts.join('_')}`;
+        }
+        
+        link.download = `${filename}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        this.isExporting.set(false);
+      },
+      error: (error: any) => {
+        console.error('Export failed:', error);
+        this.isExporting.set(false);
+        // You could add a toast notification here
+      }
+    });
   }
 }

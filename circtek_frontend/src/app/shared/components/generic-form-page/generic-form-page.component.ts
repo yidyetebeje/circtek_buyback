@@ -158,7 +158,7 @@ export class GenericFormPageComponent {
   getButtonClass(action: FormAction): string {
     const baseClass = 'btn';
     const variantClass = {
-      primary: 'btn-primary',
+      primary: 'btn-accent',
       secondary: 'btn-secondary', 
       danger: 'btn-error',
       ghost: 'btn-ghost'

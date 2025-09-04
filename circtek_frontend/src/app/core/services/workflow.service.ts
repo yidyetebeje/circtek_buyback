@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
 
 export interface IWorkflow {
   id?: string | number;
   name?: string;
   description?: string;
-  canvasState?: any;
+  canvas_state?: any;
   position?: { x: number; y: number };
   scale?: number;
   clientId?: string | number;
@@ -22,7 +23,7 @@ export interface IWorkflow {
   providedIn: 'root'
 })
 export class WorkflowService {
-  private baseUrl = 'workflows';
+  private baseUrl = '/configuration/workflows';
 
   constructor(
     private http: HttpClient,
@@ -38,11 +39,24 @@ export class WorkflowService {
   }
 
   getWorkflow(id: string): Observable<IWorkflow | null> {
-    return this.apiService.get(`${this.baseUrl}/${id}`);
+    console.log(`🔍 WorkflowService: Making GET request to ${this.baseUrl}/${id}`);
+    return this.apiService.get<{data: IWorkflow | null, message: string, status: number}>(`${this.baseUrl}/${id}`)
+      .pipe(
+        map((response: {data: IWorkflow | null, message: string, status: number}) => {
+          console.log('🔍 Raw API response:', response);
+          return response.data;
+        })
+      );
   }
 
   getWorkflows(): Observable<any> {
-    return this.apiService.get(this.baseUrl);
+    return this.apiService.get<{data: any[], message: string, status: number}>(this.baseUrl)
+      .pipe(
+        map((response: {data: any[], message: string, status: number}) => {
+          console.log('🔍 Raw workflows list response:', response);
+          return response.data;
+        })
+      );
   }
 
   deleteWorkflow(id: string): Observable<any> {

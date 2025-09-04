@@ -17,6 +17,7 @@ import { SkuSpecsRecord, SkuSpecsCreateInput, SkuSpecsUpdateInput, SkuSpecsQuery
 import { RepairReasonRecord, RepairReasonCreateInput, RepairReasonUpdateInput, RepairReasonQueryInput, RepairReasonListResponse } from '../models/repair-reason';
 import { LabelTemplateRecord, LabelTemplateCreateInput, LabelTemplateUpdateInput, LabelTemplateListResponse } from '../models/label-template';
 import { WorkflowRecord, WorkflowCreateInput, WorkflowUpdateInput, WorkflowListResponse } from '../models/workflow';
+import { DashboardOverviewStats, WarehouseStats, RecentActivity, MonthlyTrend } from '../models/dashboard';
 
 @Injectable({
   providedIn: 'root',
@@ -46,6 +47,18 @@ export class ApiService {
 
   getDiagnostics(params: HttpParams = new HttpParams()): Observable<DiagnosticListResponse> {
     return this.get<DiagnosticListResponse>('/diagnostics/tests', params);
+  }
+
+  exportDiagnostics(params: HttpParams = new HttpParams()): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/diagnostics/tests/export`, {
+      params,
+      withCredentials: true,
+      responseType: 'blob'
+    });
+  }
+
+  getPublicDiagnostic(id: number): Observable<ApiResponse<any>> {
+    return this.get<ApiResponse<any>>(`/diagnostics/public/tests/${id}`);
   }
 
   // Warehouses list (tenant-scoped by backend unless super_admin)
@@ -338,7 +351,7 @@ export class ApiService {
   }
 
   deleteTransfer(id: number): Observable<ApiResponse<{ id: number } | null>> {
-    return this.delete<ApiResponse<{ id: number } | null>>(`/såtock/transfers/${id}`);
+    return this.delete<ApiResponse<{ id: number } | null>>(`/stock/transfers/${id}`);
   }
 
   findDeviceByImeiOrSerial(identifier: string): Observable<ApiResponse<any | null>> {
@@ -351,7 +364,7 @@ export class ApiService {
   }
 
   getRepair(id: number): Observable<ApiResponse<RepairWithItems | null>> {
-    return this.get<ApiResponse<RepairWithItems | null>>(`/såtock/repairs/${id}`);
+    return this.get<ApiResponse<RepairWithItems | null>>(`/stock/repairs/${id}`);
   }
 
   createRepair(payload: RepairCreateInput): Observable<ApiResponse<RepairRecord | null>> {
@@ -359,7 +372,7 @@ export class ApiService {
   }
 
   consumeRepairItems(id: number, payload: RepairConsumeItemsInput): Observable<ApiResponse<RepairConsumeResult | null>> {
-    return this.post<ApiResponse<RepairConsumeResult | null>>(`/såtock/repairs/${id}/consume`, payload);
+    return this.post<ApiResponse<RepairConsumeResult | null>>(`/stock/repairs/${id}/consume`, payload);
   }
 
   createRepairWithConsume(payload: RepairCreateWithConsumeInput): Observable<ApiResponse<RepairCreateWithConsumeResult | null>> {
@@ -456,5 +469,22 @@ export class ApiService {
 
   deleteRepairReason(id: number): Observable<ApiResponse<null>> {
     return this.delete<ApiResponse<null>>(`/stock/repair-reasons/${id}`);
+  }
+
+  // ===== Dashboard Stats =====
+  getDashboardOverview(params: HttpParams = new HttpParams()): Observable<ApiResponse<DashboardOverviewStats>> {
+    return this.get<ApiResponse<DashboardOverviewStats>>('/dashboard/overview', params);
+  }
+
+  getDashboardWarehouseStats(params: HttpParams = new HttpParams()): Observable<ApiResponse<WarehouseStats[]>> {
+    return this.get<ApiResponse<WarehouseStats[]>>('/dashboard/warehouses', params);
+  }
+
+  getDashboardRecentActivity(params: HttpParams = new HttpParams()): Observable<ApiResponse<RecentActivity[]>> {
+    return this.get<ApiResponse<RecentActivity[]>>('/dashboard/activity', params);
+  }
+
+  getDashboardMonthlyTrends(params: HttpParams = new HttpParams()): Observable<ApiResponse<MonthlyTrend[]>> {
+    return this.get<ApiResponse<MonthlyTrend[]>>('/dashboard/trends', params);
   }
 }

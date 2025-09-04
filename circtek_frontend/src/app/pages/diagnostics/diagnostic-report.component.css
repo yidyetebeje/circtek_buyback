@@ -1,0 +1,54 @@
+/* General styles */
+:host {
+  display: block;
+}
+
+#report-root {
+    height: 100vh;
+    width: 100vw;
+}
+
+.card {
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+}
+
+/* Print-specific styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  :host, body, #report-root {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  .border-base-300 {
+    border-color: #E5E7EB !important; /* gray-200 */
+  }
+
+  .bg-base-200\/60, .bg-base-300\/60 {
+    background-color: #F3F4F6 !important; /* gray-100 */
+    print-color-adjust: exact;
+  }
+
+  .card-body {
+    padding: 1.25rem !important;
+  }
+
+  h1, h2, h3, p {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+
+  .grid {
+    page-break-inside: avoid;
+  }
+}

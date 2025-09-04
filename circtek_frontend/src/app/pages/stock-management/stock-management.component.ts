@@ -131,13 +131,11 @@ export class StockManagementComponent {
           { header: 'Warehouse', accessorKey: 'warehouse_name' as any },
           { header: 'Quantity', accessorKey: 'quantity' as any },
           { header: 'Type', id: 'is_part', accessorFn: (r: any) => (r.is_part ? 'Part' : 'Device') },
-          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No') },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
               actions: [
                 { key: 'edit', label: 'Edit', class: 'text-primary' },
-                { key: 'delete', label: 'Delete', class: 'text-error' },
               ],
               cellClass: () => 'text-right'
             }
@@ -149,7 +147,6 @@ export class StockManagementComponent {
           { header: 'PO No.', accessorKey: 'purchase_order_no' as any },
           { header: 'Supplier', accessorKey: 'supplier_name' as any },
           { header: 'Expected', accessorKey: 'expected_delivery_date' as any },
-          { header: 'Status', id: 'status', accessorFn: (r: any) => (r.status ? 'Active' : 'Inactive') },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
@@ -157,7 +154,6 @@ export class StockManagementComponent {
                 { key: 'detail', label: 'Detail', class: 'text-info', icon: 'eye' },
                 { key: 'receive', label: 'Receive Items', class: 'text-secondary', icon: 'package-plus' },
                 { key: 'edit', label: 'Edit', class: 'text-primary', icon: 'edit' },
-                { key: 'delete', label: 'Delete', class: 'text-error', icon: 'trash-2' },
               ],
               cellClass: () => 'text-right'
             }
@@ -176,7 +172,6 @@ export class StockManagementComponent {
             meta: {
               actions: [
                 { key: 'complete', label: 'Complete', class: 'text-secondary' },
-                { key: 'delete', label: 'Delete', class: 'text-error' },
               ],
               cellClass: () => 'text-right'
             }
@@ -184,20 +179,24 @@ export class StockManagementComponent {
         ];
       case 'repairs':
         return [
-          { header: 'ID', accessorKey: 'id' as any },
-          { header: 'Device ID', accessorKey: 'device_id' as any },
           { header: 'Device SKU', accessorKey: 'device_sku' as any },
-          { header: 'Reason ID', accessorKey: 'reason_id' as any },
+          { header: 'IMEI', accessorKey: 'device_imei' as any },
+          { header: 'Serial', accessorKey: 'device_serial' as any },
+          { header: 'Repair Reason', id: 'reason_name', accessorFn: (r: any) => r.reason_name || `ID: ${r.reason_id}` },
+          { header: 'Parts Used', id: 'parts_used', accessorFn: (r: any) => {
+            // Check for consumed parts from repair items
+            if (r.consumed_parts && r.consumed_parts.length > 0) {
+              return r.consumed_parts.map((part: string) => part).join(', ');
+            }
+            return 'No parts used';
+          }},
           { header: 'Remarks', accessorKey: 'remarks' as any },
-          { header: 'Status', id: 'status', accessorFn: (r: any) => (r.status ? 'Active' : 'Inactive') },
           { header: 'Created', accessorKey: 'created_at' as any },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
               actions: [
-                { key: 'consume', label: 'Consume Parts', class: 'text-secondary' },
-                { key: 'edit', label: 'Edit', class: 'text-primary' },
-                { key: 'delete', label: 'Delete', class: 'text-error' },
+                { key: 'detail', label: 'View Details', class: 'text-info', icon: 'eye' },
               ],
               cellClass: () => 'text-right'
             }
@@ -214,13 +213,11 @@ export class StockManagementComponent {
           { header: 'Storage', accessorKey: 'storage' as any },
           { header: 'Memory', accessorKey: 'memory' as any },
           { header: 'Color', accessorKey: 'color' as any },
-          { header: 'Status', id: 'status', accessorFn: (r: any) => (r.status ? 'Active' : 'Inactive') },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
               actions: [
                 { key: 'edit', label: 'Edit', class: 'text-primary' },
-                { key: 'delete', label: 'Delete', class: 'text-error' },
               ],
               cellClass: () => 'text-right'
             }
@@ -231,13 +228,11 @@ export class StockManagementComponent {
           { header: 'ID', accessorKey: 'id' as any },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
-          { header: 'Status', id: 'status', accessorFn: (r: any) => (r.status ? 'Active' : 'Inactive') },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
               actions: [
                 { key: 'edit', label: 'Edit', class: 'text-primary' },
-                { key: 'delete', label: 'Delete', class: 'text-error' },
               ],
               cellClass: () => 'text-right'
             }
@@ -254,7 +249,7 @@ export class StockManagementComponent {
       case 'stock': return 'Search SKU';
       case 'purchases': return 'Search PO, supplier, tracking';
       case 'transfers': return 'Search transfers';
-      case 'repairs': return 'Search device SKU, remarks';
+      case 'repairs': return 'Search device SKU, IMEI, serial, remarks';
       case 'sku-specs': return 'Search SKU, make, model';
       case 'repair-reasons': return 'Search name, description';
       default: return 'Search';
@@ -549,10 +544,6 @@ export class StockManagementComponent {
     const tab = this.activeTab();
     const row = event.row as any;
 
-    if (event.action === 'delete') {
-      this.openDeleteModal(tab, row);
-      return;
-    }
 
     if (tab === 'purchases' && event.action === 'detail') {
       this.router.navigate(['/stock-management/purchases', row.id]);
@@ -569,10 +560,11 @@ export class StockManagementComponent {
       return;
     }
 
-    if (tab === 'repairs' && event.action === 'consume') {
-      this.router.navigate(['/stock-management/repairs', row.id, 'consume']);
+    if (tab === 'repairs' && event.action === 'detail') {
+      this.router.navigate(['/stock-management/repairs', row.id]);
       return;
     }
+
 
     if (tab === 'sku-specs' && event.action === 'edit') {
       this.router.navigate(['/stock-management/sku-specs', row.id, 'edit']);
@@ -587,36 +579,4 @@ export class StockManagementComponent {
     // edit actions/forms will be added later
   }
 
-  // Delete confirmation modal state
-  isDeleteModalOpen = signal(false);
-  deleteContext = signal<{ tab: 'stock' | 'purchases' | 'transfers' | 'repairs' | 'sku-specs' | 'repair-reasons'; row: StockMgmtRow } | null>(null);
-
-  openDeleteModal(tab: 'stock' | 'purchases' | 'transfers' | 'repairs' | 'sku-specs' | 'repair-reasons', row: StockMgmtRow) {
-    this.deleteContext.set({ tab, row });
-    this.isDeleteModalOpen.set(true);
-  }
-
-  closeDeleteModal() {
-    this.isDeleteModalOpen.set(false);
-    this.deleteContext.set(null);
-  }
-
-  confirmDelete() {
-    const ctx = this.deleteContext();
-    if (!ctx) return;
-    this.loading.set(true);
-
-    let obs: any;
-    if (ctx.tab === 'stock') obs = this.api.deleteStock((ctx.row as any).id);
-    else if (ctx.tab === 'purchases') obs = this.api.deletePurchase((ctx.row as any).id);
-    else if (ctx.tab === 'transfers') obs = this.api.deleteTransfer((ctx.row as any).id);
-    else if (ctx.tab === 'repairs') obs = this.api.deleteRepair((ctx.row as any).id);
-    else if (ctx.tab === 'sku-specs') obs = this.api.deleteSkuSpecs((ctx.row as any).id);
-    else if (ctx.tab === 'repair-reasons') obs = this.api.deleteRepairReason((ctx.row as any).id);
-
-    obs.subscribe({
-      next: () => { this.loading.set(false); this.closeDeleteModal(); this.fetchData(); },
-      error: () => { this.loading.set(false); this.closeDeleteModal(); },
-    });
-  }
 }

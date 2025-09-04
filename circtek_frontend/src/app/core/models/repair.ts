@@ -35,7 +35,6 @@ export interface RepairCreateInput {
   device_id: number;
   reason_id: number;
   remarks?: string;
-  actor_id: number;
 }
 
 export interface RepairQueryInput {
@@ -56,7 +55,6 @@ export interface RepairConsumeItemsInput {
     quantity: number;
   }>;
   notes?: string;
-  actor_id: number;
 }
 
 export interface ConsumeResultItem {
@@ -80,7 +78,6 @@ export interface RepairCreateWithConsumeInput {
   device_id: number;
   reason_id: number;
   remarks?: string;
-  actor_id: number;
   // Consumption information
   warehouse_id: number;
   items: Array<{
