@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.yourproductiondomain.com/api' // Replace with your actual production API URL
+  apiUrl: 'https://circtek-aws.onrender.com/api/v1' // Replace with your actual production API URL
 };
