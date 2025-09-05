@@ -1,0 +1,65 @@
+<app-generic-form-page
+  title="Add Dead IMEI Device"
+  subtitle="Mark a device as dead IMEI and write it off from inventory"
+  [form]="form"
+  [fields]="formFields()"
+  [loading]="loading()"
+  [error]="error()"
+  (submit)="onSubmit()"
+  (cancel)="onCancel()">
+  
+  <!-- Custom content for device scanner and device info -->
+  <div class="space-y-6">
+    <!-- Device Scanner -->
+    <div class="form-group">
+      <app-barcode-scanner
+        placeholder="Scan or enter IMEI/Serial number..."
+        label="Device Identifier"
+        [required]="true"
+        (scanned)="onScan($event)" />
+      
+      @if (form.get('identifier')?.invalid && form.get('identifier')?.touched) {
+        <div class="form-error">Device identifier is required</div>
+      }
+      
+      @if (error() && !deviceFound()) {
+        <div class="form-error">{{ error() }}</div>
+      }
+    </div>
+
+    <!-- Device Information Display -->
+    @if (deviceFound()) {
+      <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+        <h4 class="text-sm font-medium text-green-800 mb-2">Device Found</h4>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span class="font-medium text-gray-600">Device ID:</span>
+            <span class="ml-2 text-gray-900">{{ deviceFound().id }}</span>
+          </div>
+          <div>
+            <span class="font-medium text-gray-600">SKU:</span>
+            <span class="ml-2 text-gray-900">{{ deviceFound().sku }}</span>
+          </div>
+          @if (deviceFound().imei) {
+            <div>
+              <span class="font-medium text-gray-600">IMEI:</span>
+              <span class="ml-2 text-gray-900">{{ deviceFound().imei }}</span>
+            </div>
+          }
+          @if (deviceFound().serial) {
+            <div>
+              <span class="font-medium text-gray-600">Serial:</span>
+              <span class="ml-2 text-gray-900">{{ deviceFound().serial }}</span>
+            </div>
+          }
+          @if (deviceFound().warehouse_name) {
+            <div>
+              <span class="font-medium text-gray-600">Current Warehouse:</span>
+              <span class="ml-2 text-gray-900">{{ deviceFound().warehouse_name }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</app-generic-form-page>

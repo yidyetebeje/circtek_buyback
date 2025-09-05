@@ -172,6 +172,13 @@ export const routes: Routes = [
   },
 
 
+  // Device History page route
+  {
+    path: 'device-history',
+    loadComponent: () =>
+      import('./pages/device-history/device-history.component').then((m) => m.DeviceHistoryComponent),
+  },
+
   // Repair Reasons form routes
   {
     path: 'stock-management/repair-reasons/add',
@@ -194,6 +201,13 @@ export const routes: Routes = [
     path: 'stock-management/sku-specs/:id/edit',
     loadComponent: () =>
       import('./pages/sku-specs-form/sku-specs-form.component').then((m) => m.SkuSpecsFormComponent),
+  },
+
+  // Dead IMEI form routes
+  {
+    path: 'stock-management/dead-imei/add',
+    loadComponent: () =>
+      import('./pages/stock-management/dead-imei-form/dead-imei-form.component').then((m) => m.DeadIMEIFormComponent),
   },
 
   // Workflow Editor routes

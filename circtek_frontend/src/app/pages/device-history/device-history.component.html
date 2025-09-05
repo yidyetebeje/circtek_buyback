@@ -1,0 +1,225 @@
+<div class="min-h-screen bg-base-100 p-6">
+  <div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-base-content mb-2">Device History</h1>
+      <p class="text-base-content/70">Search and view the complete event history for any device</p>
+    </div>
+
+    <!-- Search Section -->
+    <div class="bg-base-200 rounded-lg border border-base-300 p-6 mb-6">
+      <div class="flex flex-col space-y-4">
+        <!-- Search Input Row -->
+        <div class="flex flex-col sm:flex-row gap-4">
+          <div class="flex-1">
+            <label for="search" class="block text-sm font-medium text-base-content mb-2">
+              Device Identifier (IMEI or Serial Number)
+            </label>
+            <app-barcode-scanner
+              placeholder="Scan or enter IMEI/Serial number..."
+              [enableCamera]="true"
+              [autoClear]="false"
+              (scanned)="onBarcodeScanned($event)"
+            />
+          </div>
+          <div class="flex gap-2 items-end">
+            <button
+              type="button"
+              (click)="onSearchSubmit()"
+              [disabled]="loading() || !searchValue().trim()"
+              class="btn btn-accent flex items-center gap-2"
+            >
+              @if (loading()) {
+                <span class="loading loading-spinner loading-sm"></span>
+                Searching...
+              } @else {
+                Search
+              }
+            </button>
+          </div>
+        </div>
+
+
+        <!-- Error Message -->
+        @if (errorMessage()) {
+          <div class="alert alert-error">
+            <span>⚠️</span>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    @if (hasSearched() && !loading()) {
+      <div class="bg-base-200 rounded-lg border border-base-300">
+        <!-- Results Header -->
+        <div class="px-6 py-4 border-b border-base-300">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 class="text-xl font-semibold text-base-content">
+                Device History for: {{ searchValue() }}
+              </h2>
+              <p class="text-sm text-base-content/70 mt-1">
+                @if (hasEvents()) {
+                  {{ events().length }} event{{ events().length === 1 ? '' : 's' }} found
+                } @else {
+                  No events found
+                }
+              </p>
+            </div>
+            
+            @if (hasEvents()) {
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  (click)="toggleViewMode()"
+                  class="btn btn-outline btn-sm flex items-center gap-2"
+                >
+                  @if (viewMode() === 'timeline') {
+                    📊 Table View
+                  } @else {
+                    📅 Timeline View
+                  }
+                </button>
+                <button
+                  type="button"
+                  (click)="clearSearch()"
+                  class="btn btn-outline btn-sm"
+                >
+                  Clear
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Results Content -->
+        @if (hasEvents()) {
+          <div class="p-6">
+            <!-- Timeline View -->
+            @if (viewMode() === 'timeline') {
+              <div class="space-y-6">
+                @for (event of events(); track event.id) {
+                  <div class="relative flex items-start space-x-4">
+                    <!-- Timeline Line -->
+                    @if (!$last) {
+                      <div class="absolute left-6 top-12 w-0.5 h-full bg-base-300"></div>
+                    }
+                    
+                    <!-- Event Icon -->
+                    <div class="flex-shrink-0 w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-xl">
+                      {{ getEventConfig(event.event_type).icon }}
+                    </div>
+                    
+                    <!-- Event Content -->
+                    <div class="flex-1 min-w-0">
+                      <div class="bg-base-100 rounded-lg p-4 border border-base-300">
+                        <div class="flex flex-col sm:flex-row justify-between items-start gap-2">
+                          <div>
+                            <h3 class="text-lg font-medium text-primary">
+                              {{ getEventConfig(event.event_type).label }}
+                            </h3>
+                            <p class="text-sm text-base-content/70 mt-1">
+                              {{ formatDate(event.created_at) }}
+                            </p>
+                          </div>
+                          <span class="badge badge-outline badge-sm">
+                            ID: {{ event.id }}
+                          </span>
+                        </div>
+                        
+                        @if (formatDetails(event.details)) {
+                          <div class="mt-3 p-3 bg-base-200 rounded border border-base-300">
+                            <p class="text-sm text-base-content">
+                              <strong>Details:</strong> {{ formatDetails(event.details) }}
+                            </p>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Table View -->
+            @if (viewMode() === 'table') {
+              <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                  <thead>
+                    <tr>
+                      <th class="text-base-content/70">
+                        Event
+                      </th>
+                      <th class="text-base-content/70">
+                        Date
+                      </th>
+                      <th class="text-base-content/70">
+                        Details
+                      </th>
+                      <th class="text-base-content/70">
+                        ID
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (event of events(); track event.id) {
+                      <tr class="hover">
+                        <td>
+                          <div class="flex items-center">
+                            <span class="text-xl mr-3">{{ getEventConfig(event.event_type).icon }}</span>
+                            <div>
+                              <div class="text-sm font-medium text-primary">
+                                {{ getEventConfig(event.event_type).label }}
+                              </div>
+                              <div class="text-sm text-base-content/70">{{ event.event_type }}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="text-sm text-base-content">
+                          {{ formatDate(event.created_at) }}
+                        </td>
+                        <td class="text-sm text-base-content">
+                          <div class="max-w-xs truncate">
+                            {{ formatDetails(event.details) || 'No details' }}
+                          </div>
+                        </td>
+                        <td class="text-sm text-base-content/70">
+                          {{ event.id }}
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        } @else {
+          <!-- No Results -->
+          <div class="p-12 text-center">
+            <div class="text-6xl mb-4">🔍</div>
+            <h3 class="text-lg font-medium text-base-content mb-2">No Events Found</h3>
+            <p class="text-base-content/70">
+              No history events were found for the device identifier "{{ searchValue() }}".
+              <br>
+              Please verify the IMEI or Serial Number and try again.
+            </p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Initial State -->
+    @if (!hasSearched() && !loading()) {
+      <div class="bg-base-200 rounded-lg border border-base-300 p-12 text-center">
+        <div class="text-6xl mb-4">📱</div>
+        <h3 class="text-lg font-medium text-base-content mb-2">Search Device History</h3>
+        <p class="text-base-content/70 max-w-md mx-auto">
+          Scan or enter a device IMEI (15 digits) or Serial Number to view its complete event history, 
+          including repairs, transfers, tests, and adjustments.
+        </p>
+      </div>
+    }
+  </div>
+</div>

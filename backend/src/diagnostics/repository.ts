@@ -1,0 +1,256 @@
+import { and, asc, count, desc, eq, like, or, SQL } from 'drizzle-orm'
+import { db } from '../db'
+import { devices, test_results, users as usersTable, warehouses as warehousesTable } from '../db/circtek.schema'
+import { DiagnosticFilters, DiagnosticListResult, DiagnosticPublic, DiagnosticUploadInput } from './types'
+
+const diagnosticSelection = {
+	id: test_results.id,
+	created_at: test_results.created_at,
+	updated_at: test_results.updated_at,
+	tenant_id: test_results.tenant_id,
+	warehouse_id: test_results.warehouse_id,
+	tester_id: test_results.tester_id,
+	device_id: test_results.device_id,
+	lpn: test_results.lpn,
+	serial_number: test_results.serial_number,
+	imei: test_results.imei,
+	passed_components: test_results.passed_components,
+	failed_components: test_results.failed_components,
+	pending_components: test_results.pending_components,
+	oem_status: test_results.oem_status,
+	battery_info: test_results.battery_info,
+	oem_info: test_results.oem_info,
+	label_printed: test_results.label_printed,
+	status: test_results.status,
+	os_version: test_results.os_version,
+	device_lock: test_results.device_lock,
+	carrier_lock: test_results.carrier_lock,
+	sim_lock: test_results.sim_lock,
+	ESN: test_results.ESN,
+	iCloud: test_results.iCloud,
+	eSIM: test_results.eSIM,
+	eSIM_erasure: test_results.eSIM_erasure,
+	make: devices.make,
+	model_no: devices.model_no,
+	model_name: devices.model_name,
+	device_type: devices.device_type,
+	device_serial: devices.serial,
+	device_imei: devices.imei,
+	device_lpn: devices.lpn,
+	device_sku: devices.sku,
+	device_imei2: devices.imei2,
+	device_guid: devices.guid,
+	device_description: devices.description,
+	device_storage: devices.storage,
+	device_memory: devices.memory,
+	device_color: devices.color,
+	device_created_at: devices.created_at,
+	device_status: devices.status,
+	warehouse_name: warehousesTable.name,
+	tester_username: usersTable.user_name,
+}
+
+export class DiagnosticsRepository {
+	constructor(private readonly database: typeof db) {}
+
+	async list(filters: DiagnosticFilters): Promise<DiagnosticListResult> {
+		const conditions: any[] = []
+		if (filters.identifier) {
+			const pattern = `%${filters.identifier}%`
+			conditions.push(or(
+				like(test_results.lpn, pattern),
+				like(test_results.serial_number, pattern),
+				like(test_results.imei, pattern),
+				like(devices.lpn, pattern),
+				like(devices.serial, pattern),
+				like(devices.imei, pattern),
+			))
+		}
+		if (typeof filters.tenant_id === 'number') conditions.push(eq(test_results.tenant_id, filters.tenant_id))
+		if (filters.device_type) conditions.push(eq(devices.device_type, filters.device_type as any))
+		if (typeof filters.warehouse_id === 'number') conditions.push(eq(test_results.warehouse_id, filters.warehouse_id))
+		if (typeof filters.tester_id === 'number') conditions.push(eq(test_results.tester_id, filters.tester_id))
+
+		const page = Math.max(1, filters.page ?? 1)
+		const limit = Math.max(1, Math.min(100, filters.limit ?? 10))
+		const offset = (page - 1) * limit
+
+		const whereCond = conditions.length ? (and(...conditions) as any) : undefined
+
+		// Sorting mapping
+		const sortDir = (filters.sort_dir === 'asc' || filters.sort_dir === 'desc') ? filters.sort_dir : 'desc'
+		const column = (() => {
+			switch (filters.sort_by) {
+				case 'id': return test_results.id
+				case 'created_at': return test_results.created_at
+				case 'lpn': return test_results.lpn
+				case 'serial_number': return test_results.serial_number
+				case 'imei': return test_results.imei
+				case 'make': return devices.make
+				case 'model_name': return devices.model_name
+				case 'status': return test_results.status
+				default: return test_results.created_at
+			}
+		})()
+		const orderExpr = sortDir === 'asc' ? asc(column as any) : desc(column as any)
+
+		const baseFrom = this.database
+			.select(diagnosticSelection)
+			.from(test_results)
+			.leftJoin(devices, eq(test_results.device_id, devices.id))
+			.leftJoin(warehousesTable, eq(test_results.warehouse_id, warehousesTable.id))
+			.leftJoin(usersTable, eq(test_results.tester_id, usersTable.id))
+
+		const [totalRow] = await (whereCond
+			? this.database
+				.select({ total: count() })
+				.from(test_results)
+				.leftJoin(devices, eq(test_results.device_id, devices.id))
+				.leftJoin(warehousesTable, eq(test_results.warehouse_id, warehousesTable.id))
+				.leftJoin(usersTable, eq(test_results.tester_id, usersTable.id))
+				.where(whereCond)
+			: this.database
+				.select({ total: count() })
+				.from(test_results)
+				.leftJoin(devices, eq(test_results.device_id, devices.id))
+				.leftJoin(warehousesTable, eq(test_results.warehouse_id, warehousesTable.id))
+				.leftJoin(usersTable, eq(test_results.tester_id, usersTable.id)))
+
+		const rows = await (whereCond
+			? baseFrom.where(whereCond).orderBy(orderExpr).limit(limit).offset(offset)
+			: baseFrom.orderBy(orderExpr).limit(limit).offset(offset))
+
+		return { rows: rows as unknown as DiagnosticPublic[], total: totalRow?.total ?? 0, page, limit }
+	}
+
+	async exportAll(filters: DiagnosticFilters): Promise<DiagnosticPublic[]> {
+		const conditions: any[] = []
+		if (filters.identifier) {
+			const pattern = `%${filters.identifier}%`
+			conditions.push(or(
+				like(test_results.lpn, pattern),
+				like(test_results.serial_number, pattern),
+				like(test_results.imei, pattern),
+				like(devices.lpn, pattern),
+				like(devices.serial, pattern),
+				like(devices.imei, pattern),
+			))
+		}
+		if (typeof filters.tenant_id === 'number') conditions.push(eq(test_results.tenant_id, filters.tenant_id))
+		if (filters.device_type) conditions.push(eq(devices.device_type, filters.device_type as any))
+		const whereCond = conditions.length ? (and(...conditions) as any) : undefined
+
+		// Sorting mapping (reuse default)
+		const sortDir = (filters.sort_dir === 'asc' || filters.sort_dir === 'desc') ? filters.sort_dir : 'desc'
+		const column = (() => {
+			switch (filters.sort_by) {
+				case 'id': return test_results.id
+				case 'created_at': return test_results.created_at
+				case 'lpn': return test_results.lpn
+				case 'serial_number': return test_results.serial_number
+				case 'imei': return test_results.imei
+				case 'make': return devices.make
+				case 'model_name': return devices.model_name
+				case 'status': return test_results.status
+				default: return test_results.created_at
+			}
+		})()
+		const orderExpr = sortDir === 'asc' ? asc(column as any) : desc(column as any)
+
+		const baseFrom = this.database
+			.select(diagnosticSelection)
+			.from(test_results)
+			.leftJoin(devices, eq(test_results.device_id, devices.id))
+			.leftJoin(warehousesTable, eq(test_results.warehouse_id, warehousesTable.id))
+			.leftJoin(usersTable, eq(test_results.tester_id, usersTable.id))
+
+		const rows = await (whereCond ? baseFrom.where(whereCond).orderBy(orderExpr) : baseFrom.orderBy(orderExpr))
+		return rows as unknown as DiagnosticPublic[]
+	}
+
+	async upload(input: DiagnosticUploadInput, testerId: number, tenantId: number): Promise<DiagnosticPublic | undefined> {
+		// Ensure device exists or create it
+		const deviceToInsert = {
+			make: input.device.make,
+			model_no: input.device.model_no,
+			model_name: input.device.model_name,
+			device_type: input.device.device_type as any,
+			serial: input.device.serial,
+			imei: input.device.imei,
+			imei2: input.device.imei2,
+			guid: input.device.guid,
+			description: input.device.description ?? `${input.device.make} ${input.device.model_name}`,
+			status: 1 as any,
+			tenant_id: tenantId,
+			warehouse_id: input.test.warehouse_id, // Add warehouse_id from test input
+			lpn: input.device.lpn,
+			sku: input.device.sku,
+			storage: input.device.storage,
+			memory: input.device.memory,
+			color: input.device.color,
+		}
+
+		let [existingDevice] = await this.database
+			.select({ id: devices.id })
+			.from(devices)
+			.where(and(eq(devices.serial, deviceToInsert.serial), eq(devices.tenant_id, tenantId)) as any)
+
+		if (!existingDevice) {
+			await this.database.insert(devices).values(deviceToInsert as any)
+			;[existingDevice] = await this.database
+				.select({ id: devices.id })
+				.from(devices)
+				.where(and(eq(devices.serial, deviceToInsert.serial), eq(devices.tenant_id, tenantId)) as any)
+		}
+
+		const toInsertTest = {
+			tenant_id: tenantId,
+			device_id: existingDevice.id,
+			warehouse_id: input.test.warehouse_id,
+			tester_id: testerId,
+			battery_info: input.test.battery_info as any,
+			passed_components: input.test.passed_components,
+			failed_components: input.test.failed_components,
+			pending_components: input.test.pending_components,
+			oem_status: input.test.oem_status,
+			oem_info: input.test.oem_info as any,
+			lpn: input.test.lpn ?? deviceToInsert.lpn,
+			status: 1 as any,
+			os_version: input.test.os_version,
+			device_lock: input.test.device_lock,
+			carrier_lock: input.test.carrier_lock as any,
+			sim_lock: input.test.sim_lock as any,
+			ESN: input.test.ESN,
+			iCloud: input.test.iCloud as any,
+			eSIM: input.test.eSIM as any,
+			eSIM_erasure: input.test.eSIM_erasure as any,
+			serial_number: input.test.serial_number ?? deviceToInsert.serial,
+			imei: input.test.imei ?? deviceToInsert.imei,
+		}
+
+		await this.database.insert(test_results).values(toInsertTest as any)
+
+		const [inserted] = await this.database
+			.select(diagnosticSelection)
+			.from(test_results)
+			.leftJoin(devices, eq(test_results.device_id, devices.id))
+			.leftJoin(warehousesTable, eq(test_results.warehouse_id, warehousesTable.id))
+			.leftJoin(usersTable, eq(test_results.tester_id, usersTable.id))
+			.where(and(eq(test_results.device_id, existingDevice.id), eq(test_results.tester_id, testerId)) as any)
+
+		return inserted as unknown as DiagnosticPublic | undefined
+	}
+
+	async findById(id: number): Promise<DiagnosticPublic | undefined> {
+		const [row] = await this.database
+			.select(diagnosticSelection)
+			.from(test_results)
+			.leftJoin(devices, eq(test_results.device_id, devices.id))
+			.leftJoin(warehousesTable, eq(test_results.warehouse_id, warehousesTable.id))
+			.leftJoin(usersTable, eq(test_results.tester_id, usersTable.id))
+			.where(eq(test_results.id, id))
+		return row as unknown as DiagnosticPublic | undefined
+	}
+}
+
+

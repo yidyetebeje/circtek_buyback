@@ -18,6 +18,7 @@ import { RepairReasonRecord, RepairReasonCreateInput, RepairReasonUpdateInput, R
 import { LabelTemplateRecord, LabelTemplateCreateInput, LabelTemplateUpdateInput, LabelTemplateListResponse } from '../models/label-template';
 import { WorkflowRecord, WorkflowCreateInput, WorkflowUpdateInput, WorkflowListResponse } from '../models/workflow';
 import { DashboardOverviewStats, WarehouseStats, RecentActivity, MonthlyTrend } from '../models/dashboard';
+import { DeadIMEIRecord, DeadIMEICreateInput, DeadIMEIQueryInput, DeadIMEIResult } from '../models/dead-imei';
 
 @Injectable({
   providedIn: 'root',
@@ -383,6 +384,15 @@ export class ApiService {
     return this.delete<ApiResponse<{ id: number } | null>>(`/stock/repairs/${id}`);
   }
 
+  // ===== Dead IMEI =====
+  getDeadIMEIHistory(params: HttpParams = new HttpParams()): Observable<ApiResponse<DeadIMEIRecord[]>> {
+    return this.get<ApiResponse<DeadIMEIRecord[]>>('/stock/adjustments/dead-imei', params);
+  }
+
+  createDeadIMEIWriteOff(payload: DeadIMEICreateInput): Observable<ApiResponse<DeadIMEIResult | null>> {
+    return this.post<ApiResponse<DeadIMEIResult | null>>('/stock/adjustments/dead-imei', payload);
+  }
+
   // File Upload Methods
   uploadFile(file: File, folder?: string): Observable<ApiResponse<{ url: string; fileName: string; originalName: string; size: number; type: string } | null>> {
     const formData = new FormData();
@@ -486,5 +496,10 @@ export class ApiService {
 
   getDashboardMonthlyTrends(params: HttpParams = new HttpParams()): Observable<ApiResponse<MonthlyTrend[]>> {
     return this.get<ApiResponse<MonthlyTrend[]>>('/dashboard/trends', params);
+  }
+
+  // ===== Device Events =====
+  getDeviceEvents(params: HttpParams = new HttpParams()): Observable<ApiResponse<any[]>> {
+    return this.get<ApiResponse<any[]>>('/stock/device-events', params);
   }
 }
