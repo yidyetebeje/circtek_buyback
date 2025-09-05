@@ -1,20 +1,19 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { catchError, throwError } from 'rxjs';
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
+  const router = inject(Router);
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      let errorMessage = 'An unknown error occurred!';
-      if (error.error instanceof ErrorEvent) {
-        // Client-side errors
-        errorMessage = `Error: ${error.error.message}`;
-      } else {
-        // Server-side errors
-        errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`;
+      if (error.status === 401) {
+        // Clear token to avoid stale state and redirect to login
+        try { localStorage.removeItem('auth_token'); } catch {}
+        router.navigate(['/login']);
       }
-      // Here you could add logic to display a toast/notification to the user
-      console.error(errorMessage);
-      return throwError(() => new Error(errorMessage));
+      // Re-throw the original error for subscribers who need it
+      return throwError(() => error);
     })
   );
 };
