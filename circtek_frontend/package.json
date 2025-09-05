@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "nx serve",
-    "build": "pnpm install -g nx && nx build --configuration production",
-    "build:dev": "nx build --configuration development",
-    "watch": "nx build --watch --configuration development",
-    "test": "nx test"
+    "start": "npx nx serve",
+    "build": "npx nx build --configuration production",
+    "build:dev": "npx nx build --configuration development",
+    "watch": "npx nx build --watch --configuration development",
+    "test": "npx nx test"
   },
   "private": true,
   "dependencies": {
