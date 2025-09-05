@@ -31,14 +31,13 @@ export const requireRole = (roles: string[]) =>
 				if ((ctx as any).request.method === 'OPTIONS') {
 					return { currentUserId: null, currentTenantId: null, currentRole: null }
 				}
-              
 				const token = (ctx as any).bearer as string | undefined
 				if (!token) return { authError: { status: 401, message: 'Access Denied' } }
 				const payload = await (ctx as any).jwt.verify(token)
 				if (!payload) return { authError: { status: 403, message: 'Invalid Token' } }
 				const role = (payload as any).role as string | undefined
 				if (roles.length && (!role || !roles.includes(role))) return { authError: { status: 403, message: 'Forbidden' } }
-				return { currentUserId: Number((payload as any).sub), currentTenantId: (payload as any).tenant_id, currentRole: role }
+				return { currentUserId: Number((payload as any).sub), currentTenantId: (payload as any).tenant_id, currentRole: role, warehouseId: (payload as any).warehouse_id }
 			})
 			.onBeforeHandle(({ authError, set, request }) => {
 				// Skip authentication for OPTIONS requests (CORS preflight)

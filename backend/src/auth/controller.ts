@@ -35,7 +35,7 @@ export class AuthController {
 		if (!match) return { data: null as any, message: 'Invalid credentials', status: 401 }
 		delete (user as any).password
 		const roleName = await this.authRepo.getRoleName(user.role_id ?? null)
-		const token = await signJwt({ sub: user.id, role: roleName, tenant_id: user.tenant_id })
+		const token = await signJwt({ sub: user.id, role: roleName, tenant_id: user.tenant_id, warehouse_id: user.warehouse_id })
 		return { data: { token, user }, message: 'OK', status: 200 }
 	}
 

@@ -176,7 +176,7 @@ export const question_options = mysqlTable("question_options", {
 ]);
 
 // Device Model Question Set Assignments (many-to-many)
-export const deviceModelQuestionSetAssignments = mysqlTable("device_model_question_set_assignments", {
+export const device_model_question_set_assignments = mysqlTable("device_model_question_set_assignments", {
   id: serial("id").notNull(),
   model_id: bigint("model_id", { mode: 'number', unsigned: true }).notNull(),
   question_set_id: bigint("question_set_id", { mode: 'number', unsigned: true }).notNull(),
@@ -232,9 +232,6 @@ export const featured_devices = mysqlTable("featured_devices", {
 },
 (table) => [
   primaryKey({ columns: [table.id], name: "featured_devices_id"}),
-
-  
- 
   index("featured_devices_tenant_id_idx").on(table.tenantId),
   index("featured_devices_model_id_idx").on(table.modelId),
   index("featured_devices_shop_id_idx").on(table.shopId),
