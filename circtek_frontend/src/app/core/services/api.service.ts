@@ -1,6 +1,7 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, catchError, throwError } from 'rxjs';
+import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { DiagnosticListResponse } from '../models/diagnostic';
 import { WarehouseListResponse } from '../models/warehouse';
@@ -25,25 +26,47 @@ import { DeadIMEIRecord, DeadIMEICreateInput, DeadIMEIQueryInput, DeadIMEIResult
 })
 export class ApiService {
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
   private readonly apiUrl = environment.apiUrl;
 
+  private handleError = (err: HttpErrorResponse) => {
+    if (err.status === 401) {
+      try {
+        // Clear any stored token and redirect to login
+        localStorage.removeItem('auth_token');
+      } catch {}
+      this.router.navigate(['/login']);
+    }
+    return throwError(() => err);
+  };
+
   get<T>(path: string, params: HttpParams = new HttpParams()): Observable<T> {
-    return this.http.get<T>(`${this.apiUrl}${path}`, { params, withCredentials: true });
+    return this.http
+      .get<T>(`${this.apiUrl}${path}`, { params, withCredentials: true })
+      .pipe(catchError(this.handleError));
   }
 
   post<T>(path: string, body: object = {}): Observable<T> {
-    return this.http.post<T>(`${this.apiUrl}${path}`, body, { withCredentials: true });
+    return this.http
+      .post<T>(`${this.apiUrl}${path}`, body, { withCredentials: true })
+      .pipe(catchError(this.handleError));
   }
 
   put<T>(path: string, body: object = {}): Observable<T> {
-    return this.http.put<T>(`${this.apiUrl}${path}`, body, { withCredentials: true });
+    return this.http
+      .put<T>(`${this.apiUrl}${path}`, body, { withCredentials: true })
+      .pipe(catchError(this.handleError));
   }
 
   delete<T>(path: string): Observable<T> {
-    return this.http.delete<T>(`${this.apiUrl}${path}`, { withCredentials: true });
+    return this.http
+      .delete<T>(`${this.apiUrl}${path}`, { withCredentials: true })
+      .pipe(catchError(this.handleError));
   }
   patch<T>(path: string, body: object = {}): Observable<T> {
-    return this.http.patch<T>(`${this.apiUrl}${path}`, body, { withCredentials: true });
+    return this.http
+      .patch<T>(`${this.apiUrl}${path}`, body, { withCredentials: true })
+      .pipe(catchError(this.handleError));
   }
 
   getDiagnostics(params: HttpParams = new HttpParams()): Observable<DiagnosticListResponse> {
@@ -51,11 +74,13 @@ export class ApiService {
   }
 
   exportDiagnostics(params: HttpParams = new HttpParams()): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/diagnostics/tests/export`, {
-      params,
-      withCredentials: true,
-      responseType: 'blob'
-    });
+    return this.http
+      .get(`${this.apiUrl}/diagnostics/tests/export`, {
+        params,
+        withCredentials: true,
+        responseType: 'blob'
+      })
+      .pipe(catchError(this.handleError));
   }
 
   getPublicDiagnostic(id: number): Observable<ApiResponse<any>> {
@@ -405,7 +430,7 @@ export class ApiService {
       `${this.apiUrl}/uploads`, 
       formData, 
       { withCredentials: true }
-    );
+    ).pipe(catchError(this.handleError));
   }
 
   getSignedUrl(key: string, expiresIn?: number): Observable<ApiResponse<{ signedUrl: string; expiresIn: number } | null>> {

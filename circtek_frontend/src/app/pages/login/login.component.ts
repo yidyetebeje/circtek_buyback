@@ -24,6 +24,13 @@ export class LoginComponent {
     password: ['', [Validators.required, Validators.minLength(6)]],
   });
 
+  // Redirect away if already authenticated (token exists)
+  constructor() {
+    if (this.authService.isAuthenticated()) {
+      this.router.navigate(['/']);
+    }
+  }
+
   get identifierControl() {
     return this.loginForm.get('identifier')!;
   }
