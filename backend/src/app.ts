@@ -20,7 +20,7 @@ import { cors } from '@elysiajs/cors'
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
         .use(cors({
-            origin: ["http://localhost:4200", "http://127.0.0.1:4200"],
+            origin: ["http://localhost:4200", "http://127.0.0.1:4200", "https://circtek-aws.vercel.app"],
             methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
             allowedHeaders: ["Content-Type", "Authorization", "Accept", "Cookie"],
             credentials: true,

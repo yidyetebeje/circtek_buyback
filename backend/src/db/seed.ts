@@ -95,15 +95,44 @@ async function seed_users() {
 }
 
 async function seed_devices() {
-    const devices_data = [];
+    const devices_data: typeof devices.$inferInsert[] = [];
+    const storageOptions = ['64GB', '128GB', '256GB', '512GB'];
+    const memoryOptions = ['4GB', '6GB', '8GB'];
+    const colorOptions = ['Black', 'White', 'Silver', 'Gold', 'Blue', 'Red'];
+    const modelNames = ['iPhone 11', 'iPhone 12', 'iPhone 13', 'iPhone 14', 'iPhone 15'];
+    const modelNumbers = ['A1865', 'A1901', 'A1902', 'A1920', 'A2097'];
+
     for (let i = 1; i <= 15; i++) {
+        const storage = faker.helpers.arrayElement(storageOptions);
+        const memory = faker.helpers.arrayElement(memoryOptions);
+        const color = faker.helpers.arrayElement(colorOptions);
+        const modelIdx = i % 5;
+        const model_name = modelNames[modelIdx];
+        const model_no = modelNumbers[modelIdx];
+        const sku = `APL-${model_no}-${storage}-${color.replace(/\s+/g, '').toUpperCase()}`;
+        const lpn = `LPN-${faker.string.alphanumeric(8).toUpperCase()}`;
+        const imei = faker.phone.imei();
+        const imei2 = faker.phone.imei();
+        const guid = faker.string.uuid();
+
         devices_data.push({
             id: i,
+            sku,
+            lpn,
             make: 'Apple',
-            model_name: `iPhone 1${i % 5}`,
-            tenant_id: 1,
-            imei: faker.phone.imei(),
+            model_no,
+            model_name,
+            storage,
+            memory,
+            color,
+            device_type: 'iPhone',
             serial: faker.string.alphanumeric(12).toUpperCase(),
+            imei,
+            imei2,
+            guid,
+            description: faker.commerce.productDescription(),
+            status: true,
+            tenant_id: 1,
             warehouse_id: 1,
         });
     }
@@ -119,10 +148,12 @@ async function seed_test_results() {
             device_id: i,
             warehouse_id: 1,
             tester_id: 1,
-            passed_components: '["screen", "camera"]',
-            failed_components: '["battery"]',
+            passed_components: 'screen, camera',
+            failed_components: 'battery, accelerometer',
             serial_number: faker.string.alphanumeric(12).toUpperCase(),
             imei: faker.phone.imei(),
+            device_type: 'iPhone',
+        
         });
     }
     await db.insert(test_results).values(test_results_data);
