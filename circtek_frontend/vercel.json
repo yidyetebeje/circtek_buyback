@@ -1,0 +1,7 @@
+{
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "dist/circtek_frontend/browser",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
