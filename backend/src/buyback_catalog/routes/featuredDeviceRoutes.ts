@@ -1,7 +1,7 @@
-import Elysia, { t, type Context } from 'elysia';
-import { featuredDeviceController } from '@/catalog/controllers/featuredDeviceController';
-import { NewFeaturedDeviceSchema, UpdateFeaturedDeviceSchema } from '@/catalog/types/featuredDeviceTypes';
-import { authMiddleware, type JwtUser } from '@/middleware/auth';
+import Elysia, { t } from 'elysia';
+import { featuredDeviceController } from '../controllers/featuredDeviceController';
+import { NewFeaturedDeviceSchema, UpdateFeaturedDeviceSchema } from '../types/featuredDeviceTypes';
+import { requireRole } from '../../auth';
 
 // Create a base Elysia instance for all featured device-related routes
 export const featuredDeviceRoutes = new Elysia({ prefix: '/featured-devices' });
@@ -61,12 +61,13 @@ const publicFeaturedDeviceApi = new Elysia()
     }
   );
 
-const protectedFeaturedDeviceApi = new Elysia()
-  .use(authMiddleware.isAuthenticated)
+const authenticatedFeaturedDeviceApi = new Elysia()
+  .use(requireRole([]))
   .post('/', 
-    async ({ body, query, user, ...ctx }) => {
-      // 'user' is guaranteed to be available here due to authMiddleware
-      return featuredDeviceController.create(body, { ...ctx, body, query: query || {}, user: user as JwtUser }); 
+    async ({ body, query, ...ctx }) => {
+      // Authentication is guaranteed by requireRole middleware
+      const { currentUserId, currentTenantId, currentRole } = ctx;
+      return featuredDeviceController.create(body, { ...ctx, body, query: query || {}, currentUserId, currentTenantId, currentRole }); 
     }, 
     {
       body: NewFeaturedDeviceSchema,
@@ -79,12 +80,12 @@ const protectedFeaturedDeviceApi = new Elysia()
   // Example: If you need an authenticated version of GET all (e.g., to see unpublished items)
   // You could add it here, perhaps with a different path or rely on query params + auth context
   .get('/all', 
-    async ({ query, user, ...ctx }) => {
-      // user is guaranteed by authMiddleware.isAuthenticated
+    async ({ query, ...ctx }) => {
+      // Authentication is guaranteed by requireRole middleware
       return featuredDeviceController.getAll({ 
         ...ctx, 
         query,
-        user: user as JwtUser 
+        currentUserId: ctx.currentUserId, currentTenantId: ctx.currentTenantId, currentRole: ctx.currentRole 
       });
     }, 
     {
@@ -108,13 +109,13 @@ const protectedFeaturedDeviceApi = new Elysia()
     }
   )
   .put('/:id',
-    async ({ params, body, query, user, ...ctx }) => {
+    async ({ params, body, query, ...ctx }) => {
       const numericId = parseInt(params.id, 10);
       if (isNaN(numericId)) {
         ctx.set.status = 400;
         return { error: 'Invalid ID format. ID must be a number.' };
       }
-      return featuredDeviceController.update(numericId, body, { ...ctx, params, body, query: query || {}, user: user as JwtUser });
+      return featuredDeviceController.update(numericId, body, { ...ctx, params, body, query: query || {}, currentUserId: ctx.currentUserId, currentTenantId: ctx.currentTenantId, currentRole: ctx.currentRole });
     },
     {
       params: t.Object({ id: t.String() }),
@@ -126,13 +127,13 @@ const protectedFeaturedDeviceApi = new Elysia()
     }
   )
   .delete('/:id',
-    async ({ params, query, user, ...ctx }) => {
+    async ({ params, query, ...ctx }) => {
       const numericId = parseInt(params.id, 10);
       if (isNaN(numericId)) {
         ctx.set.status = 400;
         return { error: 'Invalid ID format. ID must be a number.' };
       }
-      return featuredDeviceController.delete(numericId, { ...ctx, params, query: query || {}, user: user as JwtUser });
+      return featuredDeviceController.delete(numericId, { ...ctx, params, query: query || {}, currentUserId: ctx.currentUserId, currentTenantId: ctx.currentTenantId, currentRole: ctx.currentRole });
     },
     {
       params: t.Object({ id: t.String() }),
@@ -146,4 +147,4 @@ const protectedFeaturedDeviceApi = new Elysia()
 // Register the public and protected route groups to the main featuredDeviceRoutes
 featuredDeviceRoutes
   .use(publicFeaturedDeviceApi)
-  .use(protectedFeaturedDeviceApi);
+  .use(authenticatedFeaturedDeviceApi);

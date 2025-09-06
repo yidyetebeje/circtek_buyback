@@ -1,11 +1,10 @@
 import Elysia, { t, type Context } from 'elysia'; 
 import { modelSeriesController } from '../controllers/modelSeriesController';
 import { ModelSeriesCreateSchema, ModelSeriesUpdateSchema, FileUploadSchema, ModelSeriesTranslationCreateSingleSchema, ModelSeriesTranslationUpdateSingleSchema } from '../types/modelSeriesTypes'; 
-import { authMiddleware, type JwtUser } from '@/middleware/auth';
-import { getClientId } from '../utils/getId';
+import { requireRole } from '../../auth';
 
 export const modelSeriesRoutes = new Elysia({ prefix: '/model-series' })
-  .use(authMiddleware.isAuthenticated) // Add centralized authentication middleware
+  .use(requireRole([])) // Add centralized authentication middleware
   // GET /model-series - Retrieve all model series with pagination/sorting/filtering
   .get('/', modelSeriesController.getAll, {
     query: t.Object({
@@ -25,10 +24,13 @@ export const modelSeriesRoutes = new Elysia({ prefix: '/model-series' })
   // POST /model-series - Create a new model series
   .post('/', (ctx) => {
     // Get clientId from authenticated user
-    const data = { ...ctx.body };
-    if (ctx.user) {
+    const data = { ...ctx.body } as any;
+    const { currentUserId, currentTenantId } = ctx as any;
+    if (currentUserId) {
+      // Add tenant_id to the data
+      data.tenant_id = currentTenantId;
       // Ensure client_id is a number as required by the schema
-      const clientId = getClientId(ctx.user);
+      const clientId = currentTenantId; // Using tenant as client for now
       if (clientId !== undefined) {
         data.client_id = clientId;
       } else {

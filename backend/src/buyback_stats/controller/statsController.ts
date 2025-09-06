@@ -73,13 +73,13 @@ export class StatsController {
   }
   
   // This method is for the /my-shop routes, ensuring user.shopId is used.
-  async getMyShopOverview({ query, currentRole, currentTenantId, currentUserId, set }: { query: Static<typeof DateRangeQuerySchema>, currentRole: string, currentTenantId: number, currentUserId: number, set: Context['set'] }) {
+  async getMyShopOverview({ query, currentRole, currentTenantId, currentUserId, shopId, set }: { query: Static<typeof DateRangeQuerySchema>, currentRole: string, currentTenantId: number, currentUserId: number, shopId: number, set: Context['set'] }) {
     try {
       if (!currentUserId || !currentTenantId || currentTenantId <= 0) { // Ensure user.id for service call, and user.shopId for this specific route
         set.status = 403; 
         return { success: false, error: "User is not associated with a valid shop or user ID is missing." };
       }
-      const user = { id: currentUserId, roleSlug: currentRole, tenant_id: currentTenantId, shopId: currentTenantId };
+      const user = { id: currentUserId, roleSlug: currentRole, tenant_id: currentTenantId, shopId: shopId };
       // Call the generic getShopOverview, but pass user.shopId as the target shopId
       // The service will still perform its access checks using the full user object.
       const result = await this.service.getShopOverview(currentTenantId, query, user);
@@ -128,15 +128,15 @@ export class StatsController {
   }
 
   // This method is for the /my-shop routes
-  async getMyShopTopDevices({ query, currentRole, currentTenantId, currentUserId, set }: { query: Static<typeof TopDevicesQuerySchema>, currentRole: string, currentTenantId: number, currentUserId: number, set: Context['set'] }) {
+  async getMyShopTopDevices({ query, currentRole, currentTenantId, currentUserId, shopId, set }: { query: Static<typeof TopDevicesQuerySchema>, currentRole: string, currentTenantId: number, currentUserId: number, shopId: number, set: Context['set'] }) {
     try {
       if (!currentUserId || !currentTenantId || currentTenantId <= 0) { // Ensure user.id for service call, and user.shopId
         set.status = 403;
         return { success: false, error: "User is not associated with a valid shop or user ID is missing." };
       }
-      const user = { id: currentUserId, roleSlug: currentRole, tenant_id: currentTenantId, shopId: currentTenantId };
+      const user = { id: currentUserId, roleSlug: currentRole, tenant_id: currentTenantId, shopId: shopId };
       // Call the generic getShopTopDevices, passing user.shopId as target and full user object
-      const result = await this.service.getShopTopDevices(currentTenantId, query, user);
+      const result = await this.service.getShopTopDevices(shopId, query, user);
 
       if ('error' in result) {
         if (result.error.toLowerCase().includes("access denied")) {
@@ -228,14 +228,14 @@ export class StatsController {
     }
   }
 
-  async getMyShopTimeSeries({ query, currentRole, currentTenantId, currentUserId, set }: { query: Static<typeof TimeSeriesQuerySchema>, currentRole: string, currentTenantId: number, currentUserId: number, set: Context['set'] }) {
+  async getMyShopTimeSeries({ query, currentRole, currentTenantId, currentUserId, shopId, set }: { query: Static<typeof TimeSeriesQuerySchema>, currentRole: string, currentTenantId: number, currentUserId: number, shopId: number, set: Context['set'] }) {
     try {
       if (!currentUserId || !currentTenantId || currentTenantId <= 0) {
         set.status = 403;
         return { success: false, error: "User is not associated with a valid shop or user ID is missing." };
       }
       
-      const user = { id: currentUserId, roleSlug: currentRole, tenant_id: currentTenantId, shopId: currentTenantId };
+      const user = { id: currentUserId, roleSlug: currentRole, tenant_id: currentTenantId, shopId: shopId };
       const result = await this.service.getShopTimeSeries(currentTenantId, query, user);
 
       if ('error' in result) {

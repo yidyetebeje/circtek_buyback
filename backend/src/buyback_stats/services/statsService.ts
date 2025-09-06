@@ -1,6 +1,6 @@
 import { statsRepository, StatsRepository } from "../repository/statsRepository";
-import { ORDER_STATUS } from "../../db/schema/order";
-import { shops as shopsSchema } from "../../db/schema/user"; // For fetching shop name
+import { ORDER_STATUS } from "../../db/order.schema";
+import { shops as shopsSchema } from "../../db/shops.schema";
 import { db } from "../../db";
 import { eq } from "drizzle-orm";
 import { 
@@ -20,7 +20,7 @@ import {
     ShopTimeSeriesResponseSchema
 } from "../types";
 import { Static } from "elysia";
-import { getAllowedShopIds } from "@/utils/access-control";
+import { getAllowedShopIds } from "../../utils/access-control-buyback";
 
 type DateRange = Static<typeof DateRangeQuerySchema>;
 // Define a type for user, which might be null if not authenticated or if token is invalid
@@ -41,27 +41,18 @@ export class StatsService {
     let allowedShopIdsForTimeSeries: number[] | undefined = undefined;
 
     if (user?.id) {
-      const rawShopIds = await getAllowedShopIds({ ...user, roleSlug: user.roleSlug } as any);
-      // Fix: undefined means unrestricted access, not no access
+      const rawShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.shopId);
       if (rawShopIds !== undefined) {
-        // User has specific shop restrictions
         const allowedShopIds = rawShopIds;
         shopIdInput = { accessibleShopIds: allowedShopIds }; 
         allowedShopIdsForTimeSeries = allowedShopIds;
       }
-      // If rawShopIds is undefined, leave shopIdInput as undefined (unrestricted access)
     }
-    // If user is undefined (e.g. system call not providing user), it would fetch unrestricted data.
-    // This scenario should be controlled at the route/auth level if an unauthenticated overview is not desired.
 
     const totalOrders = await this.repository.getTotalOrders(dateRange, shopIdInput);
     const ordersByStatus = await this.repository.getOrdersByStatus(dateRange, shopIdInput);
     const orderValues = await this.repository.getOrderValues(dateRange, shopIdInput);
     
-    // const timeSeries = dateRange?.dateFrom && dateRange?.dateTo 
-    //  ? await this.repository.getPlatformOrderTimeSeries({dateFrom: dateRange.dateFrom, dateTo: dateRange.dateTo}, 'daily', allowedShopIdsForTimeSeries)
-    //  : undefined;
-
     const averageEstimatedOrderValue = this.calculateAverage(orderValues.totalEstimatedValue, totalOrders);   
     const averageFinalOrderValue = this.calculateAverage(orderValues.totalFinalValue, orderValues.totalCompletedOrdersForFinalValue);
 
@@ -84,8 +75,7 @@ export class StatsService {
     let allowedShopIds: number[] | undefined = undefined;
 
     if (user?.id) {
-      const rawShopIds = await getAllowedShopIds({ ...user, roleSlug: user.roleSlug } as any);
-      // Fix: undefined means unrestricted access, not no access
+      const rawShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.shopId);
       if (rawShopIds !== undefined) {
         allowedShopIds = rawShopIds;
         if (allowedShopIds.length === 0) {
@@ -117,8 +107,7 @@ export class StatsService {
     let allowedShopIds: number[] | undefined = undefined;
 
     if (user?.id) { // Always fetch if user.id exists, regardless of role
-      const rawShopIds = await getAllowedShopIds({ ...user, roleSlug: user.roleSlug } as any);
-      // Fix: undefined means unrestricted access, not no access
+      const rawShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.shopId);
       if (rawShopIds !== undefined) {
         allowedShopIds = rawShopIds;
         if (allowedShopIds.length === 0) {
@@ -164,7 +153,7 @@ export class StatsService {
       return { error: "Authentication required for shop statistics", shopId: shopId, shopName: "Access Denied" };
     }
 
-    const rawAllowedShopIds = await getAllowedShopIds({ ...user, roleSlug: user.roleSlug } as any);
+    const rawAllowedShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.shopId);
     
     // Fix: Handle undefined properly for clients (unrestricted access)
     if (rawAllowedShopIds !== undefined && !rawAllowedShopIds.includes(shopId)) {
@@ -208,7 +197,7 @@ export class StatsService {
       return { error: "Authentication required for shop device statistics", shopId: shopId, shopName: "Access Denied", topDevices: [] };
     }
 
-    const rawAllowedShopIds = await getAllowedShopIds({ ...user, roleSlug: user.roleSlug } as any);
+    const rawAllowedShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.shopId);
     
     // Fix: Handle undefined properly for clients (unrestricted access)
     if (rawAllowedShopIds !== undefined && !rawAllowedShopIds.includes(shopId)) {
@@ -284,7 +273,7 @@ export class StatsService {
     let allowedShopIds: number[] | undefined = undefined;
 
     if (user?.id) {
-      const rawShopIds = await getAllowedShopIds({ ...user, roleSlug: user.roleSlug } as any);
+      const rawShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.shopId);
       if (rawShopIds !== undefined) {
         allowedShopIds = rawShopIds;
         if (allowedShopIds.length === 0) {
@@ -311,7 +300,7 @@ export class StatsService {
       return { error: "Authentication required for shop time series", shopId: shopId, shopName: "Access Denied", timeSeries: [] };
     }
 
-    const rawAllowedShopIds = await getAllowedShopIds({ ...user, roleSlug: user.roleSlug } as any);
+    const rawAllowedShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.shopId);
     
     if (rawAllowedShopIds !== undefined && !rawAllowedShopIds.includes(shopId)) {
       return { error: "Access denied to this shop's time series", shopId: shopId, shopName: "Access Denied", timeSeries: [] };

@@ -17,11 +17,10 @@ import {
   TranslationParamsSchema,
   CategoryAndLanguageParamsSchema
 } from '../types/categoryTypes';
-import { authMiddleware, type JwtUser } from '@/middleware/auth';
-import { getClientId } from '../utils/getId';
+import { requireRole } from '../../auth';
 
 export const categoryRoutes = new Elysia({ prefix: '/categories' })
-  .use(authMiddleware.isAuthenticated)
+  .use(requireRole([]))
   .get('/', 
     async (ctx) => {
       return await categoryController.getAllCategories(ctx as any);
@@ -38,7 +37,7 @@ export const categoryRoutes = new Elysia({ prefix: '/categories' })
   // GET category by ID
   .get('/:categoryId', 
     async (ctx) => {
-      return await categoryController.getCategoryById(ctx);
+      return await categoryController.getCategoryById(ctx as any);
     }, {
       params: CategoryIdParamSchema,
       detail: {
@@ -52,7 +51,7 @@ export const categoryRoutes = new Elysia({ prefix: '/categories' })
   // GET category by slug
   .get('/slug/:slug/client/:clientId', 
     async (ctx) => {
-      return await categoryController.getCategoryBySlug(ctx);
+      return await categoryController.getCategoryBySlug(ctx as any);
     }, {
       params: CategorySlugParamSchema,
       detail: {
@@ -213,7 +212,7 @@ export const categoryRoutes = new Elysia({ prefix: '/categories' })
   
   // PUT bulk upsert translations
   .put('/:categoryId/translations/bulk', 
-    async (ctx) => categoryController.bulkUpsertTranslations(ctx),
+    async (ctx) => categoryController.bulkUpsertTranslations(ctx as any),
     {
       params: CategoryIdParamSchema,
       body: t.Object({

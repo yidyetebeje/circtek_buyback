@@ -10,11 +10,11 @@ import {
   BrandIdParamSchema,
   BrandAndLanguageParamsSchema
 } from '../types/brandTypes'; 
-import { authMiddleware } from '@/middleware/auth';
+import { requireRole } from '../../auth';
 
 export const brandRoutes = new Elysia({ prefix: '/brands' })
-  .use(authMiddleware.isAuthenticated)
-  .get('/', async (ctx) => brandController.getAll(ctx), { 
+  .use(requireRole([]))
+  .get('/', async (ctx) => brandController.getAll(ctx as any), { 
     query: PaginationQuerySchema, 
     detail: {
         summary: "Get List of Brands",
@@ -22,7 +22,7 @@ export const brandRoutes = new Elysia({ prefix: '/brands' })
     }
   })
   .post('/', async (ctx) => {
-    return brandController.create(ctx);
+    return brandController.create(ctx.body as any, ctx as any);
   }, {
     body: BrandCreateSchema, 
     detail: { 
@@ -31,7 +31,10 @@ export const brandRoutes = new Elysia({ prefix: '/brands' })
     }
   })
   .get('/:id',
-    async (ctx) => brandController.getById(ctx),
+    async (ctx) => {
+      const id = parseInt(ctx.params.id, 10);
+      return brandController.getById(id, ctx as any);
+    },
     {
         params: BrandIdParamSchema, 
         detail: {
@@ -40,7 +43,10 @@ export const brandRoutes = new Elysia({ prefix: '/brands' })
         }
     }
   ).put('/:id',
-    async (ctx) => brandController.update(ctx),
+    async (ctx) => {
+      const id = parseInt(ctx.params.id, 10);
+      return brandController.update(id, ctx.body as any, ctx as any);
+    },
     {
         params: BrandIdParamSchema, 
         body: BrandUpdateSchema, 
@@ -50,7 +56,10 @@ export const brandRoutes = new Elysia({ prefix: '/brands' })
         }
     }
   ).delete('/:id',
-    async (ctx) => brandController.delete(ctx),
+    async (ctx) => {
+      const id = parseInt(ctx.params.id, 10);
+      return brandController.delete(id, ctx as any);
+    },
     {
         params: BrandIdParamSchema, 
         detail: {
@@ -59,7 +68,10 @@ export const brandRoutes = new Elysia({ prefix: '/brands' })
         }
     }
   ).post('/:id/icon',
-    async (ctx) => brandController.uploadIcon(ctx),
+    async (ctx) => {
+      const id = parseInt(ctx.params.id, 10);
+      return brandController.uploadIcon(id, ctx.body.file, ctx as any);
+    },
     {
         params: BrandIdParamSchema, 
         body: FileUploadSchema,
@@ -70,7 +82,7 @@ export const brandRoutes = new Elysia({ prefix: '/brands' })
         }
     }
   ).get('/:id/translations', 
-    async (ctx) => brandController.getTranslationsByBrand(ctx), 
+    async (ctx) => brandController.getAllTranslations(ctx as any), 
     {
       params: BrandIdParamSchema, 
       detail: {
@@ -80,7 +92,7 @@ export const brandRoutes = new Elysia({ prefix: '/brands' })
       }
     }
   ).post('/:id/translations', 
-    async (ctx) => brandController.createTranslation(ctx),
+    async (ctx) => brandController.createTranslation(ctx as any),
     {
       params: BrandIdParamSchema, 
       body: BrandTranslationCreateSchema,
@@ -94,7 +106,7 @@ export const brandRoutes = new Elysia({ prefix: '/brands' })
   
   // PUT update translation
   .put('/:id/translations/:languageId', 
-    async (ctx) => brandController.updateTranslation(ctx),
+    async (ctx) => brandController.updateTranslation(ctx as any),
     {
       params: BrandAndLanguageParamsSchema, 
       body: BrandTranslationUpdateSchema,
@@ -108,7 +120,7 @@ export const brandRoutes = new Elysia({ prefix: '/brands' })
   
   // DELETE translation
   .delete('/:id/translations/:languageId', 
-    async (ctx) => brandController.deleteTranslation(ctx),
+    async (ctx) => brandController.deleteTranslation(ctx as any),
     {
       params: BrandAndLanguageParamsSchema, 
       detail: {
@@ -121,7 +133,7 @@ export const brandRoutes = new Elysia({ prefix: '/brands' })
   
   // PUT upsert translation
   .put('/:id/translations/:languageId/upsert', 
-    async (ctx) => brandController.upsertTranslation(ctx),
+    async (ctx) => brandController.upsertTranslation(ctx as any),
     {
       params: BrandAndLanguageParamsSchema, 
       body: BrandTranslationCreateSchema, 
@@ -135,7 +147,7 @@ export const brandRoutes = new Elysia({ prefix: '/brands' })
   
   // PUT bulk upsert translations
   .put('/:id/translations/bulk', 
-    async (ctx) => brandController.bulkUpsertTranslations(ctx),
+    async (ctx) => brandController.bulkUpsertTranslations(ctx as any),
     {
       params: BrandIdParamSchema,
       body: t.Object({

@@ -12,6 +12,7 @@ const userPublicSelection = {
 	role_id: users.role_id,
 	tenant_id: users.tenant_id,
     warehouse_id: users.warehouse_id,
+	managed_shop_id: users.managed_shop_id
 }
 
 export class AuthRepository {

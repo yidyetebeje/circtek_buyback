@@ -1,12 +1,11 @@
 import Elysia, { t, type Context } from 'elysia'; 
 import { modelController } from '../controllers/modelController';
 import { ModelCreateSchema, ModelUpdateSchema, FileUploadSchema, ModelTranslationCreateSingleSchema, ModelTranslationUpdateSingleSchema } from '../types/modelTypes';
-import { authMiddleware } from '@/middleware/auth'; 
-import { getClientId } from '../utils/getId';
+import { requireRole } from '../../auth'; 
 
 export const modelRoutes = new Elysia({ prefix: '/models' })
   // Protect the GET /models route with authentication
-  .use(authMiddleware.isAuthenticated) // Added authentication middleware
+  .use(requireRole([])) // Added authentication middleware
   .get('/', (ctx) => modelController.getAll(ctx as any), { // Pass context, user will be injected
     query: t.Object({
         page: t.Optional(t.Numeric({ minimum: 1, default: 1 })),
@@ -47,15 +46,18 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
   // All operations below require authentication
   .group('', app => app
     // Apply authentication middleware to write operations
-    .use(authMiddleware.isAuthenticated)
+    .use(requireRole([]))
     
     // POST /models - Create a new model
     .post('/', (ctx) => {
       // Get clientId from authenticated user
-      const data = { ...ctx.body };
-      if (ctx.user) {
+      const data = { ...ctx.body } as any;
+      const { currentUserId, currentTenantId } = ctx as any;
+      if (currentUserId) {
+        // Add tenant_id to the data
+        data.tenant_id = currentTenantId;
         // Ensure client_id is a number as required by the schema
-        const clientId = getClientId(ctx.user);
+        const clientId = currentTenantId; // Using tenant as client for now
         if (clientId !== undefined) {
           data.client_id = clientId;
         } else {

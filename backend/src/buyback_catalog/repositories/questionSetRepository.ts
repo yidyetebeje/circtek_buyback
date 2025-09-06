@@ -1,15 +1,15 @@
 import { asc, desc, eq, and, sql, inArray, like } from "drizzle-orm";
 import { db } from "../../db";
 import { 
-  questionSets,
-  deviceQuestions,
-  questionOptions,
-  deviceModelQuestionSetAssignments,
-  questionSetTranslations,
-  questionTranslations,
-  questionOptionTranslations,
+  question_sets,
+  device_questions,
+  question_options,
+  device_model_question_set_assignments,
+  question_set_translations,
+  question_translations,
+  question_option_translations,
   models
-} from "../../db/schema/catalog";
+} from "../../db/buyback_catalogue.schema";
 import { 
   TQuestionSetCreate, 
   TQuestionSetUpdate,
@@ -22,7 +22,7 @@ export class QuestionSetRepository {
     limit = 20, 
     orderBy = "internalName", 
     order: "asc" | "desc" = "asc",
-    clientId?: number,
+    tenantId?: number,
     search?: string
   ) {
     const offset = (page - 1) * limit;
@@ -30,13 +30,13 @@ export class QuestionSetRepository {
     // Build where clauses
     let whereConditions = [];
     
-    if (clientId) {
-      whereConditions.push(eq(questionSets.client_id, clientId));
+    if (tenantId) {
+      whereConditions.push(eq(question_sets.tenant_id, tenantId));
     }
     
     if (search && search.trim() !== '') {
       whereConditions.push(
-        sql`(${questionSets.internalName} LIKE ${`%${search}%`} OR ${questionSets.displayName} LIKE ${`%${search}%`})`
+        sql`(${question_sets.internal_name} LIKE ${`%${search}%`} OR ${question_sets.display_name} LIKE ${`%${search}%`})`
       );
     }
     
@@ -46,13 +46,13 @@ export class QuestionSetRepository {
     
     // Create a column mapping for type safety
     const columnMapping = {
-      id: questionSets.id,
-      internalName: questionSets.internalName,
-      displayName: questionSets.displayName,
-      description: questionSets.description,
-      client_id: questionSets.client_id,
-      createdAt: questionSets.createdAt,
-      updatedAt: questionSets.updatedAt
+      id: question_sets.id,
+      internalName: question_sets.internal_name,
+      displayName: question_sets.display_name,
+      description: question_sets.description,
+      tenant_id: question_sets.tenant_id,
+      createdAt: question_sets.createdAt,
+      updatedAt: question_sets.updatedAt
     };
     
     // Make sure orderBy is a valid column
@@ -60,27 +60,26 @@ export class QuestionSetRepository {
       orderBy = "internalName"; // Default to a safe column if invalid
     }
     
-    const [items, totalCount] = await Promise.all([
-      db.query.questionSets.findMany({
-        where: whereClause,
-        limit,
-        offset,
-        orderBy: order === "asc" 
-          ? asc(columnMapping[orderBy as keyof typeof columnMapping])
-          : desc(columnMapping[orderBy as keyof typeof columnMapping]),
-        with: {
-          translations: true,
-          questions: {
-            with: {
-              options: true
-            }
-          }
-        }
-      }),
-      db.select({ count: sql<number>`count(*)` })
-        .from(questionSets)
-        .where(whereClause ? whereClause : sql`1=1`)
-    ]);
+    const items = await db.select({
+      id: question_sets.id,
+      internal_name: question_sets.internal_name,
+      display_name: question_sets.display_name,
+      description: question_sets.description,
+      tenant_id: question_sets.tenant_id,
+      createdAt: question_sets.createdAt,
+      updatedAt: question_sets.updatedAt
+    })
+    .from(question_sets)
+    .where(whereClause || sql`1=1`)
+    .limit(limit)
+    .offset(offset)
+    .orderBy(order === "asc" 
+      ? asc(columnMapping[orderBy as keyof typeof columnMapping])
+      : desc(columnMapping[orderBy as keyof typeof columnMapping]));
+
+    const totalCount = await db.select({ count: sql<number>`count(*)` })
+      .from(question_sets)
+      .where(whereClause || sql`1=1`);
     
     return {
       data: items,
@@ -94,56 +93,114 @@ export class QuestionSetRepository {
   }
 
   async findById(id: number, includeQuestions = true, includeTranslations = true) {
-    return db.query.questionSets.findFirst({
-      where: eq(questionSets.id, id),
-      with: {
-        translations: includeTranslations ? true : undefined,
-        questions: includeQuestions ? {
-          orderBy: asc(deviceQuestions.orderNo),
-          with: {
-            translations: includeTranslations ? true : undefined,
-            options: {
-              orderBy: asc(questionOptions.orderNo),
-              with: {
-                translations: includeTranslations ? true : undefined
-              }
-            }
-          }
-        } : undefined
-      }
-    });
+    const questionSet = await db.select({
+      id: question_sets.id,
+      internal_name: question_sets.internal_name,
+      display_name: question_sets.display_name,
+      description: question_sets.description,
+      tenant_id: question_sets.tenant_id,
+      createdAt: question_sets.createdAt,
+      updatedAt: question_sets.updatedAt
+    })
+    .from(question_sets)
+    .where(eq(question_sets.id, id))
+    .limit(1);
+
+    if (questionSet.length === 0) return null;
+
+    const result = questionSet[0];
+
+    if (includeQuestions) {
+      const questions = await db.select({
+        id: device_questions.id,
+        question_set_id: device_questions.question_set_id,
+        key: device_questions.key,
+        title: device_questions.title,
+        input_type: device_questions.input_type,
+        tooltip: device_questions.tooltip,
+        category: device_questions.category,
+        is_required: device_questions.is_required,
+        order_no: device_questions.order_no,
+        metadata: device_questions.metadata,
+        created_at: device_questions.created_at,
+        updated_at: device_questions.updated_at
+      })
+      .from(device_questions)
+      .where(eq(device_questions.question_set_id, id))
+      .orderBy(asc(device_questions.order_no));
+
+      const questionIds = questions.map(q => q.id);
+      const options = questionIds.length > 0 ? await db.select()
+        .from(question_options)
+        .where(inArray(question_options.question_id, questionIds))
+        .orderBy(asc(question_options.order_no)) : [];
+
+      const questionsWithOptions = questions.map(question => ({
+        ...question,
+        options: options.filter(option => option.question_id === question.id)
+      }));
+
+      return {
+        ...result,
+        questions: questionsWithOptions
+      };
+    }
+
+    return result;
   }
 
-  async findByInternalName(internalName: string, clientId: number) {
-    return db.query.questionSets.findFirst({
-      where: and(
-        eq(questionSets.internalName, internalName),
-        eq(questionSets.client_id, clientId)
-      ),
-      with: {
-        translations: true,
-        questions: {
-          orderBy: asc(deviceQuestions.orderNo),
-          with: {
-            translations: true,
-            options: {
-              orderBy: asc(questionOptions.orderNo),
-              with: {
-                translations: true
-              }
-            }
-          }
-        }
-      }
-    });
+  async findByInternalName(internalName: string, tenantId: number) {
+    const questionSet = await db.select({
+      id: question_sets.id,
+      internal_name: question_sets.internal_name,
+      display_name: question_sets.display_name,
+      description: question_sets.description,
+      tenant_id: question_sets.tenant_id,
+      createdAt: question_sets.createdAt,
+      updatedAt: question_sets.updatedAt
+    })
+    .from(question_sets)
+    .where(and(
+      eq(question_sets.internal_name, internalName),
+      eq(question_sets.tenant_id, tenantId)
+    ))
+    .limit(1);
+
+    if (questionSet.length === 0) return null;
+
+    const result = questionSet[0];
+
+    const questions = await db.select()
+      .from(device_questions)
+      .where(eq(device_questions.question_set_id, result.id))
+      .orderBy(asc(device_questions.order_no));
+
+    const questionIds = questions.map(q => q.id);
+    const options = questionIds.length > 0 ? await db.select()
+      .from(question_options)
+      .where(inArray(question_options.question_id, questionIds))
+      .orderBy(asc(question_options.order_no)) : [];
+
+    const questionsWithOptions = questions.map(question => ({
+      ...question,
+      options: options.filter(option => option.question_id === question.id)
+    }));
+
+    return {
+      ...result,
+      questions: questionsWithOptions
+    };
   }
 
   async create(data: TQuestionSetCreate) {
     const now = new Date();
     const formattedDate = now.toISOString().replace('T', ' ').substring(0, 19);
     
-    const result = await db.insert(questionSets).values({
-      ...data,
+    const result = await db.insert(question_sets).values({
+      internal_name: data.internalName,
+      display_name: data.displayName,
+      description: data.description,
+      tenant_id: data.tenant_id,
       createdAt: formattedDate,
       updatedAt: formattedDate
     });
@@ -155,168 +212,178 @@ export class QuestionSetRepository {
   async update(id: number, data: TQuestionSetUpdate) {
     const formattedDate = new Date().toISOString().replace('T', ' ').substring(0, 19);
     
-    await db.update(questionSets)
+    await db.update(question_sets)
       .set({
-        ...data,
+        internal_name: data.internalName,
+        display_name: data.displayName,
+        description: data.description,
+        tenant_id: data.tenant_id,
         updatedAt: formattedDate
       })
-      .where(eq(questionSets.id, id));
+      .where(eq(question_sets.id, id));
     
     return this.findById(id);
   }
 
   async delete(id: number) {
     // First delete all assignments
-    await db.delete(deviceModelQuestionSetAssignments)
-      .where(eq(deviceModelQuestionSetAssignments.questionSetId, id));
+    await db.delete(device_model_question_set_assignments)
+      .where(eq(device_model_question_set_assignments.question_set_id, id));
     
     // Delete all options for all questions in this set
-    const questionsInSet = await db.select({ id: deviceQuestions.id })
-      .from(deviceQuestions)
-      .where(eq(deviceQuestions.questionSetId, id));
+    const questionsInSet = await db.select({ id: device_questions.id })
+      .from(device_questions)
+      .where(eq(device_questions.question_set_id, id));
     
     const questionIds = questionsInSet.map(q => q.id);
     
     if (questionIds.length > 0) {
       // Delete option translations
-      await db.delete(questionOptionTranslations)
+      await db.delete(question_option_translations)
         .where(
-          inArray(questionOptionTranslations.optionId,
-            db.select({ id: questionOptions.id })
-              .from(questionOptions)
-              .where(inArray(questionOptions.questionId, questionIds))
+          inArray(question_option_translations.option_id,
+            db.select({ id: question_options.id })
+              .from(question_options)
+              .where(inArray(question_options.question_id, questionIds))
           )
         );
       
       // Delete options
-      await db.delete(questionOptions)
-        .where(inArray(questionOptions.questionId, questionIds));
+      await db.delete(question_options)
+        .where(inArray(question_options.question_id, questionIds));
       
       // Delete question translations
-      await db.delete(questionTranslations)
-        .where(inArray(questionTranslations.questionId, questionIds));
+      await db.delete(question_translations)
+        .where(inArray(question_translations.question_id, questionIds));
     }
     
     // Delete questions
-    await db.delete(deviceQuestions)
-      .where(eq(deviceQuestions.questionSetId, id));
+    await db.delete(device_questions)
+      .where(eq(device_questions.question_set_id, id));
     
     // Delete question set translations
-    await db.delete(questionSetTranslations)
-      .where(eq(questionSetTranslations.questionSetId, id));
+    await db.delete(question_set_translations)
+      .where(eq(question_set_translations.question_set_id, id));
     
     // Finally delete the question set
-    await db.delete(questionSets)
-      .where(eq(questionSets.id, id));
+    await db.delete(question_sets)
+      .where(eq(question_sets.id, id));
     
     return true;
   }
 
   // Translation related methods
   async createTranslation(data: TQuestionSetTranslationCreate) {
-    const result = await db.insert(questionSetTranslations).values(data);
+    const result = await db.insert(question_set_translations).values({
+      question_set_id: data.questionSetId,
+      language_id: data.languageId,
+      display_name: data.displayName,
+      description: data.description,
+    });
     return this.findTranslationById(Number(result[0].insertId));
   }
 
   async findTranslationById(id: number) {
-    return db.query.questionSetTranslations.findFirst({
-      where: eq(questionSetTranslations.id, id),
-      with: {
-        language: true
-      }
-    });
+    const translation = await db.select()
+      .from(question_set_translations)
+      .where(eq(question_set_translations.id, id))
+      .limit(1);
+    
+    return translation[0] || null;
   }
 
   async findTranslation(questionSetId: number, languageId: number) {
-    return db.query.questionSetTranslations.findFirst({
-      where: and(
-        eq(questionSetTranslations.questionSetId, questionSetId),
-        eq(questionSetTranslations.languageId, languageId)
-      ),
-      with: {
-        language: true
-      }
-    });
+    const translation = await db.select()
+      .from(question_set_translations)
+      .where(and(
+        eq(question_set_translations.question_set_id, questionSetId),
+        eq(question_set_translations.language_id, languageId)
+      ))
+      .limit(1);
+    
+    return translation[0] || null;
   }
 
   async updateTranslation(id: number, data: Partial<Omit<TQuestionSetTranslationCreate, 'questionSetId' | 'languageId'>>) {
-    await db.update(questionSetTranslations)
+    await db.update(question_set_translations)
       .set(data)
-      .where(eq(questionSetTranslations.id, id));
+      .where(eq(question_set_translations.id, id));
     
     return this.findTranslationById(id);
   }
 
   async deleteTranslation(id: number) {
-    await db.delete(questionSetTranslations)
-      .where(eq(questionSetTranslations.id, id));
+    await db.delete(question_set_translations)
+      .where(eq(question_set_translations.id, id));
     
     return true;
   }
 
   async findTranslationsForQuestionSet(questionSetId: number) {
-    return db.query.questionSetTranslations.findMany({
-      where: eq(questionSetTranslations.questionSetId, questionSetId),
-      with: {
-        language: true
-      }
-    });
+    return db.select()
+      .from(question_set_translations)
+      .where(eq(question_set_translations.question_set_id, questionSetId));
   }
 
   // Assignment related methods
   async getQuestionSetsForModel(modelId: number) {
-    const assignments = await db.query.deviceModelQuestionSetAssignments.findMany({
-      where: eq(deviceModelQuestionSetAssignments.modelId, modelId),
-      orderBy: asc(deviceModelQuestionSetAssignments.assignmentOrder),
-      with: {
-        questionSet: {
-          with: {
-            translations: true,
-            questions: {
-              orderBy: asc(deviceQuestions.orderNo),
-              with: {
-                translations: true,
-                options: {
-                  orderBy: asc(questionOptions.orderNo),
-                  with: {
-                    translations: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    });
+    const assignments = await db.select()
+      .from(device_model_question_set_assignments)
+      .where(eq(device_model_question_set_assignments.model_id, modelId))
+      .orderBy(asc(device_model_question_set_assignments.assignment_order));
     
-    return assignments.map(assignment => assignment.questionSet);
+    const questionSetIds = assignments.map(a => a.question_set_id);
+    if (questionSetIds.length === 0) return [];
+    
+    const questionSets = await db.select()
+      .from(question_sets)
+      .where(inArray(question_sets.id, questionSetIds));
+    
+    // Get questions for all question sets
+    const questions = await db.select()
+      .from(device_questions)
+      .where(inArray(device_questions.question_set_id, questionSetIds))
+      .orderBy(asc(device_questions.order_no));
+    
+    // Get options for all questions
+    const questionIds = questions.map(q => q.id);
+    const options = questionIds.length > 0 ? await db.select()
+      .from(question_options)
+      .where(inArray(question_options.question_id, questionIds))
+      .orderBy(asc(question_options.order_no)) : [];
+    
+    // Combine data
+    return questionSets.map(qs => ({
+      ...qs,
+      questions: questions.filter(q => q.question_set_id === qs.id).map(question => ({
+        ...question,
+        options: options.filter(opt => opt.question_id === question.id)
+      }))
+    }));
   }
 
   async getModelsByQuestionSet(questionSetId: number, page = 1, limit = 20) {
     const offset = (page - 1) * limit;
     
-    const [assignments, totalCount] = await Promise.all([
-      db.query.deviceModelQuestionSetAssignments.findMany({
-        where: eq(deviceModelQuestionSetAssignments.questionSetId, questionSetId),
-        limit,
-        offset,
-        with: {
-          model: {
-            with: {
-              category: true,
-              brand: true,
-              modelSeries: true
-            }
-          }
-        }
-      }),
-      db.select({ count: sql<number>`count(*)` })
-        .from(deviceModelQuestionSetAssignments)
-        .where(eq(deviceModelQuestionSetAssignments.questionSetId, questionSetId))
-    ]);
+    const assignments = await db.select({
+      model_id: device_model_question_set_assignments.model_id
+    })
+    .from(device_model_question_set_assignments)
+    .where(eq(device_model_question_set_assignments.question_set_id, questionSetId))
+    .limit(limit)
+    .offset(offset);
+    
+    const totalCount = await db.select({ count: sql<number>`count(*)` })
+      .from(device_model_question_set_assignments)
+      .where(eq(device_model_question_set_assignments.question_set_id, questionSetId));
+    
+    const modelIds = assignments.map(a => a.model_id);
+    const modelsData = modelIds.length > 0 ? await db.select()
+      .from(models)
+      .where(inArray(models.id, modelIds)) : [];
     
     return {
-      data: assignments.map(assignment => assignment.model),
+      data: modelsData,
       meta: {
         total: totalCount[0].count,
         page,
@@ -331,103 +398,99 @@ export class QuestionSetRepository {
     const formattedDate = now.toISOString().replace('T', ' ').substring(0, 19);
     
     // Check if the assignment already exists
-    const existingAssignment = await db.query.deviceModelQuestionSetAssignments.findFirst({
-      where: and(
-        eq(deviceModelQuestionSetAssignments.modelId, modelId),
-        eq(deviceModelQuestionSetAssignments.questionSetId, questionSetId)
-      )
-    });
+    const existingAssignment = await db.select()
+      .from(device_model_question_set_assignments)
+      .where(and(
+        eq(device_model_question_set_assignments.model_id, modelId),
+        eq(device_model_question_set_assignments.question_set_id, questionSetId)
+      ))
+      .limit(1);
     
-    if (existingAssignment) {
+    if (existingAssignment.length > 0) {
       // Update the existing assignment
-      await db.update(deviceModelQuestionSetAssignments)
+      await db.update(device_model_question_set_assignments)
         .set({
-          assignmentOrder,
-          updatedAt: formattedDate
+          assignment_order: assignmentOrder,
+          updated_at: formattedDate
         })
-        .where(eq(deviceModelQuestionSetAssignments.id, existingAssignment.id));
+        .where(eq(device_model_question_set_assignments.id, existingAssignment[0].id));
       
-      return db.query.deviceModelQuestionSetAssignments.findFirst({
-        where: eq(deviceModelQuestionSetAssignments.id, existingAssignment.id),
-        with: {
-          model: true,
-          questionSet: true
-        }
-      });
+      const updated = await db.select()
+        .from(device_model_question_set_assignments)
+        .where(eq(device_model_question_set_assignments.id, existingAssignment[0].id))
+        .limit(1);
+      
+      return updated[0];
     }
     
     // Create a new assignment
-    const result = await db.insert(deviceModelQuestionSetAssignments).values({
-      modelId,
-      questionSetId,
-      assignmentOrder,
-      createdAt: formattedDate,
-      updatedAt: formattedDate
+    const result = await db.insert(device_model_question_set_assignments).values({
+      model_id: modelId,
+      question_set_id: questionSetId,
+      assignment_order: assignmentOrder,
+      created_at: formattedDate,
+      updated_at: formattedDate
     });
     
-    return db.query.deviceModelQuestionSetAssignments.findFirst({
-      where: eq(deviceModelQuestionSetAssignments.id, Number(result[0].insertId)),
-      with: {
-        model: true,
-        questionSet: true
-      }
-    });
+    const created = await db.select()
+      .from(device_model_question_set_assignments)
+      .where(eq(device_model_question_set_assignments.id, Number(result[0].insertId)))
+      .limit(1);
+    
+    return created[0];
   }
 
   async updateAssignment(id: number, assignmentOrder: number) {
     const formattedDate = new Date().toISOString().replace('T', ' ').substring(0, 19);
     
-    await db.update(deviceModelQuestionSetAssignments)
+    await db.update(device_model_question_set_assignments)
       .set({
-        assignmentOrder,
-        updatedAt: formattedDate
+        assignment_order: assignmentOrder,
+        updated_at: formattedDate
       })
-      .where(eq(deviceModelQuestionSetAssignments.id, id));
+      .where(eq(device_model_question_set_assignments.id, id));
     
-    return db.query.deviceModelQuestionSetAssignments.findFirst({
-      where: eq(deviceModelQuestionSetAssignments.id, id),
-      with: {
-        model: true,
-        questionSet: true
-      }
-    });
+    const updated = await db.select()
+      .from(device_model_question_set_assignments)
+      .where(eq(device_model_question_set_assignments.id, id))
+      .limit(1);
+    
+    return updated[0];
   }
 
   async deleteAssignment(id: number) {
-    await db.delete(deviceModelQuestionSetAssignments)
-      .where(eq(deviceModelQuestionSetAssignments.id, id));
+    await db.delete(device_model_question_set_assignments)
+      .where(eq(device_model_question_set_assignments.id, id));
     
     return true;
   }
 
   async findAssignment(modelId: number, questionSetId: number) {
-    return db.query.deviceModelQuestionSetAssignments.findFirst({
-      where: and(
-        eq(deviceModelQuestionSetAssignments.modelId, modelId),
-        eq(deviceModelQuestionSetAssignments.questionSetId, questionSetId)
-      ),
-      with: {
-        model: true,
-        questionSet: true
-      }
-    });
+    const assignment = await db.select()
+      .from(device_model_question_set_assignments)
+      .where(and(
+        eq(device_model_question_set_assignments.model_id, modelId),
+        eq(device_model_question_set_assignments.question_set_id, questionSetId)
+      ))
+      .limit(1);
+    
+    return assignment[0] || null;
   }
 
   async findAssignmentById(id: number) {
-    return db.query.deviceModelQuestionSetAssignments.findFirst({
-      where: eq(deviceModelQuestionSetAssignments.id, id),
-      with: {
-        model: true,
-        questionSet: true
-      }
-    });
+    const assignment = await db.select()
+      .from(device_model_question_set_assignments)
+      .where(eq(device_model_question_set_assignments.id, id))
+      .limit(1);
+    
+    return assignment[0] || null;
   }
 
   async deleteAssignmentByModelAndQuestionSet(modelId: number, questionSetId: number) {
-    await db.delete(deviceModelQuestionSetAssignments)
+    await db.delete(device_model_question_set_assignments)
       .where(and(
-        eq(deviceModelQuestionSetAssignments.modelId, modelId),
-        eq(deviceModelQuestionSetAssignments.questionSetId, questionSetId)
+        eq(device_model_question_set_assignments.model_id, modelId),
+        eq(device_model_question_set_assignments.question_set_id, questionSetId)
       ));
     
     return true;

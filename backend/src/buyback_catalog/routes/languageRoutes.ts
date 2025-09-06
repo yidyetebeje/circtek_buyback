@@ -6,7 +6,7 @@ import {
   LanguageIdParamSchema
 } from '../types/languageTypes';
 import { t } from 'elysia';
-import { authMiddleware, type JwtUser } from '@/middleware/auth';
+import { requireRole } from '../../auth';
 
 // Define the pagination and sorting query parameters schema
 const PaginationQuerySchema = t.Object({
@@ -18,7 +18,7 @@ const PaginationQuerySchema = t.Object({
 
 // Create and export the language routes
 export const languageRoutes = new Elysia({ prefix: '/languages' })
-  .use(authMiddleware.isAuthenticated) // Add centralized authentication middleware
+  .use(requireRole([])) // Add centralized authentication middleware
   // GET all languages
   .get('/', 
     async ({ query }) => {

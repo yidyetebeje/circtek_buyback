@@ -173,7 +173,7 @@ export class CategoryController {
     };
   }
 
-  async bulkUpsertTranslations(ctx: Context<{ params: Static<typeof CategoryIdParamSchema>, body: { translations: Array<{ language_id: number; title: string; description?: string; meta_title?: string; meta_description?: string; meta_keywords?: string; }> } }> & { currentUserId: number }) {
+  async bulkUpsertTranslations(ctx: Context<{ params: Static<typeof CategoryIdParamSchema>, body: { translations: Array<{ language_id: number; title: string; description?: string; meta_title?: string; meta_description?: string; meta_keywords?: string; }> } }> & { currentUserId: number | null }) {
     try {
       const { params, body, currentUserId } = ctx;
       const categoryId = params.categoryId;

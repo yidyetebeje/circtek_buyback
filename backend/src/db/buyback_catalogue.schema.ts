@@ -205,7 +205,7 @@ export const device_model_question_set_assignments = mysqlTable("device_model_qu
 
 // Translation tables for question sets system
 
-export const questionSetTranslations = mysqlTable("question_set_translations", {
+export const question_set_translations = mysqlTable("question_set_translations", {
   id: serial("id").notNull(),
   question_set_id: bigint("question_set_id", { mode: 'number', unsigned: true }).references(() => question_sets.id).notNull(),
   language_id: bigint("language_id", { mode: 'number', unsigned: true }).references(() => languages.id).notNull(),
@@ -252,4 +252,33 @@ export const model_test_price_drops = mysqlTable("model_test_price_drops", {
 
   unique("uq_model_test_name").on(table.model_id, table.test_name),
   index("model_test_price_drops_model_id_idx").on(table.model_id)
+]);
+
+
+export const question_translations = mysqlTable("question_translations", {
+  id: serial("id").notNull(),
+  question_id: bigint("question_id", { mode: 'number', unsigned: true }).references(() => device_questions.id).notNull(),
+  language_id: bigint("language_id", { mode: 'number', unsigned: true }).references(() => languages.id).notNull(),
+  title: varchar({ length: 255 }).notNull(),
+  tooltip: text(),
+  category: varchar({ length: 100 }),
+},
+(table) => [
+  primaryKey({ columns: [table.id], name: "question_translations_id"}),
+  index("question_translations_question_id_idx").on(table.question_id),
+  index("question_translations_language_id_idx").on(table.language_id),
+  unique().on(table.question_id, table.language_id)
+]);
+
+export const question_option_translations = mysqlTable("question_option_translations", {
+  id: serial("id").notNull(),
+  option_id: bigint("option_id", { mode: 'number', unsigned: true }).references(() => question_options.id).notNull(),
+  language_id: bigint("language_id", { mode: 'number', unsigned: true }).references(() => languages.id).notNull(),
+  title: varchar({ length: 255 }).notNull(),
+},
+(table) => [
+  primaryKey({ columns: [table.id], name: "question_option_translations_id"}),
+  index("question_option_translations_option_id_idx").on(table.option_id),
+  index("question_option_translations_language_id_idx").on(table.language_id),
+  unique().on(table.option_id, table.language_id)
 ]);

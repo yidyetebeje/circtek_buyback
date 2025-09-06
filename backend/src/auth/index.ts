@@ -29,15 +29,15 @@ export const requireRole = (roles: string[]) =>
 			.derive(async (ctx) => {
 				// Skip authentication for OPTIONS requests (CORS preflight)
 				if ((ctx as any).request.method === 'OPTIONS') {
-					return { currentUserId: null, currentTenantId: null, currentRole: null }
+					return { currentUserId: null, currentTenantId: null, currentRole: null, warehouseId: null, managedShopId: null }
 				}
 				const token = (ctx as any).bearer as string | undefined
-				if (!token) return { authError: { status: 401, message: 'Access Denied' } }
+				if (!token) return { authError: { status: 401, message: 'Access Denied' }, currentUserId: null, currentTenantId: null, currentRole: null, warehouseId: null, managedShopId: null }
 				const payload = await (ctx as any).jwt.verify(token)
-				if (!payload) return { authError: { status: 403, message: 'Invalid Token' } }
+				if (!payload) return { authError: { status: 403, message: 'Invalid Token' }, currentUserId: null, currentTenantId: null, currentRole: null, warehouseId: null, managedShopId: null }
 				const role = (payload as any).role as string | undefined
-				if (roles.length && (!role || !roles.includes(role))) return { authError: { status: 403, message: 'Forbidden' } }
-				return { currentUserId: Number((payload as any).sub), currentTenantId: (payload as any).tenant_id, currentRole: role, warehouseId: (payload as any).warehouse_id }
+				if (roles.length && (!role || !roles.includes(role))) return { authError: { status: 403, message: 'Forbidden' }, currentUserId: null, currentTenantId: null, currentRole: null, warehouseId: null, managedShopId: null }
+				return { currentUserId: Number((payload as any).sub), currentTenantId: (payload as any).tenant_id, currentRole: role, warehouseId: (payload as any).warehouse_id, managedShopId: (payload as any).managed_shop_id }
 			})
 			.onBeforeHandle(({ authError, set, request }) => {
 				// Skip authentication for OPTIONS requests (CORS preflight)

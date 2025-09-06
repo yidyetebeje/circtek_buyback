@@ -5,7 +5,7 @@ import {
   AIBulkTranslationRequestSchema 
 } from '../types/aiTranslationTypes';
 import { z } from 'zod';
-import { authMiddleware, type JwtUser } from '@/middleware/auth';
+import { requireRole } from '../../auth';
 
 // Schema for component translation requests
 const ComponentTranslationRequestSchema = z.object({
@@ -16,7 +16,7 @@ const ComponentTranslationRequestSchema = z.object({
 });
 
 export const aiTranslationRoutes = new Elysia({ prefix: '/ai-translation' })
-  .use(authMiddleware.isAuthenticated) // Add centralized authentication middleware
+  .use(requireRole([])) // Add centralized authentication middleware
   // POST /ai-translation/generate - Generate AI translation for a single language
   .post('/generate', 
     (ctx) => aiTranslationController.generateTranslation(ctx.body, ctx), 

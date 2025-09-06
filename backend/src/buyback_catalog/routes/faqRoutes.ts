@@ -10,22 +10,22 @@ import {
   FAQIdParamSchema,
   FAQPaginationQuerySchema
 } from "../types/faqTypes";
-import { authMiddleware, type JwtUser } from '@/middleware/auth';
+import { requireRole } from '../../auth';
 
 // Create and export the FAQ routes
 export const faqRoutes = new Elysia({ prefix: '/faqs' })
-  .use(authMiddleware.isAuthenticated) // Add centralized authentication middleware
+  .use(requireRole([])) // Add centralized authentication middleware
   // GET all FAQs with pagination, filtering and sorting
   .get('/', 
     async ({ query }) => {
-      const { page, limit, orderBy, order, shop_id, client_id, is_published, search } = query;
+      const { page, limit, orderBy, order, shop_id, tenant_id, is_published, search } = query;
       
-      return await faqController.getAllFAQs(page, limit, orderBy, order, shop_id, client_id, is_published, search);
+      return await faqController.getAllFAQs(page, limit, orderBy, order, shop_id, tenant_id, is_published, search);
     }, {
       query: FAQPaginationQuerySchema,
       detail: {
         summary: 'Get all FAQs',
-        description: 'Retrieve a paginated list of FAQs with optional filtering by shop, client, publication status, and search',
+        description: 'Retrieve a paginated list of FAQs with optional filtering by shop, tenant, publication status, and search',
         tags: ['FAQs']
       }
     }
@@ -47,12 +47,8 @@ export const faqRoutes = new Elysia({ prefix: '/faqs' })
   
   // POST create new FAQ
   .post('/', 
-    async ({ body, set, user }) => {
-      if (!user) {
-        set.status = 401;
-        return { error: 'Unauthorized' };
-      }
-      return await faqController.createFAQ(body, user, { set } as any);
+    async ({ body, set, currentTenantId }) => {
+      return await faqController.createFAQ(body, currentTenantId, { set } as any);
     }, {
       body: FAQCreateSchema,
       detail: {
@@ -104,12 +100,8 @@ export const faqRoutes = new Elysia({ prefix: '/faqs' })
   
   // POST create FAQ with translations
   .post('/with-translations', 
-    async ({ body, user, set }) => {
-      if (!user) {
-        set.status = 401;
-        return { error: 'Unauthorized' };
-      }
-      return await faqController.createFAQWithTranslations(body, user, { set } as any);
+    async ({ body, currentTenantId, set }) => {
+      return await faqController.createFAQWithTranslations(body, currentTenantId, { set } as any);
     }, {
       body: FAQWithTranslationsCreateSchema,
       detail: {
@@ -246,7 +238,7 @@ export const faqRoutes = new Elysia({ prefix: '/faqs' })
 
 // Shop-specific FAQ routes
 export const shopFAQRoutes = new Elysia({ prefix: '/shops' })
-  .use(authMiddleware.isAuthenticated) // Add centralized authentication middleware
+  .use(requireRole([])) // Add centralized authentication middleware
   // GET FAQs by shop ID
   .get('/:shopId/faqs', 
     async ({ params, query }) => {

@@ -9,10 +9,10 @@ import {
   MultipleShopsEntityPublishSchema,
   BulkPublishToMultipleShopsSchema
 } from '../types/shopCatalogTypes';
-import { authMiddleware, type JwtUser } from '@/middleware/auth';
+import { requireRole } from '../../auth';
 
 export const shopCatalogRoutes = new Elysia({ prefix: '/shop-catalog' })
-  .use(authMiddleware.isAuthenticated) // Add centralized authentication middleware
+  .use(requireRole([])) // Add centralized authentication middleware
   // BRANDS
   .get('/brands/status', shopCatalogController.getBrandStatus, {
     query: ShopCatalogStatusQuerySchema,

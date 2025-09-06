@@ -256,7 +256,7 @@ export class ShopLocationController {
       return {
         success: true,
         data: location,
-        message: `Shop location ${location.isActive ? 'activated' : 'deactivated'} successfully`
+        message: `Shop location ${location.is_active ? 'activated' : 'deactivated'} successfully`
       };
     } catch (error) {
       console.error('Error toggling shop location status:', error);

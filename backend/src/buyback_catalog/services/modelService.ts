@@ -2,11 +2,13 @@ import { modelRepository } from "../repositories/modelRepository";
 import { TModelCreate, TModelUpdate, TModelTranslationInsert, ModelTranslationCreateSingleSchema, ModelTranslationUpdateSingleSchema } from "../types/modelTypes";
 import { NotFoundError, InternalServerError, BadRequestError } from "../utils/errors"; 
 import { db } from "../../db";
-import { modelTranslations, languages, modelTestPriceDrops } from "../../db/schema/catalog";
-import { shops } from "../../db/schema/user";
+import { model_translations } from "../../db/shops.schema";
+import { model_test_price_drops, languages } from "../../db/buyback_catalogue.schema";
+import { shops } from "../../db/shops.schema";
 import { and, eq, inArray } from 'drizzle-orm';
 import { s3Service } from "./s3Service";
-import { deviceCategories, shopDeviceCategories } from "../../db/schema/catalog";
+import { device_categories } from "../../db/buyback_catalogue.schema";
+import { shop_device_categories } from "../../db/shops.schema";
 import { TModelTestPriceDrop } from "../types/modelTypes";
 
 export class ModelService {
@@ -74,12 +76,12 @@ export class ModelService {
     // Insert price drops if provided
     if (priceDrops && priceDrops.length > 0) {
       const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
-      await db.insert(modelTestPriceDrops).values(priceDrops.map(pd => ({
-        modelId: newModel.id,
-        testName: pd.test_name,
-        priceDrop: pd.price_drop,
-        createdAt: now,
-        updatedAt: now
+      await db.insert(model_test_price_drops).values(priceDrops.map(pd => ({
+        model_id: newModel.id,
+        test_name: pd.test_name,
+        price_drop: pd.price_drop,
+        created_at: now,
+        updated_at: now
       })) as any);
     }
 
@@ -133,15 +135,15 @@ export class ModelService {
     // Replace price drops if provided
     if (priceDrops) {
       // Delete existing
-      await db.delete(modelTestPriceDrops).where(eq(modelTestPriceDrops.modelId, id));
+      await db.delete(model_test_price_drops).where(eq(model_test_price_drops.model_id, id));
       if (priceDrops.length > 0) {
         const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
-        await db.insert(modelTestPriceDrops).values(priceDrops.map(pd => ({
-          modelId: id,
-          testName: pd.test_name,
-          priceDrop: pd.price_drop,
-          createdAt: now,
-          updatedAt: now
+        await db.insert(model_test_price_drops).values(priceDrops.map(pd => ({
+          model_id: id,
+          test_name: pd.test_name,
+          price_drop: pd.price_drop,
+          created_at: now,
+          updated_at: now
         })) as any);
       }
     }
@@ -154,15 +156,14 @@ export class ModelService {
         // 1. Delete translations that are not in the new list
         const translationsToDelete = existingTranslationIds.filter(langId => !updatedTranslationLangIds.includes(langId));
         if(translationsToDelete.length > 0){
-           const transRecordsToDelete = await db.query.modelTranslations.findMany({
-               where: and(
-                   eq(modelTranslations.model_id, id),
-                   inArray(modelTranslations.language_id, translationsToDelete)
-               ),
-               columns: { id: true }
-           });
+           const transRecordsToDelete = await db.select({ id: model_translations.id })
+             .from(model_translations)
+             .where(and(
+               eq(model_translations.model_id, id),
+               inArray(model_translations.language_id, translationsToDelete)
+             ));
            if (transRecordsToDelete.length > 0) {
-                await db.delete(modelTranslations).where(inArray(modelTranslations.id, transRecordsToDelete.map(t => t.id)));
+                await db.delete(model_translations).where(inArray(model_translations.id, transRecordsToDelete.map(t => t.id)));
            }
         }
 
@@ -238,8 +239,9 @@ export class ModelService {
     }
 
     // 2. Check if language exists
-    const languageExists = await db.query.languages.findFirst({ where: eq(languages.id, data.language_id) });
-    if (!languageExists) {
+    const languageExists = await db.select().from(languages).where(eq(languages.id, data.language_id)).limit(1);
+    const language = languageExists[0];
+    if (!language) {
         throw new NotFoundError(`Language with ID ${data.language_id} not found.`);
     }
 
@@ -295,8 +297,9 @@ export class ModelService {
     }
 
     // 2. Check if language exists
-    const languageExists = await db.query.languages.findFirst({ where: eq(languages.id, languageId) });
-    if (!languageExists) {
+    const languageExists = await db.select().from(languages).where(eq(languages.id, languageId)).limit(1);
+    const language = languageExists[0];
+    if (!language) {
         throw new NotFoundError(`Language with ID ${languageId} not found.`);
     }
 
@@ -355,9 +358,10 @@ export class ModelService {
         chunk.map(async (translation) => {
           try {
             // Check if language exists
-            const language = await db.query.languages.findFirst({ 
-              where: eq(languages.id, translation.language_id) 
-            });
+            const languageResult = await db.select().from(languages)
+              .where(eq(languages.id, translation.language_id))
+              .limit(1);
+            const language = languageResult[0];
             if (!language) {
               results.errors.push({
                 language_id: translation.language_id,
@@ -461,9 +465,10 @@ export class ModelService {
     clientId?: number;
   }) {
     // Check if shop exists
-    const shop = await db.query.shops.findFirst({
-      where: eq(shops.id, shopId)
-    });
+    const shopResult = await db.select().from(shops)
+      .where(eq(shops.id, shopId))
+      .limit(1);
+    const shop = shopResult[0];
 
     if (!shop) {
       throw new NotFoundError(`Shop with ID ${shopId} not found.`);
@@ -501,9 +506,10 @@ export class ModelService {
     clientId?: number;
   }) {
     // Check if shop exists
-    const shop = await db.query.shops.findFirst({
-      where: eq(shops.id, shopId)
-    });
+    const shopResult = await db.select().from(shops)
+      .where(eq(shops.id, shopId))
+      .limit(1);
+    const shop = shopResult[0];
 
     if (!shop) {
       throw new NotFoundError(`Shop with ID ${shopId} not found.`);
@@ -514,13 +520,13 @@ export class ModelService {
     // We therefore join with `shopDeviceCategories` to ensure we get the category
     // that is specifically published for the provided shop.
     const categoryRecord = await db
-      .select({ id: deviceCategories.id })
-      .from(deviceCategories)
-      .innerJoin(shopDeviceCategories, eq(deviceCategories.id, shopDeviceCategories.category_id))
+      .select({ id: device_categories.id })
+      .from(device_categories)
+      .innerJoin(shop_device_categories, eq(device_categories.id, shop_device_categories.category_id))
       .where(and(
-        eq(deviceCategories.sef_url, categorySlug),
-        eq(shopDeviceCategories.shop_id, shopId),
-        eq(shopDeviceCategories.is_published, 1)
+        eq(device_categories.sef_url, categorySlug),
+        eq(shop_device_categories.shop_id, shopId),
+        eq(shop_device_categories.is_published, 1)
       ))
       .limit(1);
 

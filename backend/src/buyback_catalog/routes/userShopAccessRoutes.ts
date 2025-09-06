@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
 import { userShopAccessController } from '../controllers/userShopAccessController';
-import { authMiddleware } from '@/middleware/auth';
+import { requireRole } from '../../auth';
 
 
 const GrantAccessSchema = t.Object({
@@ -16,10 +16,10 @@ const UpdateAccessSchema = t.Object({
 });
 
 export const userShopAccessRoutes = new Elysia({ prefix: '/shop-access' })
-  .use(authMiddleware.isAuthenticated)
-  .get('/user/:userId', async ({ params, user, ...ctx }) => {
+  .use(requireRole([]))
+  .get('/user/:userId', async ({ params, ...ctx }) => {
     const userId = parseInt(params.userId, 10);
-    return userShopAccessController.getUserShops(userId, { ...ctx, params, user });
+    return userShopAccessController.getUserShops(userId, ctx as any);
   }, {
     params: t.Object({
       userId: t.String()
@@ -30,9 +30,9 @@ export const userShopAccessRoutes = new Elysia({ prefix: '/shop-access' })
     }
   })
 
-  .get('/shop/:shopId', async ({ params, user, ...ctx }) => {
+  .get('/shop/:shopId', async ({ params, ...ctx }) => {
     const shopId = parseInt(params.shopId, 10);
-    return userShopAccessController.getShopUsers(shopId, { ...ctx, params, user });
+    return userShopAccessController.getShopUsers(shopId, ctx as any);
   }, {
     params: t.Object({
       shopId: t.String()
@@ -43,8 +43,8 @@ export const userShopAccessRoutes = new Elysia({ prefix: '/shop-access' })
     }
   })
 
-  .post('/', async ({ body, user, ...ctx }) => {
-    return userShopAccessController.grantAccess(body, { ...ctx, body, user });
+  .post('/grant', async ({ body, ...ctx }) => {
+    return userShopAccessController.grantAccess(body, ctx as any);
   }, {
     body: GrantAccessSchema,
     detail: {
@@ -53,11 +53,10 @@ export const userShopAccessRoutes = new Elysia({ prefix: '/shop-access' })
     }
   })
 
-  // Update a user's access to a shop
-  .put('/user/:userId/shop/:shopId', async ({ params, body, user, ...ctx }) => {
+  .put('/:userId/:shopId', async ({ params, body, ...ctx }) => {
     const userId = parseInt(params.userId, 10);
     const shopId = parseInt(params.shopId, 10);
-    return userShopAccessController.updateAccess(userId, shopId, body, { ...ctx, params, body, user });
+    return userShopAccessController.updateAccess(userId, shopId, body, ctx as any);
   }, {
     params: t.Object({
       userId: t.String(),
@@ -70,11 +69,10 @@ export const userShopAccessRoutes = new Elysia({ prefix: '/shop-access' })
     }
   })
 
-  // Revoke a user's access to a shop
-  .delete('/user/:userId/shop/:shopId', async ({ params, user, ...ctx }) => {
+  .delete('/:userId/:shopId', async ({ params, ...ctx }) => {
     const userId = parseInt(params.userId, 10);
     const shopId = parseInt(params.shopId, 10);
-    return userShopAccessController.revokeAccess(userId, shopId, { ...ctx, params, user });
+    return userShopAccessController.revokeAccess(userId, shopId, ctx as any);
   }, {
     params: t.Object({
       userId: t.String(),

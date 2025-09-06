@@ -65,7 +65,7 @@ export class QuestionSetService {
     }
 
     // If updating the internal name, check for duplicates
-    if (data.internalName && data.internalName !== questionSet.internalName && data.tenant_id) {
+    if (data.internalName && data.internalName !== questionSet.internal_name && data.tenant_id) {
       const existingSet = await questionSetRepository.findByInternalName(data.internalName, data.tenant_id);
       if (existingSet && existingSet.id !== id) {
         throw new BadRequestError(`Question set with internal name '${data.internalName}' already exists for this tenant`);
@@ -192,6 +192,9 @@ export class QuestionSetService {
       throw new NotFoundError(`Question set with ID ${questionSetId} not found`);
     }
 
+    // Type assertion since we know includeQuestions=true means questions will be included
+    const questionSetWithQuestions = questionSet as typeof questionSet & { questions: any[] };
+
     // Get all question set translations
     const questionSetTranslations = await questionSetRepository.findTranslationsForQuestionSet(questionSetId);
     
@@ -200,13 +203,14 @@ export class QuestionSetService {
       questionSetTranslations.map(async (qsTranslation) => {
         // Get all question translations for this language
         const questionTranslations = await Promise.all(
-          (questionSet.questions || []).map(async (question) => {
-            const questionTranslation = await questionRepository.findTranslation(question.id, qsTranslation.languageId);
+          (questionSetWithQuestions.questions || []).map(async (question) => {
+            const questionTranslation = await questionRepository.findTranslation(question.id, qsTranslation.language_id);
             
             // Get all option translations for this question and language
+            const questionOptions = (question as any).options as Array<{ id: number; title: string }> || [];
             const optionTranslations = await Promise.all(
-              ((question as any).options || []).map(async (option: any) => {
-                const optionTranslation = await questionRepository.findOptionTranslation(option.id, qsTranslation.languageId);
+              questionOptions.map(async (option) => {
+                const optionTranslation = await questionRepository.findOptionTranslation(option.id, qsTranslation.language_id);
                 return {
                   id: option.id,
                   title: optionTranslation?.title || '',
@@ -225,9 +229,9 @@ export class QuestionSetService {
         );
 
         return {
-          languageId: qsTranslation.languageId,
-          questionSetId: qsTranslation.questionSetId,
-          displayName: qsTranslation.displayName,
+          languageId: qsTranslation.language_id,
+          questionSetId: qsTranslation.question_set_id ,
+          displayName: qsTranslation.display_name,
           description: qsTranslation.description || '',
           questions: questionTranslations,
         };

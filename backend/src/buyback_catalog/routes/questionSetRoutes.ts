@@ -14,17 +14,17 @@ import {
   GetAssignmentsByQuestionSetIdParamsSchema
 } from '../types/questionSetTypes';
 import { t } from 'elysia';
-import { authMiddleware, type JwtUser } from '@/middleware/auth';
-import { getClientId } from '../utils/getId';
+import { requireRole } from '../../auth';
 
 // Create and export the question set routes
 export const questionSetRoutes = new Elysia({ prefix: '/question-sets' })
-  .use(authMiddleware.isAuthenticated) // Add centralized authentication middleware
+  .use(requireRole([])) // Add centralized authentication middleware
   // GET all question sets
   .get('/', 
     async (ctx) => {
       const { page, limit, orderBy, order, clientId, search } = ctx.query;
-      let client_id: number | undefined = clientId || getClientId(ctx.user!);  
+      const { currentTenantId } = ctx as any;
+      let client_id: number | undefined = clientId || currentTenantId;  
       return await questionSetController.getAllQuestionSets(page, limit, orderBy, order, client_id, search);
     }, {
       query: PaginationQuerySchema,
@@ -69,9 +69,14 @@ export const questionSetRoutes = new Elysia({ prefix: '/question-sets' })
   
   // POST create new question set
   .post('/', 
-    async ({ body, user }) => {
-      const clientId = getClientId(user!) || 0;
-      return await questionSetController.createQuestionSet(body, clientId);
+    async (ctx) => {
+      const { body, set } = ctx as any;
+      const tenantId = (ctx as any).currentTenantId;
+      if (!tenantId) {
+        set.status = 400;
+        return { error: 'Tenant ID could not be determined from user information' };
+      }
+      return await questionSetController.createQuestionSet(body, tenantId);
     }, {
       body: QuestionSetCreateSchema,
       detail: {
@@ -113,16 +118,14 @@ export const questionSetRoutes = new Elysia({ prefix: '/question-sets' })
   
   // POST create question set with questions and options
   .post('/with-questions', 
-    async ({ body , user, set}) => {
-      if (!user) {
-        set.status = 401;
-        return {
-          success: false,
-          message: 'Unauthorized'
-        }
+    async (ctx) => {
+      const { body, set } = ctx as any;
+      const tenantId = (ctx as any).currentTenantId;
+      if (!tenantId) {
+        set.status = 400;
+        return { error: 'Tenant ID could not be determined from user information' };
       }
-      const clientId = getClientId(user) || 0;
-      return await questionSetController.createQuestionSetWithQuestions(body, clientId);
+      return await questionSetController.createQuestionSetWithQuestions(body, tenantId);
     }, {
       body: QuestionSetWithQuestionsCreateSchema,
       detail: {
@@ -135,16 +138,14 @@ export const questionSetRoutes = new Elysia({ prefix: '/question-sets' })
   
   // POST create question set with questions, options, and translations
   .post('/with-questions-and-translations', 
-    async ({ body , user, set}) => {
-      if (!user) {
-        set.status = 401;
-        return {
-          success: false,
-          message: 'Unauthorized'
-        }
+    async (ctx) => {
+      const { body, set } = ctx as any;
+      const tenantId = (ctx as any).currentTenantId;
+      if (!tenantId) {
+        set.status = 400;
+        return { error: 'Tenant ID could not be determined from user information' };
       }
-      const clientId = getClientId(user) || 0;
-      return await questionSetController.createQuestionSetWithQuestionsAndTranslations(body, clientId);
+      return await questionSetController.createQuestionSetWithQuestionsAndTranslations(body, tenantId);
     }, {
       body: QuestionSetWithQuestionsAndTranslationsCreateSchema,
       detail: {

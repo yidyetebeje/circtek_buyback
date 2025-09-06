@@ -1,6 +1,7 @@
 import { asc, desc, eq, and, sql, or, inArray } from "drizzle-orm";
 import { db } from "../../db";
-import { shopLocations, shopLocationPhones } from "../../db/schema/user";
+
+import { shop_locations, shop_location_phones } from "../../db/shops.schema";
 import { 
   TShopLocationCreate, 
   TShopLocationUpdate, 
@@ -30,49 +31,75 @@ export class ShopLocationRepository {
   ) {
     const offset = (page - 1) * limit;
 
-    const conditions = [eq(shopLocations.shopId, shopId)];
+    const conditions = [eq(shop_locations.shop_id, shopId)];
     
     if (activeOnly) {
-      conditions.push(eq(shopLocations.isActive, true));
+      conditions.push(eq(shop_locations.is_active, true));
     }
     
     const whereCondition = and(...conditions);
 
     const columnMapping: { [key: string]: any } = {
-      id: shopLocations.id,
-      name: shopLocations.name,
-      displayOrder: shopLocations.displayOrder,
-      city: shopLocations.city,
-      country: shopLocations.country,
-      isActive: shopLocations.isActive,
-      createdAt: shopLocations.createdAt,
-      updatedAt: shopLocations.updatedAt
+      id: shop_locations.id,
+      name: shop_locations.name,
+      displayOrder: shop_locations.display_order,
+      city: shop_locations.city,
+      country: shop_locations.country,
+      isActive: shop_locations.is_active,
+      createdAt: shop_locations.created_at,
+      updatedAt: shop_locations.updated_at
     };
 
     if (!(orderBy in columnMapping)) {
       orderBy = "displayOrder";
     }
 
-    const items = await db.query.shopLocations.findMany({
-      where: whereCondition,
-      limit,
-      offset,
-      orderBy: order === "asc"
-        ? asc(columnMapping[orderBy])
-        : desc(columnMapping[orderBy]),
-      with: {
-        phones: true
-      }
-    });
+    const items = await db.select({
+      id: shop_locations.id,
+      shop_id: shop_locations.shop_id,
+      name: shop_locations.name,
+      address: shop_locations.address,
+      city: shop_locations.city,
+      state: shop_locations.state,
+      postal_code: shop_locations.postal_code,
+      country: shop_locations.country,
+      latitude: shop_locations.latitude,
+      longitude: shop_locations.longitude,
+      description: shop_locations.description,
+      operating_hours: shop_locations.operating_hours,
+      is_active: shop_locations.is_active,
+      display_order: shop_locations.display_order,
+      created_at: shop_locations.created_at,
+      updated_at: shop_locations.updated_at
+    })
+    .from(shop_locations)
+    .where(whereCondition)
+    .limit(limit)
+    .offset(offset)
+    .orderBy(order === "asc"
+      ? asc(columnMapping[orderBy])
+      : desc(columnMapping[orderBy]));
+
+    // Get phones separately
+    const locationIds = items.map(item => item.id);
+    const phones = locationIds.length > 0 ? await db.select()
+      .from(shop_location_phones)
+      .where(inArray(shop_location_phones.location_id, locationIds)) : [];
+
+    // Combine data
+    const itemsWithPhones = items.map(item => ({
+      ...item,
+      phones: phones.filter(phone => phone.location_id === item.id)
+    }));
 
     const totalCountResult = await db.select({ count: sql<number>`count(*)` })
-      .from(shopLocations)
+      .from(shop_locations)
       .where(whereCondition);
     
     const total = totalCountResult[0]?.count ?? 0;
 
     return {
-      data: items as TShopLocationWithPhones[],
+      data: itemsWithPhones as TShopLocationWithPhones[],
       meta: {
         total,
         page,
@@ -86,14 +113,38 @@ export class ShopLocationRepository {
    * Find location by ID with phone numbers
    */
   async findById(id: number): Promise<TShopLocationWithPhones | null> {
-    const location = await db.query.shopLocations.findFirst({
-      where: eq(shopLocations.id, id),
-      with: {
-        phones: true
-      }
-    });
+    const location = await db.select({
+      id: shop_locations.id,
+      shop_id: shop_locations.shop_id,
+      name: shop_locations.name,
+      address: shop_locations.address,
+      city: shop_locations.city,
+      state: shop_locations.state,
+      postal_code: shop_locations.postal_code,
+      country: shop_locations.country,
+      latitude: shop_locations.latitude,
+      longitude: shop_locations.longitude,
+      description: shop_locations.description,
+      operating_hours: shop_locations.operating_hours,
+      is_active: shop_locations.is_active,
+      display_order: shop_locations.display_order,
+      created_at: shop_locations.created_at,
+      updated_at: shop_locations.updated_at
+    })
+    .from(shop_locations)
+    .where(eq(shop_locations.id, id))
+    .limit(1);
 
-    return location as TShopLocationWithPhones | null;
+    if (location.length === 0) return null;
+
+    const phones = await db.select()
+      .from(shop_location_phones)
+      .where(eq(shop_location_phones.location_id, id));
+
+    return {
+      ...location[0],
+      phones
+    } as TShopLocationWithPhones;
   }
 
   /**
@@ -107,26 +158,52 @@ export class ShopLocationRepository {
     limit = 10
   ): Promise<TShopLocationWithPhones[]> {
     // Using Haversine formula for distance calculation
-    const conditions = [eq(shopLocations.isActive, true)];
+    const conditions = [eq(shop_locations.is_active, true)];
     
     if (shopId) {
-      conditions.push(eq(shopLocations.shopId, shopId));
+      conditions.push(eq(shop_locations.shop_id, shopId));
     }
 
     const whereCondition = and(...conditions);
 
     // For simplicity, we'll get all active locations and filter in application
     // In production, you'd want to use a proper spatial query
-    const locations = await db.query.shopLocations.findMany({
-      where: whereCondition,
-      with: {
-        phones: true
-      },
-      limit: limit * 2 // Get more to account for filtering
-    });
+    const locations = await db.select({
+      id: shop_locations.id,
+      shop_id: shop_locations.shop_id,
+      name: shop_locations.name,
+      address: shop_locations.address,
+      city: shop_locations.city,
+      state: shop_locations.state,
+      postal_code: shop_locations.postal_code,
+      country: shop_locations.country,
+      latitude: shop_locations.latitude,
+      longitude: shop_locations.longitude,
+      description: shop_locations.description,
+      operating_hours: shop_locations.operating_hours,
+      is_active: shop_locations.is_active,
+      display_order: shop_locations.display_order,
+      created_at: shop_locations.created_at,
+      updated_at: shop_locations.updated_at
+    })
+    .from(shop_locations)
+    .where(whereCondition)
+    .limit(limit * 2); // Get more to account for filtering
+
+    // Get phones for all locations
+    const locationIds = locations.map(loc => loc.id);
+    const phones = locationIds.length > 0 ? await db.select()
+      .from(shop_location_phones)
+      .where(inArray(shop_location_phones.location_id, locationIds)) : [];
+
+    // Combine locations with phones
+    const locationsWithPhones = locations.map(location => ({
+      ...location,
+      phones: phones.filter(phone => phone.location_id === location.id)
+    }));
 
     // Calculate distances and filter
-    const locationsWithDistance = locations.map(location => {
+    const locationsWithDistance = locationsWithPhones.map(location => {
       const distance = this.calculateDistance(
         latitude, 
         longitude, 
@@ -156,7 +233,7 @@ export class ShopLocationRepository {
       updatedAt: now
     };
 
-    const result = await db.insert(shopLocations).values(dbLocationData as any);
+    const result = await db.insert(shop_locations).values(dbLocationData as any);
     const insertId = result?.[0]?.insertId ?? 0;
     
     if (insertId === 0) return null;
@@ -166,15 +243,15 @@ export class ShopLocationRepository {
     // Insert phone numbers if provided
     if (phones && phones.length > 0) {
       const phoneData = phones.map(phone => ({
-        locationId,
-        phoneNumber: phone.phoneNumber,
-        phoneType: phone.phoneType,
-        isPrimary: phone.isPrimary,
-        createdAt: now,
-        updatedAt: now
+        location_id: locationId,
+        phone_number: phone.phoneNumber,
+        phone_type: phone.phoneType,
+        is_primary: phone.isPrimary,
+        created_at: now,
+        updated_at: now
       }));
 
-      await db.insert(shopLocationPhones).values(phoneData);
+      await db.insert(shop_location_phones).values(phoneData);
     }
 
     return this.findById(locationId);
@@ -195,28 +272,28 @@ export class ShopLocationRepository {
     };
 
     // Update location
-    await db.update(shopLocations)
+    await db.update(shop_locations)
       .set(dbLocationData as any)
-      .where(eq(shopLocations.id, id));
+      .where(eq(shop_locations.id, id));
 
     // Handle phone number updates if provided
     if (phones !== undefined) {
       // Delete existing phone numbers
-      await db.delete(shopLocationPhones)
-        .where(eq(shopLocationPhones.locationId, id));
+      await db.delete(shop_location_phones)
+        .where(eq(shop_location_phones.location_id, id));
 
       // Insert new phone numbers
       if (phones.length > 0) {
         const phoneData = phones.map(phone => ({
-          locationId: id,
-          phoneNumber: phone.phoneNumber,
-          phoneType: phone.phoneType,
-          isPrimary: phone.isPrimary,
-          createdAt: now,
-          updatedAt: now
+          location_id: id,
+          phone_number: phone.phoneNumber,
+          phone_type: phone.phoneType,
+          is_primary: phone.isPrimary,
+          created_at: now,
+          updated_at: now
         }));
 
-        await db.insert(shopLocationPhones).values(phoneData);
+        await db.insert(shop_location_phones).values(phoneData);
       }
     }
 
@@ -228,12 +305,12 @@ export class ShopLocationRepository {
    */
   async delete(id: number): Promise<boolean> {
     // Delete phone numbers first (due to foreign key constraint)
-    await db.delete(shopLocationPhones)
-      .where(eq(shopLocationPhones.locationId, id));
+    await db.delete(shop_location_phones)
+      .where(eq(shop_location_phones.location_id, id));
 
     // Delete location
-    const result = await db.delete(shopLocations)
-      .where(eq(shopLocations.id, id));
+    const result = await db.delete(shop_locations)
+      .where(eq(shop_locations.id, id));
     
     return (result as any).affectedRows > 0;
   }
@@ -247,12 +324,12 @@ export class ShopLocationRepository {
 
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     
-    await db.update(shopLocations)
+    await db.update(shop_locations)
       .set({ 
-        isActive: !location.isActive,
-        updatedAt: now 
+        is_active: !location.is_active,
+        updated_at: now 
       })
-      .where(eq(shopLocations.id, id));
+      .where(eq(shop_locations.id, id));
 
     return this.findById(id);
   }

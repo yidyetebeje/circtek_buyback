@@ -1,11 +1,11 @@
 import { asc, desc, eq, and, sql, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import {
-  deviceQuestions,
-  questionOptions,
-  questionTranslations,
-  questionOptionTranslations
-} from "../../db/schema/catalog";
+  device_questions,
+  question_options,
+  question_translations,
+  question_option_translations
+} from "../../db/buyback_catalogue.schema";
 import {
   TQuestionCreate,
   TQuestionUpdate,
@@ -18,52 +18,72 @@ import {
 export class QuestionRepository {
   // Question CRUD operations
   async findAll(questionSetId: number, includeOptions = true, includeTranslations = true) {
-    return db.query.deviceQuestions.findMany({
-      where: eq(deviceQuestions.questionSetId, questionSetId),
-      orderBy: asc(deviceQuestions.orderNo),
-      with: {
-        translations: includeTranslations ? true : undefined,
-        options: includeOptions ? {
-          orderBy: asc(questionOptions.orderNo),
-          with: {
-            translations: includeTranslations ? true : undefined
-          }
-        } : undefined
-      }
-    });
+    const questions = await db.select()
+      .from(device_questions)
+      .where(eq(device_questions.question_set_id, questionSetId))
+      .orderBy(asc(device_questions.order_no));
+
+    if (!includeOptions) return questions;
+
+    const questionIds = questions.map(q => q.id);
+    const options = questionIds.length > 0 ? await db.select()
+      .from(question_options)
+      .where(inArray(question_options.question_id, questionIds))
+      .orderBy(asc(question_options.order_no)) : [];
+
+    return questions.map(question => ({
+      ...question,
+      options: options.filter(opt => opt.question_id === question.id)
+    }));
   }
 
   async findById(id: number, includeOptions = true, includeTranslations = true) {
-    return db.query.deviceQuestions.findFirst({
-      where: eq(deviceQuestions.id, id),
-      with: {
-        translations: includeTranslations ? true : undefined,
-        options: includeOptions ? {
-          orderBy: asc(questionOptions.orderNo),
-          with: {
-            translations: includeTranslations ? true : undefined
-          }
-        } : undefined
-      }
-    });
+    const question = await db.select()
+      .from(device_questions)
+      .where(eq(device_questions.id, id))
+      .limit(1);
+
+    if (question.length === 0) return null;
+
+    const result = question[0];
+
+    if (includeOptions) {
+      const options = await db.select()
+        .from(question_options)
+        .where(eq(question_options.question_id, id))
+        .orderBy(asc(question_options.order_no));
+
+      return {
+        ...result,
+        options
+      };
+    }
+
+    return result;
   }
 
   async findByKey(key: string, questionSetId: number) {
-    return db.query.deviceQuestions.findFirst({
-      where: and(
-        eq(deviceQuestions.key, key),
-        eq(deviceQuestions.questionSetId, questionSetId)
-      ),
-      with: {
-        translations: true,
-        options: {
-          orderBy: asc(questionOptions.orderNo),
-          with: {
-            translations: true
-          }
-        }
-      }
-    });
+    const question = await db.select()
+      .from(device_questions)
+      .where(and(
+        eq(device_questions.key, key),
+        eq(device_questions.question_set_id, questionSetId)
+      ))
+      .limit(1);
+
+    if (question.length === 0) return null;
+
+    const result = question[0];
+
+    const options = await db.select()
+      .from(question_options)
+      .where(eq(question_options.question_id, result.id))
+      .orderBy(asc(question_options.order_no));
+
+    return {
+      ...result,
+      options
+    };
   }
 
   async create(data: TQuestionCreate) {
@@ -73,12 +93,12 @@ export class QuestionRepository {
     // Create a new object with the correct types
     const insertData: any = {
       title: data.title,
-      questionSetId: data.questionSetId,
-      inputType: data.inputType,
-      isRequired: data.isRequired ? 1 : 0,
-      orderNo: data.orderNo,
-      createdAt: formattedDate,
-      updatedAt: formattedDate
+      question_set_id: data.questionSetId,
+      input_type: data.inputType,
+      is_required: data.isRequired ? 1 : 0,
+      order_no: data.orderNo,
+      created_at: formattedDate,
+      updated_at: formattedDate
     };
 
     // Add optional fields
@@ -87,7 +107,7 @@ export class QuestionRepository {
     if (data.category !== undefined) insertData.category = data.category;
     if (data.metadata !== undefined) insertData.metadata = data.metadata;
 
-    const result = await db.insert(deviceQuestions).values(insertData);
+    const result = await db.insert(device_questions).values(insertData);
 
     const insertId = Number(result[0].insertId);
     return this.findById(insertId);
@@ -97,137 +117,134 @@ export class QuestionRepository {
     const formattedDate = new Date().toISOString().replace('T', ' ').substring(0, 19);
 
     // Extract the properties we need to update, explicitly converting boolean values to numbers
-    const updateData: any = { updatedAt: formattedDate };
+    const updateData: any = { updated_at: formattedDate };
     
     if (data.key !== undefined) updateData.key = data.key;
     if (data.title !== undefined) updateData.title = data.title;
-    if (data.inputType !== undefined) updateData.inputType = data.inputType;
+    if (data.inputType !== undefined) updateData.input_type = data.inputType;
     if (data.tooltip !== undefined) updateData.tooltip = data.tooltip;
     if (data.category !== undefined) updateData.category = data.category;
-    if (data.isRequired !== undefined) updateData.isRequired = data.isRequired ? 1 : 0;
-    if (data.orderNo !== undefined) updateData.orderNo = data.orderNo;
+    if (data.isRequired !== undefined) updateData.is_required = data.isRequired ? 1 : 0;
+    if (data.orderNo !== undefined) updateData.order_no = data.orderNo;
     if (data.metadata !== undefined) updateData.metadata = data.metadata;
 
-    await db.update(deviceQuestions)
+    await db.update(device_questions)
       .set(updateData)
-      .where(eq(deviceQuestions.id, id));
+      .where(eq(device_questions.id, id));
 
     return this.findById(id);
   }
 
   async delete(id: number) {
     // First delete all options and their translations
-    const optionsToDelete = await db.query.questionOptions.findMany({
-      where: eq(questionOptions.questionId, id),
-      columns: {
-        id: true
-      }
-    });
+    const optionsToDelete = await db.select({ id: question_options.id })
+      .from(question_options)
+      .where(eq(question_options.question_id, id));
 
     const optionIds = optionsToDelete.map(o => o.id);
 
     if (optionIds.length > 0) {
       // Delete option translations
-      await db.delete(questionOptionTranslations)
-        .where(inArray(questionOptionTranslations.optionId, optionIds));
+      await db.delete(question_option_translations)
+        .where(inArray(question_option_translations.option_id, optionIds));
 
       // Delete options
-      await db.delete(questionOptions)
-        .where(eq(questionOptions.questionId, id));
+      await db.delete(question_options)
+        .where(eq(question_options.question_id, id));
     }
 
     // Delete question translations
-    await db.delete(questionTranslations)
-      .where(eq(questionTranslations.questionId, id));
+    await db.delete(question_translations)
+      .where(eq(question_translations.question_id, id));
 
     // Delete the question
-    await db.delete(deviceQuestions)
-      .where(eq(deviceQuestions.id, id));
+    await db.delete(device_questions)
+      .where(eq(device_questions.id, id));
 
     return true;
   }
 
   // Question translation methods
   async createTranslation(data: TQuestionTranslationCreate) {
-    const result = await db.insert(questionTranslations).values(data);
+    const result = await db.insert(question_translations).values({
+      question_id: data.questionId,
+      language_id: data.languageId,
+      title: data.title,
+      tooltip: data.tooltip,
+      category: data.category
+    });
     return this.findTranslationById(Number(result[0].insertId));
   }
 
   async findTranslationById(id: number) {
-    return db.query.questionTranslations.findFirst({
-      where: eq(questionTranslations.id, id),
-      with: {
-        language: true
-      }
-    });
+    const translation = await db.select()
+      .from(question_translations)
+      .where(eq(question_translations.id, id))
+      .limit(1);
+    
+    return translation[0] || null;
   }
 
   async findTranslation(questionId: number, languageId: number) {
-    return db.query.questionTranslations.findFirst({
-      where: and(
-        eq(questionTranslations.questionId, questionId),
-        eq(questionTranslations.languageId, languageId)
-      ),
-      with: {
-        language: true
-      }
-    });
+    const translation = await db.select()
+      .from(question_translations)
+      .where(and(
+        eq(question_translations.question_id, questionId),
+        eq(question_translations.language_id, languageId)
+      ))
+      .limit(1);
+    
+    return translation[0] || null;
   }
 
   async updateTranslation(id: number, data: Partial<Omit<TQuestionTranslationCreate, 'questionId' | 'languageId'>>) {
-    await db.update(questionTranslations)
+    await db.update(question_translations)
       .set(data)
-      .where(eq(questionTranslations.id, id));
+      .where(eq(question_translations.id, id));
 
     return this.findTranslationById(id);
   }
 
   async deleteTranslation(id: number) {
-    await db.delete(questionTranslations)
-      .where(eq(questionTranslations.id, id));
+    await db.delete(question_translations)
+      .where(eq(question_translations.id, id));
 
     return true;
   }
 
   async findTranslationsForQuestion(questionId: number) {
-    return db.query.questionTranslations.findMany({
-      where: eq(questionTranslations.questionId, questionId),
-      with: {
-        language: true
-      }
-    });
+    return db.select()
+      .from(question_translations)
+      .where(eq(question_translations.question_id, questionId));
   }
 
   // Question option CRUD operations
   async findAllOptions(questionId: number, includeTranslations = true) {
-    return db.query.questionOptions.findMany({
-      where: eq(questionOptions.questionId, questionId),
-      orderBy: asc(questionOptions.orderNo),
-      with: {
-        translations: includeTranslations ? true : undefined
-      }
-    });
+    return db.select()
+      .from(question_options)
+      .where(eq(question_options.question_id, questionId))
+      .orderBy(asc(question_options.order_no));
   }
 
   async findOptionById(id: number, includeTranslations = true) {
-    return db.query.questionOptions.findFirst({
-      where: eq(questionOptions.id, id),
-      with: {
-        translations: includeTranslations ? true : undefined
-      }
-    });
+    const option = await db.select()
+      .from(question_options)
+      .where(eq(question_options.id, id))
+      .limit(1);
+    
+    return option[0] || null;
   }
 
   async findOptionByKey(key: string, questionId: number) {
-    return db.query.questionOptions.findFirst({
-      where: and(
-        eq(questionOptions.key, key),
-        eq(questionOptions.questionId, questionId)
-      ),
-      with: {
-        translations: true
-      }
-    });
+    const option = await db.select()
+      .from(question_options)
+      .where(and(
+        eq(question_options.key, key),
+        eq(question_options.question_id, questionId)
+      ))
+      .limit(1);
+    
+    return option[0] || null;
   }
 
   async createOption(data: TQuestionOptionCreate) {
@@ -237,30 +254,30 @@ export class QuestionRepository {
     // If this is a default option for a single select question, ensure no other options are set as default
     if (data.isDefault) {
       const question = await this.findById(data.questionId, false, false);
-      if (question && (question.inputType === 'SINGLE_SELECT_RADIO' || question.inputType === 'SINGLE_SELECT_DROPDOWN')) {
-        await db.update(questionOptions)
-          .set({ isDefault: 0 })
-          .where(eq(questionOptions.questionId, data.questionId));
+      if (question && (question.input_type === 'SINGLE_SELECT_RADIO' || question.input_type === 'SINGLE_SELECT_DROPDOWN')) {
+        await db.update(question_options)
+          .set({ is_default: 0 })
+          .where(eq(question_options.question_id, data.questionId));
       }
     }
 
     // Create a new object with the correct types
     const insertData: any = {
       title: data.title,
-      orderNo: data.orderNo,
-      questionId: data.questionId,
-      isDefault: data.isDefault ? 1 : 0,
-      createdAt: formattedDate,
-      updatedAt: formattedDate
+      order_no: data.orderNo,
+      question_id: data.questionId,
+      is_default: data.isDefault ? 1 : 0,
+      created_at: formattedDate,
+      updated_at: formattedDate
     };
 
     // Add optional fields
     if (data.key !== undefined) insertData.key = data.key;
-    if (data.priceModifier !== undefined) insertData.priceModifier = data.priceModifier;
+    if (data.priceModifier !== undefined) insertData.price_modifier = data.priceModifier;
     if (data.icon !== undefined) insertData.icon = data.icon;
     if (data.metadata !== undefined) insertData.metadata = data.metadata;
 
-    const result = await db.insert(questionOptions).values(insertData);
+    const result = await db.insert(question_options).values(insertData);
 
     const insertId = Number(result[0].insertId);
     return this.findOptionById(insertId);
@@ -272,93 +289,94 @@ export class QuestionRepository {
     // If setting this option as default for a single select question, ensure no other options are set as default
     const option = await this.findOptionById(id, false);
     if (option && data.isDefault) {
-      const question = await this.findById(option.questionId, false, false);
-      if (question && (question.inputType === 'SINGLE_SELECT_RADIO' || question.inputType === 'SINGLE_SELECT_DROPDOWN')) {
-        await db.update(questionOptions)
-          .set({ isDefault: 0 })
-          .where(eq(questionOptions.questionId, option.questionId));
+      const question = await this.findById(option.question_id, false, false);
+      if (question && (question.input_type === 'SINGLE_SELECT_RADIO' || question.input_type === 'SINGLE_SELECT_DROPDOWN')) {
+        await db.update(question_options)
+          .set({ is_default: 0 })
+          .where(eq(question_options.question_id, option.question_id));
       }
     }
     
     // Extract the properties we need to update, explicitly converting boolean values to numbers
-    const updateData: any = { updatedAt: formattedDate };
+    const updateData: any = { updated_at: formattedDate };
     
     if (data.key !== undefined) updateData.key = data.key;
     if (data.title !== undefined) updateData.title = data.title;
-    if (data.priceModifier !== undefined) updateData.priceModifier = data.priceModifier;
+    if (data.priceModifier !== undefined) updateData.price_modifier = data.priceModifier;
     if (data.icon !== undefined) updateData.icon = data.icon;
-    if (data.isDefault !== undefined) updateData.isDefault = data.isDefault ? 1 : 0;
-    if (data.orderNo !== undefined) updateData.orderNo = data.orderNo;
+    if (data.isDefault !== undefined) updateData.is_default = data.isDefault ? 1 : 0;
+    if (data.orderNo !== undefined) updateData.order_no = data.orderNo;
     if (data.metadata !== undefined) updateData.metadata = data.metadata;
 
-    await db.update(questionOptions)
+    await db.update(question_options)
       .set(updateData)
-      .where(eq(questionOptions.id, id));
+      .where(eq(question_options.id, id));
 
     return this.findOptionById(id);
   }
 
   async deleteOption(id: number) {
     // Delete option translations first
-    await db.delete(questionOptionTranslations)
-      .where(eq(questionOptionTranslations.optionId, id));
+    await db.delete(question_option_translations)
+      .where(eq(question_option_translations.option_id, id));
 
     // Delete the option
-    await db.delete(questionOptions)
-      .where(eq(questionOptions.id, id));
+    await db.delete(question_options)
+      .where(eq(question_options.id, id));
 
     return true;
   }
 
   // Question option translation methods
   async createOptionTranslation(data: TQuestionOptionTranslationCreate) {
-    const result = await db.insert(questionOptionTranslations).values(data);
+    const result = await db.insert(question_option_translations).values({
+      option_id: data.optionId,
+      language_id: data.languageId,
+      title: data.title
+    });
     return this.findOptionTranslationById(Number(result[0].insertId));
   }
 
   async findOptionTranslationById(id: number) {
-    return db.query.questionOptionTranslations.findFirst({
-      where: eq(questionOptionTranslations.id, id),
-      with: {
-        language: true
-      }
-    });
+    const translation = await db.select()
+      .from(question_option_translations)
+      .where(eq(question_option_translations.id, id))
+      .limit(1);
+    
+    return translation[0] || null;
   }
 
   async findOptionTranslation(optionId: number, languageId: number) {
-    return db.query.questionOptionTranslations.findFirst({
-      where: and(
-        eq(questionOptionTranslations.optionId, optionId),
-        eq(questionOptionTranslations.languageId, languageId)
-      ),
-      with: {
-        language: true
-      }
-    });
+    const translation = await db.select()
+      .from(question_option_translations)
+      .where(and(
+        eq(question_option_translations.option_id, optionId),
+        eq(question_option_translations.language_id, languageId)
+      ))
+      .limit(1);
+    
+    return translation[0] || null;
   }
 
   async updateOptionTranslation(id: number, data: Partial<Omit<TQuestionOptionTranslationCreate, 'optionId' | 'languageId'>>) {
-    await db.update(questionOptionTranslations)
+    await db.update(question_option_translations)
       .set(data)
-      .where(eq(questionOptionTranslations.id, id));
+      .where(eq(question_option_translations.id, id));
 
     return this.findOptionTranslationById(id);
   }
 
   async deleteOptionTranslation(id: number) {
-    await db.delete(questionOptionTranslations)
-      .where(eq(questionOptionTranslations.id, id));
+    await db.delete(question_option_translations)
+      .where(eq(question_option_translations.id, id));
 
     return true;
   }
 
   async findTranslationsForOption(optionId: number) {
-    return db.query.questionOptionTranslations.findMany({
-      where: eq(questionOptionTranslations.optionId, optionId),
-      with: {
-        language: true
-      }
-    });
+    return db.select()
+      .from(question_option_translations)
+      .where(eq(question_option_translations.option_id, optionId));
   }
 }
 

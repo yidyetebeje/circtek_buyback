@@ -17,6 +17,11 @@ import { stock_management_routes } from './stock'
 import { upload_routes } from './uploads'
 import { dashboard_stats_routes } from './dashboard/stats'
 import { cors } from '@elysiajs/cors'
+import catalogApi from "./buyback_catalog";
+import buybackApi from "./buyback";
+import { emailTemplatesModule } from "./email-templates";
+import { statsRoutes } from "./buyback_stats/routes/statsRoutes";
+import emailModule from "./email/email-module";
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
         .use(cors({
@@ -53,6 +58,11 @@ export const buildApp = () =>
 					{ name: 'Stock Management', description: 'Global stock management operations' },
 					{ name: 'Uploads', description: 'File upload and management' },
 					{ name: 'Dashboard', description: 'Dashboard statistics and analytics' },
+					{ name: 'Stats', description: 'Stats' },
+					{ name: 'Buyback', description: 'Buyback' },
+					{ name: 'Buyback Catalog', description: 'Buyback Catalog' },
+					{ name: 'Email Templates', description: 'Email Templates' },
+					{ name: 'Email', description: 'Email' },
 				],
 			},
 		}))
@@ -71,6 +81,11 @@ export const buildApp = () =>
 				exp: '30d',
 			})
 		)
+		.use(catalogApi)
+		.use(buybackApi)
+		.use(emailTemplatesModule)
+		.use(emailModule)
+		.use(statsRoutes)
 		.use(user_routes)
 		.use(auth_routes)
 		.use(role_routes)

@@ -5,9 +5,6 @@ import { shop_device_categories, shop_brands, shop_model_series, shop_models } f
 import { shops, user_shop_access } from "../../db/shops.schema";
 import { devices } from "../../db/circtek.schema";
 import { and, count, desc, eq, sum, gte, lte, SQL, sql, isNotNull, ne, asc, inArray } from "drizzle-orm";
-import { MySqlSelect } from "drizzle-orm/mysql-core";
-import { TopDeviceItemSchema, TopShopItemSchema } from "../types";
-import { InferSelectModel } from 'drizzle-orm';
 import { warehouses } from "../../db/circtek.schema";
 
 // Helper type for date range filtering

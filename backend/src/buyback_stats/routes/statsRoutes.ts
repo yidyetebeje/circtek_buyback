@@ -130,42 +130,44 @@ export const statsRoutes = (app: Elysia) => app
         .group("/my-shop", (myShopGroup) => myShopGroup
             // Create a custom middleware for shop users only (excluding admins)
             .guard({
-                beforeHandle: ({ currentRole, currentTenantId, currentUserId, set }) => {
+                beforeHandle: ({ currentRole, currentTenantId, currentUserId, managedShopId, set }) => {
                     // This route is specifically for non-admin users accessing their own shopId from token.
                     if (currentRole == 'admin' || currentRole =="super_admin") {
                         set.status = 403;
                         return { error: "Admins should use /stats/shop/{shopId} routes. /my-shop is for non-admin shop users." };
                     }
                     
+
+                    
                 }
             })
-            .get("/overview", ({ query, currentRole, currentTenantId, currentUserId, set }) => {
+            .get("/overview", ({ query, currentRole, currentTenantId, currentUserId, managedShopId,set }) => {
                 if (!currentRole || !currentTenantId || !currentUserId) {
                     set.status = 401;
                     return { success: false, error: "Authentication required" };
                 }
                 // user and user.shopId are validated by onBeforeHandle
-                return statsController.getMyShopOverview({ query, currentRole, currentTenantId, currentUserId, set });
+                return statsController.getMyShopOverview({ query, currentRole, currentTenantId, currentUserId, shopId: managedShopId, set });
             }, {
                 query: DateRangeQuerySchema,
                 detail: { summary: "Get my shop's overview", tags: ["Statistics"] }
             })
-            .get("/top-devices", ({ query, currentRole, currentTenantId, currentUserId, set }) => {
+            .get("/top-devices", ({ query, currentRole, currentTenantId, currentUserId, managedShopId, set }) => {
                 if (!currentRole || !currentTenantId || !currentUserId) {
                     set.status = 401;
                     return { success: false, error: "Authentication required" };
                 }
-                return statsController.getMyShopTopDevices({ query, currentRole, currentTenantId, currentUserId, set });
+                return statsController.getMyShopTopDevices({ query, currentRole, currentTenantId, currentUserId, shopId: managedShopId, set });
             }, {
                 query: TopDevicesQuerySchema,
                 detail: { summary: "Get my shop's top devices", tags: ["Statistics"] }
             })
-            .get("/time-series", ({ query, currentRole, currentTenantId, currentUserId, set }) => {
+            .get("/time-series", ({ query, currentRole, currentTenantId, currentUserId,managedShopId, set }) => {
                 if (!currentRole || !currentTenantId || !currentUserId) {
                     set.status = 401;
                     return { success: false, error: "Authentication required" };
                 }
-                return statsController.getMyShopTimeSeries({ query, currentRole, currentTenantId, currentUserId, set });
+                return statsController.getMyShopTimeSeries({ query, currentRole, currentTenantId, currentUserId, shopId: managedShopId, set });
             }, {
                 query: TimeSeriesQuerySchema,
                 detail: { summary: "Get my shop's order time series", tags: ["Statistics"] }

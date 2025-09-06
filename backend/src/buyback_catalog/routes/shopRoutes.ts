@@ -14,8 +14,7 @@ import { brandController } from '../controllers/brandController';
 import { categoryController } from '../controllers/categoryController';
 import { modelSeriesController } from '../controllers/modelSeriesController';
 import { modelController } from '../controllers/modelController';
-import { authMiddleware } from '@/middleware/auth';
-import { getClientId } from '../utils/getId';
+import { requireRole } from '../../auth';
 export const shopRoutes = new Elysia({ prefix: '/shops' });
 const publicShopApi = new Elysia()
   .get('/:shopId/published-brands',
@@ -31,7 +30,7 @@ const publicShopApi = new Elysia()
       const orderBy = String(ctx.query.orderBy || 'title');
       const order = String(ctx.query.order || 'asc') as 'asc' | 'desc';
       const search = ctx.query.search ? String(ctx.query.search) : undefined;
-      const clientId = ctx.query.clientId ? parseInt(String(ctx.query.clientId), 10) : undefined;
+      const tenantId = ctx.query.tenantId ? parseInt(String(ctx.query.tenantId), 10) : undefined;
       
       const simplifiedCtx = { set: ctx.set };
       
@@ -41,7 +40,7 @@ const publicShopApi = new Elysia()
         orderBy,
         order,
         search,
-        clientId
+        tenantId
       }, simplifiedCtx as Context);
     },
     {
@@ -52,7 +51,7 @@ const publicShopApi = new Elysia()
         orderBy: t.Optional(t.String({ default: 'title' })),
         order: t.Optional(t.Enum({ asc: 'asc', desc: 'desc' }, { default: 'asc' })),
         search: t.Optional(t.String()),
-        clientId: t.Optional(t.Numeric())
+        tenantId: t.Optional(t.Numeric())
       }),
       detail: {
         summary: 'Get Published Brands in Shop',
@@ -74,7 +73,7 @@ const publicShopApi = new Elysia()
       const orderBy = String(ctx.query.orderBy || 'title');
       const order = String(ctx.query.order || 'asc') as 'asc' | 'desc';
       const search = ctx.query.search ? String(ctx.query.search) : undefined;
-      const clientId = ctx.query.clientId ? parseInt(String(ctx.query.clientId), 10) : undefined;
+      const tenantId = ctx.query.tenantId ? parseInt(String(ctx.query.tenantId), 10) : undefined;
       
       const simplifiedCtx = { set: ctx.set };
       
@@ -84,7 +83,7 @@ const publicShopApi = new Elysia()
         orderBy,
         order,
         search,
-        clientId
+        tenantId
       }, simplifiedCtx as Context);
     },
     {
@@ -95,7 +94,7 @@ const publicShopApi = new Elysia()
         orderBy: t.Optional(t.String({ default: 'title' })),
         order: t.Optional(t.Enum({ asc: 'asc', desc: 'desc' }, { default: 'asc' })),
         search: t.Optional(t.String()),
-        clientId: t.Optional(t.Numeric())
+        tenantId: t.Optional(t.Numeric())
       }),
       detail: {
         summary: 'Get Published Categories in Shop',
@@ -365,8 +364,8 @@ const publicShopApi = new Elysia()
   )
   .group('/catalog', app => app.use(shopCatalogRoutes));
 
-const protectedShopApi = new Elysia()
-  .use(authMiddleware.isAuthenticated)
+const authenticatedShopApi = new Elysia()
+  .use(requireRole([]))
   .onError(({ error, code, set }) => {
     // Handle validation errors specifically
     if (code === 'VALIDATION') {
@@ -440,25 +439,19 @@ const protectedShopApi = new Elysia()
     };
   })
 
-  .get('/', async ({ query, user, ...ctx }) => {
-    const queryParams = { ...query };
-    if (user && user.roleSlug !== 'super-admin') {
-      const clientId = getClientId(user);
-      if (clientId !== undefined) {
-        queryParams.clientId = clientId;
-      } else {
-        ctx.set.status = 400;
-        return { error: 'Client ID could not be determined from user information' };
-      }
+  .get('/', async ({ query, currentTenantId, ...ctx }) => {
+    const queryParams = { ...query } as Record<string, any>;
+    if (currentTenantId) {
+      (queryParams as any).tenant_id = currentTenantId;
+    } else {
+      ctx.set.status = 400;
+      return { error: 'Tenant ID could not be determined from user information' };
     }
-    const active = query.active;
-    
     // For admin users, clientId filtering is optional via query params
     return shopController.getAll({ 
       ...ctx, 
-      query: queryParams as Record<string, string>,
-      user 
-    });
+      query: queryParams as Record<string, string>
+    } as any);
   }, {
     query: t.Object({
         page: t.Optional(t.Numeric({ minimum: 1, default: 1 })),
@@ -476,8 +469,14 @@ const protectedShopApi = new Elysia()
     }
   })
 
-  .post('/', ({ body, user, ...ctx }) => {
+  .post('/', (ctx) => {
     try {
+      const { body } = ctx as any;
+      const { currentUserId, currentTenantId, currentRole, managedShopId } = ctx as any;
+      if (!currentUserId || !currentTenantId) {
+        (ctx as any).set.status = 401;
+        return { error: 'User must be authenticated to create a shop', field: 'authentication' };
+      }
       // Trim and clean string fields
       const data = { ...body } as any; // Type assertion to handle validation before type checking
       
@@ -536,31 +535,14 @@ const protectedShopApi = new Elysia()
         data.logo = null; // Ensure consistent null value for database
       }
       
-      if (user) {
-        const clientId = getClientId(user);
-        if (clientId !== undefined) {
-          data.client_id = clientId;
-          // Also set owner_id to the authenticated user's ID
-          data.owner_id = user.id;
-        } else {
-          ctx.set.status = 400;
-          return { 
-            error: 'Client ID could not be determined from user information',
-            field: 'client_id'
-          };
-        }
-      } else {
-        ctx.set.status = 401;
-        return { 
-          error: 'User must be authenticated to create a shop',
-          field: 'authentication'
-        };
-      }
-      
-      return shopController.create(data, { ...ctx, body: data, user });
+      // Use derived fields from auth middleware
+      data.tenant_id = currentTenantId;
+      data.owner_id = currentUserId;
+      const userForCtx = { id: currentUserId, roleSlug: currentRole, managed_shop_id: managedShopId } as any;
+      return shopController.create(data, { ...(ctx as any), body: data, user: userForCtx } as any);
     } catch (error) {
       console.error('Error in shop creation route:', error);
-      ctx.set.status = 500;
+      (ctx as any).set.status = 500;
       return { 
         error: 'An unexpected error occurred while processing the shop creation request',
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -575,13 +557,15 @@ const protectedShopApi = new Elysia()
   })
 
   .put('/:shopId',
-    async ({ params, body, query, user, ...ctx }) => { 
+    async (ctx) => { 
+        const { params, body, query } = ctx as any;
         const numericId = parseInt(params.shopId, 10);
         if (isNaN(numericId)) {
-            ctx.set.status = 400;
+            (ctx as any).set.status = 400;
             return { error: 'Invalid shop ID format. ID must be a number.' };
         }
-        return shopController.update(numericId, body, { ...ctx, params, body, query, user });
+        const userForCtx = { id: (ctx as any).currentUserId, roleSlug: (ctx as any).currentRole, managed_shop_id: (ctx as any).managedShopId } as any;
+        return shopController.update(numericId, body, { ...(ctx as any), params, body, query, user: userForCtx } as any);
     },
     {
         params: t.Object({ shopId: t.String() }),
@@ -594,13 +578,15 @@ const protectedShopApi = new Elysia()
   )
 
   .delete('/:shopId',
-    async ({ params, query, user, ...ctx }) => { 
+    async (ctx) => { 
+        const { params, query } = ctx as any;
         const numericId = parseInt(params.shopId, 10);
         if (isNaN(numericId)) {
-            ctx.set.status = 400;
+            (ctx as any).set.status = 400;
             return { error: 'Invalid shop ID format. ID must be a number.' };
         }
-        return shopController.delete(numericId, { ...ctx, params, query, user });
+        const userForCtx = { id: (ctx as any).currentUserId, roleSlug: (ctx as any).currentRole, managed_shop_id: (ctx as any).managedShopId } as any;
+        return shopController.delete(numericId, { ...(ctx as any), params, query, user: userForCtx } as any);
     },
     {
         params: t.Object({ shopId: t.String() }),
@@ -613,13 +599,15 @@ const protectedShopApi = new Elysia()
 
   // POST /shops/{shopId}/logo - Logo upload route
   .post('/:shopId/logo',
-    async ({ params, body, query, user, ...ctx }) => { 
+    async (ctx) => { 
+        const { params, body, query } = ctx as any;
         const numericId = parseInt(params.shopId, 10);
         if (isNaN(numericId)) {
-            ctx.set.status = 400;
+            (ctx as any).set.status = 400;
             return { error: 'Invalid shop ID format. ID must be a number.' };
         }
-        return shopController.uploadLogo(numericId, body.file, { ...ctx, params, body, query, user });
+        const userForCtx = { id: (ctx as any).currentUserId, roleSlug: (ctx as any).currentRole, managed_shop_id: (ctx as any).managedShopId } as any;
+        return shopController.uploadLogo(numericId, body.file, { ...(ctx as any), params, body, query, user: userForCtx } as any);
     },
     {
         params: t.Object({ shopId: t.String() }),
@@ -637,13 +625,15 @@ const protectedShopApi = new Elysia()
 
   // PUT /shops/{shopId}/config - Update config for a specific shop
   .put('/:shopId/config',
-    async ({ params, body, user, ...ctx }) => { 
+    async (ctx) => { 
+        const { params, body } = ctx as any;
         const numericId = parseInt(params.shopId, 10);
         if (isNaN(numericId)) {
-            ctx.set.status = 400;
+            (ctx as any).set.status = 400;
             return { error: 'Invalid shop ID format. ID must be a number.' };
         }
-        return shopController.updateShopConfig(numericId, body, { ...ctx, params, body, user });
+        const userForCtx = { id: (ctx as any).currentUserId, roleSlug: (ctx as any).currentRole, managed_shop_id: (ctx as any).managedShopId } as any;
+        return shopController.updateShopConfig(numericId, body, { ...(ctx as any), params, body, user: userForCtx } as any);
     },
     {
         params: t.Object({ shopId: t.String() }),
@@ -659,10 +649,11 @@ const protectedShopApi = new Elysia()
   
   // GET /shops/{shopId}/locations - Get all locations for a shop
   .get('/:shopId/locations',
-    async ({ params, query, user, ...ctx }) => {
+    async (ctx) => {
+      const { params, query } = ctx as any;
       const shopId = parseInt(params.shopId, 10);
       if (isNaN(shopId)) {
-        ctx.set.status = 400;
+        (ctx as any).set.status = 400;
         return { error: 'Invalid shop ID format. ID must be a number.' };
       }
       
@@ -675,10 +666,10 @@ const protectedShopApi = new Elysia()
       };
       
       return shopLocationController.getByShopId(shopId, queryParams, { 
-        ...ctx, 
+        ...(ctx as any), 
         params, 
         query: query as unknown as Record<string, string>, 
-        user 
+        user: { id: (ctx as any).currentUserId, roleSlug: (ctx as any).currentRole, managed_shop_id: (ctx as any).managedShopId } as any
       });
     },
     {
@@ -700,20 +691,21 @@ const protectedShopApi = new Elysia()
   
   // GET /shops/{shopId}/locations/{locationId} - Get a specific location
   .get('/:shopId/locations/:locationId',
-    async ({ params, user, ...ctx }) => {
+    async (ctx) => {
+      const { params } = ctx as any;
       const shopId = parseInt(params.shopId, 10);
       const locationId = parseInt(params.locationId, 10);
       
       if (isNaN(shopId) || isNaN(locationId)) {
-        ctx.set.status = 400;
+        (ctx as any).set.status = 400;
         return { error: 'Invalid ID format. IDs must be numbers.' };
       }
       
       return shopLocationController.getById(locationId, { 
-        ...ctx, 
+        ...(ctx as any), 
         params, 
         query: {} as Record<string, string>,
-        user 
+        user: { id: (ctx as any).currentUserId, roleSlug: (ctx as any).currentRole, managed_shop_id: (ctx as any).managedShopId } as any
       });
     },
     {
@@ -731,24 +723,18 @@ const protectedShopApi = new Elysia()
   
   // POST /shops/{shopId}/locations - Create a new location
   .post('/:shopId/locations',
-    async ({ params, body, user, ...ctx }) => {
+    async (ctx) => {
+      const { params, body } = ctx as any;
       const shopId = parseInt(params.shopId, 10);
       
       if (isNaN(shopId)) {
-        ctx.set.status = 400;
+        (ctx as any).set.status = 400;
         return { error: 'Invalid shop ID format. ID must be a number.' };
-      }
-      
-      // Verify shop belongs to user's client (if not admin)
-      if (user && user.roleSlug !== 'admin') {
-        const clientId = getClientId(user);
-        // Note: We should verify that the shop belongs to the user's client
-        // This would typically be done in the controller
       }
       
       const locationData = { ...body, shopId };
       
-      return shopLocationController.create(locationData, { ...ctx, params, body, user });
+      return shopLocationController.create(locationData, { ...(ctx as any), params, body, user: { id: (ctx as any).currentUserId, roleSlug: (ctx as any).currentRole, managed_shop_id: (ctx as any).managedShopId } as any });
     },
     {
       params: t.Object({ shopId: t.String() }),
@@ -763,16 +749,17 @@ const protectedShopApi = new Elysia()
   
   // PUT /shops/{shopId}/locations/{locationId} - Update a location
   .put('/:shopId/locations/:locationId',
-    async ({ params, body, user, ...ctx }) => {
+    async (ctx) => {
+      const { params, body } = ctx as any;
       const shopId = parseInt(params.shopId, 10);
       const locationId = parseInt(params.locationId, 10);
       
       if (isNaN(shopId) || isNaN(locationId)) {
-        ctx.set.status = 400;
+        (ctx as any).set.status = 400;
         return { error: 'Invalid ID format. IDs must be numbers.' };
       }
       
-      return shopLocationController.update(locationId, body, { ...ctx, params, body, user });
+      return shopLocationController.update(locationId, body, { ...(ctx as any), params, body, user: { id: (ctx as any).currentUserId, roleSlug: (ctx as any).currentRole, managed_shop_id: (ctx as any).managedShopId } as any });
     },
     {
       params: t.Object({ 
@@ -790,16 +777,17 @@ const protectedShopApi = new Elysia()
   
   // DELETE /shops/{shopId}/locations/{locationId} - Delete a location
   .delete('/:shopId/locations/:locationId',
-    async ({ params, user, ...ctx }) => {
+    async (ctx) => {
+      const { params } = ctx as any;
       const shopId = parseInt(params.shopId, 10);
       const locationId = parseInt(params.locationId, 10);
       
       if (isNaN(shopId) || isNaN(locationId)) {
-        ctx.set.status = 400;
+        (ctx as any).set.status = 400;
         return { error: 'Invalid ID format. IDs must be numbers.' };
       }
       
-      return shopLocationController.delete(locationId, { ...ctx, params, user });
+      return shopLocationController.delete(locationId, { ...(ctx as any), params, user: { id: (ctx as any).currentUserId, roleSlug: (ctx as any).currentRole, managed_shop_id: (ctx as any).managedShopId } as any });
     },
     {
       params: t.Object({ 
@@ -816,16 +804,17 @@ const protectedShopApi = new Elysia()
   
   // POST /shops/{shopId}/locations/{locationId}/toggle-active - Toggle active status
   .post('/:shopId/locations/:locationId/toggle-active',
-    async ({ params, user, ...ctx }) => {
+    async (ctx) => {
+      const { params } = ctx as any;
       const shopId = parseInt(params.shopId, 10);
       const locationId = parseInt(params.locationId, 10);
       
       if (isNaN(shopId) || isNaN(locationId)) {
-        ctx.set.status = 400;
+        (ctx as any).set.status = 400;
         return { error: 'Invalid ID format. IDs must be numbers.' };
       }
       
-      return shopLocationController.toggleActive(locationId, { ...ctx, params, user });
+      return shopLocationController.toggleActive(locationId, { ...(ctx as any), params, user: { id: (ctx as any).currentUserId, roleSlug: (ctx as any).currentRole, managed_shop_id: (ctx as any).managedShopId } as any });
     },
     {
       params: t.Object({ 
@@ -842,4 +831,4 @@ const protectedShopApi = new Elysia()
 
 shopRoutes
   .use(publicShopApi)
-  .use(protectedShopApi);
+  .use(authenticatedShopApi);
