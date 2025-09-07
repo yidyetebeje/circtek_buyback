@@ -1,8 +1,10 @@
 import { getEmailService } from './email-service';
 import { emailTemplateService } from '../../email-templates/services/email-template-service';
-import type { OrderStatus } from '../../db/schema/order';
-import { EMAIL_TEMPLATE_TYPE } from '../../db/schema/email-templates';
-import { shippingDetails } from '../../db/schema/order';
+
+import { OrderStatus } from '../../db/order.schema';
+
+import { EMAIL_TEMPLATE_TYPE } from '../../email-templates';
+import { shipping_details } from '../../db/order.schema';
 import { db } from '../../db';
 import { eq } from 'drizzle-orm';
 
@@ -67,16 +69,16 @@ export class OrderNotificationService {
       // Get order data for recipient details - directly from the database since getOrderData is private in EmailTemplateService
       const shippingData = await db
         .select()
-        .from(shippingDetails)
-        .where(eq(shippingDetails.orderId, orderId))
+        .from(shipping_details)
+        .where(eq(shipping_details.orderId, orderId))
         .limit(1);
         
-      if (!shippingData || shippingData.length === 0 || !shippingData[0].sellerEmail) {
+      if (!shippingData || shippingData.length === 0 || !shippingData[0].seller_email) {
         console.error(`[OrderNotificationService] No seller email found for order: ${orderId}`);
         return { success: false, error: 'No seller email found' };
       }
       
-      const sellerEmail = shippingData[0].sellerEmail;
+      const sellerEmail = shippingData[0].seller_email;
       
       const emailService = getEmailService();
       

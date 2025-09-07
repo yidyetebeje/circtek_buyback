@@ -1,6 +1,6 @@
 import { Elysia, error, t } from 'elysia';
 import { UserController, type HandlerContext } from '../controllers/user-controller';
-import { authMiddleware, type JwtUser } from '@/middleware/auth';
+import { requireRole } from '../../auth';
 import { UserService } from '../services/user-service'; // Import UserService
 import {
     createUserWithRoleSchema,
@@ -23,8 +23,16 @@ export const userRoutes = new Elysia({ prefix: '' })
   .decorate('userService', userService) // Decorate with userService instance
   .group('/users', (group) =>
     group
-      .use(authMiddleware.isAuthenticated)
-      .get('/', (context) => userController.listUsersHandler(context), {
+      .use(requireRole(['admin', 'user']))
+      .get('/', (context) => userController.listUsersHandler({
+        ...context,
+        userService,
+        currentUserId: context.currentUserId,
+        currentTenantId: context.currentTenantId,
+        currentRole: context.currentRole ?? null,
+        warehouseId: context.warehouseId,
+        managedShopId: context.managedShopId
+      }), {
         query: listUsersQuerySchema,
         detail: {
           summary: 'List users',
@@ -32,7 +40,15 @@ export const userRoutes = new Elysia({ prefix: '' })
           tags: ['Users'],
         },
       })
-      .get('/:id', (context) => userController.getUserByIdHandler(context), {
+      .get('/:id', (context) => userController.getUserByIdHandler({
+        ...context,
+        userService,
+        currentUserId: context.currentUserId,
+        currentTenantId: context.currentTenantId,
+        currentRole: context.currentRole ?? null,
+        warehouseId: context.warehouseId,
+        managedShopId: context.managedShopId
+      }), {
         params: userIdParamSchema,
         detail: {
           summary: 'Get a user by ID',
@@ -40,7 +56,15 @@ export const userRoutes = new Elysia({ prefix: '' })
           tags: ['Users'],
         },
       })
-      .post('/create', (context) => userController.createUserHandler(context), {
+      .post('/create', (context) => userController.createUserHandler({
+        ...context,
+        userService,
+        currentUserId: context.currentUserId,
+        currentTenantId: context.currentTenantId,
+        currentRole: context.currentRole ?? null,
+        warehouseId: context.warehouseId,
+        managedShopId: context.managedShopId
+      }), {
         body: createUserWithRoleSchema,
         detail: {
           summary: 'Create a new user with a role',
@@ -48,7 +72,15 @@ export const userRoutes = new Elysia({ prefix: '' })
           tags: ['Users'],
         },
       })
-      .put('/:id', (context) => userController.updateUserHandler(context), {
+      .put('/:id', (context) => userController.updateUserHandler({
+        ...context,
+        userService,
+        currentUserId: context.currentUserId,
+        currentTenantId: context.currentTenantId,
+        currentRole: context.currentRole ?? null,
+        warehouseId: context.warehouseId,
+        managedShopId: context.managedShopId
+      }), {
         params: userIdParamSchema,
         body: updateUserSchema,
         response: {
@@ -66,7 +98,15 @@ export const userRoutes = new Elysia({ prefix: '' })
           tags: ['Users'],
         },
       })
-      .put('/:id/role', (context) => userController.updateUserRoleHandler(context), {
+      .put('/:id/role', (context) => userController.updateUserRoleHandler({
+        ...context,
+        userService,
+        currentUserId: context.currentUserId,
+        currentTenantId: context.currentTenantId,
+        currentRole: context.currentRole ?? null,
+        warehouseId: context.warehouseId,
+        managedShopId: context.managedShopId
+      }), {
         params: userIdParamSchema,
         body: updateUserRoleSchema,
         detail: {

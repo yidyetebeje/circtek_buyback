@@ -1,0 +1,398 @@
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ColumnDef } from '@tanstack/angular-table';
+import { HttpParams } from '@angular/common/http';
+import { ActivatedRoute, Router } from '@angular/router';
+
+import { GenericPageComponent, type Facet, type GenericTab } from '../../shared/components/generic-page/generic-page.component';
+import { ApiService } from '../../core/services/api.service';
+import { RepairRecord } from '../../core/models/repair';
+import { RepairReasonRecord } from '../../core/models/repair-reason';
+import { DeadIMEIRecord } from '../../core/models/dead-imei';
+
+// Union type for table rows across tabs
+export type RepairRow = RepairRecord | RepairReasonRecord | DeadIMEIRecord;
+
+@Component({
+  selector: 'app-repair',
+  imports: [CommonModule, GenericPageComponent],
+  templateUrl: './repair.component.html',
+  styleUrls: ['./repair.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class RepairComponent {
+  private readonly api = inject(ApiService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  // State
+  loading = signal(false);
+  data = signal<RepairRow[]>([]);
+  total = signal(0);
+
+  // Tabs & pagination
+  activeTab = signal<'repairs' | 'repair-reasons' | 'dead-imei'>('repairs');
+  pageIndex = signal(0);
+  pageSize = signal(10);
+
+  // Filters (shared + per tab)
+  search = signal('');
+  selectedWarehouseId = signal<number | null>(null); // dead-imei
+  repairReasonStatus = signal<'any' | 'true' | 'false'>('any'); // repair-reasons
+
+  // Options
+  warehouseOptions = signal<Array<{ label: string; value: string }>>([]);
+
+  // Guards
+  private initialized = signal(false);
+  private requestSeq = 0;
+  // Track last emitted URL query to avoid redundant navigations
+  private _lastQueryNorm = signal<string>('');
+
+  // Tabs
+  tabs = computed<GenericTab[]>(() => [
+    { key: 'repairs', label: 'Repairs' },
+    { key: 'repair-reasons', label: 'Repair Reasons' },
+    { key: 'dead-imei', label: 'Dead IMEI' },
+  ]);
+
+  // Header
+  title = 'Repair Management';
+  subtitle = 'Manage repairs, repair reasons and dead IMEI records';
+  primaryAction = computed(() => {
+    const tab = this.activeTab();
+    if (tab === 'repairs') {
+      return { label: 'Add Repair' };
+    } else if (tab === 'repair-reasons') {
+      return { label: 'Add Repair Reason' };
+    } else if (tab === 'dead-imei') {
+      return { label: 'Add Dead IMEI' };
+    }
+    return null;
+  });
+
+  // Facets per tab
+  facets = computed<Facet[]>(() => {
+    const list: Facet[] = [];
+    const tab = this.activeTab();
+    
+    if (tab === 'repair-reasons') {
+      list.push({ key: 'status', label: 'Status', type: 'select', options: [
+        { label: 'Any', value: 'any' },
+        { label: 'Active', value: 'true' },
+        { label: 'Inactive', value: 'false' },
+      ] });
+    }
+    if (tab === 'dead-imei') {
+      list.push({ key: 'warehouse_id', label: 'Warehouse', type: 'select', options: this.warehouseOptions() });
+    }
+    return list;
+  });
+
+  // Columns per tab
+  columns = computed<ColumnDef<RepairRow>[]>(() => {
+    switch (this.activeTab()) {
+      case 'repairs':
+        return [
+          { header: 'Device SKU', accessorKey: 'device_sku' as any },
+          { header: 'IMEI', accessorKey: 'device_imei' as any },
+          { header: 'Serial', accessorKey: 'device_serial' as any },
+          { header: 'Repair Reason', id: 'reason_name', accessorFn: (r: any) => r.reason_name || `ID: ${r.reason_id}` },
+          { header: 'Parts Used', id: 'parts_used', accessorFn: (r: any) => {
+            // Check for consumed parts from repair items
+            if (r.consumed_parts && r.consumed_parts.length > 0) {
+              return r.consumed_parts.map((part: string) => part).join(', ');
+            }
+            return 'No parts used';
+          }},
+          { header: 'Remarks', accessorKey: 'remarks' as any },
+          { header: 'Created', accessorKey: 'created_at' as any },
+          {
+            header: 'Actions', id: 'actions' as any, enableSorting: false as any,
+            meta: {
+              actions: [
+                { key: 'detail', label: 'View Details', class: 'text-info', icon: 'eye' },
+              ],
+              cellClass: () => 'text-right'
+            }
+          } as any,
+        ];
+      case 'repair-reasons':
+        return [
+          { header: '#', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
+          { header: 'Name', accessorKey: 'name' as any },
+          { header: 'Description', accessorKey: 'description' as any },
+          {
+            header: 'Actions', id: 'actions' as any, enableSorting: false as any,
+            meta: {
+              actions: [
+                { key: 'edit', label: 'Edit', class: 'text-primary' },
+              ],
+              cellClass: () => 'text-right'
+            }
+          } as any,
+        ];
+      case 'dead-imei':
+        return [
+          { header: '#', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
+          { header: 'Device ID', accessorKey: 'device_id' as any },
+          { header: 'SKU', accessorKey: 'sku' as any },
+          { header: 'IMEI', accessorKey: 'device_imei' as any },
+          { header: 'Serial', accessorKey: 'device_serial' as any },
+          { header: 'Warehouse', accessorKey: 'warehouse_name' as any },
+          { header: 'Notes', accessorKey: 'notes' as any },
+          { header: 'Actor', accessorKey: 'actor_name' as any },
+          { header: 'Created', accessorKey: 'created_at' as any },
+          {
+            header: 'Actions', id: 'actions' as any, enableSorting: false as any,
+            meta: {
+              actions: [
+                { key: 'detail', label: 'View Details', class: 'text-info' },
+              ],
+              cellClass: () => 'text-right'
+            }
+          } as any,
+        ];
+      default:
+        return [];
+    }
+  });
+
+  // Search placeholder per tab
+  searchPlaceholder = computed(() => {
+    switch (this.activeTab()) {
+      case 'repairs': return 'Search device SKU, IMEI, serial, remarks';
+      case 'repair-reasons': return 'Search name, description';
+      case 'dead-imei': return 'Search device ID, SKU, IMEI, serial';
+      default: return 'Search';
+    }
+  });
+
+  constructor() {
+    // Hydrate from URL
+    const qp = this.route.snapshot.queryParamMap;
+    const num = (k: string, d: number) => { const v = qp.get(k); const n = Number(v); return Number.isFinite(n) ? n : d; };
+    const optNum = (k: string) => { const v = qp.get(k); if (v == null) return null; const n = Number(v); return Number.isFinite(n) ? n : null; };
+    const str = (k: string, d = '') => qp.get(k) ?? d;
+
+    const tab = str('tab', 'repairs');
+    if (tab === 'repairs' || tab === 'repair-reasons' || tab === 'dead-imei') this.activeTab.set(tab as any);
+    else this.activeTab.set('repairs');
+
+    this.pageIndex.set(Math.max(0, num('page', 1) - 1));
+    this.pageSize.set(num('limit', 10) || 10);
+    this.search.set(str('search', ''));
+
+    this.selectedWarehouseId.set(optNum('warehouse_id'));
+    const rrs = str('repair_reason_status', 'any'); this.repairReasonStatus.set(rrs === 'true' || rrs === 'false' ? (rrs as any) : 'any');
+
+    this.initialized.set(true);
+
+    // Initialize last emitted query from current snapshot to prevent immediate redundant navigation
+    const currentFromUrl: Record<string, string> = {};
+    for (const key of qp.keys) {
+      const v = qp.get(key);
+      if (v != null) currentFromUrl[key] = v;
+    }
+    this._lastQueryNorm.set(this._normalizeQuery(currentFromUrl));
+
+    // Load options
+    effect(() => {
+      // Load warehouses for selects (limit high for options)
+      this.api.getWarehouses(new HttpParams().set('limit', '1000')).subscribe(res => {
+        const opts = (res.data ?? []).map(w => ({ label: w.name, value: String(w.id) }));
+        this.warehouseOptions.set(opts);
+      });
+    });
+
+    // Fetch data on state change
+    effect(() => {
+      if (!this.initialized()) return;
+      this.activeTab();
+      this.pageIndex();
+      this.pageSize();
+      this.search();
+      // dead-imei
+      this.selectedWarehouseId();
+      // repair-reasons
+      this.repairReasonStatus();
+      this.fetchData();
+    });
+
+    // URL sync
+    effect(() => {
+      if (!this.initialized()) return;
+      const query: Record<string, any> = {
+        tab: this.activeTab(),
+        page: this.pageIndex() + 1,
+        limit: this.pageSize(),
+      };
+      const s = this.search().trim(); if (s) query['search'] = s;
+      
+      if (this.activeTab() === 'repair-reasons') {
+        if (this.repairReasonStatus() !== 'any') query['repair_reason_status'] = this.repairReasonStatus();
+      }
+      if (this.activeTab() === 'dead-imei') {
+        const wid = this.selectedWarehouseId(); if (wid != null) query['warehouse_id'] = String(wid);
+      }
+      
+      // Only navigate if normalized query differs from last emitted
+      const desiredNorm = this._normalizeQuery(query);
+      if (desiredNorm !== this._lastQueryNorm()) {
+        this._lastQueryNorm.set(desiredNorm);
+        this.router.navigate([], { queryParams: query, replaceUrl: true });
+      }
+    });
+  }
+
+  // Normalize a query object to a stable string: omit empty, sort keys, stringify values
+  private _normalizeQuery(obj: Record<string, any>): string {
+    const out: Record<string, string> = {};
+    Object.keys(obj).forEach(k => {
+      const val = (obj as any)[k];
+      if (val == null || val === '') return;
+      out[k] = String(val);
+    });
+    const keys = Object.keys(out).sort();
+    return keys.map(k => `${k}=${out[k]}`).join('&');
+  }
+
+  private fetchData() {
+    const seq = ++this.requestSeq;
+    this.loading.set(true);
+    const tab = this.activeTab();
+
+    if (tab === 'repairs') {
+      let params = new HttpParams()
+        .set('page', String(this.pageIndex() + 1))
+        .set('limit', String(this.pageSize()));
+      const s = this.search().trim(); if (s) params = params.set('search', s);
+      this.api.getRepairs(params).subscribe({
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
+          this.data.set(res.data ?? []);
+          this.total.set(res.meta?.total ?? 0);
+          this.loading.set(false);
+        },
+        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
+      });
+      return;
+    }
+
+    if (tab === 'repair-reasons') {
+      let params = new HttpParams()
+        .set('page', String(this.pageIndex() + 1))
+        .set('limit', String(this.pageSize()));
+      const s = this.search().trim(); if (s) params = params.set('search', s);
+      const rrs = this.repairReasonStatus(); if (rrs !== 'any') params = params.set('status', rrs);
+      this.api.getRepairReasons(params).subscribe({
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
+          this.data.set(res.data ?? []);
+          this.total.set(res.meta?.total ?? 0);
+          this.loading.set(false);
+        },
+        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
+      });
+      return;
+    }
+
+    if (tab === 'dead-imei') {
+      let params = new HttpParams()
+        .set('page', String(this.pageIndex() + 1))
+        .set('limit', String(this.pageSize()));
+      const s = this.search().trim(); if (s) params = params.set('search', s);
+      const wid = this.selectedWarehouseId(); if (wid != null) params = params.set('warehouse_id', String(wid));
+      this.api.getDeadIMEIHistory(params).subscribe({
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
+          this.data.set(res.data ?? []);
+          this.total.set(res.meta?.total ?? 0);
+          this.loading.set(false);
+        },
+        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
+      });
+      return;
+    }
+  }
+
+  // Handlers from GenericPage
+  onPageChange(event: { pageIndex: number; pageSize: number }) {
+    const idx = event.pageIndex;
+    const size = event.pageSize;
+    let changed = false;
+    if (idx !== this.pageIndex()) { this.pageIndex.set(idx); changed = true; }
+    if (size !== this.pageSize()) { this.pageSize.set(size); changed = true; }
+    if (!changed) return;
+  }
+
+  onFiltersChange(event: { search: string; facets: Record<string, string> }) {
+    this.search.set(event.search ?? '');
+    const f = event.facets ?? {};
+    const parseNum = (v?: string) => { if (!v) return null; const n = Number(v); return Number.isFinite(n) ? n : null; };
+
+    if (this.activeTab() === 'repair-reasons') {
+      const rrs = f['status']; this.repairReasonStatus.set(rrs === 'true' || rrs === 'false' ? (rrs as any) : 'any');
+    }
+
+    if (this.activeTab() === 'dead-imei') {
+      this.selectedWarehouseId.set(parseNum(f['warehouse_id']));
+    }
+
+    this.pageIndex.set(0); // reset
+  }
+
+  onSortingChange(_state: Array<{ id: string; desc: boolean }>) {
+    // Server-side sorting not implemented
+  }
+
+  onTabChange(key: string | null) {
+    const k = (key ?? 'repairs') as 'repairs' | 'repair-reasons' | 'dead-imei';
+    if (k !== this.activeTab()) {
+      this.activeTab.set(k);
+      // reset filters per tab
+      this.search.set('');
+      this.pageIndex.set(0);
+    }
+  }
+
+  // Actions
+  onPrimaryActionClick() {
+    const tab = this.activeTab();
+    if (tab === 'repairs') {
+      this.router.navigate(['/repair/repairs/add']);
+    } else if (tab === 'repair-reasons') {
+      this.router.navigate(['/repair/repair-reasons/add']);
+    } else if (tab === 'dead-imei') {
+      this.router.navigate(['/repair/dead-imei/add']);
+    }
+  }
+
+  onCellAction(event: { action: string; row: RepairRow }) {
+    const tab = this.activeTab();
+    const row = event.row as any;
+
+    if (tab === 'repairs' && event.action === 'detail') {
+      this.router.navigate(['/repair/repairs', row.id]);
+      return;
+    }
+
+    if (tab === 'repair-reasons' && event.action === 'edit') {
+      this.router.navigate(['/repair/repair-reasons', row.id, 'edit']);
+      return;
+    }
+
+    if (tab === 'dead-imei' && event.action === 'detail') {
+      // Add detail view for dead IMEI if needed
+      return;
+    }
+  }
+}

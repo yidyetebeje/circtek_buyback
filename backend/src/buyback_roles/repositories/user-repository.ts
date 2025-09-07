@@ -1,5 +1,5 @@
 import { db } from '../../db';
-import { users, roles } from '../../db/schema/user';
+import { users, roles } from '../../db/circtek.schema';
 import { eq, ne, and, or, like, count, asc, desc as dizzleDesc, SQL, getTableColumns } from 'drizzle-orm';
 import { CreateUserWithRoleDTO, UpdateUserRoleDTO, ListUsersQueryDTO } from '../types/user-types';
 import * as bcrypt from 'bcrypt';
@@ -11,18 +11,16 @@ export class UserRepository {
     const result = await db
       .select({
         id: users.id,
-        fName: users.fName,
-        lName: users.lName,
-        userName: users.userName,
+        name: users.name,
+        user_name: users.user_name,
         email: users.email,
-        roleId: users.roleId,
+        role_id: users.role_id,
         status: users.status,
-        clientId: users.clientId,
-        warehouseId: users.warehouseId,
-        organizationName: users.organizationName,
+        tenant_id: users.tenant_id,
+        warehouse_id: users.warehouse_id,
         managed_shop_id: users.managed_shop_id,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt
+        created_at: users.created_at,
+        updated_at: users.updated_at
       })
       .from(users)
       .where(eq(users.id, id))
@@ -35,8 +33,8 @@ export class UserRepository {
     const result = await db
       .select({
         id: roles.id,
-        title: roles.title,
-        slug: roles.slug,
+        name: roles.name,
+        description: roles.description,
       })
       .from(roles)
       .where(eq(roles.id, roleId))
@@ -63,21 +61,21 @@ export class UserRepository {
         id: users.id,
       })
       .from(users)
-      .where(eq(users.userName, userName))
+      .where(eq(users.user_name, userName))
       .limit(1);
 
     return result[0] || null;
   }
 
-  async findRoleBySlug(slug: string) {
+  async findRoleByName(name: string) {
     const result = await db
       .select({
         id: roles.id,
-        title: roles.title,
-        slug: roles.slug,
+        name: roles.name,
+        description: roles.description,
       })
       .from(roles)
-      .where(eq(roles.slug, slug))
+      .where(eq(roles.name, name))
       .limit(1);
 
     return result[0] || null;
@@ -92,18 +90,16 @@ export class UserRepository {
     const hashedPassword = await this.hashPassword(userData.password);
     
     await db.insert(users).values({
-      fName: userData.fName,
-      lName: userData.lName,
-      userName: userData.userName,
+      name: userData.fName + ' ' + (userData.lName || ''),
+      user_name: userData.userName,
       email: userData.email,
       password: hashedPassword,
-      roleId: roleId,
-      clientId: clientId,
-      warehouseId: userData.warehouseId,
-      organizationName: userData.organizationName,
+      role_id: roleId,
+      tenant_id: clientId,
+      warehouse_id: userData.warehouseId,
       managed_shop_id: userData.managed_shop_id,
-      createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-      updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+      created_at: new Date(),
+      updated_at: new Date(),
     });
 
     const result = await db
@@ -118,9 +114,8 @@ export class UserRepository {
 
     return {
       id: result[0].id,
-      fName: userData.fName,
-      lName: userData.lName,
-      userName: userData.userName,
+      name: userData.fName + ' ' + (userData.lName || ''),
+      user_name: userData.userName,
       email: userData.email,
     };
   }
@@ -132,31 +127,28 @@ export class UserRepository {
     await db
       .update(users)
       .set({
-        roleId: roleId,
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        role_id: roleId,
+        updated_at: new Date(),
       })
       .where(eq(users.id, userId));
 
     return {
       id: currentUser.id,
-      fName: currentUser.fName || '',
-      lName: currentUser.lName || '',
-      userName: currentUser.userName || '',
+      name: currentUser.name || '',
+      user_name: currentUser.user_name || '',
       email: currentUser.email || '',
     };
   }
 
   async updateUser(userId: number, updateData: Partial<{
-    fName?: string;
-    lName?: string;
-    userName?: string;
+    name?: string;
+    user_name?: string;
     email?: string;
     password?: string;
-    roleId?: number;
+    role_id?: number;
     status?: boolean;
-    clientId?: number;
-    warehouseId?: number;
-    organizationName?: string;
+    tenant_id?: number;
+    warehouse_id?: number;
     managed_shop_id?: number | null;
   }>) {
     // Check if user exists
@@ -178,11 +170,11 @@ export class UserRepository {
       }
     }
 
-    if (updateData.userName && updateData.userName !== existingUser.userName) {
+    if (updateData.user_name && updateData.user_name !== existingUser.user_name) {
       const usernameExists = await db
         .select({ id: users.id })
         .from(users)
-        .where(and(eq(users.userName, updateData.userName), ne(users.id, userId)))
+        .where(and(eq(users.user_name, updateData.user_name), ne(users.id, userId)))
         .limit(1);
       
       if (usernameExists.length > 0) {
@@ -192,19 +184,17 @@ export class UserRepository {
 
     // Prepare update data
     const updateFields: any = {
-      updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+      updated_at: new Date(),
     };
 
     // Add fields that are being updated
-    if (updateData.fName !== undefined) updateFields.fName = updateData.fName;
-    if (updateData.lName !== undefined) updateFields.lName = updateData.lName;
-    if (updateData.userName !== undefined) updateFields.userName = updateData.userName;
+    if (updateData.name !== undefined) updateFields.name = updateData.name;
+    if (updateData.user_name !== undefined) updateFields.user_name = updateData.user_name;
     if (updateData.email !== undefined) updateFields.email = updateData.email;
-    if (updateData.roleId !== undefined) updateFields.roleId = updateData.roleId;
+    if (updateData.role_id !== undefined) updateFields.role_id = updateData.role_id;
     if (updateData.status !== undefined) updateFields.status = updateData.status;
-    if (updateData.clientId !== undefined) updateFields.clientId = updateData.clientId;
-    if (updateData.warehouseId !== undefined) updateFields.warehouseId = updateData.warehouseId;
-    if (updateData.organizationName !== undefined) updateFields.organizationName = updateData.organizationName;
+    if (updateData.tenant_id !== undefined) updateFields.tenant_id = updateData.tenant_id;
+    if (updateData.warehouse_id !== undefined) updateFields.warehouse_id = updateData.warehouse_id;
     if (updateData.managed_shop_id !== undefined) updateFields.managed_shop_id = updateData.managed_shop_id;
 
     // Handle password update if provided
@@ -223,24 +213,22 @@ export class UserRepository {
     return await this.findById(userId);
   }
 
-  async findManyPaginated(params: ListUsersQueryDTO, filterByAuthClientId?: number) {
-    const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', search, roleId, roleSlug, status, clientId: queryClientId, shopId } = params;
+  async findManyPaginated(params: ListUsersQueryDTO, filterByAuthTenantId?: number) {
+    const { page = 1, limit = 10, sortBy = 'created_at', sortOrder = 'desc', search, roleId, roleName, status, tenantId: queryTenantId, shopId } = params;
 
     const conditions: SQL[] = [];
-    const effectiveClientId = filterByAuthClientId !== undefined ? filterByAuthClientId : queryClientId;
+    const effectiveTenantId = filterByAuthTenantId !== undefined ? filterByAuthTenantId : queryTenantId;
 
-    if (effectiveClientId !== undefined) {
-        conditions.push(eq(users.clientId, effectiveClientId));
+    if (effectiveTenantId !== undefined) {
+        conditions.push(eq(users.tenant_id, effectiveTenantId));
     }
 
     if (search) {
       const searchPattern = `%${search}%`;
       const searchableStringColumns = [
-        users.fName,
-        users.lName,
-        users.userName,
+        users.name,
+        users.user_name,
         users.email,
-        users.organizationName,
       ];
       
       const searchSqlConditions = searchableStringColumns
@@ -256,12 +244,12 @@ export class UserRepository {
     }
 
     if (roleId !== undefined) {
-      conditions.push(eq(users.roleId, roleId));
+      conditions.push(eq(users.role_id, roleId));
     }
     
-    // Add roleSlug filtering support
-    if (roleSlug !== undefined) {
-      conditions.push(eq(roles.slug, roleSlug));
+    // Add roleName filtering support
+    if (roleName !== undefined) {
+      conditions.push(eq(roles.name, roleName));
     }
     
     if (status !== undefined) {
@@ -276,18 +264,18 @@ export class UserRepository {
     // Build the base query
     const baseQuery = db
       .select({
-        id: users.id, fName: users.fName, lName: users.lName, userName: users.userName,
-        email: users.email, status: users.status, createdAt: users.createdAt, updatedAt: users.updatedAt,
-        organizationName: users.organizationName, roleId: users.roleId, roleTitle: roles.title,
-        clientId: users.clientId, 
+        id: users.id, name: users.name, user_name: users.user_name,
+        email: users.email, status: users.status, created_at: users.created_at, updated_at: users.updated_at,
+        role_id: users.role_id, roleName: roles.name,
+        tenant_id: users.tenant_id, 
       })
       .from(users)
-      .leftJoin(roles, eq(users.roleId, roles.id));
+      .leftJoin(roles, eq(users.role_id, roles.id));
 
     const baseCountQuery = db
       .select({ total: count() })
       .from(users)
-      .leftJoin(roles, eq(users.roleId, roles.id));
+      .leftJoin(roles, eq(users.role_id, roles.id));
 
     // Apply conditions if they exist
     const queryBuilder = conditions.length > 0 
@@ -299,9 +287,9 @@ export class UserRepository {
       : baseCountQuery;
 
     const userTableColumns = getTableColumns(users);
-    // Ensure sortBy is a valid key of userTableColumns, otherwise default to users.createdAt
+    // Ensure sortBy is a valid key of userTableColumns, otherwise default to users.created_at
     const sortKey = sortBy as keyof typeof userTableColumns;
-    const sortColumnToUse = userTableColumns[sortKey] || users.createdAt;
+    const sortColumnToUse = userTableColumns[sortKey] || users.created_at;
         
     const result = await queryBuilder
         .orderBy(sortOrder === 'asc' ? asc(sortColumnToUse) : dizzleDesc(sortColumnToUse))
@@ -312,7 +300,7 @@ export class UserRepository {
     const total = totalCountResult[0]?.total || 0;
 
     return {
-      data: result.map(u => ({ ...u, role: u.roleId && u.roleTitle ? { id: u.roleId, title: u.roleTitle } : null })),
+      data: result.map(u => ({ ...u, role: u.role_id && u.roleName ? { id: u.role_id, name: u.roleName } : null })),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }

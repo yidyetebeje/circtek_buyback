@@ -2,7 +2,7 @@ import { FeaturedDeviceRepository } from '../repositories/featuredDeviceReposito
 import { NewFeaturedDevice, FeaturedDevice, NewFeaturedDeviceSchema } from '../types/featuredDeviceTypes';
 import { AppContext } from '../types/contextTypes'; // Assuming a common context type
 import { Static } from 'elysia';
-import { shopAccessService } from '../../roles/services/shopAccessService';
+import { shopAccessService } from '../../buyback_roles/services/shopAccessService';
 import { db } from '../../db';
 import { shops } from '../../db/shops.schema';
 import { inArray } from 'drizzle-orm';

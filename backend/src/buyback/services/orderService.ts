@@ -2,10 +2,9 @@ import { orderRepository, CreateOrderParams, UpdateOrderStatusParams, OrdersFilt
 import { shippingService } from "./shippingService";
 import { notificationService } from "./notificationService";
 import { ORDER_STATUS, OrderStatus } from "../../db/order.schema";
-import { deviceService } from "../../inventory/services/deviceService";
-import { getAllowedShopIds } from "@/utils/access-control";
+import { getAllowedShopIds } from "../../utils/access-control-buyback";
+import { deviceService } from "../../services/deviceService";
 
-// Define JwtUser type locally since import path is not available
 interface JwtUser {
   id: number;
   tenant_id: number;
@@ -87,7 +86,7 @@ export class OrderService {
             serial: params.serialNumber,
             warehouse_id: params.warehouseId, 
             tenant_id: newOrder.tenant_id,
-            order_id: newOrder.id
+            order_id: Number(newOrder.id)
           });
           console.log(`[OrderService] Device with IMEI ${params.imei} added to inventory from admin order ${newOrder.id}`);
         } catch (deviceError) {
@@ -110,11 +109,11 @@ export class OrderService {
    * @param user Optional user to check access permissions
    * @returns The complete order object or null if not found or no access
    */
-  async getOrderById(orderId: string, user_id: string): Promise<any> {
+  async getOrderById(orderId: string, user?: JwtUser): Promise<any> {
     try {
       let allowedShopIds: number[] | undefined;
-      if (user_id) {
-        allowedShopIds = await getAllowedShopIds(user_id);
+      if (user) {
+        allowedShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.managed_shop_id);
       }
       return await orderRepository.getOrderById(orderId, allowedShopIds);
     } catch (error) {
@@ -130,10 +129,10 @@ export class OrderService {
    * @param user Optional user to check access permissions
    * @returns Paginated list of orders
    */
-  async listOrders(filters: OrdersFilter = {}, user_id?: string): Promise<any> {
+  async listOrders(filters: OrdersFilter = {}, user?: JwtUser): Promise<any> {
     try {
-      if (user_id) {
-        const allowedShopIds = await getAllowedShopIds(user_id);
+      if (user) {
+        const allowedShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.managed_shop_id);
         filters.allowedShopIds = allowedShopIds;
       }
       return await orderRepository.listOrders(filters);
@@ -150,10 +149,10 @@ export class OrderService {
    * @param user User to check access permissions
    * @returns The updated order
    */
-  async updateOrderStatus(params: UpdateOrderStatusParams & { serialNumber?: string }, user_id: string): Promise<any> {
+  async updateOrderStatus(params: UpdateOrderStatusParams & { serialNumber?: string }, user: JwtUser): Promise<any> {
     try {
       // Get the shops the user has access to (following warehouse pattern)
-      const allowedShopIds = await getAllowedShopIds(user_id);
+      const allowedShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.managed_shop_id);
       
       // Get the current order to compare status changes
       const currentOrder = await orderRepository.getOrderById(params.orderId, allowedShopIds);
@@ -185,7 +184,7 @@ export class OrderService {
             serial: params.serialNumber,
             warehouse_id: params.warehouseId,
             tenant_id: currentOrder.tenant_id,
-            order_id: params.orderId
+            order_id: Number(params.orderId)
           });
           
           console.log(`[OrderService] Device with IMEI ${params.imei} added to inventory from order ${params.orderId}`);
@@ -232,7 +231,7 @@ export class OrderService {
       }
       
       // Check if the user has access to the order's shop using getAllowedShopIds
-      const allowedShopIds = await getAllowedShopIds(user);
+      const allowedShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.managed_shop_id);
       if (!allowedShopIds) {
         // undefined means no restrictions (admin/client roles)
         return true;
@@ -359,14 +358,14 @@ export class OrderService {
 
     // Check inventory for existing device
     if (imei) {
-      const existingDevice = await deviceService.getDeviceByImei(imei, tenant_id);
+      const existingDevice = await deviceService.getDeviceByImei(imei, tenant_id!);
       if (existingDevice) {
         return { purchasable: false, reason: "IN_STOCK" };
       }
     }
 
     if (serialNumber) {
-      const existingDeviceBySerial = await deviceService.getDeviceBySerial(serialNumber, tenant_id);
+      const existingDeviceBySerial = await deviceService.getDeviceBySerial(serialNumber, tenant_id!);
       if (existingDeviceBySerial) {
         return { purchasable: false, reason: "IN_STOCK" };
       }

@@ -138,6 +138,14 @@ export const routes: Routes = [
       import('./pages/stock-management/stock-management.component').then((m) => m.StockManagementComponent),
   },
 
+  // Repair Management page route (lazy-loaded component)
+  {
+    path: 'repair',
+    canMatch: [authGuard],
+    loadComponent: () =>
+      import('./pages/repair/repair.component').then((m) => m.RepairComponent),
+  },
+
   // Purchase form routes
   {
     path: 'stock-management/purchases/add',
@@ -181,7 +189,7 @@ export const routes: Routes = [
 
   // Repair form routes
   {
-    path: 'stock-management/repairs/add',
+    path: 'repair/repairs/add',
     canMatch: [authGuard],
     loadComponent: () =>
       import('./pages/repair-form/repair-form.component').then((m) => m.RepairFormComponent),
@@ -189,7 +197,7 @@ export const routes: Routes = [
 
   // Repair detail routes
   {
-    path: 'stock-management/repairs/:id',
+    path: 'repair/repairs/:id',
     canMatch: [authGuard],
     loadComponent: () =>
       import('./pages/repair-detail/repair-detail.component').then((m) => m.RepairDetailComponent),
@@ -206,13 +214,13 @@ export const routes: Routes = [
 
   // Repair Reasons form routes
   {
-    path: 'stock-management/repair-reasons/add',
+    path: 'repair/repair-reasons/add',
     canMatch: [authGuard],
     loadComponent: () =>
       import('./pages/repair-reasons-form/repair-reasons-form.component').then((m) => m.RepairReasonsFormComponent),
   },
   {
-    path: 'stock-management/repair-reasons/:id/edit',
+    path: 'repair/repair-reasons/:id/edit',
     canMatch: [authGuard],
     loadComponent: () =>
       import('./pages/repair-reasons-form/repair-reasons-form.component').then((m) => m.RepairReasonsFormComponent),
@@ -234,7 +242,7 @@ export const routes: Routes = [
 
   // Dead IMEI form routes
   {
-    path: 'stock-management/dead-imei/add',
+    path: 'repair/dead-imei/add',
     canMatch: [authGuard],
     loadComponent: () =>
       import('./pages/stock-management/dead-imei-form/dead-imei-form.component').then((m) => m.DeadIMEIFormComponent),

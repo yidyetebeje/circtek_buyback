@@ -30,12 +30,12 @@ export class RoleService {
   }
 
   async createRole(roleData: InsertRoleDTO): Promise<SelectRoleDTO> {
-    if (!roleData.slug) {
-      throw new Error("Role slug is required.");
+    if (!roleData.name) {
+      throw new Error("Role name is required.");
     }
-    const existingRoleBySlug = await this.roleRepository.findBySlug(roleData.slug);
-    if (existingRoleBySlug) {
-        throw new Error(`Role with slug '${roleData.slug}' already exists`);
+    const existingRoleByName = await this.roleRepository.findBySlug(roleData.name);
+    if (existingRoleByName) {
+        throw new Error(`Role with name '${roleData.name}' already exists`);
     }
     
     const newRole = await this.roleRepository.create(roleData);
@@ -51,10 +51,10 @@ export class RoleService {
       throw new NotFoundError(`Role with ID ${id} not found to update`);
     }
 
-    if (roleData.slug && roleData.slug !== existingRole.slug) {
-        const conflictingRole = await this.roleRepository.findBySlug(roleData.slug);
+    if (roleData.name && roleData.name !== existingRole.name) {
+        const conflictingRole = await this.roleRepository.findBySlug(roleData.name);
         if (conflictingRole && conflictingRole.id !== id) {
-            throw new Error(`Another role with slug '${roleData.slug}' already exists`);
+            throw new Error(`Another role with name '${roleData.name}' already exists`);
         }
     }
 

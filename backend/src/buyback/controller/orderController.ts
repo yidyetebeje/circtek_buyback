@@ -146,7 +146,17 @@ export class OrderController {
       const { params, currentRole, currentTenantId, currentUserId, warehouseId } = context as any;
       const { orderId } = params as { orderId: string };
       
-      const order = await orderService.getOrderById(orderId, currentUserId);
+      // Create user object for service call
+      const user = currentUserId ? {
+        id: currentUserId,
+        tenant_id: currentTenantId,
+        roleSlug: currentRole,
+        warehouseId: warehouseId,
+        managed_shop_id: warehouseId,
+        email: ''
+      } : undefined;
+      
+      const order = await orderService.getOrderById(orderId, user);
       
       if (!order) {
         throw new NotFoundError("Order not found or you don't have access to it");
@@ -225,7 +235,17 @@ export class OrderController {
         sortOrder: sortOrder as "asc" | "desc"
       };
 
-      const result = await orderService.listOrders(filter, currentUserId);
+      // Create user object for service call
+      const user = currentUserId ? {
+        id: currentUserId,
+        tenant_id: currentTenantId,
+        roleSlug: currentRole,
+        warehouseId: warehouseId,
+        managed_shop_id: warehouseId,
+        email: ''
+      } : undefined;
+      
+      const result = await orderService.listOrders(filter, user);
       return { data: result };
     } catch (error: any) {
       console.error("[OrderController] List orders error:", error);
@@ -277,6 +297,16 @@ export class OrderController {
         throw new BadRequestError("Final price, IMEI, SKU, and Warehouse ID are required for PAID status");
       }
       
+      // Create user object for service call
+      const user = {
+        id: currentUserId,
+        tenant_id: currentTenantId,
+        roleSlug: currentRole,
+        warehouseId: currentWarehouseId,
+        managed_shop_id: currentWarehouseId,
+        email: ''
+      };
+      
       const updatedOrder = await orderService.updateOrderStatus({
         orderId,
         newStatus: newStatus as OrderStatus,
@@ -286,7 +316,7 @@ export class OrderController {
         imei,
         sku,
         warehouseId
-      }, currentUserId);
+      }, user);
       
       // Send email notification for status change
       try {

@@ -14,22 +14,18 @@ import {
   updateUserSchema,
   type UpdateUserDTO
 } from '../types/user-types';
-import { type JwtUser } from '../../catalog/types/authTypes';
-import { type AuthContext } from '../types/auth-types'; // Import AuthContext
 
-// Define a more focused base for handler context
-// It includes general Elysia context properties needed by handlers,
-// but omits params, query, body, which will be route-specific.
-export interface BaseHandlerContext {
+
+// Handler context interface for requireRole middleware
+export interface HandlerContext {
   set: Context['set'];
-  store: Context['store']; // Example, add others like request if used directly
-  // Add other specific Elysia context properties if your handlers use them directly
-}
-
-// HandlerContext now combines the base with your custom decorators/derived properties.
-export interface HandlerContext extends BaseHandlerContext {
+  store: Context['store'];
   userService: UserService;
-  user?: JwtUser | null; // Authenticated user from JWT (can be null from middleware)
+  currentUserId: number | null;
+  currentTenantId: number | null;
+  currentRole: string | null;
+  warehouseId: number | null;
+  managedShopId: number | null;
 }
 
 export class UserController {
@@ -40,12 +36,12 @@ export class UserController {
   }
 
   public async listUsersHandler(context: HandlerContext & { query: Static<typeof listUsersQuerySchema> }) {
-    const { query, userService, set, user } = context;
+    const { query, userService, set, currentUserId, currentTenantId, currentRole } = context;
     try {
-      const authContextForService: AuthContext | undefined = user ? { 
-        id: user.id, 
-        clientId: user.clientId,
-        roleSlug: user.roleSlug
+      const authContextForService = currentUserId ? {
+        id: currentUserId,
+        clientId: currentTenantId || undefined,
+        roleSlug: currentRole || undefined
       } : undefined;
 
       const result = await userService.listUsers(query as ListUsersQueryDTO, authContextForService);
@@ -109,7 +105,7 @@ export class UserController {
   }
 
   public async createUserHandler(context: HandlerContext & { body: Static<typeof createUserWithRoleSchema> }) {
-    const { body, userService, set, user } = context; 
+    const { body, userService, set, currentUserId, currentTenantId, currentRole } = context; 
     try {
       // Create user data with body properties
       const userData: CreateUserWithRoleDTO & { clientId: number } = {
@@ -118,12 +114,12 @@ export class UserController {
       };
       
       // Set client ID from authenticated user
-      if (user) {
-        if (user.roleSlug === 'client') {
-          userData.clientId = user.id;
+      if (currentUserId) {
+        if (currentRole === 'client') {
+          userData.clientId = currentUserId;
         } else {
           // Ensure clientId is always a number (use 0 as default if undefined)
-          userData.clientId = user.clientId || 0;
+          userData.clientId = currentTenantId || 0;
         }
       }
       
@@ -339,12 +335,12 @@ export class UserController {
   }
 
   public async getUserByIdHandler(context: HandlerContext & { params: Static<typeof userIdParamSchema> }) {
-    const { params, userService, set, user } = context;
+    const { params, userService, set, currentUserId, currentTenantId, currentRole } = context;
     try {
-      const authContextForService: AuthContext | undefined = user ? { 
-        id: user.id, 
-        clientId: user.clientId,
-        roleSlug: user.roleSlug
+      const authContextForService = currentUserId ? {
+        id: currentUserId,
+        clientId: currentTenantId || undefined,
+        roleSlug: currentRole || undefined
       } : undefined;
 
       const result = await userService.getUserById(params.id, authContextForService);

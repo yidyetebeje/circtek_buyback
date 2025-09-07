@@ -28,10 +28,10 @@ export class UserService {
       throw new Error('User with this username already exists.');
     }
 
-    // Find the role by slug
-    const role = await this.userRepository.findRoleBySlug(userData.roleSlug);
+    // Find the role by name
+    const role = await this.userRepository.findRoleByName(userData.roleSlug);
     if (!role) {
-      throw new Error(`Role with slug '${userData.roleSlug}' not found.`);
+      throw new Error(`Role with name '${userData.roleSlug}' not found.`);
     }
 
     // Create the user with the role
@@ -57,12 +57,11 @@ export class UserService {
     // Return user with role information
     return {
       id: newUser.id,
-      fName: newUser.fName,
-      lName: newUser.lName,
-      userName: newUser.userName,
+      name: newUser.name,
+      user_name: newUser.user_name,
       email: newUser.email,
-      roleName: role.title,
-      roleSlug: role.slug,
+      roleName: role.name,
+      roleSlug: role.name,
       managed_shop_id: userData.managed_shop_id,
     };
   }
@@ -74,10 +73,10 @@ export class UserService {
       throw new NotFoundError(`User with ID ${userId} not found.`);
     }
 
-    // Find the role by slug
-    const role = await this.userRepository.findRoleBySlug(updateData.roleSlug);
+    // Find the role by name
+    const role = await this.userRepository.findRoleByName(updateData.roleSlug);
     if (!role) {
-      throw new Error(`Role with slug '${updateData.roleSlug}' not found.`);
+      throw new Error(`Role with name '${updateData.roleSlug}' not found.`);
     }
 
     // Update the user's role
@@ -89,12 +88,11 @@ export class UserService {
     // Return user with updated role information
     return {
       id: updatedUser.id,
-      fName: updatedUser.fName,
-      lName: updatedUser.lName,
-      userName: updatedUser.userName,
+      name: updatedUser.name,
+      user_name: updatedUser.user_name,
       email: updatedUser.email,
-      roleName: role.title,
-      roleSlug: role.slug,
+      roleName: role.name,
+      roleSlug: role.name,
     };
   }
 
@@ -109,24 +107,25 @@ export class UserService {
     const repositoryUpdateData: any = {};
 
     // Copy basic fields
-    if (updateData.fName !== undefined) repositoryUpdateData.fName = updateData.fName;
-    if (updateData.lName !== undefined) repositoryUpdateData.lName = updateData.lName;
-    if (updateData.userName !== undefined) repositoryUpdateData.userName = updateData.userName;
+    if (updateData.fName !== undefined) repositoryUpdateData.name = updateData.fName;
+    if (updateData.lName !== undefined) repositoryUpdateData.name = updateData.lName;
+    if (updateData.userName !== undefined) repositoryUpdateData.user_name = updateData.userName;
     if (updateData.email !== undefined) repositoryUpdateData.email = updateData.email;
     if (updateData.password !== undefined) repositoryUpdateData.password = updateData.password;
     if (updateData.status !== undefined) repositoryUpdateData.status = updateData.status;
-    if (updateData.clientId !== undefined) repositoryUpdateData.clientId = updateData.clientId;
-    if (updateData.warehouseId !== undefined) repositoryUpdateData.warehouseId = updateData.warehouseId;
-    if (updateData.organizationName !== undefined) repositoryUpdateData.organizationName = updateData.organizationName;
+    if (updateData.clientId !== undefined) repositoryUpdateData.tenant_id = updateData.clientId;
+    if (updateData.warehouseId !== undefined) repositoryUpdateData.warehouse_id = updateData.warehouseId;
+
+    // Handle managed_shop_id
     if (updateData.managed_shop_id !== undefined) repositoryUpdateData.managed_shop_id = updateData.managed_shop_id;
 
     // Handle role update if roleSlug is provided
     if (updateData.roleSlug !== undefined) {
-      const role = await this.userRepository.findRoleBySlug(updateData.roleSlug);
+      const role = await this.userRepository.findRoleByName(updateData.roleSlug);
       if (!role) {
         throw new Error(`Role with slug '${updateData.roleSlug}' not found.`);
       }
-      repositoryUpdateData.roleId = role.id;
+      repositoryUpdateData.role_id = role.id;
     }
 
     // Update the user
@@ -136,22 +135,20 @@ export class UserService {
     }
 
     // Get role information for response
-    const role = updatedUser.roleId ? await this.userRepository.findRoleById(updatedUser.roleId) : null;
+    const role = updatedUser.role_id ? await this.userRepository.findRoleById(updatedUser.role_id) : null;
 
     // Return user with complete information
     return {
       id: updatedUser.id,
-      fName: updatedUser.fName || '',
-      lName: updatedUser.lName || '',
-      userName: updatedUser.userName || '',
+      name: updatedUser.name || '',
+      user_name: updatedUser.user_name || '',
       email: updatedUser.email || '',
       status: updatedUser.status,
-      roleId: updatedUser.roleId,
-      roleName: role?.title || '',
-      roleSlug: role?.slug || '',
-      clientId: updatedUser.clientId,
-      warehouseId: updatedUser.warehouseId,
-      organizationName: updatedUser.organizationName,
+      role_id: updatedUser.role_id,
+      roleName: role?.name || '',
+      roleSlug: role?.name || '',
+      tenant_id: updatedUser.tenant_id,
+      warehouse_id: updatedUser.warehouse_id,
       managed_shop_id: updatedUser.managed_shop_id,
     };
   }
@@ -201,38 +198,38 @@ export class UserService {
     }
     
     // For 'client' role, they can only access users from their own client account.
-    // The client's own user ID is the `clientId` for all users under their account.
+    // The client's own user ID is the `tenant_id` for all users under their account.
     if (authContext.roleSlug === 'client') {
-      if (user.clientId !== authContext.id) {
+      if (user.tenant_id !== authContext.id) {
         throw new NotFoundError(`User not found or you don't have permission to access this user.`);
       }
     }
     
     // For 'admin' role, they can only access users from their assigned client.
     if (authContext.roleSlug === 'admin' && authContext.clientId !== undefined) {
-      if (user.clientId !== authContext.clientId) {
+      if (user.tenant_id !== authContext.clientId) {
         throw new NotFoundError(`User not found or you don't have permission to access this user.`);
       }
     }
     
-    const role = user.roleId ? await this.userRepository.findRoleById(user.roleId) : null;
+    const role = user.role_id ? await this.userRepository.findRoleById(user.role_id) : null;
     
     return {
       id: user.id,
-      fName: user.fName || '',
-      lName: user.lName || '',
-      userName: user.userName || '',
-      email: user.email || '',
-      status: user.status,
-      clientId: user.clientId,
-      warehouseId: user.warehouseId,
-      organizationName: user.organizationName,
+      name: user.name,
+      user_name: user.user_name,
+      email: user.email,
+      role_id: user.role_id,
+      roleName: role?.name || '',
+      roleSlug: role?.name || '',
+      tenant_id: user.tenant_id,
+      warehouse_id: user.warehouse_id,
       managed_shop_id: user.managed_shop_id,
-      createdAt: user.createdAt,
+      created_at: user.created_at,
       role: role ? {
         id: role.id,
-        title: role.title,
-        slug: role.slug
+        name: role.name,
+        description: role.description
       } : null
     };
   }

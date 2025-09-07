@@ -9,13 +9,10 @@ import { ApiService } from '../../core/services/api.service';
 import { StockWithWarehouse } from '../../core/models/stock';
 import { PurchaseRecord } from '../../core/models/purchase';
 import { TransferWithDetails } from '../../core/models/transfer';
-import { RepairRecord } from '../../core/models/repair';
 import { SkuSpecsRecord } from '../../core/models/sku-specs';
-import { RepairReasonRecord } from '../../core/models/repair-reason';
-import { DeadIMEIRecord } from '../../core/models/dead-imei';
 
 // Union type for table rows across tabs
-export type StockMgmtRow = StockWithWarehouse | PurchaseRecord | TransferWithDetails | RepairRecord | SkuSpecsRecord | RepairReasonRecord | DeadIMEIRecord;
+export type StockMgmtRow = StockWithWarehouse | PurchaseRecord | TransferWithDetails | SkuSpecsRecord;
 
 @Component({
   selector: 'app-stock-management',
@@ -35,7 +32,7 @@ export class StockManagementComponent {
   total = signal(0);
 
   // Tabs & pagination
-  activeTab = signal<'stock' | 'purchases' | 'transfers' | 'repairs' | 'sku-specs' | 'repair-reasons' | 'dead-imei'>('stock');
+  activeTab = signal<'stock' | 'purchases' | 'transfers' | 'sku-specs'>('stock');
   pageIndex = signal(0);
   pageSize = signal(10);
 
@@ -48,8 +45,6 @@ export class StockManagementComponent {
   fromWarehouseId = signal<number | null>(null); // transfers
   toWarehouseId = signal<number | null>(null); // transfers
   transferStatus = signal<'any' | 'pending' | 'completed'>('any'); // transfers
-  
-  repairReasonStatus = signal<'any' | 'true' | 'false'>('any'); // repair-reasons
 
   // Options
   warehouseOptions = signal<Array<{ label: string; value: string }>>([]);
@@ -65,29 +60,20 @@ export class StockManagementComponent {
     { key: 'stock', label: 'Stock' },
     { key: 'purchases', label: 'Purchases' },
     { key: 'transfers', label: 'Transfers' },
-    { key: 'repairs', label: 'Repairs' },
     { key: 'sku-specs', label: 'SKU Specs' },
-    { key: 'repair-reasons', label: 'Repair Reasons' },
-    { key: 'dead-imei', label: 'Dead IMEI' },
   ]);
 
   // Header
   title = 'Stock Management';
-  subtitle = 'Manage stock, purchases and transfers';
+  subtitle = 'Manage stock, purchases, transfers and SKU specifications';
   primaryAction = computed(() => {
     const tab = this.activeTab();
     if (tab === 'purchases') {
       return { label: 'Add Purchase' };
     } else if (tab === 'transfers') {
       return { label: 'Add Transfer' };
-    } else if (tab === 'repairs') {
-      return { label: 'Add Repair' };
     } else if (tab === 'sku-specs') {
       return { label: 'Add SKU Specs' };
-    } else if (tab === 'repair-reasons') {
-      return { label: 'Add Repair Reason' };
-    } else if (tab === 'dead-imei') {
-      return { label: 'Add Dead IMEI' };
     }
     return null;
   });
@@ -113,16 +99,6 @@ export class StockManagementComponent {
         { label: 'Pending', value: 'pending' },
         { label: 'Completed', value: 'completed' },
       ] });
-    }
-    if (tab === 'repair-reasons') {
-      list.push({ key: 'status', label: 'Status', type: 'select', options: [
-        { label: 'Any', value: 'any' },
-        { label: 'Active', value: 'true' },
-        { label: 'Inactive', value: 'false' },
-      ] });
-    }
-    if (tab === 'dead-imei') {
-      list.push({ key: 'warehouse_id', label: 'Warehouse', type: 'select', options: this.warehouseOptions() });
     }
     // purchases: keep only search for now
     return list;
@@ -196,31 +172,6 @@ export class StockManagementComponent {
             }
           } as any,
         ];
-      case 'repairs':
-        return [
-          { header: 'Device SKU', accessorKey: 'device_sku' as any },
-          { header: 'IMEI', accessorKey: 'device_imei' as any },
-          { header: 'Serial', accessorKey: 'device_serial' as any },
-          { header: 'Repair Reason', id: 'reason_name', accessorFn: (r: any) => r.reason_name || `ID: ${r.reason_id}` },
-          { header: 'Parts Used', id: 'parts_used', accessorFn: (r: any) => {
-            // Check for consumed parts from repair items
-            if (r.consumed_parts && r.consumed_parts.length > 0) {
-              return r.consumed_parts.map((part: string) => part).join(', ');
-            }
-            return 'No parts used';
-          }},
-          { header: 'Remarks', accessorKey: 'remarks' as any },
-          { header: 'Created', accessorKey: 'created_at' as any },
-          {
-            header: 'Actions', id: 'actions' as any, enableSorting: false as any,
-            meta: {
-              actions: [
-                { key: 'detail', label: 'View Details', class: 'text-info', icon: 'eye' },
-              ],
-              cellClass: () => 'text-right'
-            }
-          } as any,
-        ];
       case 'sku-specs':
         return [
           { header: '#', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
@@ -246,50 +197,6 @@ export class StockManagementComponent {
             }
           } as any,
         ];
-      case 'repair-reasons':
-        return [
-          { header: '#', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
-          { header: 'Name', accessorKey: 'name' as any },
-          { header: 'Description', accessorKey: 'description' as any },
-          {
-            header: 'Actions', id: 'actions' as any, enableSorting: false as any,
-            meta: {
-              actions: [
-                { key: 'edit', label: 'Edit', class: 'text-primary' },
-              ],
-              cellClass: () => 'text-right'
-            }
-          } as any,
-        ];
-      case 'dead-imei':
-        return [
-          { header: '#', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
-          { header: 'Device ID', accessorKey: 'device_id' as any },
-          { header: 'SKU', accessorKey: 'sku' as any },
-          { header: 'IMEI', accessorKey: 'device_imei' as any },
-          { header: 'Serial', accessorKey: 'device_serial' as any },
-          { header: 'Warehouse', accessorKey: 'warehouse_name' as any },
-          { header: 'Notes', accessorKey: 'notes' as any },
-          { header: 'Actor', accessorKey: 'actor_name' as any },
-          { header: 'Created', accessorKey: 'created_at' as any },
-          {
-            header: 'Actions', id: 'actions' as any, enableSorting: false as any,
-            meta: {
-              actions: [
-                { key: 'detail', label: 'View Details', class: 'text-info' },
-              ],
-              cellClass: () => 'text-right'
-            }
-          } as any,
-        ];
       default:
         return [];
     }
@@ -301,10 +208,7 @@ export class StockManagementComponent {
       case 'stock': return 'Search SKU';
       case 'purchases': return 'Search PO, supplier, tracking';
       case 'transfers': return 'Search transfers';
-      case 'repairs': return 'Search device SKU, IMEI, serial, remarks';
       case 'sku-specs': return 'Search SKU, make, model';
-      case 'repair-reasons': return 'Search name, description';
-      case 'dead-imei': return 'Search device ID, SKU, IMEI, serial';
       default: return 'Search';
     }
   });
@@ -317,7 +221,7 @@ export class StockManagementComponent {
     const str = (k: string, d = '') => qp.get(k) ?? d;
 
     const tab = str('tab', 'stock');
-    if (tab === 'stock' || tab === 'purchases' || tab === 'transfers' || tab === 'repairs' || tab === 'sku-specs' || tab === 'repair-reasons' || tab === 'dead-imei') this.activeTab.set(tab as any);
+    if (tab === 'stock' || tab === 'purchases' || tab === 'transfers' || tab === 'sku-specs') this.activeTab.set(tab as any);
     else this.activeTab.set('stock');
 
     this.pageIndex.set(Math.max(0, num('page', 1) - 1));
@@ -332,7 +236,6 @@ export class StockManagementComponent {
     this.toWarehouseId.set(optNum('to_warehouse_id'));
     const ts = str('status', 'any'); this.transferStatus.set(ts === 'pending' || ts === 'completed' ? (ts as any) : 'any');
     
-    const rrs = str('repair_reason_status', 'any'); this.repairReasonStatus.set(rrs === 'true' || rrs === 'false' ? (rrs as any) : 'any');
 
     this.initialized.set(true);
 
@@ -368,8 +271,6 @@ export class StockManagementComponent {
       this.fromWarehouseId();
       this.toWarehouseId();
       this.transferStatus();
-      // repair-reasons
-      this.repairReasonStatus();
       this.fetchData();
     });
 
@@ -391,9 +292,6 @@ export class StockManagementComponent {
         const fw = this.fromWarehouseId(); if (fw != null) query['from_warehouse_id'] = String(fw);
         const tw = this.toWarehouseId(); if (tw != null) query['to_warehouse_id'] = String(tw);
         if (this.transferStatus() !== 'any') query['status'] = this.transferStatus();
-      }
-      if (this.activeTab() === 'repair-reasons') {
-        if (this.repairReasonStatus() !== 'any') query['repair_reason_status'] = this.repairReasonStatus();
       }
       // Only navigate if normalized query differs from last emitted
       const desiredNorm = this._normalizeQuery(query);
@@ -478,58 +376,6 @@ export class StockManagementComponent {
       return;
     }
 
-    if (tab === 'repairs') {
-      let params = new HttpParams()
-        .set('page', String(this.pageIndex() + 1))
-        .set('limit', String(this.pageSize()));
-      const s = this.search().trim(); if (s) params = params.set('search', s);
-      this.api.getRepairs(params).subscribe({
-        next: (res) => {
-          if (seq !== this.requestSeq) return;
-          this.data.set(res.data ?? []);
-          this.total.set(res.meta?.total ?? 0);
-          this.loading.set(false);
-        },
-        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
-      });
-      return;
-    }
-
-    if (tab === 'repair-reasons') {
-      let params = new HttpParams()
-        .set('page', String(this.pageIndex() + 1))
-        .set('limit', String(this.pageSize()));
-      const s = this.search().trim(); if (s) params = params.set('search', s);
-      const rrs = this.repairReasonStatus(); if (rrs !== 'any') params = params.set('status', rrs);
-      this.api.getRepairReasons(params).subscribe({
-        next: (res) => {
-          if (seq !== this.requestSeq) return;
-          this.data.set(res.data ?? []);
-          this.total.set(res.meta?.total ?? 0);
-          this.loading.set(false);
-        },
-        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
-      });
-      return;
-    }
-
-    if (tab === 'dead-imei') {
-      let params = new HttpParams()
-        .set('page', String(this.pageIndex() + 1))
-        .set('limit', String(this.pageSize()));
-      const s = this.search().trim(); if (s) params = params.set('search', s);
-      const wid = this.selectedWarehouseId(); if (wid != null) params = params.set('warehouse_id', String(wid));
-      this.api.getDeadIMEIHistory(params).subscribe({
-        next: (res) => {
-          if (seq !== this.requestSeq) return;
-          this.data.set(res.data ?? []);
-          this.total.set(res.meta?.total ?? 0);
-          this.loading.set(false);
-        },
-        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
-      });
-      return;
-    }
 
     // sku-specs
     let params = new HttpParams()
@@ -574,9 +420,6 @@ export class StockManagementComponent {
       const ts = f['status']; this.transferStatus.set(ts === 'pending' || ts === 'completed' ? (ts as any) : 'any');
     }
     
-    if (this.activeTab() === 'repair-reasons') {
-      const rrs = f['status']; this.repairReasonStatus.set(rrs === 'true' || rrs === 'false' ? (rrs as any) : 'any');
-    }
 
     this.pageIndex.set(0); // reset
   }
@@ -586,7 +429,7 @@ export class StockManagementComponent {
   }
 
   onTabChange(key: string | null) {
-    const k = (key ?? 'stock') as 'stock' | 'purchases' | 'transfers' | 'repairs' | 'sku-specs' | 'repair-reasons' | 'dead-imei';
+    const k = (key ?? 'stock') as 'stock' | 'purchases' | 'transfers' | 'sku-specs';
     if (k !== this.activeTab()) {
       this.activeTab.set(k);
       // reset filters per tab
@@ -602,14 +445,8 @@ export class StockManagementComponent {
       this.router.navigate(['/stock-management/purchases/add']);
     } else if (tab === 'transfers') {
       this.router.navigate(['/stock-management/transfers/add']);
-    } else if (tab === 'repairs') {
-      this.router.navigate(['/stock-management/repairs/add']);
     } else if (tab === 'sku-specs') {
       this.router.navigate(['/stock-management/sku-specs/add']);
-    } else if (tab === 'repair-reasons') {
-      this.router.navigate(['/stock-management/repair-reasons/add']);
-    } else if (tab === 'dead-imei') {
-      this.router.navigate(['/stock-management/dead-imei/add']);
     }
   }
 
@@ -633,19 +470,8 @@ export class StockManagementComponent {
       return;
     }
 
-    if (tab === 'repairs' && event.action === 'detail') {
-      this.router.navigate(['/stock-management/repairs', row.id]);
-      return;
-    }
-
-
     if (tab === 'sku-specs' && event.action === 'edit') {
       this.router.navigate(['/stock-management/sku-specs', row.id, 'edit']);
-      return;
-    }
-
-    if (tab === 'repair-reasons' && event.action === 'edit') {
-      this.router.navigate(['/stock-management/repair-reasons', row.id, 'edit']);
       return;
     }
 

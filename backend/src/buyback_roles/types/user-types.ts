@@ -89,8 +89,10 @@ export const listUsersQuerySchema = t.Object({
   search: t.Optional(t.String()),
   roleId: t.Optional(t.Numeric()),
   roleSlug: t.Optional(t.String()), // Added roleSlug filtering support
+  roleName: t.Optional(t.String()), // Added roleName filtering support
   status: t.Optional(t.Boolean()), // This was previously t.Nullable(t.Boolean()) in userListItemSchema, ensuring consistency or specific use. For query, boolean is fine.
   clientId: t.Optional(t.Numeric()), 
+  tenantId: t.Optional(t.Numeric()), // Added tenantId filtering support
   shopId: t.Optional(t.Numeric()),
 });
 
