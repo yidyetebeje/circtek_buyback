@@ -77,7 +77,9 @@ export class TextEditorService {
     // Ensure editor is within viewport bounds
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    const editorWidth = textNode.width() * scale + 20;
+    // Use fixed width from config to keep toolbar fully visible
+    const fixedWidth = TEXT_EDITOR_CONFIG.EDITOR_WIDTH;
+    const editorWidth = fixedWidth;
 
     if (editorPosition.x + editorWidth > viewportWidth) {
       editorPosition.x = Math.max(0, viewportWidth - editorWidth);
@@ -88,11 +90,11 @@ export class TextEditorService {
       editorPosition.y = Math.max(0, viewportHeight - 200);
     }
 
-    editorContainer.className = 'text-editor-container';
+    editorContainer.className = 'text-editor-container editor-modal';
     editorContainer.style.position = 'fixed';
     editorContainer.style.top = editorPosition.y + 'px';
     editorContainer.style.left = editorPosition.x + 'px';
-    editorContainer.style.width = textNode.width() * scale + 10 + 'px';
+    editorContainer.style.width = editorWidth + 'px';
     editorContainer.style.zIndex = TEXT_EDITOR_CONFIG.Z_INDEX;
     editorContainer.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
     editorContainer.style.borderRadius = TEXT_EDITOR_CONFIG.CONTAINER_STYLE.borderRadius;
@@ -120,6 +122,7 @@ export class TextEditorService {
     toolbar.className = 'text-editor-toolbar';
     toolbar.style.display = 'flex';
     toolbar.style.alignItems = 'center';
+    toolbar.style.flexWrap = 'wrap';
     toolbar.style.padding = '4px';
     toolbar.style.borderBottom = '1px solid #eee';
     toolbar.style.backgroundColor = '#f8f9fa';
@@ -195,6 +198,9 @@ export class TextEditorService {
     textarea.style.lineHeight = textNode.lineHeight().toString();
     textarea.style.boxSizing = 'border-box';
     textarea.style.fontWeight = textNode.fontStyle() === 'bold' ? 'bold' : 'normal';
+    // Ensure text wraps within fixed editor width
+    textarea.style.wordBreak = 'break-word';
+    textarea.style.whiteSpace = 'pre-wrap';
     
     if (typeof originalColor === 'string') {
       textarea.style.color = originalColor;

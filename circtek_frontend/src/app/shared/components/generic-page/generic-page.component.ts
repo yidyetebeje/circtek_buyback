@@ -196,6 +196,10 @@ export class GenericPageComponent<TData extends object> {
     this.searchQuery.set(value);
   }
 
+  clearSearch() {
+    this.searchQuery.set('');
+  }
+
   facetValue(key: string): string {
     return this.facetModel()[key] ?? '';
   }

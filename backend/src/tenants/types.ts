@@ -27,6 +27,8 @@ export const TenantListQuery = t.Object({
   status: t.Optional(t.Boolean()),
   page: t.Optional(t.Number({ default: 1 })),
   limit: t.Optional(t.Number({ default: 10 })),
+  sort: t.Optional(t.String()),
+  order: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
 })
 
 export type TenantListQueryInput = Static<typeof TenantListQuery>

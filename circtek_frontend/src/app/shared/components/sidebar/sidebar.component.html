@@ -1,7 +1,9 @@
 <aside class="sidebar" [class.sidebar-open]="isOpen()">
   <div class="sidebar-content">
     <div class="logo-container">
-      <img src="img/brand/icon1.png" alt="Circtek Logo" class="sidebar-logo">
+      <a routerLink="/dashboard" (click)="closeSidebar()" aria-label="Go to dashboard">
+        <img src="img/brand/icon1.png" alt="Circtek Logo" class="sidebar-logo">
+      </a>
     </div>
     
     <!-- Mobile navigation menu -->

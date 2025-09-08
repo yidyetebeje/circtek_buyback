@@ -1,4 +1,4 @@
-import { and, count, eq, like, or, SQL } from "drizzle-orm";
+import { and, count, eq, like, or, SQL, asc, desc } from "drizzle-orm";
 import { roles, tenants, users } from "../db/circtek.schema";
 import { UserCreateInput, UserFilters, UserListResult, UserPublic, UserUpdateInput } from "./types";
 import { db } from "../db/index";
@@ -17,6 +17,18 @@ const userPublicSelection = {
 
 const userListSelection = {
   ...userPublicSelection,
+  role_name: roles.name,
+  tenant_name: tenants.name,
+} as const;
+
+// Sortable fields mapping
+const sortableFields = {
+  id: users.id,
+  name: users.name,
+  user_name: users.user_name,
+  email: users.email,
+  created_at: users.created_at,
+  status: users.status,
   role_name: roles.name,
   tenant_name: tenants.name,
 } as const;
@@ -81,6 +93,12 @@ export class UsersRepository {
     const limit = Math.max(1, Math.min(100, filters.limit ?? 10));
     const offset = (page - 1) * limit;
 
+    // Handle sorting
+    const sortField = filters.sort && sortableFields[filters.sort as keyof typeof sortableFields] 
+      ? sortableFields[filters.sort as keyof typeof sortableFields]
+      : users.id; // default sort by id
+    const sortOrder = filters.order === 'desc' ? desc : asc;
+
     let totalRow: { total: number } | undefined;
     if (conditions.length) {
       const finalCondition = and(...(conditions as any));
@@ -98,6 +116,7 @@ export class UsersRepository {
         .leftJoin(roles, eq(users.role_id, roles.id))
         .leftJoin(tenants, eq(users.tenant_id, tenants.id))
         .where(finalCondition as any)
+        .orderBy(sortOrder(sortField))
         .limit(limit)
         .offset(offset);
     } else {
@@ -106,6 +125,7 @@ export class UsersRepository {
         .from(users)
         .leftJoin(roles, eq(users.role_id, roles.id))
         .leftJoin(tenants, eq(users.tenant_id, tenants.id))
+        .orderBy(sortOrder(sortField))
         .limit(limit)
         .offset(offset);
     }

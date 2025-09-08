@@ -96,6 +96,8 @@ export const TEXT_EDITOR_CONFIG = {
     'User Signature Placeholder'
   ],
   Z_INDEX: '10000',
+  // Fixed editor width to keep toolbar buttons visible
+  EDITOR_WIDTH: 380,
   CONTAINER_STYLE: {
     borderRadius: '4px',
     background: 'white',

@@ -11,4 +11,10 @@
   (formSubmit)="onFormSubmit($event)"
   (actionClick)="onActionClick($event)"
   (backClick)="onActionClick({ action: 'Cancel' })"
-></app-generic-form-page>
+>
+  @if (successMessage()) {
+    <div class="alert alert-success">
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+</app-generic-form-page>

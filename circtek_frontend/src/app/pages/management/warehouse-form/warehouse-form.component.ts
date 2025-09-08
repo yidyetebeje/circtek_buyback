@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../../core/services/api.service';
@@ -26,6 +26,7 @@ export class WarehouseFormComponent {
   loading = signal(false);
   submitting = signal(false);
   errorMessage = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
   warehouseId = signal<number | null>(null);
   isEditMode = computed(() => this.warehouseId() !== null);
   
@@ -112,10 +113,29 @@ export class WarehouseFormComponent {
     });
   }
 
+  // Custom validators
+  private noWhitespaceValidator(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    if (!value) return null;
+    const isWhitespace = (value || '').trim().length === 0;
+    const isValid = !isWhitespace;
+    return isValid ? null : { whitespace: true };
+  }
+
   private createForm(): FormGroup {
     const formConfig: any = {
-      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-      description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
+      name: ['', [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100),
+        this.noWhitespaceValidator
+      ]],
+      description: ['', [
+        Validators.required,
+        Validators.minLength(10),
+        Validators.maxLength(500),
+        this.noWhitespaceValidator
+      ]],
       status: [true]
     };
 
@@ -127,12 +147,15 @@ export class WarehouseFormComponent {
   }
 
   private loadTenantOptions() {
-    this.api.getTenants(new HttpParams().set('limit', '1000')).subscribe({
+    // Only load active tenants
+    this.api.getTenants(new HttpParams().set('limit', '1000').set('status', 'true')).subscribe({
       next: (res) => {
-        const options = (res.data ?? []).map(tenant => ({
-          label: tenant.name,
-          value: tenant.id
-        }));
+        const options = (res.data ?? [])
+          .filter(tenant => tenant.status) // Additional client-side filter
+          .map(tenant => ({
+            label: tenant.name,
+            value: tenant.id
+          }));
         this.tenantOptions.set(options);
       },
       error: (error) => {
@@ -170,11 +193,22 @@ export class WarehouseFormComponent {
   }
 
   onFormSubmit(formValue: any) {
-    if (this.warehouseForm().invalid) return;
+    if (this.warehouseForm().invalid) {
+      this.markAllFieldsAsTouched();
+      return;
+    }
+    
     this.errorMessage.set(null);
+    this.successMessage.set(null);
     this.submitting.set(true);
     
+    // Trim all string values
     const warehouseData = { ...formValue };
+    Object.keys(warehouseData).forEach(key => {
+      if (typeof warehouseData[key] === 'string') {
+        warehouseData[key] = warehouseData[key].trim();
+      }
+    });
     
     // Set tenant_id from current user if not super admin
     if (!this.isSuperAdmin()) {
@@ -185,7 +219,10 @@ export class WarehouseFormComponent {
       this.api.updateWarehouse(this.warehouseId()!, warehouseData).subscribe({
         next: () => {
           this.submitting.set(false);
-          this.router.navigate(['/management'], { queryParams: { tab: 'warehouses' } });
+          this.successMessage.set('Warehouse updated successfully.');
+          setTimeout(() => {
+            this.router.navigate(['/management'], { queryParams: { tab: 'warehouses' } });
+          }, 1200);
         },
         error: (error) => {
           console.error('Failed to update warehouse:', error);
@@ -198,7 +235,10 @@ export class WarehouseFormComponent {
       this.api.createWarehouse(warehouseData).subscribe({
         next: () => {
           this.submitting.set(false);
-          this.router.navigate(['/management'], { queryParams: { tab: 'warehouses' } });
+          this.successMessage.set('Warehouse created successfully.');
+          setTimeout(() => {
+            this.router.navigate(['/management'], { queryParams: { tab: 'warehouses' } });
+          }, 1200);
         },
         error: (error) => {
           console.error('Failed to create warehouse:', error);
@@ -214,5 +254,11 @@ export class WarehouseFormComponent {
     if (event.action === 'Cancel') {
       this.router.navigate(['/management'], { queryParams: { tab: 'warehouses' } });
     }
+  }
+  
+  private markAllFieldsAsTouched() {
+    Object.keys(this.warehouseForm().controls).forEach(key => {
+      this.warehouseForm().get(key)?.markAsTouched();
+    });
   }
 }

@@ -79,7 +79,7 @@ export class DiagnosticsComponent {
   columns = computed<ColumnDef<Diagnostic>[]>(() => [
     // 1) Order number starting at 1 across pages
     {
-      header: '#',
+      header: 'S.No',
       id: 'order',
       enableSorting: false as any,
       meta: {

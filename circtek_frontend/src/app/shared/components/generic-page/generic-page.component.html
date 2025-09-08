@@ -58,7 +58,7 @@
                     <label class="label-text font-medium text-base-content/80">{{ f.label }}:</label>
                     @if (f.type === 'text') {
                       <input 
-                        class="input input-sm input-bordered bg-base-50 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        class="input input-sm input-bordered bg-base-50 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 placeholder:text-base-content/50 placeholder:font-normal"
                         type="text" 
                         [placeholder]="facetPlaceholder(f)"
                         [ngModel]="facetValue(f.key)" 
@@ -92,7 +92,7 @@
               </div>
               <input 
                 type="text" 
-                class="search-input input input-bordered w-full pl-10 pr-4" 
+                class="search-input input input-bordered w-full pl-10 pr-12 placeholder:text-base-content/50 placeholder:font-normal" 
                 [placeholder]="searchPlaceholder()" 
                 [ngModel]="searchQuery()" 
                 (ngModelChange)="onSearchInput($event)" 
@@ -100,8 +100,9 @@
               @if (searchQuery()) {
                 <button 
                   type="button" 
-                  class="absolute inset-y-0 right-0 pr-3 flex items-center text-base-content/60 hover:text-primary transition-colors" 
-                  (click)="searchQuery.set('')"
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center text-base-content/60 hover:text-primary transition-colors z-10" 
+                  aria-label="Clear search"
+                  (click)="clearSearch()"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
                     <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />

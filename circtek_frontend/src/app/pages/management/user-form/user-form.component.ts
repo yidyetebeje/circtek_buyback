@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../../shared/components/generic-form-page/generic-form-page.component';
+import { GenericModalComponent, type ModalAction } from '../../../shared/components/generic-modal/generic-modal.component';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/user';
@@ -10,7 +11,7 @@ import { HttpParams } from '@angular/common/http';
 
 @Component({
   selector: 'app-user-form',
-  imports: [CommonModule, GenericFormPageComponent, ReactiveFormsModule],
+  imports: [CommonModule, GenericFormPageComponent, ReactiveFormsModule, GenericModalComponent],
   templateUrl: './user-form.component.html',
   styleUrls: ['./user-form.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,7 +27,10 @@ export class UserFormComponent {
   loading = signal(false);
   submitting = signal(false);
   errorMessage = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
   userId = signal<number | null>(null);
+  showConfirmModal = signal(false);
+  pendingFormData = signal<any>(null);
   isEditMode = computed(() => this.userId() !== null);
   
   // Options
@@ -44,6 +48,12 @@ export class UserFormComponent {
   title = computed(() => this.isEditMode() ? 'Edit User' : 'Add User');
   subtitle = computed(() => this.isEditMode() ? 'Update user information' : 'Create a new user account');
   submitLabel = computed(() => this.isEditMode() ? 'Update User' : 'Create User');
+
+  // Modal actions
+  confirmModalActions = computed<ModalAction[]>(() => [
+    { label: 'Cancel', variant: 'ghost', action: 'cancel' },
+    { label: 'Yes, Update', variant: 'primary', action: 'confirm', loading: this.submitting() }
+  ]);
 
   fields = computed<FormField[]>(() => {
     const fields: FormField[] = [
@@ -158,10 +168,66 @@ export class UserFormComponent {
     });
   }
 
+  // Custom validators
+  private noWhitespaceValidator(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    if (!value) return null;
+    const isWhitespace = (value || '').trim().length === 0;
+    const isValid = !isWhitespace;
+    return isValid ? null : { whitespace: true };
+  }
+
+  private strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    if (!value) return null;
+    
+    const hasUpperCase = /[A-Z]/.test(value);
+    const hasLowerCase = /[a-z]/.test(value);
+    const hasNumeric = /[0-9]/.test(value);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(value);
+    const isValidLength = value.length >= 8;
+    const noWhitespace = !/\s/.test(value);
+    
+    const passwordValid = hasUpperCase && hasLowerCase && hasNumeric && hasSpecialChar && isValidLength && noWhitespace;
+    
+    if (!passwordValid) {
+      return {
+        strongPassword: {
+          hasUpperCase,
+          hasLowerCase,
+          hasNumeric,
+          hasSpecialChar,
+          isValidLength,
+          noWhitespace
+        }
+      };
+    }
+    
+    return null;
+  }
+
+  // Note: Username uniqueness validation would require a backend endpoint
+  // For now, we'll rely on backend validation and show server errors
+
   private createForm(): FormGroup {
+    // Allows letters (including accents), spaces, apostrophes, hyphens, and periods.
+    // Disallows whitespace-only names.
+    const NAME_REGEX = /^(?!\s*$)[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$/;
+
     const formConfig: any = {
-      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-      user_name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
+      name: ['', [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100),
+        Validators.pattern(NAME_REGEX),
+        this.noWhitespaceValidator
+      ]],
+      user_name: ['', [
+        Validators.required,
+        Validators.minLength(3),
+        Validators.maxLength(50),
+        this.noWhitespaceValidator
+      ]],
       email: ['', [Validators.required, Validators.email]],
       role_id: [null, [Validators.required]],
       warehouse_id: [null, [Validators.required]],
@@ -169,7 +235,7 @@ export class UserFormComponent {
     };
 
     if (!this.isEditMode()) {
-      formConfig.password = ['', [Validators.required, Validators.minLength(6)]];
+      formConfig.password = ['', [Validators.required, this.strongPasswordValidator]];
     }
 
     if (this.isSuperAdmin()) {
@@ -206,12 +272,15 @@ export class UserFormComponent {
   }
 
   private loadTenantOptions() {
-    this.api.getTenants(new HttpParams().set('limit', '1000')).subscribe({
+    // Only load active tenants
+    this.api.getTenants(new HttpParams().set('limit', '1000').set('status', 'true')).subscribe({
       next: (res) => {
-        const options = (res.data ?? []).map(tenant => ({
-          label: tenant.name,
-          value: tenant.id
-        }));
+        const options = (res.data ?? [])
+          .filter(tenant => tenant.status) // Additional client-side filter
+          .map(tenant => ({
+            label: tenant.name,
+            value: tenant.id
+          }));
         this.tenantOptions.set(options);
       },
       error: (error) => {
@@ -221,13 +290,15 @@ export class UserFormComponent {
   }
 
   private loadWarehousesForTenant(tenantId?: number | null) {
-    let params = new HttpParams().set('limit', '1000');
+    let params = new HttpParams().set('limit', '1000').set('status', 'true');
     if (this.isSuperAdmin() && tenantId) {
       params = params.set('tenant_id', String(tenantId));
     }
     this.api.getWarehouses(params).subscribe({
       next: (res) => {
-        const options = (res.data ?? []).map(w => ({ label: w.name, value: w.id }));
+        const options = (res.data ?? [])
+          .filter(warehouse => warehouse.status) // Additional client-side filter
+          .map(w => ({ label: w.name, value: w.id }));
         this.warehouseOptions.set(options);
       },
       error: (error) => {
@@ -272,11 +343,51 @@ export class UserFormComponent {
   }
 
   onFormSubmit(formValue: any) {
-    if (this.userForm().invalid) return;
-    this.errorMessage.set(null);
-    this.submitting.set(true);
+    if (this.userForm().invalid) {
+      this.markAllFieldsAsTouched();
+      return;
+    }
     
+    // Trim all string values
     const userData = { ...formValue };
+    Object.keys(userData).forEach(key => {
+      if (typeof userData[key] === 'string') {
+        userData[key] = userData[key].trim();
+      }
+    });
+    
+    // For edit mode, show confirmation modal
+    if (this.isEditMode()) {
+      this.pendingFormData.set(userData);
+      this.showConfirmModal.set(true);
+      return;
+    }
+    
+    // For create mode, proceed directly
+    this.submitForm(userData);
+  }
+  
+  private markAllFieldsAsTouched() {
+    Object.keys(this.userForm().controls).forEach(key => {
+      this.userForm().get(key)?.markAsTouched();
+    });
+  }
+  
+  onConfirmModalAction(action: string) {
+    if (action === 'confirm') {
+      const userData = this.pendingFormData();
+      if (userData) {
+        this.submitForm(userData);
+      }
+    }
+    this.showConfirmModal.set(false);
+    this.pendingFormData.set(null);
+  }
+  
+  private submitForm(userData: any) {
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    this.submitting.set(true);
     
     // Set tenant_id from current user if not super admin
     if (!this.isSuperAdmin()) {
@@ -287,7 +398,11 @@ export class UserFormComponent {
       this.api.updateUser(this.userId()!, userData).subscribe({
         next: () => {
           this.submitting.set(false);
-          this.router.navigate(['/management'], { queryParams: { tab: 'users' } });
+          this.successMessage.set('User updated successfully.');
+          // Navigate after a short delay so the success is visible
+          setTimeout(() => {
+            this.router.navigate(['/management'], { queryParams: { tab: 'users' } });
+          }, 1200);
         },
         error: (error) => {
           console.error('Failed to update user:', error);
@@ -300,7 +415,10 @@ export class UserFormComponent {
       this.api.createUser(userData).subscribe({
         next: () => {
           this.submitting.set(false);
-          this.router.navigate(['/management'], { queryParams: { tab: 'users' } });
+          this.successMessage.set('User created successfully.');
+          setTimeout(() => {
+            this.router.navigate(['/management'], { queryParams: { tab: 'users' } });
+          }, 1200);
         },
         error: (error) => {
           console.error('Failed to create user:', error);

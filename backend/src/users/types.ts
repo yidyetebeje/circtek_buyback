@@ -7,6 +7,8 @@ export type UserFilters = {
 	search?: string;
 	page?: number;
 	limit?: number;
+	sort?: string;
+	order?: 'asc' | 'desc';
 }
 
 export const UserCreate = t.Object({
@@ -39,6 +41,8 @@ export const UserListQuery = t.Object({
 	search: t.Optional(t.String()),
 	page: t.Optional(t.Number({ default: 1 })),
 	limit: t.Optional(t.Number({ default: 10 })),
+	sort: t.Optional(t.String()),
+	order: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
 })
 
 export type UserCreateInput = Static<typeof UserCreate>;

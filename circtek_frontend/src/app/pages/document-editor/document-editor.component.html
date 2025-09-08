@@ -1,9 +1,9 @@
 <!-- Main Container -->
 <div class="min-h-screen bg-base-200 transition-colors duration-300 flex flex-col items-center">
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 py-8 max-w-screen-2xl">
     <!-- Card Container -->
-    <div class="card-container rounded-2xl border border-base-300/50 max-w-7xl mx-auto">
-      <div class="p-6 md:p-8">
+    <div class="card-container rounded-2xl border border-base-300/50 w-full mx-auto">
+      <div class="p-4 sm:p-6 lg:p-8">
         <!-- Header Section -->
         <div class="mb-6">
           <!-- Title, Back Button, and Save Button Row -->
@@ -35,12 +35,12 @@
           </div>
 
           <!-- Compact Document Controls Row -->
-          <div class="flex flex-wrap items-center gap-4 p-3 bg-base-50 rounded-lg border border-base-300/20">
+          <div class="flex flex-wrap items-center gap-3 p-3 bg-base-50 rounded-lg border border-base-300/20 overflow-x-auto">
             <!-- Paper Size -->
-            <div class="flex items-center gap-2">
-              <label class="text-xs font-medium text-base-content/70">Size:</label>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <label class="text-xs font-medium text-base-content/70 whitespace-nowrap">Size:</label>
               <select
-                class="select select-bordered select-sm w-32"
+                class="select select-bordered select-sm w-36 max-w-36"
                 [value]="selectedPaperSize"
                 (change)="onPaperSizeChange($event)"
               >
@@ -56,9 +56,9 @@
             </div>
 
             <!-- Orientation -->
-            <div class="flex items-center gap-2">
-              <label class="text-xs font-medium text-base-content/70">Orientation:</label>
-              <select class="select select-bordered select-sm w-24"
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <label class="text-xs font-medium text-base-content/70 whitespace-nowrap">Orientation:</label>
+              <select class="select select-bordered select-sm w-28 max-w-28"
                 [(ngModel)]="paperOrientation" (ngModelChange)="setPaperOrientation($event)">
                 <option value="portrait">Portrait</option>
                 <option value="landscape">Landscape</option>
@@ -66,22 +66,23 @@
             </div>
 
             <!-- DPI -->
-            <div class="flex items-center gap-2">
-              <label class="text-xs font-medium text-base-content/70">DPI:</label>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <label class="text-xs font-medium text-base-content/70 whitespace-nowrap">DPI:</label>
               <input 
                 type="number" 
-                min="50" 
-                max="1200" 
+                min="72" 
+                max="600" 
                 step="1"
-                class="input input-bordered input-sm w-20" 
+                class="input input-bordered input-sm w-20 max-w-20" 
                 [ngModel]="DPI"
-                (ngModelChange)="onDpiInputChange($event)" 
+                (ngModelChange)="onDpiInputChange($event)"
+                (input)="validateDpiInput($event)"
               />
             </div>
 
             <!-- List Mode Toggle -->
             <button
-              class="btn btn-sm"
+              class="btn btn-sm flex-shrink-0"
               [ngClass]="{
                 'btn-primary': isListModeActive,
                 'btn-outline btn-primary': !isListModeActive
@@ -89,23 +90,23 @@
               (click)="toggleListMode()"
             >
               <lucide-icon [img]="List" class="size-4"></lucide-icon>
-              List Mode
+              <span class="hidden sm:inline ml-1">List Mode</span>
             </button>
 
             <!-- Dimensions Display/Input -->
             @if (selectedPaperSize !== 'Custom') {
-              <div class="text-xs text-base-content/60">
+              <div class="text-xs text-base-content/60 flex-shrink-0">
                 {{ canvasWidthMm | number: "1.1-1" }} x {{ canvasHeightMm | number: "1.1-1" }} mm
               </div>
             } @else {
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2 flex-shrink-0">
                 <label class="text-xs font-medium text-base-content/70">W:</label>
                 <input
                   type="number"
                   step="1"
                   min="10"
                   max="1000"
-                  class="input input-bordered input-sm w-16"
+                  class="input input-bordered input-sm w-16 max-w-16"
                   [ngModel]="canvasWidthMm"
                   (ngModelChange)="canvasWidthMm = $event; onMmInputChange()"
                   (wheel)="$event.preventDefault()"
@@ -117,7 +118,7 @@
                   step="1"
                   min="10"
                   max="1000"
-                  class="input input-bordered input-sm w-16"
+                  class="input input-bordered input-sm w-16 max-w-16"
                   [ngModel]="canvasHeightMm"
                   (ngModelChange)="canvasHeightMm = $event; onMmInputChange()"
                   (wheel)="$event.preventDefault()"
@@ -129,12 +130,12 @@
         </div>
 
         <!-- Main Editor Layout -->
-        <div class="flex flex-grow gap-4 lg:gap-6">
+        <div class="flex flex-col lg:flex-row flex-grow gap-4 lg:gap-6 min-h-0">
           <!-- Sidebar -->
-          <div class="w-1/4 lg:w-1/6 flex-shrink-0">
-            <div class="card bg-base-100 rounded-xl border border-base-300/20 shadow h-[calc(100vh-12rem)] sticky top-4 overflow-hidden">
-              <div class="p-4 border-b border-base-300">
-                <h5 class="text-base font-semibold text-base-content">
+          <div class="w-full lg:w-1/4 xl:w-1/5 flex-shrink-0 order-2 lg:order-1">
+            <div class="card bg-base-100 rounded-xl border border-base-300/20 shadow h-64 lg:h-[calc(100vh-16rem)] overflow-hidden">
+              <div class="p-3 border-b border-base-300">
+                <h5 class="text-sm lg:text-base font-semibold text-base-content">
                   <lucide-icon [img]="Circle" class="size-4 mr-2" style="color: #a7d48e"></lucide-icon>Elements
                 </h5>
               </div>
@@ -190,20 +191,20 @@
           </div>
 
           <!-- Main Canvas Area -->
-          <div class="flex-grow">
+          <div class="flex-grow min-w-0 order-1 lg:order-2">
             <div class="card bg-base-100 rounded-xl border border-base-300/20 shadow h-full">
-              <div class="p-3">
+              <div class="p-2 sm:p-3">
                 <!-- Properties Panel -->
                 <div class="card bg-base-50 rounded-lg border border-base-300/20 mb-3 min-h-12">
-                  <div class="p-3">
+                  <div class="p-2 sm:p-3">
                     <div *ngIf="!selectedShape" class="flex items-center justify-center text-gray-500" style="height: 30px">
                       <lucide-icon [img]="Circle" class="size-4 mr-2" style="color: #a7d48e"></lucide-icon>
                       <span style="font-size: 0.9rem">Select an element to edit its properties</span>
                     </div>
                     
-                    <div *ngIf="selectedShape" class="flex items-center gap-4">
+                    <div *ngIf="selectedShape" class="flex items-center gap-3 overflow-x-auto">
                       <!-- Element Header -->
-                      <div class="flex items-center">
+                      <div class="flex items-center flex-shrink-0">
                         <span [ngClass]="{
                           'ni-caps-small': selectedShape.name() === 'text',
                           'ni-image': selectedShape.name() === 'image',
@@ -217,78 +218,84 @@
 
                       <!-- Text Properties -->
                       <div *ngIf="currentContextType === 'text' || selectedShape.name() === 'placeholder-text' || selectedShape.name() === 'placeholder-group' || (isListModeActive && listSelectedNodes.length > 0)" 
-                           class="flex items-center gap-3">
-                        <div class="flex items-center gap-2">
+                           class="flex items-center gap-3 flex-wrap">
+                        <div class="flex items-center gap-2 flex-shrink-0">
                           <label for="font-size-input" class="text-xs font-medium text-base-content/70 whitespace-nowrap">Font Size:</label>
-                          <input id="font-size-input" type="number" min="8" max="72" class="input input-bordered input-xs w-16" [value]="getSelectedShapeFontSize()" (input)="setFontSize($event)" />
+                          <input id="font-size-input" type="number" min="8" max="72" class="input input-bordered input-xs w-16 max-w-16" [value]="getSelectedShapeFontSize()" (input)="setFontSize($event)" />
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-shrink-0">
                           <label class="text-xs font-medium text-base-content/70 whitespace-nowrap">Style:</label>
                           <div class="join">
                             <button type="button" class="btn btn-xs join-item" [ngClass]="isBold(selectedShape) ? 'btn-primary' : 'btn-ghost'" (click)="setFontWeight('bold')" title="Bold"><b>B</b></button>
                             <button type="button" class="btn btn-xs join-item" [ngClass]="!isBold(selectedShape) ? 'btn-primary' : 'btn-ghost'" (click)="setFontWeight('normal')" title="Normal">N</button>
                           </div>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-shrink-0">
                           <label class="text-xs font-medium text-base-content/70 whitespace-nowrap">Color:</label>
                           <div class="flex items-center gap-1">
-                            <input type="color" class="w-6 h-6 rounded border border-base-300" id="textColorPicker" title="Click to pick a color" [value]="getSelectedShapeFill('#000000')" (input)="onColorChange($event)" />
-                            <input type="text" class="input input-bordered input-xs w-16" aria-label="Hex color code" aria-describedby="textColorPicker" [value]="getSelectedShapeFill('#000000')" (input)="onHexInputChange($event)" placeholder="#000000" />
+                            <div class="relative">
+                              <input type="color" class="w-6 h-6 rounded border border-base-300 cursor-pointer" id="textColorPicker" title="Click to pick a color" [value]="getSelectedShapeFill('#000000')" (input)="onColorChange($event)" />
+                            </div>
+                            <input type="text" class="input input-bordered input-xs w-18 max-w-18" aria-label="Hex color code" aria-describedby="textColorPicker" [value]="getSelectedShapeFill('#000000')" (input)="onHexInputChange($event)" placeholder="#000000" />
                           </div>
                         </div>
-                        <button *ngIf="selectedShape.name() === 'text' || selectedShape.name() === 'placeholder-text'" class="btn btn-xs btn-outline"
+                        <button *ngIf="selectedShape.name() === 'text' || selectedShape.name() === 'placeholder-text'" class="btn btn-xs btn-outline flex-shrink-0"
                           (click)="safeStartTextEditing()">
-                          <lucide-icon [img]="Edit" class="size-3 mr-1"></lucide-icon> Edit Text
+                          <lucide-icon [img]="Edit" class="size-3 mr-1"></lucide-icon> 
+                          <span class="hidden sm:inline">Edit Text</span>
                         </button>
                       </div>
 
                       <!-- Placeholder Properties -->
                       <div *ngIf="selectedShape?.name() === 'placeholder'" 
-                           class="flex items-center gap-3">
-                        <span class="badge badge-info text-xs whitespace-nowrap">ID: {{ getPlaceholderId(selectedShape) }}</span>
-                        <div class="flex items-center gap-2">
+                           class="flex items-center gap-3 flex-wrap">
+                        <span class="badge badge-info text-xs whitespace-nowrap flex-shrink-0">ID: {{ getPlaceholderId(selectedShape) }}</span>
+                        <div class="flex items-center gap-2 flex-shrink-0">
                           <label for="placeholder-width-input" class="text-xs font-medium text-base-content/70 whitespace-nowrap">W:</label>
-                          <input id="placeholder-width-input" type="number" min="50" max="500" class="input input-bordered input-xs w-16" [value]="getPlaceholderWidth()" (input)="setPlaceholderWidth($event)" />
+                          <input id="placeholder-width-input" type="number" min="50" max="500" class="input input-bordered input-xs w-16 max-w-16" [value]="getPlaceholderWidth()" (input)="setPlaceholderWidth($event)" />
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-shrink-0">
                           <label for="placeholder-height-input" class="text-xs font-medium text-base-content/70 whitespace-nowrap">H:</label>
-                          <input id="placeholder-height-input" type="number" min="50" max="500" class="input input-bordered input-xs w-16" [value]="getPlaceholderHeight()" (input)="setPlaceholderHeight($event)" />
+                          <input id="placeholder-height-input" type="number" min="50" max="500" class="input input-bordered input-xs w-16 max-w-16" [value]="getPlaceholderHeight()" (input)="setPlaceholderHeight($event)" />
                         </div>
                       </div>
 
                       <!-- Image Properties -->
                       <div *ngIf="selectedShape.name() === 'image'" 
-                           class="flex items-center gap-3">
-                        <div class="flex items-center gap-2">
+                           class="flex items-center gap-3 flex-wrap">
+                        <div class="flex items-center gap-2 flex-shrink-0">
                           <label for="image-width-input" class="text-xs font-medium text-base-content/70 whitespace-nowrap">W:</label>
-                          <input id="image-width-input" type="number" min="10" max="1000" class="input input-bordered input-xs w-20" [value]="selectedShape.width()" (input)="setImageWidth($event)" />
+                          <input id="image-width-input" type="number" min="10" max="1000" class="input input-bordered input-xs w-20 max-w-20" [value]="selectedShape.width()" (input)="setImageWidth($event)" />
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-shrink-0">
                           <label for="image-height-input" class="text-xs font-medium text-base-content/70 whitespace-nowrap">H:</label>
-                          <input id="image-height-input" type="number" min="10" max="1000" class="input input-bordered input-xs w-20" [value]="selectedShape.height()" (input)="setImageHeight($event)" />
+                          <input id="image-height-input" type="number" min="10" max="1000" class="input input-bordered input-xs w-20 max-w-20" [value]="selectedShape.height()" (input)="setImageHeight($event)" />
                         </div>
                       </div>
 
                       <!-- Shape Properties -->
                       <div *ngIf="selectedShape.name() === 'shape'" 
-                           class="flex items-center gap-3">
-                        <div class="flex items-center gap-2">
+                           class="flex items-center gap-3 flex-wrap">
+                        <div class="flex items-center gap-2 flex-shrink-0">
                           <label class="text-xs font-medium text-base-content/70 whitespace-nowrap">Color:</label>
                           <div class="flex items-center gap-1">
-                            <input type="color" class="w-6 h-6 rounded border border-base-300" id="shapeColorPicker" title="Click to pick a color" [value]="getShapeDisplayColor('#000000')" (input)="onColorChange($event)" />
-                            <input type="text" class="input input-bordered input-xs w-16" aria-label="Hex color code" aria-describedby="shapeColorPicker" [value]="getShapeDisplayColor('#000000')" (input)="onHexInputChange($event)" placeholder="#000000" />
+                            <div class="relative">
+                              <input type="color" class="w-6 h-6 rounded border border-base-300 cursor-pointer" id="shapeColorPicker" title="Click to pick a color" [value]="getShapeDisplayColor('#000000')" (input)="onColorChange($event)" />
+                            </div>
+                            <input type="text" class="input input-bordered input-xs w-18 max-w-18" aria-label="Hex color code" aria-describedby="shapeColorPicker" [value]="getShapeDisplayColor('#000000')" (input)="onHexInputChange($event)" placeholder="#000000" />
                           </div>
                         </div>
-                        <div *ngIf="getShapeType() === 'outlined-rectangle' || getShapeType() === 'line'" class="flex items-center gap-2">
+                        <div *ngIf="getShapeType() === 'outlined-rectangle' || getShapeType() === 'line'" class="flex items-center gap-2 flex-shrink-0">
                           <label for="stroke-width-input" class="text-xs font-medium text-base-content/70 whitespace-nowrap">Stroke:</label>
-                          <input id="stroke-width-input" type="number" min="1" max="20" class="input input-bordered input-xs w-16" [value]="getShapeStrokeWidth()" (input)="setShapeStrokeWidth($event)" />
+                          <input id="stroke-width-input" type="number" min="1" max="20" class="input input-bordered input-xs w-16 max-w-16" [value]="getShapeStrokeWidth()" (input)="setShapeStrokeWidth($event)" />
                         </div>
                       </div>
 
                       <!-- Delete Button -->
-                      <div class="ml-auto">
+                      <div class="ml-auto flex-shrink-0">
                         <button class="btn btn-xs btn-error btn-outline" (click)="deleteSelectedShape()">
-                          <lucide-icon [img]="Trash2" class="size-3 mr-1"></lucide-icon> Delete
+                          <lucide-icon [img]="Trash2" class="size-3 mr-1"></lucide-icon> 
+                          <span class="hidden sm:inline">Delete</span>
                         </button>
                       </div>
                     </div>
@@ -313,8 +320,8 @@
                 <div class="mb-3" *ngIf="!isListModeActive"></div>
 
                 <!-- Canvas Wrapper -->
-                <div class="relative min-h-[500px] border border-dashed border-base-300 p-2">
-                  <div id="konva-container" class="mx-auto"></div>
+                <div class="relative min-h-[400px] sm:min-h-[500px] border border-dashed border-base-300 p-2 overflow-hidden">
+                  <div id="konva-container" class="mx-auto w-full h-full"></div>
                   <ng-container #placeholderContainer></ng-container>
                   <div *ngIf="!hasElements" class="text-center text-base-content/60 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                     <lucide-icon [img]="Lightbulb" class="size-8 block mb-2"></lucide-icon>

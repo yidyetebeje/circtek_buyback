@@ -1,7 +1,15 @@
-import { and, count, eq, like, SQL } from 'drizzle-orm'
+import { and, count, eq, like, SQL, asc, desc } from 'drizzle-orm'
 import { tenants } from '../db/circtek.schema'
 import { db } from '../db'
 import { TenantCreateInput, TenantListQueryInput, TenantListResult, TenantPublic, TenantUpdateInput } from './types'
+
+// Sortable fields mapping
+const sortableFields = {
+	id: tenants.id,
+	name: tenants.name,
+	description: tenants.description,
+	status: tenants.status,
+} as const
 
 export class TenantsRepository {
 	constructor(private readonly database: typeof db) {}
@@ -31,14 +39,20 @@ export class TenantsRepository {
 		const limit = Math.max(1, Math.min(100, filters.limit ?? 10))
 		const offset = (page - 1) * limit
 
+		// Handle sorting
+		const sortField = filters.sort && sortableFields[filters.sort as keyof typeof sortableFields] 
+			? sortableFields[filters.sort as keyof typeof sortableFields]
+			: tenants.id // default sort by id
+		const sortOrder = filters.order === 'desc' ? desc : asc
+
 		const whereCond = conditions.length ? and(...conditions) : undefined
 		const [totalRow] = await (whereCond
 			? this.database.select({ total: count() }).from(tenants).where(whereCond)
 			: this.database.select({ total: count() }).from(tenants))
 
 		const rows = await (whereCond
-			? this.database.select().from(tenants).where(whereCond).limit(limit).offset(offset)
-			: this.database.select().from(tenants).limit(limit).offset(offset))
+			? this.database.select().from(tenants).where(whereCond).orderBy(sortOrder(sortField)).limit(limit).offset(offset)
+			: this.database.select().from(tenants).orderBy(sortOrder(sortField)).limit(limit).offset(offset))
 
 		return { rows: rows as any, total: totalRow?.total ?? 0, page, limit }
 	}

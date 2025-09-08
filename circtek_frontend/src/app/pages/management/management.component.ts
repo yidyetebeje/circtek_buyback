@@ -14,6 +14,7 @@ import { Tenant } from '../../core/models/tenant';
 import { RepairReasonRecord } from '../../core/models/repair-reason';
 import { LabelTemplateRecord } from '../../core/models/label-template';
 import { WorkflowRecord } from '../../core/models/workflow';
+import { ToastrService } from 'ngx-toastr';
 
 // Union to drive the generic table
 export type MgmtRow = User | Warehouse | WiFiProfile | Tenant | RepairReasonRecord | LabelTemplateRecord | WorkflowRecord;
@@ -30,6 +31,7 @@ export class ManagementComponent {
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly toastr = inject(ToastrService);
 
   // Loading & data
   loading = signal(false);
@@ -46,6 +48,10 @@ export class ManagementComponent {
   selectedRoleId = signal<number | null>(null); // users
   selectedTenantId = signal<number | null>(null); // super_admin only
   selectedUserActive = signal<'any' | 'true' | 'false'>('any'); // users
+
+  // Sorting
+  sortField = signal<string | null>(null);
+  sortOrder = signal<'asc' | 'desc'>('asc');
 
   // Options
   roleOptions = signal<Array<{ label: string; value: string }>>([]);
@@ -179,11 +185,27 @@ export class ManagementComponent {
           this.loading.set(false);
           this.closeDeleteModal();
           this.fetchData(); // Refresh the data
+          // Show success message
+          const entityName = ctx.tab === 'tenants' ? 'Tenant' : 
+                             ctx.tab === 'users' ? 'User' :
+                             ctx.tab === 'warehouses' ? 'Warehouse' :
+                             ctx.tab === 'wifi' ? 'WiFi Profile' :
+                             ctx.tab === 'labels' ? 'Label Template' :
+                             'Workflow';
+          this.toastr.success(`${entityName} deleted successfully!`, 'Delete Successful');
         },
         error: (error: any) => {
           console.error('Failed to delete:', error);
           this.loading.set(false);
           this.closeDeleteModal();
+          // Show error message
+          const entityName = ctx.tab === 'tenants' ? 'tenant' : 
+                             ctx.tab === 'users' ? 'user' :
+                             ctx.tab === 'warehouses' ? 'warehouse' :
+                             ctx.tab === 'wifi' ? 'WiFi profile' :
+                             ctx.tab === 'labels' ? 'label template' :
+                             'workflow';
+          this.toastr.error(`Failed to delete ${entityName}. Please try again.`, 'Delete Failed');
         }
       });
     }
@@ -197,7 +219,7 @@ export class ManagementComponent {
           { header: 'S.No', accessorKey: 'id' as any },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
-          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No') },
+          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
           {
             header: 'Actions',
             id: 'actions' as any,
@@ -219,7 +241,7 @@ export class ManagementComponent {
           { header: 'Email', accessorKey: 'email' as any },
           { header: 'Role', accessorKey: 'role_name' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
-          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No') },
+          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
           {
             header: 'Actions',
             id: 'actions' as any,
@@ -239,7 +261,7 @@ export class ManagementComponent {
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
-          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No') },
+          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
           {
             header: 'Actions',
             id: 'actions' as any,
@@ -259,7 +281,7 @@ export class ManagementComponent {
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'SSID', accessorKey: 'ssid' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
-          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No') },
+          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
           // Actions: assign tester, view assigned testers
           {
             header: 'Actions',
@@ -282,7 +304,7 @@ export class ManagementComponent {
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
-          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No') },
+          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
           {
             header: 'Actions',
             id: 'actions' as any,
@@ -304,7 +326,7 @@ export class ManagementComponent {
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
-          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No') },
+          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
           {
             header: 'Actions',
             id: 'actions' as any,
@@ -397,6 +419,8 @@ export class ManagementComponent {
       this.selectedRoleId();
       this.selectedTenantId();
       this.selectedUserActive();
+      this.sortField();
+      this.sortOrder();
       this.fetchData();
     });
 
@@ -428,6 +452,8 @@ export class ManagementComponent {
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
       const s = this.search().trim(); if (s) params = params.set('name', s);
+      const sort = this.sortField(); if (sort) params = params.set('sort', sort);
+      const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getTenants(params).subscribe({
         next: (res) => {
           if (seq !== this.requestSeq) return;
@@ -448,6 +474,8 @@ export class ManagementComponent {
       const rid = this.selectedRoleId(); if (rid != null) params = params.set('role_id', String(rid));
       if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
       const ia = this.selectedUserActive(); if (ia !== 'any') params = params.set('is_active', ia === 'true' ? 'true' : 'false');
+      const sort = this.sortField(); if (sort) params = params.set('sort', sort);
+      const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getUsers(params).subscribe({
         next: (res) => { 
           if (seq !== this.requestSeq) return; 
@@ -471,6 +499,8 @@ export class ManagementComponent {
         .set('limit', String(this.pageSize()));
       const s = this.search().trim(); if (s) params = params.set('search', s);
       if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
+      const sort = this.sortField(); if (sort) params = params.set('sort', sort);
+      const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getWarehouses(params).subscribe({
         next: (res) => { 
           if (seq !== this.requestSeq) return; 
@@ -499,7 +529,19 @@ export class ManagementComponent {
             tenant_name: p.tenant_name ?? String(p.tenant_id)
           }));
           const s = this.search().trim().toLowerCase();
-          const filtered = s ? all.filter(r => `${r.name} ${r.ssid}`.toLowerCase().includes(s)) : all;
+          let filtered = s ? all.filter(r => `${r.name} ${r.ssid}`.toLowerCase().includes(s)) : all;
+          
+          // Apply client-side sorting
+          const sortField = this.sortField();
+          const sortOrder = this.sortOrder();
+          if (sortField) {
+            filtered.sort((a: any, b: any) => {
+              const aVal = a[sortField] ?? '';
+              const bVal = b[sortField] ?? '';
+              const comparison = String(aVal).localeCompare(String(bVal));
+              return sortOrder === 'desc' ? -comparison : comparison;
+            });
+          }
           this.total.set(filtered.length);
           const start = this.pageIndex() * this.pageSize();
           const paged = filtered.slice(start, start + this.pageSize());
@@ -519,7 +561,19 @@ export class ManagementComponent {
             tenant_name: (r as any).tenant_name ?? String(r.tenant_id)
           }));
           const s = this.search().trim().toLowerCase();
-          const filtered = s ? all.filter(r => `${r.name} ${r.description ?? ''}`.toLowerCase().includes(s)) : all;
+          let filtered = s ? all.filter(r => `${r.name} ${r.description ?? ''}`.toLowerCase().includes(s)) : all;
+          
+          // Apply client-side sorting
+          const sortField = this.sortField();
+          const sortOrder = this.sortOrder();
+          if (sortField) {
+            filtered.sort((a: any, b: any) => {
+              const aVal = a[sortField] ?? '';
+              const bVal = b[sortField] ?? '';
+              const comparison = String(aVal).localeCompare(String(bVal));
+              return sortOrder === 'desc' ? -comparison : comparison;
+            });
+          }
           this.total.set(filtered.length);
           const start = this.pageIndex() * this.pageSize();
           const paged = filtered.slice(start, start + this.pageSize());
@@ -539,7 +593,19 @@ export class ManagementComponent {
             tenant_name: (r as any).tenant_name ?? String(r.tenant_id)
           }));
           const s = this.search().trim().toLowerCase();
-          const filtered = s ? all.filter(r => `${r.name} ${r.description ?? ''}`.toLowerCase().includes(s)) : all;
+          let filtered = s ? all.filter(r => `${r.name} ${r.description ?? ''}`.toLowerCase().includes(s)) : all;
+          
+          // Apply client-side sorting
+          const sortField = this.sortField();
+          const sortOrder = this.sortOrder();
+          if (sortField) {
+            filtered.sort((a: any, b: any) => {
+              const aVal = a[sortField] ?? '';
+              const bVal = b[sortField] ?? '';
+              const comparison = String(aVal).localeCompare(String(bVal));
+              return sortOrder === 'desc' ? -comparison : comparison;
+            });
+          }
           this.total.set(filtered.length);
           const start = this.pageIndex() * this.pageSize();
           const paged = filtered.slice(start, start + this.pageSize());
@@ -572,8 +638,18 @@ export class ManagementComponent {
     this.pageIndex.set(0); // reset
   }
 
-  onSortingChange(_state: Array<{ id: string; desc: boolean }>) {
-    // Not implementing server-side sorting now; could be added per tab later
+  onSortingChange(state: Array<{ id: string; desc: boolean }>) {
+    if (state.length === 0) {
+      // No sorting applied
+      this.sortField.set(null);
+      this.sortOrder.set('asc');
+    } else {
+      // Use the first sort state
+      const sort = state[0];
+      this.sortField.set(sort.id);
+      this.sortOrder.set(sort.desc ? 'desc' : 'asc');
+    }
+    this.pageIndex.set(0); // Reset to first page when sorting changes
   }
 
   onTabChange(key: string | null) {
@@ -583,6 +659,9 @@ export class ManagementComponent {
       // reset some filters per tab
       this.search.set('');
       this.pageIndex.set(0);
+      // reset sorting when tab changes
+      this.sortField.set(null);
+      this.sortOrder.set('asc');
     }
   }
 
@@ -680,12 +759,19 @@ export class ManagementComponent {
       const tid = this.selectedTenantId();
       if (tid != null) params = params.set('tenant_id', String(tid));
     }
-    this.api.getUsers(params).subscribe(res => {
-      const opts = (res.data ?? []).map(u => ({ label: u.user_name, value: String(u.id) }));
-      this.testerOptions.set(opts);
-      // Auto-select first tester if available and no tester is currently selected
-      if (opts.length > 0 && this.selectedAssignTesterId() === null) {
-        this.selectedAssignTesterId.set(Number(opts[0].value));
+    this.api.getUsers(params).subscribe({
+      next: (res) => {
+        const opts = (res.data ?? []).map(u => ({ label: u.user_name || u.name, value: String(u.id) }));
+        this.testerOptions.set(opts);
+        // Auto-select first tester if available and no tester is currently selected
+        if (opts.length > 0 && this.selectedAssignTesterId() === null) {
+          this.selectedAssignTesterId.set(Number(opts[0].value));
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load tester options:', error);
+        this.testerOptions.set([]);
+        this.toastr.error('Failed to load available testers', 'Loading Error');
       }
     });
   }
@@ -750,23 +836,59 @@ export class ManagementComponent {
     const testerId = this.selectedAssignTesterId();
     if (testerId == null) return;
     this.loading.set(true);
+    
     if (this.activeTab() === 'wifi') {
       const profile = this.selectedWifiProfile();
       const profileId = profile ? profile.id : this.selectedAssignProfileId();
       if (profileId == null) { this.loading.set(false); return; }
-      this.api.assignWifiProfile(profileId, testerId).subscribe({ next: () => { this.loading.set(false); this.closeAssignModal(); }, error: () => { this.loading.set(false); }, });
+      this.api.assignWifiProfile(profileId, testerId).subscribe({ 
+        next: () => { 
+          this.loading.set(false); 
+          this.closeAssignModal(); 
+          this.toastr.success('WiFi Profile assigned to tester successfully!', 'Assignment Successful');
+        }, 
+        error: (error) => { 
+          this.loading.set(false); 
+          console.error('Failed to assign WiFi profile:', error);
+          this.toastr.error('Failed to assign WiFi profile to tester', 'Assignment Failed');
+        }
+      });
       return;
     }
+    
     if (this.activeTab() === 'labels') {
       const rec = this.selectedLabelTemplate();
       if (!rec) { this.loading.set(false); return; }
-      this.api.assignLabelTemplate(rec.id, testerId).subscribe({ next: () => { this.loading.set(false); this.closeAssignModal(); }, error: () => { this.loading.set(false); }, });
+      this.api.assignLabelTemplate(rec.id, testerId).subscribe({ 
+        next: () => { 
+          this.loading.set(false); 
+          this.closeAssignModal(); 
+          this.toastr.success('Label Template assigned to tester successfully!', 'Assignment Successful');
+        }, 
+        error: (error) => { 
+          this.loading.set(false); 
+          console.error('Failed to assign label template:', error);
+          this.toastr.error('Failed to assign label template to tester', 'Assignment Failed');
+        }
+      });
       return;
     }
+    
     if (this.activeTab() === 'workflows') {
       const rec = this.selectedWorkflow();
       if (!rec) { this.loading.set(false); return; }
-      this.api.assignWorkflow(rec.id, testerId).subscribe({ next: () => { this.loading.set(false); this.closeAssignModal(); }, error: () => { this.loading.set(false); }, });
+      this.api.assignWorkflow(rec.id, testerId).subscribe({ 
+        next: () => { 
+          this.loading.set(false); 
+          this.closeAssignModal(); 
+          this.toastr.success('Workflow assigned to tester successfully!', 'Assignment Successful');
+        }, 
+        error: (error) => { 
+          this.loading.set(false); 
+          console.error('Failed to assign workflow:', error);
+          this.toastr.error('Failed to assign workflow to tester', 'Assignment Failed');
+        }
+      });
     }
   }
 

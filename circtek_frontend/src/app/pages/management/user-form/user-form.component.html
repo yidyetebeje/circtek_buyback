@@ -12,4 +12,36 @@
   backUrl="/management"
   (formSubmit)="onFormSubmit($event)"
   (actionClick)="onActionClick($event)"
-></app-generic-form-page>
+>
+  @if (successMessage()) {
+    <div class="alert alert-success">
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+</app-generic-form-page>
+
+<!-- Confirmation Modal -->
+<app-generic-modal
+  [isOpen]="showConfirmModal()"
+  [title]="'Confirm Update'"
+  [actions]="confirmModalActions()"
+  [closable]="!submitting()"
+  (close)="showConfirmModal.set(false)"
+  (actionClick)="onConfirmModalAction($event)"
+>
+  <p class="text-base-content/80 mb-4">
+    Are you sure you want to update this user? This action will modify the user's information.
+  </p>
+  
+  <div class="bg-base-200 rounded-lg p-4">
+    <h4 class="font-medium mb-2">Changes to be saved:</h4>
+    @if (pendingFormData(); as data) {
+      <ul class="text-sm space-y-1">
+        <li><strong>Name:</strong> {{ data.name }}</li>
+        <li><strong>Username:</strong> {{ data.user_name }}</li>
+        <li><strong>Email:</strong> {{ data.email }}</li>
+        <li><strong>Status:</strong> {{ data.status ? 'Active' : 'Inactive' }}</li>
+      </ul>
+    }
+  </div>
+</app-generic-modal>

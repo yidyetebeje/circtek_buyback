@@ -1,4 +1,4 @@
-import { and, count, eq, like, SQL } from 'drizzle-orm'
+import { and, count, eq, like, SQL, asc, desc } from 'drizzle-orm'
 import { tenants, warehouses } from '../db/circtek.schema'
 import { db } from '../db'
 import { WarehouseCreateInput, WarehouseFilters, WarehouseListResult, WarehousePublic, WarehouseUpdateInput } from './types'
@@ -12,6 +12,16 @@ const warehousePublicSelection = {
 	tenant_name: tenants.name,
 	created_at: warehouses.created_at,
 }
+
+// Sortable fields mapping
+const sortableFields = {
+	id: warehouses.id,
+	name: warehouses.name,
+	description: warehouses.description,
+	status: warehouses.status,
+	tenant_name: tenants.name,
+	created_at: warehouses.created_at,
+} as const
 
 export class WarehousesRepository {
 	constructor(private readonly database: typeof db) {}
@@ -44,6 +54,12 @@ export class WarehousesRepository {
 		const limit = Math.max(1, Math.min(100, filters.limit ?? 10))
 		const offset = (page - 1) * limit
 
+		// Handle sorting
+		const sortField = filters.sort && sortableFields[filters.sort as keyof typeof sortableFields] 
+			? sortableFields[filters.sort as keyof typeof sortableFields]
+			: warehouses.id // default sort by id
+		const sortOrder = filters.order === 'desc' ? desc : asc
+
 		const whereCond = conditions.length ? and(...conditions) : undefined
 		const [totalRow] = await (whereCond
 			? this.database.select({ total: count() }).from(warehouses).where(whereCond)
@@ -55,12 +71,14 @@ export class WarehousesRepository {
 				.from(warehouses)
 				.leftJoin(tenants, eq(warehouses.tenant_id, tenants.id))
 				.where(whereCond)
+				.orderBy(sortOrder(sortField))
 				.limit(limit)
 				.offset(offset)
 			: this.database
 				.select(warehousePublicSelection)
 				.from(warehouses)
 				.leftJoin(tenants, eq(warehouses.tenant_id, tenants.id))
+				.orderBy(sortOrder(sortField))
 				.limit(limit)
 				.offset(offset))
 

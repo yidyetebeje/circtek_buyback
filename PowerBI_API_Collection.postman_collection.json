@@ -1,0 +1,346 @@
+{
+  "info": {
+    "name": "PowerBI API Collection",
+    "description": "Comprehensive API collection for PowerBI endpoints in the Circtek system. These endpoints provide data optimized for PowerBI reporting and analytics.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API (adjust as needed)"
+    }
+  ],
+  "item": [
+    {
+      "name": "Repairs List",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/powerbi/repairs?page=1&limit=50&start_date=2024-01-01&end_date=2024-12-31&warehouse_id=1&actor_id=1&tenant_id=1&status=true",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "powerbi",
+            "repairs"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number for pagination (minimum: 1, default: 1)"
+            },
+            {
+              "key": "limit",
+              "value": "50",
+              "description": "Number of items per page (minimum: 1, maximum: 100, default: 50)"
+            },
+            {
+              "key": "start_date",
+              "value": "2024-01-01",
+              "description": "Start date filter (format: YYYY-MM-DD)"
+            },
+            {
+              "key": "end_date",
+              "value": "2024-12-31",
+              "description": "End date filter (format: YYYY-MM-DD)"
+            },
+            {
+              "key": "warehouse_id",
+              "value": "1",
+              "description": "Filter by warehouse ID (numeric)"
+            },
+            {
+              "key": "actor_id",
+              "value": "1",
+              "description": "Filter by actor (user) ID (numeric)"
+            },
+            {
+              "key": "tenant_id",
+              "value": "1",
+              "description": "Filter by tenant ID (numeric)"
+            },
+            {
+              "key": "status",
+              "value": "true",
+              "description": "Filter by repair status (boolean: true/false)"
+            }
+          ]
+        },
+        "description": "Get comprehensive repairs data with device, reason, actor, and warehouse details. Supports filtering by date range, warehouse, and actor. This endpoint is optimized for PowerBI reporting.\n\n**Features:**\n- Pagination support\n- Date range filtering\n- Multiple filter options\n- Detailed joins with related entities\n- Repair items with individual reasons\n\n**All query parameters are optional**"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/powerbi/repairs?page=1&limit=2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "powerbi",
+                "repairs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"device_id\": 123,\n      \"remarks\": \"Screen replacement needed\",\n      \"status\": true,\n      \"actor_id\": 5,\n      \"tenant_id\": 1,\n      \"warehouse_id\": 2,\n      \"created_at\": \"2024-01-15T10:30:00.000Z\",\n      \"updated_at\": \"2024-01-15T14:45:00.000Z\",\n      \"device_sku\": \"IPH-14-128GB-BLK\",\n      \"device_lpn\": \"LPN123456\",\n      \"device_serial\": \"SN123456789\",\n      \"device_imei\": \"123456789012345\",\n      \"actor_name\": \"John Doe\",\n      \"actor_user_name\": \"john.doe\",\n      \"actor_email\": \"john.doe@company.com\",\n      \"warehouse_name\": \"Main Warehouse\",\n      \"warehouse_description\": \"Primary storage facility\",\n      \"tenant_name\": \"Tenant A\",\n      \"tenant_description\": \"Main tenant organization\",\n      \"repair_items\": [\n        {\n          \"id\": 1,\n          \"sku\": \"SCREEN-IPH14\",\n          \"quantity\": 1,\n          \"cost\": \"150.00\",\n          \"reason_id\": 3,\n          \"reason_name\": \"Cracked Screen\",\n          \"purchase_items_id\": 456,\n          \"created_at\": \"2024-01-15T10:30:00.000Z\"\n        },\n        {\n          \"id\": 2,\n          \"sku\": \"ADHESIVE-IPH\",\n          \"quantity\": 1,\n          \"cost\": \"5.00\",\n          \"reason_id\": 3,\n          \"reason_name\": \"Cracked Screen\",\n          \"purchase_items_id\": null,\n          \"created_at\": \"2024-01-15T10:30:00.000Z\"\n        }\n      ]\n    }\n  ],\n  \"pagination\": {\n    \"page\": 1,\n    \"limit\": 2,\n    \"total\": 150,\n    \"total_pages\": 75\n  },\n  \"message\": \"Repairs list retrieved successfully\",\n  \"status\": 200\n}"
+        },
+        {
+          "name": "Error Response",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/powerbi/repairs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "powerbi",
+                "repairs"
+              ]
+            }
+          },
+          "status": "Internal Server Error",
+          "code": 500,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": null,\n  \"message\": \"Failed to retrieve repairs list\",\n  \"status\": 500,\n  \"error\": \"Database connection failed\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Device Repair History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/powerbi/device-repair-history?imei=123456789012345&tenant_id=1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "powerbi",
+            "device-repair-history"
+          ],
+          "query": [
+            {
+              "key": "imei",
+              "value": "123456789012345",
+              "description": "Device IMEI number (string, minimum 1 character) - Required if serial is not provided"
+            },
+            {
+              "key": "serial",
+              "value": "",
+              "description": "Device serial number (string, minimum 1 character) - Required if IMEI is not provided",
+              "disabled": true
+            },
+            {
+              "key": "tenant_id",
+              "value": "1",
+              "description": "Filter by tenant ID (numeric, optional)"
+            }
+          ]
+        },
+        "description": "Get complete repair history for a device by IMEI or serial number with all related properties joined. This endpoint provides detailed device information along with its complete repair history.\n\n**Requirements:**\n- Either IMEI or serial number must be provided\n- Returns 400 error if neither IMEI nor serial is provided\n- Returns 404 if device is not found\n\n**Features:**\n- Complete device information\n- Full repair history with detailed joins\n- Individual repair items with reasons\n- Chronological ordering (newest first)"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/powerbi/device-repair-history?imei=123456789012345",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "powerbi",
+                "device-repair-history"
+              ],
+              "query": [
+                {
+                  "key": "imei",
+                  "value": "123456789012345"
+                }
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": {\n    \"device\": {\n      \"id\": 123,\n      \"sku\": \"IPH-14-128GB-BLK\",\n      \"lpn\": \"LPN123456\",\n      \"serial\": \"SN123456789\",\n      \"imei\": \"123456789012345\"\n    },\n    \"repairs\": [\n      {\n        \"id\": 1,\n        \"device_id\": 123,\n        \"remarks\": \"Screen replacement completed\",\n        \"status\": true,\n        \"actor_id\": 5,\n        \"tenant_id\": 1,\n        \"warehouse_id\": 2,\n        \"created_at\": \"2024-01-15T10:30:00.000Z\",\n        \"updated_at\": \"2024-01-15T14:45:00.000Z\",\n        \"device_sku\": \"IPH-14-128GB-BLK\",\n        \"device_lpn\": \"LPN123456\",\n        \"device_make\": \"Apple\",\n        \"device_model_no\": \"A2649\",\n        \"device_model_name\": \"iPhone 14\",\n        \"device_storage\": \"128GB\",\n        \"device_memory\": \"6GB\",\n        \"device_color\": \"Black\",\n        \"device_type\": \"Smartphone\",\n        \"device_serial\": \"SN123456789\",\n        \"device_imei\": \"123456789012345\",\n        \"device_imei2\": null,\n        \"device_description\": \"iPhone 14 128GB Black\",\n        \"reason_name\": null,\n        \"reason_description\": null,\n        \"actor_name\": \"John Doe\",\n        \"actor_user_name\": \"john.doe\",\n        \"actor_email\": \"john.doe@company.com\",\n        \"warehouse_name\": \"Main Warehouse\",\n        \"warehouse_description\": \"Primary storage facility\",\n        \"tenant_name\": \"Tenant A\",\n        \"tenant_description\": \"Main tenant organization\",\n        \"repair_items\": [\n          {\n            \"id\": 1,\n            \"sku\": \"SCREEN-IPH14\",\n            \"quantity\": 1,\n            \"cost\": \"150.00\",\n            \"reason_id\": 3,\n            \"purchase_items_id\": 456,\n            \"created_at\": \"2024-01-15T10:30:00.000Z\"\n          }\n        ]\n      },\n      {\n        \"id\": 2,\n        \"device_id\": 123,\n        \"remarks\": \"Battery replacement\",\n        \"status\": true,\n        \"actor_id\": 7,\n        \"tenant_id\": 1,\n        \"warehouse_id\": 2,\n        \"created_at\": \"2024-02-10T09:15:00.000Z\",\n        \"updated_at\": \"2024-02-10T11:30:00.000Z\",\n        \"device_sku\": \"IPH-14-128GB-BLK\",\n        \"device_lpn\": \"LPN123456\",\n        \"device_make\": \"Apple\",\n        \"device_model_no\": \"A2649\",\n        \"device_model_name\": \"iPhone 14\",\n        \"device_storage\": \"128GB\",\n        \"device_memory\": \"6GB\",\n        \"device_color\": \"Black\",\n        \"device_type\": \"Smartphone\",\n        \"device_serial\": \"SN123456789\",\n        \"device_imei\": \"123456789012345\",\n        \"device_imei2\": null,\n        \"device_description\": \"iPhone 14 128GB Black\",\n        \"reason_name\": null,\n        \"reason_description\": null,\n        \"actor_name\": \"Jane Smith\",\n        \"actor_user_name\": \"jane.smith\",\n        \"actor_email\": \"jane.smith@company.com\",\n        \"warehouse_name\": \"Main Warehouse\",\n        \"warehouse_description\": \"Primary storage facility\",\n        \"tenant_name\": \"Tenant A\",\n        \"tenant_description\": \"Main tenant organization\",\n        \"repair_items\": [\n          {\n            \"id\": 3,\n            \"sku\": \"BATTERY-IPH14\",\n            \"quantity\": 1,\n            \"cost\": \"80.00\",\n            \"reason_id\": 5,\n            \"purchase_items_id\": 789,\n            \"created_at\": \"2024-02-10T09:15:00.000Z\"\n          }\n        ]\n      }\n    ]\n  },\n  \"message\": \"Device repair history retrieved successfully\",\n  \"status\": 200\n}"
+        },
+        {
+          "name": "Device Not Found",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/powerbi/device-repair-history?imei=999999999999999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "powerbi",
+                "device-repair-history"
+              ],
+              "query": [
+                {
+                  "key": "imei",
+                  "value": "999999999999999"
+                }
+              ]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": null,\n  \"message\": \"Device not found\",\n  \"status\": 404\n}"
+        },
+        {
+          "name": "Missing Parameters",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/powerbi/device-repair-history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "powerbi",
+                "device-repair-history"
+              ]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": null,\n  \"message\": \"Either IMEI or serial number must be provided\",\n  \"status\": 400\n}"
+        },
+        {
+          "name": "Server Error",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/powerbi/device-repair-history?imei=123456789012345",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "powerbi",
+                "device-repair-history"
+              ],
+              "query": [
+                {
+                  "key": "imei",
+                  "value": "123456789012345"
+                }
+              ]
+            }
+          },
+          "status": "Internal Server Error",
+          "code": 500,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"data\": null,\n  \"message\": \"Failed to retrieve device repair history\",\n  \"status\": 500,\n  \"error\": \"Database connection timeout\"\n}"
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Add any pre-request scripts here",
+          "// Example: Set dynamic variables, authentication, etc."
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Add test scripts here",
+          "// Example: Validate response structure, status codes, etc.",
+          "pm.test(\"Status code is 200\", function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test(\"Response has data property\", function () {",
+          "    const jsonData = pm.response.json();",
+          "    pm.expect(jsonData).to.have.property('data');",
+          "    pm.expect(jsonData).to.have.property('message');",
+          "    pm.expect(jsonData).to.have.property('status');",
+          "});"
+        ]
+      }
+    }
+  ]
+}

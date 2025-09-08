@@ -627,6 +627,9 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     this.canvasService.addElement(rect);
     this.setupShapeNodeEvents(rect);
     this.selectShape(rect);
+    // Force immediate update of hasElements flag
+    this.canvasService.forceUpdateHasElementsFlag();
+    this.cdRef.detectChanges();
   }
 
   createOutlinedRectangle(
@@ -645,6 +648,9 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     this.canvasService.addElement(rect);
     this.setupShapeNodeEvents(rect);
     this.selectShape(rect);
+    // Force immediate update of hasElements flag
+    this.canvasService.forceUpdateHasElementsFlag();
+    this.cdRef.detectChanges();
   }
 
   createLine(x: number, y: number, length = 100): void {
@@ -652,6 +658,9 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     this.canvasService.addElement(line);
     this.setupShapeNodeEvents(line);
     this.selectShape(line);
+    // Force immediate update of hasElements flag
+    this.canvasService.forceUpdateHasElementsFlag();
+    this.cdRef.detectChanges();
   }
 
   // Property getters and setters for template
@@ -937,6 +946,13 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     } else if (this.selectedShape instanceof Konva.Text) {
       this.shapeService.setTextFill(this.selectedShape, color);
       this.canvasService.layer?.batchDraw();
+    } else if (this.selectedShape instanceof Konva.Group) {
+      // Handle placeholder groups - ensure color changes are applied to text within the group
+      const textChild = this.selectedShape.findOne(".placeholder-text");
+      if (textChild instanceof Konva.Text) {
+        this.shapeService.setTextFill(textChild, color);
+        this.canvasService.layer?.batchDraw();
+      }
     }
   }
 
@@ -954,6 +970,12 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     } else if (this.selectedShape) {
       if (this.selectedShape instanceof Konva.Text) {
         this.setTextColor(this.selectedColor);
+      } else if (this.selectedShape instanceof Konva.Group) {
+        // Handle placeholder groups that might contain text nodes
+        const textChild = this.selectedShape.findOne(".placeholder-text");
+        if (textChild instanceof Konva.Text) {
+          this.setTextColor(this.selectedColor);
+        }
       } else if (
         this.selectedShape instanceof Konva.Shape &&
         this.selectedShape.name() === "shape"
@@ -1097,6 +1119,20 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   onDpiInputChange(value: any): void {
     const newDpi = Number(value);
     this.canvasService.dimensions.setDPI(newDpi);
+  }
+
+  validateDpiInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = Number(input.value);
+    
+    // Enforce limits
+    if (value < 72) {
+      input.value = '72';
+      this.canvasService.dimensions.setDPI(72);
+    } else if (value > 600) {
+      input.value = '600';
+      this.canvasService.dimensions.setDPI(600);
+    }
   }
 
   // Canvas utility methods
@@ -1332,6 +1368,9 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
         this.canvasService.addElement(textNode);
         this.setupTextNodeEvents(textNode);
         this.textEditorService.autoResizeTextNode(textNode, true);
+        // Force immediate update of hasElements flag
+        this.canvasService.forceUpdateHasElementsFlag();
+        this.cdRef.detectChanges();
         break;
 
       case "placeholder":
@@ -1386,6 +1425,9 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
       .then((imageNode) => {
         this.canvasService.addElement(imageNode);
         this.setupImageNodeEvents(imageNode);
+        // Force immediate update of hasElements flag
+        this.canvasService.forceUpdateHasElementsFlag();
+        this.cdRef.detectChanges();
       });
   }
 
@@ -1489,26 +1531,66 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     placeholderId: string,
   ): void {
     placeholderNode.on("mouseover", () => {
-      const pos = this.canvasService.stage?.getPointerPosition();
-      if (!pos) return;
+      // Get the element's position in the canvas
+      const stage = this.canvasService.stage;
+      if (!stage) return;
+      
+      const nodeAbsolutePosition = placeholderNode.getAbsolutePosition();
+      const stageContainer = stage.container();
+      const containerRect = stageContainer.getBoundingClientRect();
+      
+      // Calculate tooltip position relative to the element, not the mouse
+      const tooltipX = containerRect.left + nodeAbsolutePosition.x;
+      const tooltipY = containerRect.top + nodeAbsolutePosition.y - 35; // Position above the element
 
       const tooltipContainer = document.createElement("div");
       tooltipContainer.className = "konva-tooltip";
       tooltipContainer.style.position = "absolute";
-      tooltipContainer.style.top = `${pos.y + 10}px`;
-      tooltipContainer.style.left = `${pos.x + 10}px`;
+      tooltipContainer.style.top = `${tooltipY}px`;
+      tooltipContainer.style.left = `${tooltipX}px`;
       tooltipContainer.style.padding = "5px 10px";
-      tooltipContainer.style.backgroundColor = "rgba(0,0,0,0.75)";
+      tooltipContainer.style.backgroundColor = "rgba(0,0,0,0.85)";
       tooltipContainer.style.color = "white";
-      tooltipContainer.style.borderRadius = "3px";
+      tooltipContainer.style.borderRadius = "4px";
       tooltipContainer.style.fontSize = "12px";
       tooltipContainer.style.pointerEvents = "none";
       tooltipContainer.style.zIndex = "1000";
+      tooltipContainer.style.maxWidth = "200px";
+      tooltipContainer.style.wordWrap = "break-word";
+      tooltipContainer.style.whiteSpace = "nowrap";
+      tooltipContainer.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
 
       tooltipContainer.textContent =
         this.placeholderService.getPlaceholderDisplayText(placeholderId);
+      
+      // Adjust position if tooltip would go off-screen
       document.body.appendChild(tooltipContainer);
+      const tooltipRect = tooltipContainer.getBoundingClientRect();
+      
+      if (tooltipRect.right > window.innerWidth) {
+        tooltipContainer.style.left = `${tooltipX - tooltipRect.width}px`;
+      }
+      if (tooltipRect.top < 0) {
+        tooltipContainer.style.top = `${containerRect.top + nodeAbsolutePosition.y + (placeholderNode.height?.() || 30) + 5}px`;
+      }
+      
       placeholderNode.attrs.tooltipElement = tooltipContainer;
+    });
+
+    placeholderNode.on("mousemove", () => {
+      // Update tooltip position if element moves
+      const tooltipElement = placeholderNode.attrs.tooltipElement;
+      if (!tooltipElement || !this.canvasService.stage) return;
+      
+      const nodeAbsolutePosition = placeholderNode.getAbsolutePosition();
+      const stageContainer = this.canvasService.stage.container();
+      const containerRect = stageContainer.getBoundingClientRect();
+      
+      const tooltipX = containerRect.left + nodeAbsolutePosition.x;
+      const tooltipY = containerRect.top + nodeAbsolutePosition.y - 35;
+      
+      tooltipElement.style.left = `${tooltipX}px`;
+      tooltipElement.style.top = `${tooltipY}px`;
     });
 
     placeholderNode.on("mouseout", () => {
@@ -1726,7 +1808,13 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     }
 
     // Destroy placeholder components
-    this.placeholderRegistry.forEach((ref) => ref.destroy());
+    this.placeholderRegistry.forEach((ref) => {
+      try {
+        ref.destroy();
+      } catch (error) {
+        console.warn('Error destroying placeholder component:', error);
+      }
+    });
     this.placeholderRegistry.clear();
 
     // Clean up services
@@ -1736,9 +1824,20 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     // Reset editor context
     this.editorContextService.setContextType("none");
 
-    // Restore layout
+    // Close save modal if open
+    this.isSaveModalVisible = false;
+
+    // Restore layout and remove any editor-specific classes
     this.layoutService.setFullScreenMode(false);
     this.renderer.removeClass(document.body, "document-editor-fullscreen");
+    
+    // Remove any modal overlay or editor-specific elements
+    const editorModals = document.querySelectorAll('.konva-tooltip, .editor-modal, .editor-overlay');
+    editorModals.forEach(modal => {
+      if (modal.parentNode) {
+        modal.parentNode.removeChild(modal);
+      }
+    });
 
     // Remove event listeners
     window.removeEventListener("resize", this.handleWindowResize.bind(this));
@@ -1746,5 +1845,8 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
 
     // Destroy canvas
     this.canvasService.destroy();
+    
+    // Force garbage collection of any remaining references
+    this.cdRef.detectChanges();
   }
 }

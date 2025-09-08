@@ -5,6 +5,8 @@ export type WarehouseFilters = {
 	search?: string
 	page?: number
 	limit?: number
+	sort?: string
+	order?: 'asc' | 'desc'
 }
 
 export const WarehouseCreate = t.Object({
@@ -26,6 +28,8 @@ export const WarehouseListQuery = t.Object({
 	search: t.Optional(t.String()),
 	page: t.Optional(t.Number({ default: 1 })),
 	limit: t.Optional(t.Number({ default: 10 })),
+	sort: t.Optional(t.String()),
+	order: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
 })
 
 export type WarehouseCreateInput = Static<typeof WarehouseCreate>

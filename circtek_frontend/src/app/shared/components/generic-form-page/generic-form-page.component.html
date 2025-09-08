@@ -59,7 +59,7 @@
                       [class.select-error]="isFieldInvalid(field)"
                       [disabled]="field.disabled || loading() || submitting()"
                     >
-                      <option value="">Select {{ field.label }}</option>
+                      <option [ngValue]="null" disabled>Select {{ field.label }}</option>
                       @for (option of field.options; track option.value) {
                         <option [ngValue]="option.value">{{ option.label }}</option>
                       }
@@ -68,10 +68,11 @@
                   @case ('textarea') {
                     <textarea 
                       [formControlName]="field.key"
-                      class="textarea textarea-bordered w-full"
+                      class="textarea textarea-bordered w-full placeholder:text-base-content/50 placeholder:font-normal"
                       [class.textarea-error]="isFieldInvalid(field)"
                       [placeholder]="field.placeholder || ''"
                       [disabled]="field.disabled || loading() || submitting()"
+                      [maxlength]="field.validation?.maxLength || null"
                       rows="4"
                     ></textarea>
                   }
@@ -88,6 +89,24 @@
                       </label>
                     </div>
                   }
+                  @case ('radio') {
+                    <div class="form-control">
+                      <div class="space-y-2">
+                        @for (option of field.options; track option.value) {
+                          <label class="label cursor-pointer justify-start gap-3">
+                            <input 
+                              type="radio"
+                              [formControlName]="field.key"
+                              [value]="option.value"
+                              class="radio radio-primary"
+                              [disabled]="field.disabled || loading() || submitting()"
+                            />
+                            <span class="label-text">{{ option.label }}</span>
+                          </label>
+                        }
+                      </div>
+                    </div>
+                  }
                   @case ('file') {
                     <app-file-upload
                       [formControlName]="field.key"
@@ -99,10 +118,11 @@
                     <input 
                       [type]="field.type"
                       [formControlName]="field.key"
-                      class="input input-bordered w-full"
+                      class="input input-bordered w-full placeholder:text-base-content/50 placeholder:font-normal"
                       [class.input-error]="isFieldInvalid(field)"
                       [placeholder]="field.placeholder || ''"
                       [disabled]="field.disabled || loading() || submitting()"
+                      [maxlength]="field.validation?.maxLength || null"
                     />
                   }
                 }

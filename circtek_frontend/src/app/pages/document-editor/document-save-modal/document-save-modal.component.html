@@ -8,8 +8,10 @@
   <form [formGroup]="documentForm" (ngSubmit)="submitForm()" novalidate>
     <!-- Document Name -->
     <div class="mb-4">
-      <label for="documentName" class="block text-sm font-medium text-gray-700">Document Name</label>
-      <input type="text" id="documentName" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" formControlName="name" placeholder="Enter document name">
+      <label for="documentName" class="block text-sm font-medium text-gray-700">
+        Document Name <span class="text-red-500">*</span>
+      </label>
+      <input type="text" id="documentName" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" formControlName="name" placeholder="Enter document name" required>
       <div *ngIf="f['name'].touched && f['name'].invalid" class="text-red-600 text-sm mt-1">
         <div *ngIf="f['name'].errors?.['required']">Document name is required.</div>
       </div>

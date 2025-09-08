@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../../core/services/api.service';
@@ -25,6 +25,7 @@ export class TenantFormComponent {
   loading = signal(false);
   submitting = signal(false);
   errorMessage = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
   tenantId = signal<number | null>(null);
   isEditMode = computed(() => this.tenantId() !== null);
 
@@ -94,10 +95,29 @@ export class TenantFormComponent {
     });
   }
 
+  // Custom validators
+  private noWhitespaceValidator(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    if (!value) return null;
+    const isWhitespace = (value || '').trim().length === 0;
+    const isValid = !isWhitespace;
+    return isValid ? null : { whitespace: true };
+  }
+
   private createForm(): FormGroup {
     return this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-      description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
+      name: ['', [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100),
+        this.noWhitespaceValidator
+      ]],
+      description: ['', [
+        Validators.required,
+        Validators.minLength(10),
+        Validators.maxLength(500),
+        this.noWhitespaceValidator
+      ]],
       status: [true],
     });
   }
@@ -143,17 +163,31 @@ export class TenantFormComponent {
   }
 
   onFormSubmit(formValue: any) {
-    if (this.tenantForm().invalid) return;
+    if (this.tenantForm().invalid) {
+      this.markAllFieldsAsTouched();
+      return;
+    }
+    
     this.errorMessage.set(null);
+    this.successMessage.set(null);
     this.submitting.set(true);
 
+    // Trim all string values
     const tenantData = { ...formValue };
+    Object.keys(tenantData).forEach(key => {
+      if (typeof tenantData[key] === 'string') {
+        tenantData[key] = tenantData[key].trim();
+      }
+    });
 
     if (this.isEditMode()) {
       this.api.updateTenant(this.tenantId()!, tenantData).subscribe({
         next: () => {
           this.submitting.set(false);
-          this.router.navigate(['/management'], { queryParams: { tab: 'tenants' } });
+          this.successMessage.set('Tenant updated successfully.');
+          setTimeout(() => {
+            this.router.navigate(['/management'], { queryParams: { tab: 'tenants' } });
+          }, 1200);
         },
         error: (error) => {
           const msg = error?.error?.message || error?.message || 'Failed to update tenant';
@@ -165,7 +199,10 @@ export class TenantFormComponent {
       this.api.createTenant(tenantData).subscribe({
         next: () => {
           this.submitting.set(false);
-          this.router.navigate(['/management'], { queryParams: { tab: 'tenants' } });
+          this.successMessage.set('Tenant created successfully.');
+          setTimeout(() => {
+            this.router.navigate(['/management'], { queryParams: { tab: 'tenants' } });
+          }, 1200);
         },
         error: (error) => {
           const msg = error?.error?.message || error?.message || 'Failed to create tenant';
@@ -180,5 +217,11 @@ export class TenantFormComponent {
     if (event.action === 'Cancel') {
       this.router.navigate(['/management'], { queryParams: { tab: 'tenants' } });
     }
+  }
+  
+  private markAllFieldsAsTouched() {
+    Object.keys(this.tenantForm().controls).forEach(key => {
+      this.tenantForm().get(key)?.markAsTouched();
+    });
   }
 }

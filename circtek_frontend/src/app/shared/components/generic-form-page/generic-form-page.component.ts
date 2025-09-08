@@ -8,7 +8,7 @@ import { FileUploadComponent } from '../file-upload/file-upload.component';
 export interface FormField {
   key: string;
   label: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'select' | 'textarea' | 'checkbox' | 'date' | 'file';
+  type: 'text' | 'email' | 'password' | 'number' | 'select' | 'textarea' | 'checkbox' | 'radio' | 'date' | 'file';
   placeholder?: string;
   required?: boolean;
   options?: Array<{ label: string; value: any }>;
@@ -132,6 +132,9 @@ export class GenericFormPageComponent {
       return `${field.label} cannot exceed ${errors['maxlength'].requiredLength} characters`;
     }
     if (errors['pattern']) {
+      if (field.key === 'name') {
+        return 'Name can only contain letters, spaces, apostrophes, hyphens, and periods';
+      }
       return `${field.label} format is invalid`;
     }
     if (errors['min']) {
@@ -139,6 +142,23 @@ export class GenericFormPageComponent {
     }
     if (errors['max']) {
       return `${field.label} cannot exceed ${errors['max'].max}`;
+    }
+    if (errors['whitespace']) {
+      return `${field.label} cannot be empty or contain only spaces`;
+    }
+    if (errors['strongPassword']) {
+      const requirements = [];
+      const details = errors['strongPassword'];
+      if (!details.hasUpperCase) requirements.push('uppercase letter');
+      if (!details.hasLowerCase) requirements.push('lowercase letter');
+      if (!details.hasNumeric) requirements.push('number');
+      if (!details.hasSpecialChar) requirements.push('special character');
+      if (!details.isValidLength) requirements.push('at least 8 characters');
+      if (!details.noWhitespace) requirements.push('no spaces');
+      return `Password must contain: ${requirements.join(', ')}`;
+    }
+    if (errors['usernameExists']) {
+      return 'This username is already taken';
     }
 
     return 'Invalid input';
