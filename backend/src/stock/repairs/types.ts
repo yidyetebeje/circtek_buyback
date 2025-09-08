@@ -2,13 +2,12 @@ import { t, type Static } from "elysia"
 
 export const RepairCreate = t.Object({
   device_id: t.Number(),
-  reason_id: t.Number(),
   remarks: t.Optional(t.String()),
+  warehouse_id: t.Number(),
 })
 
 export const RepairQuery = t.Object({
   device_id: t.Optional(t.Number()),
-  reason_id: t.Optional(t.Number()),
   status: t.Optional(t.Boolean()),
   date_from: t.Optional(t.String()),
   date_to: t.Optional(t.String()),
@@ -22,6 +21,7 @@ export const RepairConsumeItems = t.Object({
   items: t.Array(t.Object({
     sku: t.String(),
     quantity: t.Number(),
+    reason_id: t.Number(),
   })),
   notes: t.Optional(t.String()),
 })
@@ -34,7 +34,6 @@ export type RepairRecord = {
   id: number
   device_id: number
   device_sku: string
-  reason_id: number
   remarks: string | null
   status: boolean
   actor_id: number
@@ -49,6 +48,7 @@ export type RepairItemRecord = {
   sku: string
   quantity: number
   cost: number
+  reason_id: number
   purchase_items_id: number | null
   status: boolean
   tenant_id: number
@@ -91,13 +91,13 @@ export type RepairConsumeResult = {
 export const RepairCreateWithConsume = t.Object({
   // Repair information
   device_id: t.Number(),
-  reason_id: t.Number(),
   remarks: t.Optional(t.String()),
   // Consumption information
   warehouse_id: t.Number(),
   items: t.Array(t.Object({
     sku: t.String(),
     quantity: t.Number(),
+    reason_id: t.Number(),
   })),
   notes: t.Optional(t.String()),
 })

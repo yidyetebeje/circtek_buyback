@@ -264,12 +264,12 @@ export class RepairFormComponent implements OnInit {
     // Prepare the payload for the new endpoint
     const payload: RepairCreateWithConsumeInput = {
       device_id: formValue.device_id!,
-      reason_id: parts[0]?.reason_id || 1, // Use first part's reason or default
       remarks: formValue.remarks || undefined,
       warehouse_id: formValue.warehouse_id!,
       items: parts.map((part: any) => ({
         sku: part.sku,
-        quantity: part.quantity
+        quantity: part.quantity,
+        reason_id: part.reason_id
       })),
       notes: undefined // Optional field
     };

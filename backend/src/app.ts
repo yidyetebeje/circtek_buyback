@@ -22,6 +22,7 @@ import buybackApi from "./buyback";
 import { emailTemplatesModule } from "./email-templates";
 import { statsRoutes } from "./buyback_stats/routes/statsRoutes";
 import emailModule from "./email/email-module";
+import { external_api_routes } from "./external-api";
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
         .use(cors({
@@ -97,5 +98,6 @@ export const buildApp = () =>
 		.use(stock_management_routes)
 		.use(upload_routes)
 		.use(dashboard_stats_routes)
+		.use(external_api_routes)
 
 

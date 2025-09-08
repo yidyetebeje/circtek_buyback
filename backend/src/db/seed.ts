@@ -111,8 +111,8 @@ async function seed_devices() {
         const model_no = modelNumbers[modelIdx];
         const sku = `APL-${model_no}-${storage}-${color.replace(/\s+/g, '').toUpperCase()}`;
         const lpn = `LPN-${faker.string.alphanumeric(8).toUpperCase()}`;
-        const imei = faker.phone.imei();
-        const imei2 = faker.phone.imei();
+        const imei = faker.string.numeric(15);
+        const imei2 = faker.string.numeric(15);
         const guid = faker.string.uuid();
 
         devices_data.push({

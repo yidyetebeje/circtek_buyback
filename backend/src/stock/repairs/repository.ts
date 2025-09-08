@@ -1,6 +1,6 @@
 import { and, count, desc, eq, gte, lte, like, or, sql } from "drizzle-orm"
 import { db } from "../../db"
-import { repair_items, repairs, repair_reasons, devices } from "../../db/circtek.schema"
+import { repair_items, repairs, devices } from "../../db/circtek.schema"
 import { purchase_items } from "../../db/circtek.schema"
 import { RepairConsumeItemsInput, RepairListResult, RepairRecord, RepairWithItems, RepairCreateInput, RepairItemRecord, RepairQueryInput } from "./types"
 
@@ -34,19 +34,17 @@ export class RepairsRepository {
     const conditions: any[] = []
     if (typeof filters.tenant_id === 'number') conditions.push(eq(repairs.tenant_id, filters.tenant_id))
     if (typeof filters.device_id === 'number') conditions.push(eq(repairs.device_id, filters.device_id))
-    if (typeof filters.reason_id === 'number') conditions.push(eq(repairs.reason_id, filters.reason_id))
     if (typeof filters.status === 'boolean') conditions.push(eq(repairs.status, filters.status))
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
     if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
     if (filters.search) {
       const pattern = `%${filters.search}%`
-      // Search on remarks, device_sku, device_imei, device_serial, reason_name
+      // Search on remarks, device_sku, device_imei, device_serial
       conditions.push(or(
         like(repairs.remarks, pattern),
         like(devices.sku, pattern),
         like(devices.imei, pattern),
-        like(devices.serial, pattern),
-        like(repair_reasons.name, pattern)
+        like(devices.serial, pattern)
       ))
     }
 
@@ -59,13 +57,11 @@ export class RepairsRepository {
       const final = and(...conditions)
       ;[totalRow] = await this.database.select({ total: count() })
         .from(repairs)
-        .leftJoin(repair_reasons, eq(repairs.reason_id, repair_reasons.id))
         .leftJoin(devices, eq(repairs.device_id, devices.id))
         .where(final as any)
     } else {
       ;[totalRow] = await this.database.select({ total: count() })
         .from(repairs)
-        .leftJoin(repair_reasons, eq(repairs.reason_id, repair_reasons.id))
         .leftJoin(devices, eq(repairs.device_id, devices.id))
     }
 
@@ -75,20 +71,17 @@ export class RepairsRepository {
       rows = await this.database.select({
         id: repairs.id,
         device_id: repairs.device_id,
-        reason_id: repairs.reason_id,
         remarks: repairs.remarks,
         status: repairs.status,
         tenant_id: repairs.tenant_id,
         actor_id: repairs.actor_id,
         created_at: repairs.created_at,
         updated_at: repairs.updated_at,
-        reason_name: repair_reasons.name,
         device_sku: devices.sku,
         device_imei: devices.imei,
         device_serial: devices.serial
       })
         .from(repairs)
-        .leftJoin(repair_reasons, eq(repairs.reason_id, repair_reasons.id))
         .leftJoin(devices, eq(repairs.device_id, devices.id))
         .where(final as any)
         .orderBy(desc(repairs.created_at))
@@ -98,20 +91,17 @@ export class RepairsRepository {
       rows = await this.database.select({
         id: repairs.id,
         device_id: repairs.device_id,
-        reason_id: repairs.reason_id,
         remarks: repairs.remarks,
         status: repairs.status,
         tenant_id: repairs.tenant_id,
         actor_id: repairs.actor_id,
         created_at: repairs.created_at,
         updated_at: repairs.updated_at,
-        reason_name: repair_reasons.name,
         device_sku: devices.sku,
         device_imei: devices.imei,
         device_serial: devices.serial
       })
         .from(repairs)
-        .leftJoin(repair_reasons, eq(repairs.reason_id, repair_reasons.id))
         .leftJoin(devices, eq(repairs.device_id, devices.id))
         .orderBy(desc(repairs.created_at))
         .limit(limit)
@@ -146,20 +136,17 @@ export class RepairsRepository {
     const [repairRow] = await this.database.select({
       id: repairs.id,
       device_id: repairs.device_id,
-      reason_id: repairs.reason_id,
       remarks: repairs.remarks,
       status: repairs.status,
       tenant_id: repairs.tenant_id,
       actor_id: repairs.actor_id,
       created_at: repairs.created_at,
       updated_at: repairs.updated_at,
-      reason_name: repair_reasons.name,
       device_sku: devices.sku,
       device_imei: devices.imei,
       device_serial: devices.serial
     })
       .from(repairs)
-      .leftJoin(repair_reasons, eq(repairs.reason_id, repair_reasons.id))
       .leftJoin(devices, eq(repairs.device_id, devices.id))
       .where(and(...conditions))
 

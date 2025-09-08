@@ -60,8 +60,9 @@ export class SkuAutocompleteComponent {
 
   hasResults = computed(() => this.filteredOptions().length > 0);
   showCreateOption = computed(() => {
-    const query = this.searchControl.value?.trim() || '';
-    return query.length > 0 && !this.hasResults() && !this.loading();
+    const query = (this.searchControl.value?.trim() || '').toLowerCase();
+    const hasExactSku = this.filteredOptions().some(option => option.sku.toLowerCase() === query);
+    return query.length > 0 && !this.loading() && !hasExactSku;
   });
 
   constructor() {

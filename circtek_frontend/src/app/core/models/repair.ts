@@ -76,13 +76,13 @@ export interface RepairConsumeResult {
 export interface RepairCreateWithConsumeInput {
   // Repair information
   device_id: number;
-  reason_id: number;
   remarks?: string;
   // Consumption information
   warehouse_id: number;
   items: Array<{
     sku: string;
     quantity: number;
+    reason_id: number;
   }>;
   notes?: string;
 }

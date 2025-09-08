@@ -28,10 +28,27 @@ export class PurchaseDetailComponent {
     return p ? `Purchase Order - ${p.purchase.purchase_order_no}` : 'Purchase Order Details';
   });
 
-  progressPercentage = computed(() => {
+  totalItems = computed(() => {
     const p = this.purchase();
-    if (!p || p.total_items === 0) return 0;
-    return Math.round((p.total_received / p.total_items) * 100);
+    return p ? p.items.reduce((sum: number, item: any) => sum + (item.quantity ?? 0), 0) : 0;
+  });
+
+  totalReceived = computed(() => {
+    const p = this.purchase();
+    return p ? p.items.reduce((sum: number, item: any) => sum + (item.received_quantity ?? 0), 0) : 0;
+  });
+
+  isFullyReceived = computed(() => {
+    const totalItems = this.totalItems();
+    const totalReceived = this.totalReceived();
+    return totalItems > 0 && totalReceived >= totalItems;
+  });
+
+  progressPercentage = computed(() => {
+    const totalItems = this.totalItems();
+    if (totalItems === 0) return 0;
+    const totalReceived = this.totalReceived();
+    return Math.round((totalReceived / totalItems) * 100);
   });
 
   availableDocuments = computed(() => {

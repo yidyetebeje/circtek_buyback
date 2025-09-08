@@ -275,11 +275,11 @@ export const repair_reasons = mysqlTable('repair_reasons', {
 export const repairs = mysqlTable('repairs', {
   id: serial('id').primaryKey(),
   device_id: bigint('device_id', { mode: 'number', unsigned: true }).references(() => devices.id).notNull(),
-  reason_id: bigint('reason_id', { mode: 'number', unsigned: true }).references(() => repair_reasons.id).notNull(),
   remarks: text('remarks'),
   status: boolean('status').default(true),
   actor_id: bigint('actor_id', { mode: 'number', unsigned: true }).references(() => users.id).notNull(),
   tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  warehouse_id: bigint('warehouse_id', {mode: 'number', unsigned: true}).references(() => warehouses.id).notNull(),
   created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
@@ -290,6 +290,7 @@ export const repair_items = mysqlTable('repair_items', {
   // relate the sku with the stock table
   sku: varchar('sku', { length: 255 }),
   quantity: int('quantity').notNull(),
+  reason_id: bigint('reason_id', { mode: 'number', unsigned: true }).references(() => repair_reasons.id).notNull(),
   cost: decimal('cost', { precision: 10, scale: 2 }).notNull(),
   purchase_items_id: bigint('purchase_items_id', { mode: 'number', unsigned: true }).references(() => purchase_items.id),
   status: boolean('status').default(true),

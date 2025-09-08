@@ -194,7 +194,7 @@ export class ManagementComponent {
     switch (this.activeTab()) {
       case 'tenants':
         return [
-          { header: 'ID', accessorKey: 'id' as any },
+          { header: 'S.No', accessorKey: 'id' as any },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No') },
@@ -213,7 +213,7 @@ export class ManagementComponent {
         ];
       case 'users':
         return [
-          { header: 'ID', accessorKey: 'id' as any },
+          { header: 'S.No', accessorKey: 'id' as any },
           { header: 'Username', accessorKey: 'user_name' as any },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Email', accessorKey: 'email' as any },
@@ -235,7 +235,7 @@ export class ManagementComponent {
         ];
       case 'warehouses':
         return [
-          { header: 'ID', accessorKey: 'id' as any },
+          { header: 'S.No', accessorKey: 'id' as any },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
@@ -255,7 +255,7 @@ export class ManagementComponent {
         ];
       case 'wifi':
         return [
-          { header: 'ID', accessorKey: 'id' as any },
+          { header: 'S.No', accessorKey: 'id' as any },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'SSID', accessorKey: 'ssid' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
@@ -278,7 +278,7 @@ export class ManagementComponent {
         ];
       case 'labels':
         return [
-          { header: 'ID', accessorKey: 'id' as any },
+          { header: 'S.No', accessorKey: 'id' as any },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
@@ -300,7 +300,7 @@ export class ManagementComponent {
         ];
       case 'workflows':
         return [
-          { header: 'ID', accessorKey: 'id' as any },
+          { header: 'S.No', accessorKey: 'id' as any },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },

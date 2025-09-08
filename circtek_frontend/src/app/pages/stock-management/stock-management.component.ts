@@ -109,7 +109,7 @@ export class StockManagementComponent {
     switch (this.activeTab()) {
       case 'stock':
         return [
-          { header: '#', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
             const idx = this.data().indexOf(r as any);
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
@@ -130,7 +130,7 @@ export class StockManagementComponent {
         ];
       case 'purchases':
         return [
-          { header: '#', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
             const idx = this.data().indexOf(r as any);
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
@@ -152,7 +152,7 @@ export class StockManagementComponent {
         ];
       case 'transfers':
         return [
-          { header: '#', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
             const idx = this.data().indexOf(r as any);
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
@@ -174,7 +174,7 @@ export class StockManagementComponent {
         ];
       case 'sku-specs':
         return [
-          { header: '#', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
             const idx = this.data().indexOf(r as any);
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;

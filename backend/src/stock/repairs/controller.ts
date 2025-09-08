@@ -18,7 +18,7 @@ export class RepairsController {
           device_id: created.device_id,
           actor_id,
           event_type: 'REPAIR_STARTED',
-          details: { repair_id: created.id, reason_id: created.reason_id, remarks: created.remarks },
+          details: { repair_id: created.id, remarks: created.remarks },
           tenant_id,
         })
       } catch (e) {
@@ -38,8 +38,8 @@ export class RepairsController {
       // 1) Create the repair first
       const repairPayload = {
         device_id: payload.device_id,
-        reason_id: payload.reason_id,
         remarks: payload.remarks,
+        warehouse_id: payload.warehouse_id,
         actor_id,
       }
       
@@ -122,7 +122,7 @@ export class RepairsController {
       if (!repair) return { data: null, message: 'Repair not found', status: 404 }
 
       // 1) Pre-allocate from purchases for all items to ensure availability and compute costs
-      type Allocation = { sku: string; quantity: number; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }> }
+      type Allocation = { sku: string; quantity: number; reason_id: number; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }> }
       const perItemAllocations: Allocation[] = []
 
       for (const item of payload.items) {
@@ -140,7 +140,7 @@ export class RepairsController {
           }
           return { data: null, message: `Insufficient available purchased quantity for SKU ${item.sku}`, status: 400 }
         }
-        perItemAllocations.push({ sku: item.sku, quantity: item.quantity, allocations: alloc.allocations })
+        perItemAllocations.push({ sku: item.sku, quantity: item.quantity, reason_id: item.reason_id, allocations: alloc.allocations })
       }
 
       // 2) Create stock movements per item
@@ -199,6 +199,7 @@ export class RepairsController {
         sku: a.sku,
         quantity: x.quantity,
         cost: Number(x.unit_price),
+        reason_id: a.reason_id,
         purchase_items_id: x.purchase_item_id,
         status: true,
         tenant_id,
@@ -207,7 +208,7 @@ export class RepairsController {
       })))
 
       try {
-        await this.repo.addRepairItems(repair_id, itemsToPersist as any, tenant_id)
+        await this.repo.addRepairItems(repair_id, itemsToPersist, tenant_id)
       } catch (e) {
         // rollback: delete persisted repair_items if any, compensate movements, deallocate allocations
         for (const ok of successfulMovements) {

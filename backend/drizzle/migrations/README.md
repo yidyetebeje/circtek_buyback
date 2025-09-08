@@ -55,3 +55,5 @@ DROP COLUMN is_published;
 **Note:** This will permanently delete the data in these columns.
 
 
+
+

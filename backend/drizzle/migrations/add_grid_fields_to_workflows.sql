@@ -26,3 +26,5 @@ SET position_x = 0,
 WHERE position_x IS NULL;
 
 
+
+

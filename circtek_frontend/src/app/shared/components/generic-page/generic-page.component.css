@@ -191,6 +191,11 @@
   color: oklch(var(--pc));
 }
 
+/* Improve contrast for active tab in dark theme */
+[data-theme="dim"] .tabs-boxed .tab-active {
+  color: #0a0a0a;
+}
+
 /* Clean filter card */
 .filter-card {
   background: oklch(var(--b1));

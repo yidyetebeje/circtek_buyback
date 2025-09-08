@@ -34,12 +34,12 @@
                   role="tab"
                   class="tab whitespace-nowrap transition-all duration-200 hover:bg-primary/10 rounded-xl"
                   [class.bg-primary]="activeTabKey() === tab.key"
-                  [class.text-primary-content]="activeTabKey() === tab.key"
+                 
                   (click)="setActiveTab(tab.key)"
                 >
                   <span>{{ tab.label }}</span>
                   @if (tab.badge != null) {
-                    <span class="ml-2 badge" [class.badge-primary]="activeTabKey() !== tab.key" [class.badge-neutral]="activeTabKey() === tab.key" [class.badge-sm]="true">{{ tab.badge }}</span>
+                    <span class="ml-2 badge" [class.badge-primary]="activeTabKey() !== tab.key" [class.badge-neutral]="activeTabKey() === tab.key" [class.badge-sm]="true" [class.text-dark]="activeTabKey() === tab.key" >{{ tab.badge }}</span>
                   }
                 </button>
               }
