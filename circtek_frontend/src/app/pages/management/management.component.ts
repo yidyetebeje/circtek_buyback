@@ -324,7 +324,6 @@ export class ManagementComponent {
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
-          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
           {
             header: 'Actions',
             id: 'actions' as any,
@@ -350,7 +349,6 @@ export class ManagementComponent {
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
-          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
           {
             header: 'Actions',
             id: 'actions' as any,
