@@ -763,10 +763,7 @@ export class ManagementComponent {
       next: (res) => {
         const opts = (res.data ?? []).map(u => ({ label: u.user_name || u.name, value: String(u.id) }));
         this.testerOptions.set(opts);
-        // Auto-select first tester if available and no tester is currently selected
-        if (opts.length > 0 && this.selectedAssignTesterId() === null) {
-          this.selectedAssignTesterId.set(Number(opts[0].value));
-        }
+        // Don't auto-select any tester - require explicit selection
       },
       error: (error) => {
         console.error('Failed to load tester options:', error);
@@ -834,13 +831,20 @@ export class ManagementComponent {
 
   submitAssign() {
     const testerId = this.selectedAssignTesterId();
-    if (testerId == null) return;
+    if (testerId == null) {
+      this.toastr.error('Please select a tester before assigning', 'Selection Required');
+      return;
+    }
     this.loading.set(true);
     
     if (this.activeTab() === 'wifi') {
       const profile = this.selectedWifiProfile();
       const profileId = profile ? profile.id : this.selectedAssignProfileId();
-      if (profileId == null) { this.loading.set(false); return; }
+      if (profileId == null) { 
+        this.loading.set(false); 
+        this.toastr.error('Please select a WiFi profile before assigning', 'Selection Required');
+        return; 
+      }
       this.api.assignWifiProfile(profileId, testerId).subscribe({ 
         next: () => { 
           this.loading.set(false); 
@@ -858,7 +862,11 @@ export class ManagementComponent {
     
     if (this.activeTab() === 'labels') {
       const rec = this.selectedLabelTemplate();
-      if (!rec) { this.loading.set(false); return; }
+      if (!rec) { 
+        this.loading.set(false); 
+        this.toastr.error('Please select a label template before assigning', 'Selection Required');
+        return; 
+      }
       this.api.assignLabelTemplate(rec.id, testerId).subscribe({ 
         next: () => { 
           this.loading.set(false); 
@@ -876,7 +884,11 @@ export class ManagementComponent {
     
     if (this.activeTab() === 'workflows') {
       const rec = this.selectedWorkflow();
-      if (!rec) { this.loading.set(false); return; }
+      if (!rec) { 
+        this.loading.set(false); 
+        this.toastr.error('Please select a workflow before assigning', 'Selection Required');
+        return; 
+      }
       this.api.assignWorkflow(rec.id, testerId).subscribe({ 
         next: () => { 
           this.loading.set(false); 
@@ -895,13 +907,13 @@ export class ManagementComponent {
   onAssignTesterSelect(event: Event) {
     const target = event.target as HTMLSelectElement | null;
     const value = target?.value?.trim();
-    this.selectedAssignTesterId.set(value ? Number(value) : null);
+    this.selectedAssignTesterId.set(value && value !== '' ? Number(value) : null);
   }
 
   onAssignProfileSelect(event: Event) {
     const target = event.target as HTMLSelectElement | null;
     const value = target?.value?.trim();
-    this.selectedAssignProfileId.set(value ? Number(value) : null);
+    this.selectedAssignProfileId.set(value && value !== '' ? Number(value) : null);
   }
 
 
@@ -909,6 +921,7 @@ export class ManagementComponent {
   // View assigned testers modal
   isAssignedModalOpen = signal(false);
   assignedTesters = signal<User[]>([]);
+  assignedTestersLoading = signal(false);
   
   assignedModalActions = computed<ModalAction[]>(() => [
     {
@@ -920,21 +933,58 @@ export class ManagementComponent {
 
   openAssignedModal(row: WiFiProfile | LabelTemplateRecord | WorkflowRecord) {
     this.isAssignedModalOpen.set(true);
+    this.assignedTestersLoading.set(true);
+    this.assignedTesters.set([]); // Clear previous data
+    
     let params = new HttpParams();
     if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
+    
     if (this.activeTab() === 'wifi') {
       this.selectedWifiProfile.set(row as WiFiProfile);
-      this.api.getWifiProfileTesters((row as WiFiProfile).id, params).subscribe({ next: (res) => { this.assignedTesters.set(res.data ?? []); }, error: () => { this.assignedTesters.set([]); }, });
+      this.api.getWifiProfileTesters((row as WiFiProfile).id, params).subscribe({ 
+        next: (res) => { 
+          this.assignedTesters.set(res.data ?? []); 
+          this.assignedTestersLoading.set(false);
+        }, 
+        error: (error) => { 
+          console.error('Failed to load assigned testers:', error);
+          this.assignedTesters.set([]); 
+          this.assignedTestersLoading.set(false);
+          this.toastr.error('Failed to load assigned testers', 'Loading Error');
+        }, 
+      });
       return;
     }
     if (this.activeTab() === 'labels') {
       this.selectedLabelTemplate.set(row as LabelTemplateRecord);
-      this.api.getLabelTemplateTesters((row as LabelTemplateRecord).id, params).subscribe({ next: (res) => { this.assignedTesters.set(res.data ?? []); }, error: () => { this.assignedTesters.set([]); }, });
+      this.api.getLabelTemplateTesters((row as LabelTemplateRecord).id, params).subscribe({ 
+        next: (res) => { 
+          this.assignedTesters.set(res.data ?? []); 
+          this.assignedTestersLoading.set(false);
+        }, 
+        error: (error) => { 
+          console.error('Failed to load assigned testers:', error);
+          this.assignedTesters.set([]); 
+          this.assignedTestersLoading.set(false);
+          this.toastr.error('Failed to load assigned testers', 'Loading Error');
+        }, 
+      });
       return;
     }
     if (this.activeTab() === 'workflows') {
       this.selectedWorkflow.set(row as WorkflowRecord);
-      this.api.getWorkflowTesters((row as WorkflowRecord).id, params).subscribe({ next: (res) => { this.assignedTesters.set(res.data ?? []); }, error: () => { this.assignedTesters.set([]); }, });
+      this.api.getWorkflowTesters((row as WorkflowRecord).id, params).subscribe({ 
+        next: (res) => { 
+          this.assignedTesters.set(res.data ?? []); 
+          this.assignedTestersLoading.set(false);
+        }, 
+        error: (error) => { 
+          console.error('Failed to load assigned testers:', error);
+          this.assignedTesters.set([]); 
+          this.assignedTestersLoading.set(false);
+          this.toastr.error('Failed to load assigned testers', 'Loading Error');
+        }, 
+      });
     }
   }
 
@@ -946,9 +996,26 @@ export class ManagementComponent {
       const profile = this.selectedWifiProfile()!;
       this.api.unassignWifiProfile(profile.id, userId).subscribe({
         next: () => {
-          this.api.getWifiProfileTesters(profile.id, params).subscribe({ next: (res) => { this.assignedTesters.set(res.data ?? []); this.loading.set(false); }, error: () => { this.loading.set(false); }, });
+          this.assignedTestersLoading.set(true);
+          this.api.getWifiProfileTesters(profile.id, params).subscribe({ 
+            next: (res) => { 
+              this.assignedTesters.set(res.data ?? []); 
+              this.loading.set(false); 
+              this.assignedTestersLoading.set(false);
+              this.toastr.success('Tester unassigned from WiFi Profile successfully!', 'Unassignment Successful');
+            }, 
+            error: () => { 
+              this.loading.set(false); 
+              this.assignedTestersLoading.set(false);
+              this.toastr.error('Failed to refresh tester list', 'Refresh Failed');
+            }, 
+          });
         },
-        error: () => { this.loading.set(false); },
+        error: (error) => { 
+          this.loading.set(false); 
+          console.error('Failed to unassign WiFi profile:', error);
+          this.toastr.error('Failed to unassign tester from WiFi profile', 'Unassignment Failed');
+        },
       });
       return;
     }
@@ -956,9 +1023,26 @@ export class ManagementComponent {
       const rec = this.selectedLabelTemplate()!;
       this.api.unassignLabelTemplate(rec.id, userId).subscribe({
         next: () => {
-          this.api.getLabelTemplateTesters(rec.id, params).subscribe({ next: (res) => { this.assignedTesters.set(res.data ?? []); this.loading.set(false); }, error: () => { this.loading.set(false); }, });
+          this.assignedTestersLoading.set(true);
+          this.api.getLabelTemplateTesters(rec.id, params).subscribe({ 
+            next: (res) => { 
+              this.assignedTesters.set(res.data ?? []); 
+              this.loading.set(false); 
+              this.assignedTestersLoading.set(false);
+              this.toastr.success('Tester unassigned from Label Template successfully!', 'Unassignment Successful');
+            }, 
+            error: () => { 
+              this.loading.set(false); 
+              this.assignedTestersLoading.set(false);
+              this.toastr.error('Failed to refresh tester list', 'Refresh Failed');
+            }, 
+          });
         },
-        error: () => { this.loading.set(false); },
+        error: (error) => { 
+          this.loading.set(false); 
+          console.error('Failed to unassign label template:', error);
+          this.toastr.error('Failed to unassign tester from label template', 'Unassignment Failed');
+        },
       });
       return;
     }
@@ -966,9 +1050,26 @@ export class ManagementComponent {
       const rec = this.selectedWorkflow()!;
       this.api.unassignWorkflow(rec.id, userId).subscribe({
         next: () => {
-          this.api.getWorkflowTesters(rec.id, params).subscribe({ next: (res) => { this.assignedTesters.set(res.data ?? []); this.loading.set(false); }, error: () => { this.loading.set(false); }, });
+          this.assignedTestersLoading.set(true);
+          this.api.getWorkflowTesters(rec.id, params).subscribe({ 
+            next: (res) => { 
+              this.assignedTesters.set(res.data ?? []); 
+              this.loading.set(false); 
+              this.assignedTestersLoading.set(false);
+              this.toastr.success('Tester unassigned from Workflow successfully!', 'Unassignment Successful');
+            }, 
+            error: () => { 
+              this.loading.set(false); 
+              this.assignedTestersLoading.set(false);
+              this.toastr.error('Failed to refresh tester list', 'Refresh Failed');
+            }, 
+          });
         },
-        error: () => { this.loading.set(false); },
+        error: (error) => { 
+          this.loading.set(false); 
+          console.error('Failed to unassign workflow:', error);
+          this.toastr.error('Failed to unassign tester from workflow', 'Unassignment Failed');
+        },
       });
     }
   }
@@ -976,6 +1077,7 @@ export class ManagementComponent {
   closeAssignedModal() {
     this.isAssignedModalOpen.set(false);
     this.assignedTesters.set([]);
+    this.assignedTestersLoading.set(false);
   }
 
   onAssignedModalAction(action: string): void {

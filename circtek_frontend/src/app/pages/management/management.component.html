@@ -45,8 +45,12 @@
     <!-- WiFi Profile dropdown only for wifi tab when no profile is selected -->
     @if (activeTab() === 'wifi' && !selectedWifiProfile()) {
       <div class="form-control">
-        <label class="label"><span class="label-text">WiFi Profile</span></label>
-        <select class="select select-bordered" (change)="onAssignProfileSelect($event)">
+        <label class="label mb-1"><span class="label-text">WiFi Profile</span></label>
+        <select 
+          class="select select-bordered" 
+          (change)="onAssignProfileSelect($event)"
+          [disabled]="loading()"
+        >
           <option [value]="''">Select WiFi profile…</option>
           @for (opt of wifiOptions(); track opt.value) {
             <option [value]="opt.value">{{ opt.label }}</option>
@@ -57,12 +61,24 @@
     
     <!-- Tester selection -->
     <div class="form-control">
-      <label class="label"><span class="label-text">Tester</span></label>
-      <select class="select select-bordered" (change)="onAssignTesterSelect($event)">
+      <label class="label mb-1"><span class="label-text">Tester</span></label>
+      <select 
+        class="select select-bordered" 
+        (change)="onAssignTesterSelect($event)" 
+        [value]="selectedAssignTesterId() ?? ''"
+        [disabled]="loading()"
+      >
+        <option value="">Select a tester…</option>
         @for (opt of testerOptions(); track opt.value) {
           <option [value]="opt.value">{{ opt.label }}</option>
         }
       </select>
+      @if (loading()) {
+        <div class="text-xs text-base-content/60 mt-1">
+          <span class="loading loading-spinner loading-xs"></span>
+          Loading testers...
+        </div>
+      }
     </div>
   </div>
 </app-generic-modal>
@@ -87,35 +103,53 @@
       <div><span class="font-medium">Workflow:</span> {{ w.name }}</div>
     }
   </div>
-  <div class="overflow-x-auto border rounded-box">
-    <table class="table w-full">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Username</th>
-          <th>Name</th>
-          <th class="text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (u of assignedTesters(); track u.id) {
+  @if (assignedTestersLoading()) {
+    <div class="flex items-center justify-center py-8">
+      <span class="loading loading-spinner loading-md mr-2"></span>
+      <span class="text-base-content/70">Loading assigned testers...</span>
+    </div>
+  } @else {
+    <div class="overflow-x-auto border rounded-box">
+      <table class="table w-full">
+        <thead>
           <tr>
-            <td>{{ u.id }}</td>
-            <td>{{ u.user_name }}</td>
-            <td>{{ u.name }}</td>
-            <td class="text-right">
-              <button class="btn btn-ghost btn-xs text-error" (click)="unassignTester(u.id)">Unassign</button>
-            </td>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Name</th>
+            <th class="text-right">Actions</th>
           </tr>
-        }
-        @if (!assignedTesters().length) {
-          <tr>
-            <td colspan="4" class="text-center py-4 text-base-content/60">No testers assigned.</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody>
+          @for (u of assignedTesters(); track u.id) {
+            <tr>
+              <td>{{ u.id }}</td>
+              <td>{{ u.user_name }}</td>
+              <td>{{ u.name }}</td>
+              <td class="text-right">
+                <button 
+                  class="btn btn-ghost btn-xs text-error" 
+                  [disabled]="loading() || assignedTestersLoading()"
+                  [class.loading]="loading()"
+                  (click)="unassignTester(u.id)"
+                >
+                  @if (loading()) {
+                    <span class="loading loading-spinner loading-xs"></span>
+                  } @else {
+                    Unassign
+                  }
+                </button>
+              </td>
+            </tr>
+          }
+          @if (!assignedTesters().length) {
+            <tr>
+              <td colspan="4" class="text-center py-4 text-base-content/60">No testers assigned.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 </app-generic-modal>
 
 <!-- Delete Confirmation Modal -->
