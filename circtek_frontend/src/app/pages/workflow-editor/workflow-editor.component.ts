@@ -2147,8 +2147,11 @@ export class WorkflowEditorComponent
     const isNodeOrHandle = target.closest(
       ".custom-node, .decision-node, .node-handle, .connection-path",
     );
+    
+    // Also check if target is an SVG path (connection edge)
+    const isSVGPath = target.tagName === 'path' && target.id && target.id.startsWith('connection-');
 
-    if (!isNodeOrHandle) {
+    if (!isNodeOrHandle && !isSVGPath) {
       console.log("Canvas clicked, clearing selections.");
       this.selectedNode = null;
       this.selectedEdge = null;
@@ -2165,7 +2168,7 @@ export class WorkflowEditorComponent
     const xDiff = Math.abs(screenX - this.lastClickPosition.x);
     const yDiff = Math.abs(screenY - this.lastClickPosition.y);
 
-    if (timeDiff < 300 && xDiff < 10 && yDiff < 10 && !isNodeOrHandle) {
+    if (timeDiff < 300 && xDiff < 10 && yDiff < 10 && !isNodeOrHandle && !isSVGPath) {
       console.log("Double-click detected on canvas at screen coords", {
         screenX,
         screenY,

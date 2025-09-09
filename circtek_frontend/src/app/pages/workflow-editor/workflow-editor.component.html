@@ -276,11 +276,12 @@
 
           <!-- Render Connections (SVG Layer) -->
           <svg
-            class="connections-layer absolute pointer-events-none z-10 overflow-visible"
+            class="connections-layer absolute z-10 overflow-visible"
             [style.width.px]="5000"
             [style.height.px]="5000"
             [style.left.px]="0"
             [style.top.px]="0"
+            style="pointer-events: none;"
           >
             <defs>
               <!-- Basic Arrowhead Definition -->
@@ -312,7 +313,7 @@
             </defs>
             <g *ngFor="let edge of edges">
               <path
-                class="transition-[stroke-width] duration-200"
+                class="transition-[stroke-width] duration-200 cursor-pointer"
                 [id]="'connection-' + edge.id"
                 [attr.stroke]="selectedEdge?.id === edge.id ? '#a7d48e' : '#555'"
                 [attr.stroke-width]="selectedEdge?.id === edge.id ? 3 : 2"
@@ -327,6 +328,7 @@
                     ? 'url(#arrowhead-selected)'
                     : 'url(#arrowhead)'
                 "
+                style="pointer-events: stroke;"
               >
                 <!-- Path 'd' attribute will be set dynamically by updateConnectionPath -->
               </path>
