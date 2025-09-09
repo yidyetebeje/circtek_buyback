@@ -35,7 +35,7 @@ export class WorkflowService {
   }
 
   updateWorkflow(id: string, workflow: IWorkflow): Observable<any> {
-    return this.apiService.put(`${this.baseUrl}/${id}`, workflow);
+    return this.apiService.patch(`${this.baseUrl}/${id}`, workflow);
   }
 
   getWorkflow(id: string): Observable<IWorkflow | null> {

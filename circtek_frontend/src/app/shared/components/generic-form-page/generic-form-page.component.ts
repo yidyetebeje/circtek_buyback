@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal, in
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormGroupDirective, ControlContainer } from '@angular/forms';
 import { Router } from '@angular/router';
-import { LucideAngularModule, ArrowLeft, Save, Edit, Share } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, Save, Edit, Share, Eye, EyeOff } from 'lucide-angular';
 import { FileUploadComponent } from '../file-upload/file-upload.component';
 
 export interface FormField {
@@ -69,6 +69,8 @@ export class GenericFormPageComponent {
   readonly Save = Save;
   readonly Edit = Edit;
   readonly Share = Share;
+  readonly Eye = Eye;
+  readonly EyeOff = EyeOff;
 
   // Computed values
   submitAction = computed(() => {
@@ -185,6 +187,21 @@ export class GenericFormPageComponent {
     }[action.variant];
     
     return `${baseClass} ${variantClass}`;
+  }
+
+  // Password visibility state and helpers
+  private passwordVisibility = signal<Record<string, boolean>>({});
+
+  isPasswordVisible(fieldKey: string): boolean {
+    const state = this.passwordVisibility();
+    return !!state[fieldKey];
+  }
+
+  togglePasswordVisibility(fieldKey: string): void {
+    this.passwordVisibility.update((prev) => ({
+      ...prev,
+      [fieldKey]: !prev[fieldKey]
+    }));
   }
 }
 

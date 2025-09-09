@@ -270,6 +270,7 @@ export class WorkflowEditorComponent
   nameTouched = signal<boolean>(false);
   isFormValid = computed(() => this.name().trim().length > 0);
   modalActions: ModalAction[] = [];
+  isSaving = signal<boolean>(false);
 
   /**
    * Get actual DOM position of handle for debugging/verification
@@ -851,30 +852,49 @@ export class WorkflowEditorComponent
   ) {
     console.log("WorkflowEditorComponent: Constructor called");
     effect(() => {
-      // This effect will automatically run when any of its dependencies (signals) change.
-      // Dependencies: this.isFormValid() (which depends on this.name()) and this.isSaveModalVisible.
-      if (!this.isSaveModalVisible) return;
-
+      // Dependencies: this.isFormValid() (which depends on this.name()), this.isSaveModalVisible, and this.isSaving()
+      const modalVisible = this.isSaveModalVisible;
       const isValid = this.isFormValid();
-      console.log('Form validity changed:', isValid, 'Name value:', this.name());
+      const saving = this.isSaving();
       
-      // Update modal actions with current validation state
-      this.updateModalActionsValidation(isValid);
+      if (modalVisible) {
+        console.log('Modal state changed:', { isValid, saving, name: this.name(), modalVisible });
+        this.updateModalActionsValidation(isValid, saving);
+      }
     });
   }
 
   /**
-   * Update modal actions validation state
+   * Update modal actions validation and saving state
    */
-  private updateModalActionsValidation(isValid: boolean): void {
+  private updateModalActionsValidation(isValid: boolean, isSaving: boolean = false): void {
+    console.log('updateModalActionsValidation called:', { isValid, isSaving, actionsLength: this.modalActions.length });
     if (this.modalActions.length === 0) return;
     
     const saveIndex = this.modalActions.findIndex(a => a.action === 'save');
     if (saveIndex > -1) {
       // Create new array to trigger change detection
       const newActions = [...this.modalActions];
-      newActions[saveIndex] = { ...newActions[saveIndex], disabled: !isValid };
+      const isUpdate = !!this.currentWorkflowId;
+      const newLabel = isSaving 
+        ? (isUpdate ? "Updating..." : "Saving...") 
+        : (isUpdate ? "Update" : "Save");
+      
+      console.log('Updating action:', { 
+        oldAction: newActions[saveIndex], 
+        newLabel, 
+        disabled: !isValid || isSaving, 
+        loading: isSaving 
+      });
+      
+      newActions[saveIndex] = { 
+        ...newActions[saveIndex], 
+        disabled: !isValid || isSaving,
+        loading: isSaving,
+        label: newLabel
+      };
       this.modalActions = newActions;
+      console.log('Updated modalActions:', this.modalActions);
       this.changeDetectorRef.detectChanges();
     }
   }
@@ -888,7 +908,7 @@ export class WorkflowEditorComponent
     
     // Update validation state immediately
     if (this.isSaveModalVisible) {
-      this.updateModalActionsValidation(this.isFormValid());
+      this.updateModalActionsValidation(this.isFormValid(), this.isSaving());
     }
   }
 
@@ -1159,7 +1179,7 @@ export class WorkflowEditorComponent
   ): void {
     const options = {
       closeButton: true,
-      positionClass: "toast-top-right",
+      positionClass: "toast-top-center",
       timeOut: 5000,
       progressBar: true,
     };
@@ -2315,22 +2335,26 @@ export class WorkflowEditorComponent
     this.nameTouched.set(false);
     
     // Configure modal actions with initial validation state
+    const isUpdate = !!this.currentWorkflowId;
     this.modalActions = [
       { label: "Cancel", variant: "ghost", action: "cancel" },
-      { label: this.currentWorkflowId ? "Update" : "Save", variant: "primary", action: "save", disabled: !this.isFormValid() },
+      { 
+        label: isUpdate ? "Update" : "Save", 
+        variant: "primary", 
+        action: "save", 
+        disabled: !this.isFormValid(),
+        loading: false
+      },
     ];
     
     // Show modal after actions are configured
     this.isSaveModalVisible = true;
-    
-    // Force validation update after modal is shown
-    setTimeout(() => {
-      this.updateModalActionsValidation(this.isFormValid());
-    }, 0);
+    this.changeDetectorRef.detectChanges();
   }
 
   closeSaveModal(): void {
     this.isSaveModalVisible = false;
+    this.isSaving.set(false); // Reset saving state when modal is closed
   }
 
   prepareWorkflowData(): void {
@@ -2416,14 +2440,20 @@ export class WorkflowEditorComponent
   }): void {
     if (!formData.name) {
       this.showToast("Workflow name is required.", "error");
+      this.isSaving.set(false);
       return;
     }
     console.log("Handling workflow save:", formData);
     if (!this.currentWorkflowData || !this.currentWorkflowData.canvas_state) {
       // Check canvas_state too
       this.showToast("Workflow data not prepared correctly", "error");
+      this.isSaving.set(false);
       return;
     }
+
+    // Set saving state
+    this.isSaving.set(true);
+    console.log('Setting isSaving to true');
 
     // Construct the data payload, ensuring all required fields are present
     const saveData: IWorkflow = {
@@ -2460,13 +2490,23 @@ export class WorkflowEditorComponent
     this.workflowService.createWorkflow(workflowData).subscribe({
       next: (response: any) => {
         console.log("Workflow created successfully:", response);
+        this.isSaving.set(false);
         this.showToast("Workflow saved successfully", "success");
         this.closeSaveModal();
-        // Navigate back to the workflows list after successful creation
-        this.router.navigate(["/workflows"]);
+        
+        // Navigate to the edit page with the new workflow ID
+        const newWorkflowId = response?.data?.id || response?.id;
+        if (newWorkflowId) {
+          this.currentWorkflowId = newWorkflowId.toString();
+          this.router.navigate(["/workflow-editor", newWorkflowId], { replaceUrl: true });
+        } else {
+          console.warn("No workflow ID returned from server, navigating to workflows list");
+          this.router.navigate(["/workflows"]);
+        }
       },
       error: (error: any) => {
         console.error("Error creating workflow:", error);
+        this.isSaving.set(false);
         this.showToast(
           "Error creating workflow: " +
             (error?.error?.message || "Unknown error"),
@@ -2480,13 +2520,21 @@ export class WorkflowEditorComponent
     this.workflowService.updateWorkflow(id, workflowData).subscribe({
       next: (response: any) => {
         console.log("Workflow updated successfully:", response);
+        this.isSaving.set(false);
         this.showToast("Workflow updated successfully", "success");
         this.closeSaveModal();
-        // Navigate back to the workflows list after successful update
-        this.router.navigate(["/workflows"]);
+        
+        // Update the current workflow data with the response
+        if (response?.data) {
+          this.currentWorkflowData = { ...this.currentWorkflowData, ...response.data };
+        }
+        
+        // Stay on the edit page (no navigation needed)
+        console.log("Remaining on edit page after successful update");
       },
       error: (error: any) => {
         console.error("Error updating workflow:", error);
+        this.isSaving.set(false);
         this.showToast(
           "Error updating workflow: " +
             (error?.error?.message || "Unknown error"),

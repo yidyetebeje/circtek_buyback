@@ -183,3 +183,106 @@ body {
 /* You can add global styles to this file, and also import other style files */
 html, body { height: 100%; }
 body { margin: 0; font-family: "Poppins", sans-serif; }
+
+/* ngx-toastr custom styles for proper positioning and z-index */
+.toast-container {
+  position: fixed !important;
+  z-index: 9999 !important;
+  pointer-events: none;
+}
+
+.toast-container > div {
+  pointer-events: auto;
+  position: relative;
+  overflow: hidden;
+  margin: 0 0 6px;
+  padding: 15px 15px 15px 50px;
+  width: 300px;
+  border-radius: 6px;
+  background-position: 15px center;
+  background-repeat: no-repeat;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+}
+
+.toast-container .toast-success {
+  background-color: #51A351;
+}
+
+.toast-container .toast-error {
+  background-color: #BD362F;
+}
+
+.toast-container .toast-info {
+  background-color: #2F96B4;
+}
+
+.toast-container .toast-warning {
+  background-color: #F89406;
+}
+
+.toast-container .toast:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  opacity: 1;
+  cursor: pointer;
+}
+
+/* Animation classes */
+.toast-container .ng-animate {
+  transition: 300ms ease-in-out;
+  transition-property: opacity, transform;
+}
+
+.toast-container .ng-enter {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.toast-container .ng-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.toast-container .ng-leave {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.toast-container .ng-leave-active {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+/* Ensure toast positioning classes work correctly */
+.toast-top-right {
+  top: 20px;
+  right: 20px;
+}
+
+.toast-top-left {
+  top: 20px;
+  left: 20px;
+}
+
+.toast-bottom-right {
+  bottom: 20px;
+  right: 20px;
+}
+
+.toast-bottom-left {
+  bottom: 20px;
+  left: 20px;
+}
+
+.toast-top-center {
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.toast-bottom-center {
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}

@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { CommonModule, NgIf, NgForOf } from '@angular/common';
 import { GenericModalComponent, ModalAction } from '../../../shared/components/generic-modal/generic-modal.component';
 
@@ -51,6 +51,7 @@ export class DocumentSaveModalComponent implements OnInit, OnChanges {
 
   documentForm: FormGroup;
   isSaving: boolean = false;
+  saveError: string = '';
 
   get modalTitle(): string {
     return this.isEditing ? 'Update Document' : 'Save New Document';
@@ -76,7 +77,7 @@ export class DocumentSaveModalComponent implements OnInit, OnChanges {
   constructor(private fb: FormBuilder) {
     // Initialize the form group
     this.documentForm = this.fb.group({
-      name: ['', Validators.required],
+      name: ['', [Validators.required, this.trimmedRequiredValidator]],
       description: [''],
       is_published: [true], // Default to Draft/Not Published
       clientId: [''] // Keep if client selection is needed
@@ -123,7 +124,7 @@ export class DocumentSaveModalComponent implements OnInit, OnChanges {
   private resetForm(): void {
     if (this.isEditing && this.documentData) {
       this.documentForm.patchValue({
-        name: this.documentData.name || '',
+        name: (this.documentData.name || '').trim(),
         description: this.documentData.description || '',
         is_published: this.documentData.is_published === true, // Ensure boolean
         clientId: this.documentData.client_id || '' // Use client_id from data
@@ -138,11 +139,19 @@ export class DocumentSaveModalComponent implements OnInit, OnChanges {
       });
     }
     this.isSaving = false; // Reset saving state
+    this.saveError = ''; // Reset error state
     // Note: We do NOT reset the canvas_state here - it should be preserved
   }
 
   // Prepare and emit the save event
   saveDocument(): void {
+    // Normalize and validate trimmed name
+    const rawName = (this.documentForm.value.name ?? '').toString();
+    const trimmedName = rawName.trim();
+    if (trimmedName.length === 0) {
+      this.documentForm.get('name')?.setErrors({ required: true });
+    }
+
     if (this.documentForm.invalid) {
       // Mark fields as touched to show errors
       Object.values(this.documentForm.controls).forEach(control => {
@@ -152,10 +161,11 @@ export class DocumentSaveModalComponent implements OnInit, OnChanges {
     }
 
     this.isSaving = true;
+    this.saveError = ''; // Clear any previous errors
 
     // Prepare form data to emit, including the essential canvas_state
     const formData: DocumentFormData = {
-      name: this.documentForm.value.name,
+      name: trimmedName,
       description: this.documentForm.value.description || '',
       is_published: true,
       canvas_state: this.getPreservedCanvasState() || {} // Use preserved canvas state
@@ -169,11 +179,8 @@ export class DocumentSaveModalComponent implements OnInit, OnChanges {
     console.log('Emitting save event with data:', formData);
     console.log('Canvas state being preserved:', this.getPreservedCanvasState());
     this.save.emit(formData);
-
-    // Optionally reset saving state after a delay, assuming parent closes modal
-    setTimeout(() => {
-      this.isSaving = false;
-    }, 1500);
+    
+    // Note: Don't reset isSaving here - parent component will handle success/error
   }
 
   // Alias for calling saveDocument from the template submit button
@@ -188,6 +195,20 @@ export class DocumentSaveModalComponent implements OnInit, OnChanges {
     // this.resetForm();
   }
 
+  // Method for parent to call on successful save
+  onSaveSuccess(): void {
+    this.isSaving = false;
+    this.saveError = '';
+
+    this.close();
+  }
+
+  // Method for parent to call on save error
+  onSaveError(errorMessage: string): void {
+    this.isSaving = false;
+    this.saveError = errorMessage;
+  }
+
   onModalClose(): void {
     this.close();
   }
@@ -199,4 +220,10 @@ export class DocumentSaveModalComponent implements OnInit, OnChanges {
       this.close();
     }
   }
+
+  // Validator: ensures name is not only whitespace
+  private trimmedRequiredValidator = (control: AbstractControl): ValidationErrors | null => {
+    const value = (control.value ?? '').toString();
+    return value.trim().length > 0 ? null : { required: true };
+  };
 } 

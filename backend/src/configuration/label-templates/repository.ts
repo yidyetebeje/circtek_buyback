@@ -39,6 +39,7 @@ export class LabelTemplatesRepository {
         const [created] = await this.database
             .select(labelTemplateSelection)
             .from(label_templates)
+            .leftJoin(tenants, eq(label_templates.tenant_id, tenants.id))
             .where(and(eq(label_templates.name, payload.name), eq(label_templates.tenant_id, payload.tenant_id)) as any)
         return created as any
     }

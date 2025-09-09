@@ -9,6 +9,7 @@ import {
   ChangeDetectorRef,
   HostListener,
   ApplicationRef,
+  NgZone,
 } from "@angular/core";
 import {
   Location,
@@ -31,7 +32,7 @@ import {
   Save,
   Edit,
   List,
-  Circle,
+  Info,
   Trash2,
   Lightbulb,
 } from "lucide-angular";
@@ -94,6 +95,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   placeholderContainerRef!: ViewContainerRef;
   @ViewChild("sidebarCard") sidebarCard!: ElementRef;
   @ViewChild("mainContentCard") mainContentCard!: ElementRef;
+  @ViewChild(DocumentSaveModalComponent) documentSaveModal!: DocumentSaveModalComponent;
 
   // Registry of created placeholder component references
   private placeholderRegistry = new Map<string, any>();
@@ -114,7 +116,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   readonly Save = Save;
   readonly Edit = Edit;
   readonly List = List;
-  readonly Circle = Circle;
+  readonly Info = Info;
   readonly Trash2 = Trash2;
   readonly Lightbulb = Lightbulb;
 
@@ -254,6 +256,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     private toastr: ToastrService,
     private cdRef: ChangeDetectorRef,
     private appRef: ApplicationRef,
+    private ngZone: NgZone,
     // New services
     private canvasService: CanvasService,
     private textEditorService: TextEditorService,
@@ -1226,9 +1229,6 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   }
 
   handleSave(formData: DocumentFormData): void {
-    this.isLoading = false;
-    this.isSaveModalVisible = false;
-
     // Clear any selection effects before serializing for final save
     this.listLayoutService.prepareForSave();
 
@@ -1236,11 +1236,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
       this.placeholderRegistry,
     );
     if (!canvasState) {
-      this.toastr.error(
-        "Could not prepare document state for saving.",
-        "Save Error",
-      );
-      this.isLoading = false;
+      this.documentSaveModal.onSaveError("Could not prepare document state for saving.");
       return;
     }
 
@@ -1266,24 +1262,24 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
           .updateDocument(Number(this.documentId), updatePayload)
           .subscribe({
             next: (updatedDocument) => {
+              this.documentSaveModal.onSaveSuccess();
+              this.isSaveModalVisible = false;
               this.toastr.success(
                 "Document updated successfully!",
                 "Save Successful",
               );
               // Navigate to the specific document after updating
-              // Handle both direct response and wrapped in ApiResponse
-              const documentId = updatedDocument?.id || updatedDocument?.data?.id || this.documentId;
+              // Handle ApiResponse structure: { data: LabelTemplateRecord, message, status }
+              const documentId = updatedDocument?.data?.id || this.documentId;
               console.log('Updated document response:', updatedDocument);
               console.log('Extracted document ID:', documentId);
-              this.router.navigate(["/labels", documentId]);
+              this.router.navigate(["/labels", documentId], { replaceUrl: true });
             },
             error: (err) => {
               console.error("Error updating document:", err);
-              this.toastr.error(
-                err.error?.message || "Failed to update document.",
-                "Save Error",
-              );
-              this.isLoading = false;
+              const errorMessage = err.error?.message || "Failed to update document.";
+              this.documentSaveModal.onSaveError(errorMessage);
+              this.toastr.error(errorMessage, "Save Error");
             },
           }),
       );
@@ -1291,30 +1287,29 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
       this.subscription.add(
         this.documentService.createDocument(payload).subscribe({
           next: (newDocument) => {
+            this.documentSaveModal.onSaveSuccess();
+            this.isSaveModalVisible = false;
             this.toastr.success(
               "Document created successfully!",
               "Save Successful",
             );
-            this.isLoading = false;
             // Navigate to the newly created document
-            // Handle both direct response and wrapped in ApiResponse
-            const documentId = newDocument?.id || newDocument?.data?.id;
+            // Handle ApiResponse structure: { data: LabelTemplateRecord, message, status }
+            const documentId = newDocument?.data?.id;
             console.log('New document response:', newDocument);
             console.log('Extracted document ID:', documentId);
             if (documentId) {
-              this.router.navigate(["/labels", documentId]);
+              this.router.navigate(["/labels", documentId], { replaceUrl: true });
             } else {
               console.warn('No document ID found in response, navigating to labels list');
-              this.router.navigate(["/labels"]);
+              this.router.navigate(["/labels"], { replaceUrl: true });
             }
           },
           error: (err) => {
             console.error("Error creating document:", err);
-            this.toastr.error(
-              err.error?.message || "Failed to create document.",
-              "Save Error",
-            );
-            this.isLoading = false;
+            const errorMessage = err.error?.message || "Failed to create document.";
+            this.documentSaveModal.onSaveError(errorMessage);
+            this.toastr.error(errorMessage, "Save Error");
           },
         }),
       );
@@ -1355,7 +1350,11 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
       const pos = this.canvasService.stage.getPointerPosition();
       if (!pos) return;
 
-      this.handleDrop(pos.x, pos.y);
+      // Ensure Angular change detection runs after handling the drop
+      this.ngZone.run(() => {
+        this.handleDrop(pos.x, pos.y);
+        this.cdRef.detectChanges();
+      });
     });
   }
 
@@ -1494,8 +1493,12 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
         placeholderRef.instance.placeholderCreated.subscribe(
           (placeholderImage: Konva.Image) => {
             console.log('Placeholder created:', placeholderId, placeholderImage);
-            // Notify canvas service that an element was added (placeholder adds itself to layer)
-            this.canvasService.addElement(placeholderImage as any);
+            // Notify canvas service and update UI within Angular zone
+            this.ngZone.run(() => {
+              this.canvasService.addElement(placeholderImage as any);
+              this.canvasService.forceUpdateHasElementsFlag();
+              this.cdRef.detectChanges();
+            });
 
             placeholderImage.on("click tap", () =>
               this.selectShape(placeholderImage),
@@ -1507,9 +1510,12 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
               if (e.evt) e.evt.stopPropagation();
             });
             
-            // Force update hasElements flag after placeholder is added
+            // Ensure flag is updated after any async image/text sizing completes
             setTimeout(() => {
-              this.canvasService.forceUpdateHasElementsFlag();
+              this.ngZone.run(() => {
+                this.canvasService.forceUpdateHasElementsFlag();
+                this.cdRef.detectChanges();
+              });
             }, 100);
           },
         );

@@ -48,6 +48,7 @@ export class WorkflowsRepository {
         const [created] = await this.database
             .select(workflowSelection)
             .from(workflows)
+            .leftJoin(tenants, eq(workflows.tenant_id, tenants.id))
             .where(and(eq(workflows.name, payload.name), eq(workflows.tenant_id, payload.tenant_id)) as any)
         return created as any
     }

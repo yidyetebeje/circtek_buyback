@@ -115,15 +115,38 @@
                     ></app-file-upload>
                   }
                   @default {
-                    <input 
-                      [type]="field.type"
-                      [formControlName]="field.key"
-                      class="input input-bordered w-full placeholder:text-base-content/50 placeholder:font-normal"
-                      [class.input-error]="isFieldInvalid(field)"
-                      [placeholder]="field.placeholder || ''"
-                      [disabled]="field.disabled || loading() || submitting()"
-                      [maxlength]="field.validation?.maxLength || null"
-                    />
+                    @if (field.type === 'password') {
+                      <div class="relative">
+                        <input 
+                          [type]="isPasswordVisible(field.key) ? 'text' : 'password'"
+                          [formControlName]="field.key"
+                          class="input input-bordered w-full pr-10 placeholder:text-base-content/50 placeholder:font-normal"
+                          [class.input-error]="isFieldInvalid(field)"
+                          [placeholder]="field.placeholder || ''"
+                          [disabled]="field.disabled || loading() || submitting()"
+                          [maxlength]="field.validation?.maxLength || null"
+                        />
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-xs absolute right-2 top-1/2 -translate-y-1/2 z-10 pointer-events-auto"
+                          (click)="togglePasswordVisibility(field.key)"
+                          [disabled]="loading() || submitting()"
+                          aria-label="Toggle password visibility"
+                        >
+                          <lucide-icon [img]="isPasswordVisible(field.key) ? EyeOff : Eye" class="size-4"></lucide-icon>
+                        </button>
+                      </div>
+                    } @else {
+                      <input 
+                        [type]="field.type"
+                        [formControlName]="field.key"
+                        class="input input-bordered w-full placeholder:text-base-content/50 placeholder:font-normal"
+                        [class.input-error]="isFieldInvalid(field)"
+                        [placeholder]="field.placeholder || ''"
+                        [disabled]="field.disabled || loading() || submitting()"
+                        [maxlength]="field.validation?.maxLength || null"
+                      />
+                    }
                   }
                 }
 

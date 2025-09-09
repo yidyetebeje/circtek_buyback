@@ -106,10 +106,30 @@ export class WiFiProfileFormComponent {
       this.wifiProfileId.set(Number(id));
     }
 
-    // Load options
-    if (this.isSuperAdmin()) {
-      this.loadTenantOptions();
-    }
+    // Load tenant options and ensure tenant control only for super admins
+    effect(() => {
+      const superAdmin = this.isSuperAdmin();
+      const form = this.wifiProfileForm();
+      if (superAdmin) {
+        // Ensure form has tenant_id control and load options
+        if (!form.get('tenant_id')) {
+          const prev = form.getRawValue();
+          this.wifiProfileForm.set(this.createForm());
+          this.wifiProfileForm().patchValue(prev as any);
+        }
+        if (this.tenantOptions().length === 0) {
+          this.loadTenantOptions();
+        }
+      } else {
+        // Ensure form does not carry tenant_id when not super admin
+        if (form.get('tenant_id')) {
+          const prev = form.getRawValue();
+          delete (prev as any).tenant_id;
+          this.wifiProfileForm.set(this.createForm());
+          this.wifiProfileForm().patchValue(prev as any);
+        }
+      }
+    });
 
     // Load WiFi profile data if editing
     effect(() => {
