@@ -4,9 +4,12 @@
 
     <!-- Work Category -->
     <div class="mt-3 border-t border-base-300">
-      <button type="button" class="w-full flex items-center justify-between py-3 hover:bg-base-200 transition-colors" (click)="toggleCategory('work')">
-        <span class="text-sm font-medium text-base-content">Work</span>
-        <lucide-icon [name]="categoryState['work'] ? 'chevron-down' : 'chevron-right'" class="w-4 h-4 text-base-content/70"></lucide-icon>
+      <button type="button" class="w-full flex items-center justify-between py-3 px-2 hover:bg-base-200 active:bg-base-300 transition-all duration-200 rounded-md cursor-pointer border border-transparent hover:border-base-300" (click)="toggleCategory('work')">
+        <span class="text-sm font-semibold text-base-content flex items-center gap-2">
+          <lucide-icon [img]="Folder" class="w-4 h-4 text-base-content/70"></lucide-icon>
+          Work
+        </span>
+        <lucide-icon [img]="categoryState['work'] ? ChevronDown : ChevronRight" class="w-4 h-4 text-base-content/70 transition-transform duration-200"></lucide-icon>
       </button>
       <div class="px-1 pb-3" [class.hidden]="!categoryState['work']">
         <div *ngFor="let nodeType of workNodes"
@@ -23,9 +26,12 @@
 
     <!-- Labels Category -->
     <div class="border-t border-base-300">
-      <button type="button" class="w-full flex items-center justify-between py-3 hover:bg-base-200 transition-colors" (click)="toggleCategory('labels')">
-        <span class="text-sm font-medium text-base-content">Labels</span>
-        <lucide-icon [name]="categoryState['labels'] ? 'chevron-down' : 'chevron-right'" class="w-4 h-4 text-base-content/70"></lucide-icon>
+      <button type="button" class="w-full flex items-center justify-between py-3 px-2 hover:bg-base-200 active:bg-base-300 transition-all duration-200 rounded-md cursor-pointer border border-transparent hover:border-base-300" (click)="toggleCategory('labels')">
+        <span class="text-sm font-semibold text-base-content flex items-center gap-2">
+          <lucide-icon [img]="Tag" class="w-4 h-4 text-base-content/70"></lucide-icon>
+          Labels
+        </span>
+        <lucide-icon [img]="categoryState['labels'] ? ChevronDown : ChevronRight" class="w-4 h-4 text-base-content/70 transition-transform duration-200"></lucide-icon>
       </button>
       <div class="px-1 pb-3" [class.hidden]="!categoryState['labels']">
         <div *ngFor="let nodeType of labelNodes"

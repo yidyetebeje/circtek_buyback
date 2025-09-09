@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideAngularModule, Folder, Tag, ChevronDown, ChevronRight } from 'lucide-angular';
 
 // Interface based on usage in the bundled code
 export interface INodeType {
@@ -22,13 +22,19 @@ export class NodePaletteComponent implements OnChanges {
   @Output() nodeSelected = new EventEmitter<INodeType>();
   @Output() nodeDragStart = new EventEmitter<INodeType>();
 
+  // Icon constants for template
+  Folder = Folder;
+  Tag = Tag;
+  ChevronDown = ChevronDown;
+  ChevronRight = ChevronRight;
+
   // Categorized nodes
   workNodes: INodeType[] = [];
   labelNodes: INodeType[] = [];
 
   // Category expand/collapse state
   categoryState: { [key: string]: boolean } = {
-    work: false, // Work category starts collapsed
+    work: true, // Work category starts expanded to show it's interactive
     labels: false // Labels category starts collapsed
   };
 
