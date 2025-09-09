@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { db } from '../../db'
 import { tenants, users, wifi_profile } from '../../db/circtek.schema'
 import type { WiFiProfileCreateInput, WiFiProfilePublic, WiFiProfileUpdateInput } from './types'
@@ -24,6 +24,7 @@ export class WiFiProfilesRepository {
                 .select(wifiProfileSelection)
                 .from(wifi_profile)
                 .leftJoin(tenants, eq(wifi_profile.tenant_id, tenants.id))
+                .orderBy(desc(wifi_profile.updated_at))
             return rows as any
         }
         const rows = await this.database
@@ -31,6 +32,7 @@ export class WiFiProfilesRepository {
             .from(wifi_profile)
             .leftJoin(tenants, eq(wifi_profile.tenant_id, tenants.id))
             .where(eq(wifi_profile.tenant_id, tenantId))
+            .orderBy(desc(wifi_profile.updated_at))
         return rows as any
     }
 

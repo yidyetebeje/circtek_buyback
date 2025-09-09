@@ -1268,12 +1268,12 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
                 "Document updated successfully!",
                 "Save Successful",
               );
-              // Navigate to the specific document after updating
-              // Handle ApiResponse structure: { data: LabelTemplateRecord, message, status }
-              const documentId = updatedDocument?.data?.id || this.documentId;
-              console.log('Updated document response:', updatedDocument);
-              console.log('Extracted document ID:', documentId);
-              this.router.navigate(["/labels", documentId], { replaceUrl: true });
+            // Navigate back to the management page labels tab after updating
+            console.log('Updated document response:', updatedDocument);
+            this.router.navigate(["/management"], { 
+              queryParams: { tab: 'labels' },
+              replaceUrl: true 
+            });
             },
             error: (err) => {
               console.error("Error updating document:", err);
@@ -1293,17 +1293,12 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
               "Document created successfully!",
               "Save Successful",
             );
-            // Navigate to the newly created document
-            // Handle ApiResponse structure: { data: LabelTemplateRecord, message, status }
-            const documentId = newDocument?.data?.id;
+            // Navigate back to the management page labels tab after creation
             console.log('New document response:', newDocument);
-            console.log('Extracted document ID:', documentId);
-            if (documentId) {
-              this.router.navigate(["/labels", documentId], { replaceUrl: true });
-            } else {
-              console.warn('No document ID found in response, navigating to labels list');
-              this.router.navigate(["/labels"], { replaceUrl: true });
-            }
+            this.router.navigate(["/management"], { 
+              queryParams: { tab: 'labels' },
+              replaceUrl: true 
+            });
           },
           error: (err) => {
             console.error("Error creating document:", err);

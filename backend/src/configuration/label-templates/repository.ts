@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { db } from '../../db'
 import { label_templates, users, tenants } from '../../db/circtek.schema'
 import type { LabelTemplateCreateInput, LabelTemplatePublic, LabelTemplateUpdateInput } from './types'
@@ -24,6 +24,7 @@ export class LabelTemplatesRepository {
                 .select(labelTemplateSelection)
                 .from(label_templates)
                 .leftJoin(tenants, eq(label_templates.tenant_id, tenants.id))
+                .orderBy(desc(label_templates.updated_at))
             return rows as any
         }
         const rows = await this.database
@@ -31,6 +32,7 @@ export class LabelTemplatesRepository {
             .from(label_templates)
             .leftJoin(tenants, eq(label_templates.tenant_id, tenants.id))
             .where(eq(label_templates.tenant_id, tenantId))
+            .orderBy(desc(label_templates.updated_at))
         return rows as any
     }
 

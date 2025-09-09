@@ -216,7 +216,11 @@ export class ManagementComponent {
     switch (this.activeTab()) {
       case 'tenants':
         return [
-          { header: 'S.No', accessorKey: 'id' as any },
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
@@ -235,7 +239,11 @@ export class ManagementComponent {
         ];
       case 'users':
         return [
-          { header: 'S.No', accessorKey: 'id' as any },
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
           { header: 'Username', accessorKey: 'user_name' as any },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Email', accessorKey: 'email' as any },
@@ -257,7 +265,11 @@ export class ManagementComponent {
         ];
       case 'warehouses':
         return [
-          { header: 'S.No', accessorKey: 'id' as any },
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
@@ -277,7 +289,11 @@ export class ManagementComponent {
         ];
       case 'wifi':
         return [
-          { header: 'S.No', accessorKey: 'id' as any },
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'SSID', accessorKey: 'ssid' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
@@ -300,7 +316,11 @@ export class ManagementComponent {
         ];
       case 'labels':
         return [
-          { header: 'S.No', accessorKey: 'id' as any },
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },
@@ -322,7 +342,11 @@ export class ManagementComponent {
         ];
       case 'workflows':
         return [
-          { header: 'S.No', accessorKey: 'id' as any },
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
           { header: 'Name', accessorKey: 'name' as any },
           { header: 'Description', accessorKey: 'description' as any },
           { header: 'Tenant', accessorKey: 'tenant_name' as any },

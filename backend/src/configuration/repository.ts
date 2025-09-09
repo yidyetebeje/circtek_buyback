@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { db } from '../db'
 import { label_templates, users, wifi_profile, workflows } from '../db/circtek.schema'
 import type { LabelTemplateCreateInput, LabelTemplatePublic, LabelTemplateUpdateInput, WiFiProfileCreateInput, WiFiProfilePublic, WiFiProfileUpdateInput, WorkflowCreateInput, WorkflowPublic, WorkflowUpdateInput } from './types'
@@ -42,10 +42,10 @@ export class ConfigurationRepository {
     // Label Templates
     async listLabelTemplates(tenantId?: number | null): Promise<LabelTemplatePublic[]> {
         if (tenantId == null) {
-            const rows = await this.database.select(labelTemplateSelection).from(label_templates)
+            const rows = await this.database.select(labelTemplateSelection).from(label_templates).orderBy(desc(label_templates.updated_at))
             return rows as any
         }
-        const rows = await this.database.select(labelTemplateSelection).from(label_templates).where(eq(label_templates.tenant_id, tenantId))
+        const rows = await this.database.select(labelTemplateSelection).from(label_templates).where(eq(label_templates.tenant_id, tenantId)).orderBy(desc(label_templates.updated_at))
         return rows as any
     }
 
@@ -79,10 +79,10 @@ export class ConfigurationRepository {
     // Workflows
     async listWorkflows(tenantId?: number | null): Promise<WorkflowPublic[]> {
         if (tenantId == null) {
-            const rows = await this.database.select(workflowSelection).from(workflows)
+            const rows = await this.database.select(workflowSelection).from(workflows).orderBy(desc(workflows.updated_at))
             return rows as any
         }
-        const rows = await this.database.select(workflowSelection).from(workflows).where(eq(workflows.tenant_id, tenantId))
+        const rows = await this.database.select(workflowSelection).from(workflows).where(eq(workflows.tenant_id, tenantId)).orderBy(desc(workflows.updated_at))
         return rows as any
     }
 
@@ -153,10 +153,10 @@ export class ConfigurationRepository {
     // WiFi Profiles CRUD
     async listWiFiProfiles(tenantId?: number | null): Promise<WiFiProfilePublic[]> {
         if (tenantId == null) {
-            const rows = await this.database.select(wifiProfileSelection).from(wifi_profile)
+            const rows = await this.database.select(wifiProfileSelection).from(wifi_profile).orderBy(desc(wifi_profile.updated_at))
             return rows as any
         }
-        const rows = await this.database.select(wifiProfileSelection).from(wifi_profile).where(eq(wifi_profile.tenant_id, tenantId))
+        const rows = await this.database.select(wifiProfileSelection).from(wifi_profile).where(eq(wifi_profile.tenant_id, tenantId)).orderBy(desc(wifi_profile.updated_at))
         return rows as any
     }
 

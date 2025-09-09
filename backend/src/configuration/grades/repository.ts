@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { db } from '../../db'
 import { grades } from '../../db/circtek.schema'
 import type { GradeCreateInput, GradePublic, GradeUpdateInput } from './types'
@@ -18,10 +18,10 @@ export class GradesRepository {
 
     async list(tenantId?: number | null): Promise<GradePublic[]> {
         if (tenantId == null) {
-            const rows = await this.database.select(gradeSelection).from(grades)
+            const rows = await this.database.select(gradeSelection).from(grades).orderBy(desc(grades.created_at))
             return rows as any
         }
-        const rows = await this.database.select(gradeSelection).from(grades).where(eq(grades.tenant_id, tenantId))
+        const rows = await this.database.select(gradeSelection).from(grades).where(eq(grades.tenant_id, tenantId)).orderBy(desc(grades.created_at))
         return rows as any
     }
 

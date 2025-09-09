@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { db } from '../../db'
 import { users, workflows, tenants } from '../../db/circtek.schema'
 import type { WorkflowCreateInput, WorkflowPublic, WorkflowUpdateInput } from './types'
@@ -33,6 +33,7 @@ export class WorkflowsRepository {
                 .select(workflowSelection)
                 .from(workflows)
                 .leftJoin(tenants, eq(workflows.tenant_id, tenants.id))
+                .orderBy(desc(workflows.updated_at))
             return rows as any
         }
         const rows = await this.database
@@ -40,6 +41,7 @@ export class WorkflowsRepository {
             .from(workflows)
             .leftJoin(tenants, eq(workflows.tenant_id, tenants.id))
             .where(eq(workflows.tenant_id, tenantId))
+            .orderBy(desc(workflows.updated_at))
         return rows as any
     }
 
