@@ -17,11 +17,7 @@
         label="Device Identifier"
         [required]="true"
         (scanned)="onScan($event)" />
-      
-      @if (form.get('identifier')?.invalid && form.get('identifier')?.touched) {
-        <div class="form-error">Device identifier is required</div>
-      }
-      
+
       @if (error() && !deviceFound()) {
         <div class="form-error">{{ error() }}</div>
       }

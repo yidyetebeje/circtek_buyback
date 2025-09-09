@@ -14,8 +14,8 @@ export const GradeUpdate = t.Object({
     status: t.Optional(t.Boolean()),
 })
 
-export type GradeCreateInput = Static<typeof GradeCreate> & { tenant_id?: number }
-export type GradeUpdateInput = Static<typeof GradeUpdate> & { tenant_id?: number }
+export type GradeCreateInput = Static<typeof GradeCreate>
+export type GradeUpdateInput = Static<typeof GradeUpdate>
 
 export type GradePublic = {
     id: number

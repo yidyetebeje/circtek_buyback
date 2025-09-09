@@ -23,10 +23,15 @@ export class TransfersRepository {
     return this.findTransferById(Number(result.insertId), transferData.tenant_id);
   }
 
-  async createTransferItems(transfer_id: number, items: TransferItemCreateInput[], tenant_id: number): Promise<TransferItemRecord[]> {
-    // Ensure stock records exist for all SKUs to satisfy FK constraints
+  async createTransferItems(transfer_id: number, items: TransferItemCreateInput[], tenant_id: number, from_warehouse_id: number, to_warehouse_id: number): Promise<TransferItemRecord[]> {
+    // Validate stock availability in sender warehouse for all items
     for (const item of items) {
-      await this.ensureStockExistsForTransfer(item.sku, tenant_id);
+      await this.validateStockForTransfer(item.sku, item.quantity || 1, from_warehouse_id, tenant_id);
+    }
+
+    // Ensure stock records exist in receiver warehouse to satisfy FK constraints
+    for (const item of items) {
+      await this.ensureStockExistsForTransfer(item.sku, to_warehouse_id, tenant_id);
     }
 
     const itemsToInsert = items.map(item => ({
@@ -346,51 +351,65 @@ export class TransfersRepository {
     return { id };
   }
 
-  private async ensureStockExistsForTransfer(sku: string, tenant_id: number): Promise<void> {
-    // Check if stock record exists for this SKU (any warehouse for FK satisfaction)
+  private async ensureStockExistsForTransfer(sku: string, warehouse_id: number, tenant_id: number): Promise<void> {
+    // Check if stock record exists for this SKU in the specified warehouse
     const [existing] = await this.database
       .select({ id: stock.id })
       .from(stock)
-      .where(and(eq(stock.sku, sku), eq(stock.tenant_id, tenant_id)))
+      .where(and(
+        eq(stock.sku, sku), 
+        eq(stock.warehouse_id, warehouse_id),
+        eq(stock.tenant_id, tenant_id)
+      ))
       .limit(1);
     
     if (existing) return;
 
-    // Create stock record in the first available warehouse for FK constraint
-    const [warehouse] = await this.database
-      .select({ id: warehouses.id })
-      .from(warehouses)
-      .where(eq(warehouses.tenant_id, tenant_id))
+    // Create stock record in the specified warehouse for FK constraint
+    try {
+      await this.database.insert(stock).values({
+        sku,
+        warehouse_id,
+        quantity: 0,
+        tenant_id,
+        is_part: false,
+      });
+    } catch (error: any) {
+      // Handle unique constraint - stock might exist but in different warehouse
+      if (error.code === 'ER_DUP_ENTRY') {
+        // Just ignore - another process might have created it
+        return;
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Validates that the SKU exists in the sender warehouse with sufficient quantity
+   */
+  private async validateStockForTransfer(sku: string, quantity: number, from_warehouse_id: number, tenant_id: number): Promise<void> {
+    const [stockRecord] = await this.database
+      .select({ 
+        id: stock.id,
+        quantity: stock.quantity,
+        warehouse_name: warehouses.name
+      })
+      .from(stock)
+      .leftJoin(warehouses, eq(stock.warehouse_id, warehouses.id))
+      .where(and(
+        eq(stock.sku, sku),
+        eq(stock.warehouse_id, from_warehouse_id),
+        eq(stock.tenant_id, tenant_id)
+      ))
       .limit(1);
 
-    if (warehouse) {
-      try {
-        await this.database.insert(stock).values({
-          sku,
-          warehouse_id: warehouse.id,
-          quantity: 0,
-          tenant_id,
-          is_part: false,
-        });
-      } catch (error: any) {
-        // Handle unique constraint - stock might exist but in different warehouse
-        if (error.code === 'ER_DUP_ENTRY') {
-          const [existingGlobal] = await this.database
-            .select({ id: stock.id })
-            .from(stock)
-            .where(eq(stock.sku, sku))
-            .limit(1);
-          
-          if (existingGlobal) {
-            await this.database
-              .update(stock)
-              .set({ warehouse_id: warehouse.id, tenant_id })
-              .where(eq(stock.sku, sku));
-          }
-        } else {
-          throw error;
-        }
-      }
+    if (!stockRecord) {
+      throw new Error(`SKU "${sku}" does not exist in the sender warehouse`);
+    }
+
+    if (stockRecord.quantity < quantity) {
+      throw new Error(`Insufficient quantity for SKU "${sku}" in sender warehouse "${stockRecord.warehouse_name}". Available: ${stockRecord.quantity}, Required: ${quantity}`);
     }
   }
 

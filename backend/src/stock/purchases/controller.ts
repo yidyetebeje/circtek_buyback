@@ -194,7 +194,7 @@ export class PurchasesController {
         if (delta > 0) {
           const movementResult = await movementsController.create({
             sku: item.sku,
-            warehouse_id: payload.warehouse_id,
+            warehouse_id: purchase.warehouse_id,
             delta,
             reason: 'purchase',
             ref_type: 'received_items',
@@ -216,7 +216,7 @@ export class PurchasesController {
             device_id: ri.device_id as number,
             actor_id: payload.actor_id,
             event_type: 'TRANSFER_IN',
-            details: { action: 'purchase_received', purchase_id: payload.purchase_id, sku: ri.sku },
+            details: { action: 'purchase_received', purchase_id: payload.purchase_id, sku: ri.sku, warehouse_id: purchase.warehouse_id },
             tenant_id,
           })
         }

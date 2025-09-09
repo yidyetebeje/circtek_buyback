@@ -61,8 +61,8 @@ export class TransfersController {
         return { data: null, message: 'Failed to create transfer', status: 500 }
       }
 
-      // Create the transfer items
-      await this.repo.createTransferItems(transfer.id, payload.items, tenant_id)
+      // Create the transfer items with validation
+      await this.repo.createTransferItems(transfer.id, payload.items, tenant_id, payload.transfer.from_warehouse_id, payload.transfer.to_warehouse_id)
       
       // Return the full transfer with details
       const fullTransfer = await this.repo.findTransferWithDetails(transfer.id, tenant_id)
@@ -72,11 +72,24 @@ export class TransfersController {
         status: 201 
       }
     } catch (error) {
+      const errorMessage = (error as Error).message;
+      
+      // Check if it's a validation error (stock availability)
+      if (errorMessage.includes('does not exist in the sender warehouse') || 
+          errorMessage.includes('Insufficient quantity for SKU')) {
+        return { 
+          data: null, 
+          message: errorMessage, 
+          status: 400 
+        }
+      }
+      
+      // Generic error
       return { 
         data: null, 
         message: 'Failed to create transfer with items', 
         status: 500, 
-        error: (error as Error).message 
+        error: errorMessage 
       }
     }
   }

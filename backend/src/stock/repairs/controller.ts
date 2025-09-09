@@ -121,117 +121,36 @@ export class RepairsController {
       const repair = await this.repo.findById(repair_id, tenant_id)
       if (!repair) return { data: null, message: 'Repair not found', status: 404 }
 
-      // 1) Pre-allocate from purchases for all items to ensure availability and compute costs
-      type Allocation = { sku: string; quantity: number; reason_id: number; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }> }
-      const perItemAllocations: Allocation[] = []
+      // Step 1: Allocate all items from purchases (fail fast if insufficient)
+      const allocationsResult = await this.allocateAllItems(payload.items, tenant_id)
+      if (!allocationsResult.success || !allocationsResult.data) {
+        return { data: null, message: allocationsResult.message, status: 400 }
+      }
+      
+      const allocations = allocationsResult.data
 
-      for (const item of payload.items) {
-        const alloc = await purchasesRepository.allocateSkuQuantity(item.sku, item.quantity, tenant_id)
-        if (alloc.total_allocated !== item.quantity) {
-          // Rollback previous allocations if any
-          const rollbackList = perItemAllocations.flatMap(a => a.allocations.map(x => ({ purchase_item_id: x.purchase_item_id, quantity: x.quantity })))
-          await purchasesRepository.deallocateAllocations(rollbackList, tenant_id)
-          // Also rollback the partial allocations from this failed attempt
-          if (alloc.allocations && alloc.allocations.length > 0) {
-            await purchasesRepository.deallocateAllocations(
-              alloc.allocations.map(x => ({ purchase_item_id: x.purchase_item_id, quantity: x.quantity })),
-              tenant_id
-            )
-          }
-          return { data: null, message: `Insufficient available purchased quantity for SKU ${item.sku}`, status: 400 }
-        }
-        perItemAllocations.push({ sku: item.sku, quantity: item.quantity, reason_id: item.reason_id, allocations: alloc.allocations })
+      // Step 2: Create stock movements for each item
+      const movementsResult = await this.createStockMovements(allocations, payload.warehouse_id, repair_id, tenant_id, actor_id)
+      if (!movementsResult.success || !movementsResult.data) {
+        await this.rollbackAllocations(allocations, tenant_id)
+        return { data: null, message: 'Failed to create stock movement; operation reverted', status: 500 }
       }
 
-      // 2) Create stock movements per item
-      const results: ConsumeResultItem[] = []
-      const successfulMovements: Array<{ sku: string; quantity: number }> = []
-      let total_quantity_consumed = 0
-      let total_cost = 0
+      const { results, successfulMovements, totals } = movementsResult.data
 
-      for (const item of perItemAllocations) {
-        const delta = -item.quantity
-        const movementResult = await movementsController.create({
-          sku: item.sku,
-          warehouse_id: payload.warehouse_id,
-          delta,
-          reason: 'repair',
-          ref_type: 'repairs',
-          ref_id: repair_id,
-          actor_id,
-        }, tenant_id)
-
-        const success = movementResult.status === 201
-        results.push({
-          sku: item.sku,
-          quantity: item.quantity,
-          cost: item.allocations.reduce((s, a) => s + a.unit_price * a.quantity, 0) / (item.quantity || 1),
-          success,
-          movement_status: movementResult.status,
-        })
-
-        if (!success) {
-          // rollback prior successful movements and allocations
-          for (const ok of successfulMovements) {
-            await movementsController.create({
-              sku: ok.sku,
-              warehouse_id: payload.warehouse_id,
-              delta: ok.quantity, // compensate
-              reason: 'repair',
-              ref_type: 'repairs_rollback',
-              ref_id: repair_id,
-              actor_id,
-            }, tenant_id)
-          }
-          const rollbackList = perItemAllocations.flatMap(a => a.allocations.map(x => ({ purchase_item_id: x.purchase_item_id, quantity: x.quantity })))
-          await purchasesRepository.deallocateAllocations(rollbackList, tenant_id)
-          return { data: null, message: 'Failed to create stock movement; operation reverted', status: 500 }
-        }
-
-        successfulMovements.push({ sku: item.sku, quantity: item.quantity })
-        total_quantity_consumed += item.quantity
-        total_cost += item.allocations.reduce((s, a) => s + a.unit_price * a.quantity, 0)
-      }
-
-      // 3) Persist repair_items per allocation
-      const itemsToPersist = perItemAllocations.flatMap(a => a.allocations.map(x => ({
-        repair_id,
-        sku: a.sku,
-        quantity: x.quantity,
-        cost: Number(x.unit_price),
-        reason_id: a.reason_id,
-        purchase_items_id: x.purchase_item_id,
-        status: true,
-        tenant_id,
-        created_at: null,
-        updated_at: null,
-      })))
-
-      try {
-        await this.repo.addRepairItems(repair_id, itemsToPersist, tenant_id)
-      } catch (e) {
-        // rollback: delete persisted repair_items if any, compensate movements, deallocate allocations
-        for (const ok of successfulMovements) {
-          await movementsController.create({
-            sku: ok.sku,
-            warehouse_id: payload.warehouse_id,
-            delta: ok.quantity, // compensate
-            reason: 'repair',
-            ref_type: 'repairs_rollback',
-            ref_id: repair_id,
-            actor_id,
-          }, tenant_id)
-        }
-        const rollbackList = perItemAllocations.flatMap(a => a.allocations.map(x => ({ purchase_item_id: x.purchase_item_id, quantity: x.quantity })))
-        await purchasesRepository.deallocateAllocations(rollbackList, tenant_id)
+      // Step 3: Persist repair items
+      const persistResult = await this.persistRepairItems(allocations, repair_id, tenant_id)
+      if (!persistResult.success) {
+        await this.rollbackMovements(successfulMovements, payload.warehouse_id, repair_id, tenant_id, actor_id)
+        await this.rollbackAllocations(allocations, tenant_id)
         return { data: null, message: 'Failed to record repair items; operation reverted', status: 500 }
       }
 
       const data: RepairConsumeResult = {
         repair_id,
         items_count: payload.items.length,
-        total_quantity_consumed,
-        total_cost,
+        total_quantity_consumed: totals.quantity,
+        total_cost: totals.cost,
         results,
       }
 
@@ -239,6 +158,145 @@ export class RepairsController {
     } catch (error) {
       return { data: null, message: 'Failed to consume items', status: 500, error: (error as Error).message }
     }
+  }
+
+  private async allocateAllItems(items: RepairConsumeItemsInput['items'], tenant_id: number) {
+    type ItemAllocation = { sku: string; quantity: number; reason_id: number; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }> }
+    const allocations: ItemAllocation[] = []
+
+    for (const item of items) {
+      const allocation = await purchasesRepository.allocateSkuQuantity(item.sku, item.quantity, tenant_id)
+      
+      if (allocation.total_allocated !== item.quantity) {
+        // Rollback any successful allocations before failing
+        await this.rollbackAllocations(allocations, tenant_id)
+        
+        // Also rollback the partial allocation from this failed attempt
+        if (allocation.allocations?.length > 0) {
+          await this.rollbackPurchaseAllocations(allocation.allocations, tenant_id)
+        }
+        
+        return { 
+          success: false, 
+          message: `Insufficient available purchased quantity for SKU ${item.sku}`,
+          data: null 
+        }
+      }
+
+      allocations.push({ 
+        sku: item.sku, 
+        quantity: item.quantity, 
+        reason_id: item.reason_id, 
+        allocations: allocation.allocations 
+      })
+    }
+
+    return { success: true, data: allocations, message: 'All items allocated successfully' }
+  }
+
+  private async createStockMovements(allocations: any[], warehouse_id: number, repair_id: number, tenant_id: number, actor_id: number) {
+    const results: ConsumeResultItem[] = []
+    const successfulMovements: Array<{ sku: string; quantity: number }> = []
+    let total_quantity = 0
+    let total_cost = 0
+
+    for (const item of allocations) {
+      const movementResult = await movementsController.create({
+        sku: item.sku,
+        warehouse_id,
+        delta: -item.quantity,
+        reason: 'repair',
+        ref_type: 'repairs',
+        ref_id: repair_id,
+        actor_id,
+      }, tenant_id)
+
+      const itemCost = this.calculateItemCost(item.allocations, item.quantity)
+      const success = movementResult.status === 201
+      
+      results.push({
+        sku: item.sku,
+        quantity: item.quantity,
+        cost: itemCost,
+        success,
+        movement_status: movementResult.status,
+      })
+
+      if (!success) {
+        // Rollback successful movements before failing
+        await this.rollbackMovements(successfulMovements, warehouse_id, repair_id, tenant_id, actor_id)
+        return { success: false, data: null, message: 'Movement creation failed' }
+      }
+
+      successfulMovements.push({ sku: item.sku, quantity: item.quantity })
+      total_quantity += item.quantity
+      total_cost += this.calculateTotalItemCost(item.allocations)
+    }
+
+    return { 
+      success: true, 
+      data: { results, successfulMovements, totals: { quantity: total_quantity, cost: total_cost } },
+      message: 'All movements created successfully'
+    }
+  }
+
+  private async persistRepairItems(allocations: any[], repair_id: number, tenant_id: number) {
+    const repairItems = allocations.flatMap(item => 
+      item.allocations.map((allocation: any) => ({
+        repair_id,
+        sku: item.sku,
+        quantity: allocation.quantity,
+        cost: Number(allocation.unit_price),
+        reason_id: item.reason_id,
+        purchase_items_id: allocation.purchase_item_id,
+        status: true,
+        tenant_id,
+        created_at: null,
+        updated_at: null,
+      }))
+    )
+
+    try {
+      await this.repo.addRepairItems(repair_id, repairItems, tenant_id)
+      return { success: true, message: 'Repair items persisted successfully' }
+    } catch (error) {
+      return { success: false, message: 'Failed to persist repair items' }
+    }
+  }
+
+  private async rollbackAllocations(allocations: any[], tenant_id: number) {
+    const allAllocations = allocations.flatMap(a => 
+      a.allocations.map((x: any) => ({ purchase_item_id: x.purchase_item_id, quantity: x.quantity }))
+    )
+    await purchasesRepository.deallocateAllocations(allAllocations, tenant_id)
+  }
+
+  private async rollbackPurchaseAllocations(allocations: Array<{ purchase_item_id: number; quantity: number }>, tenant_id: number) {
+    const rollbackList = allocations.map(x => ({ purchase_item_id: x.purchase_item_id, quantity: x.quantity }))
+    await purchasesRepository.deallocateAllocations(rollbackList, tenant_id)
+  }
+
+  private async rollbackMovements(movements: Array<{ sku: string; quantity: number }>, warehouse_id: number, repair_id: number, tenant_id: number, actor_id: number) {
+    for (const movement of movements) {
+      await movementsController.create({
+        sku: movement.sku,
+        warehouse_id,
+        delta: movement.quantity, // compensate with positive delta
+        reason: 'repair',
+        ref_type: 'repairs_rollback',
+        ref_id: repair_id,
+        actor_id,
+      }, tenant_id)
+    }
+  }
+
+  private calculateItemCost(allocations: Array<{ unit_price: number; quantity: number }>, totalQuantity: number): number {
+    const totalCost = allocations.reduce((sum, alloc) => sum + alloc.unit_price * alloc.quantity, 0)
+    return totalCost / (totalQuantity || 1)
+  }
+
+  private calculateTotalItemCost(allocations: Array<{ unit_price: number; quantity: number }>): number {
+    return allocations.reduce((sum, alloc) => sum + alloc.unit_price * alloc.quantity, 0)
   }
 }
 

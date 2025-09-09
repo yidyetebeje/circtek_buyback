@@ -13,8 +13,8 @@ export const grades_routes = new Elysia({ prefix: '/grades' })
     .get('/', async (ctx) => {
         const { currentRole, currentTenantId, query } = ctx as any
         const tenantParam = query?.tenant_id
-        const tenantId = currentRole === 'super_admin' ? (tenantParam ? Number(tenantParam) : null) : Number(currentTenantId)
-        return controller.list(tenantId)
+        const queryTenantId = tenantParam !== undefined ? Number(tenantParam) : undefined
+        return controller.list(queryTenantId, currentRole, Number(currentTenantId))
     }, { detail: { tags: ['Grades'], summary: 'List grades (tenant-scoped or all for super_admin)' } })
     .post('/', async (ctx) => {
         const { body, currentTenantId } = ctx as any
@@ -22,8 +22,7 @@ export const grades_routes = new Elysia({ prefix: '/grades' })
     }, { body: GradeCreate, detail: { tags: ['Grades'], summary: 'Create grade' } })
     .get('/:id', async (ctx) => {
         const { params, currentTenantId, currentRole, query } = ctx as any
-        const tenantId = currentRole === 'super_admin' ? (query?.tenant_id ?? currentTenantId) : currentTenantId
-        return controller.get(Number(params.id), Number(tenantId))
+        return controller.get(Number(params.id), Number(currentTenantId), currentRole, query?.tenant_id ? Number(query.tenant_id) : undefined)
     }, { detail: { tags: ['Grades'], summary: 'Get grade by id (tenant-scoped)' } })
     .patch('/:id', async (ctx) => {
         const { params, body, currentTenantId } = ctx as any

@@ -25,21 +25,11 @@ export class DeadIMEIFormComponent {
   protected readonly error = signal<string>('');
   protected readonly deviceFound = signal<any>(null);
 
-  // Form
-  protected readonly form: FormGroup = this.fb.group({
-    identifier: ['', [Validators.required]], // IMEI or Serial
-  });
+  // Form (no manual fields; submission relies on scanner result)
+  protected readonly form: FormGroup = this.fb.group({});
 
-  // Form fields for GenericFormPageComponent
-  protected readonly formFields = computed<FormField[]>(() => [
-    {
-      key: 'identifier',
-      label: 'Device Identifier',
-      type: 'text',
-      placeholder: 'Scan or enter IMEI/Serial number...',
-      required: true,
-    },
-  ]);
+  // No manual fields; only barcode scanner is used
+  protected readonly formFields = computed<FormField[]>(() => []);
 
   constructor() {
     // No initialization needed for simplified form
@@ -47,7 +37,6 @@ export class DeadIMEIFormComponent {
 
   protected onScan(result: ScanResult) {
     if (result.isValid) {
-      this.form.patchValue({ identifier: result.value });
       this.lookupDevice(result.value);
     }
   }
@@ -72,11 +61,6 @@ export class DeadIMEIFormComponent {
   }
 
   protected onSubmit() {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
     const device = this.deviceFound();
     if (!device) {
       this.error.set('Please enter a valid device identifier');

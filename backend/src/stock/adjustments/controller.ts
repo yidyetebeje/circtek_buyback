@@ -14,7 +14,7 @@ import {
 import type { response } from '../../types/response'
 import { db } from '../../db'
 import { and, eq } from 'drizzle-orm'
-import { devices } from '../../db/circtek.schema'
+import { devices, device_events } from '../../db/circtek.schema'
 
 export class AdjustmentsController {
   constructor() {}
@@ -91,31 +91,64 @@ export class AdjustmentsController {
 
   async createDeadIMEIWriteOff(payload: DeadIMEIWriteOffInput, tenant_id: number): Promise<response<AdjustmentResult | null>> {
     try {
-      // Create adjustment for dead IMEI (always -1 quantity)
-      const adjustmentData: AdjustmentCreateInput = {
-        sku: payload.sku,
-        warehouse_id: payload.warehouse_id,
-        quantity_adjustment: -1, // Write off one unit
-        reason: 'dead_imei',
-        notes: payload.reason_notes || 'Dead IMEI write-off',
-        device_id: payload.device_id,
-        actor_id: payload.actor_id,
+      // Ensure device_id is provided for dead IMEI flow
+      if (!payload.device_id) {
+        return { data: null, message: 'device_id is required for dead IMEI write-off', status: 400 }
       }
 
-      const result = await this.createAdjustment(adjustmentData, tenant_id)
+      // Ensure the device is already marked as DEAD_IMEI; if not, create the event first
+      const [existingDead] = await db
+        .select({ id: device_events.id })
+        .from(device_events)
+        .where(
+          and(
+            eq(device_events.device_id, payload.device_id),
+            eq(device_events.tenant_id, tenant_id),
+            // enum compare
+            eq(device_events.event_type as any, 'DEAD_IMEI' as any),
+          )
+        )
+      console.log(existingDead, 'existing dead imei')
 
-      // Create device event for DEAD_IMEI
-      if (result.data && result.status === 201) {
-        result.data.device_event_created = await createDeviceEvents.deadIMEI(
+      let deadEventCreated = false
+      if (!existingDead) {
+        deadEventCreated = await createDeviceEvents.deadIMEI(
           payload.device_id,
           payload.actor_id,
           tenant_id,
           payload.reason_notes || 'Dead IMEI write-off'
         )
-        result.message = 'Dead IMEI write-off completed successfully'
-      }
 
-      return result
+        if (!deadEventCreated) {
+          return { data: null, message: 'Failed to mark device as DEAD_IMEI', status: 500 }
+        }
+        const adjustmentData: AdjustmentCreateInput = {
+          sku: payload.sku,
+          warehouse_id: payload.warehouse_id,
+          quantity_adjustment: -1, // Write off one unit
+          reason: 'dead_imei',
+          notes: payload.reason_notes || 'Dead IMEI write-off',
+          device_id: payload.device_id,
+          actor_id: payload.actor_id,
+        }
+  
+        const result = await this.createAdjustment(adjustmentData, tenant_id)
+  
+        if (result.data && result.status === 201) {
+          // Reflect whether we created the DEAD_IMEI event in this call
+          result.data.device_event_created = deadEventCreated
+          result.message = 'Dead IMEI write-off completed successfully'
+        }
+        return result
+      }
+      return { 
+        data: null, 
+        message: 'The device is already in dead imei list', 
+        status: 500, 
+        
+      }
+      // Create adjustment for dead IMEI (always -1 quantity)
+     
     } catch (error) {
       return { 
         data: null, 

@@ -5,8 +5,10 @@ import type { GradeCreateInput, GradePublic, GradeUpdateInput } from './types'
 export class GradesController {
     constructor(private readonly repo: GradesRepository) {}
 
-    async list(tenantId?: number | null): Promise<response<GradePublic[]>> {
-        const rows = await this.repo.list(tenantId)
+    async list(queryTenantId: number | null | undefined, currentRole: string | undefined, currentTenantId: number): Promise<response<GradePublic[]>> {
+        const hasValidQueryTenant = typeof queryTenantId === 'number' && Number.isFinite(queryTenantId)
+        const resolvedTenantId = currentRole === 'super_admin' ? (hasValidQueryTenant ? queryTenantId! : null) : currentTenantId
+        const rows = await this.repo.list(resolvedTenantId)
         return { data: rows, message: 'OK', status: 200 }
     }
 
@@ -15,8 +17,9 @@ export class GradesController {
         return { data: created ?? null, message: 'Grade created', status: 201 }
     }
 
-    async get(id: number, tenantId: number): Promise<response<GradePublic | null>> {
-        const found = await this.repo.get(id, tenantId)
+    async get(id: number, tenantId: number, currentRole: string, queryTenantId?: number): Promise<response<GradePublic | null>> {
+        const resolvedTenantId = currentRole === 'super_admin' ? (queryTenantId ?? tenantId) : tenantId
+        const found = await this.repo.get(id, resolvedTenantId)
         if (!found) return { data: null, message: 'Not found', status: 404 }
         return { data: found, message: 'OK', status: 200 }
     }
