@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Template Preview Test</title>
+</head>
+<body>
+    <h1>Email Template Preview Test</h1>
+    
+    <div>
+        <h2>Test 1: New Template Preview</h2>
+        <button onclick="testNewTemplate()">Test New Template Preview</button>
+        <div id="result1"></div>
+    </div>
+    
+    <div>
+        <h2>Test 2: Existing Template Preview</h2>
+        <button onclick="testExistingTemplate()">Test Existing Template Preview</button>
+        <div id="result2"></div>
+    </div>
+
+    <script>
+        async function testNewTemplate() {
+            const request = {
+                templateId: 'preview-template',
+                orderId: 'mock-order-' + Date.now(),
+                subject: 'Test Subject {{customer.name}}',
+                content: '<p>Hello {{customer.name}}, this is a test email.</p>'
+            };
+            
+            console.log('Testing new template with request:', request);
+            
+            try {
+                const response = await fetch('http://localhost:5500/api/email-templates/populate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(request)
+                });
+                
+                const result = await response.json();
+                console.log('New template result:', result);
+                document.getElementById('result1').innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+            } catch (error) {
+                console.error('New template error:', error);
+                document.getElementById('result1').innerHTML = '<pre>Error: ' + error.message + '</pre>';
+            }
+        }
+        
+        async function testExistingTemplate() {
+            // First, let's try to get an existing template ID
+            try {
+                const templatesResponse = await fetch('http://localhost:5500/api/email-templates?limit=1');
+                const templatesResult = await templatesResponse.json();
+                
+                if (templatesResult.success && templatesResult.data && templatesResult.data.length > 0) {
+                    const templateId = templatesResult.data[0].id;
+                    
+                    const request = {
+                        templateId: templateId,
+                        orderId: 'mock-order-' + Date.now()
+                    };
+                    
+                    console.log('Testing existing template with request:', request);
+                    
+                    const response = await fetch('http://localhost:5500/api/email-templates/populate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(request)
+                    });
+                    
+                    const result = await response.json();
+                    console.log('Existing template result:', result);
+                    document.getElementById('result2').innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                } else {
+                    document.getElementById('result2').innerHTML = '<pre>No existing templates found</pre>';
+                }
+            } catch (error) {
+                console.error('Existing template error:', error);
+                document.getElementById('result2').innerHTML = '<pre>Error: ' + error.message + '</pre>';
+            }
+        }
+    </script>
+</body>
+</html> 

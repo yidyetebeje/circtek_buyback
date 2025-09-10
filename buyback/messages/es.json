@@ -1,0 +1,272 @@
+{
+    "HomePage": {
+        "about": "Acerca de"
+    },
+    "AdminPage": {
+        "dashboard": "Panel de control",
+        "users": "Usuarios",
+        "settings": "Configuración"
+    },
+    "AdminSidebar": {
+        "dashboards": "Paneles",
+        "customers": "Clientes",
+        "users": "Usuarios",
+        "domains": "Dominios",
+        "catalog": "Catálogo",
+        "categories": "Categorías",
+        "brands": "Marcas",
+        "modelSeries": "Series de Modelos",
+        "models": "Modelos",
+        "featuredProducts": "Productos Destacados",
+        "emailTemplates": "Plantillas de Correo",
+        "order": "Pedido",
+        "site": "Sitio",
+        "settings": "Configuración",
+        "shops": "Tiendas",
+        "orders": "Pedidos",
+        "deviceQuestions": "Preguntas de Dispositivos",
+        "faqs": "Preguntas Frecuentes",
+        "myShop": "Mi Tienda",
+        "diagnostics": "Diagnósticos",
+        "testedDevices": "Dispositivos Probados",
+        "userManagement": "Gestión de Usuarios",
+        "buyDevice": "Comprar Dispositivo",
+        "stock": "Inventario",
+        "locations": "Ubicaciones"
+    },
+    "CategoryVariants": {
+        "getQuote": "Obtener Cotización",
+        "viewAll": "Ver Todo",
+        "viewDevices": "Ver dispositivos",
+        "sellDevice": "Vender {deviceName}",
+        "sellYourDevice": "Vende Tu Dispositivo",
+        "browseCategories": "Explorar Categorías",
+        "discoverDeviceValue": "Descubre el Valor de Tu Dispositivo",
+        "selectDeviceCategory": "Selecciona de nuestra amplia gama de categorías de dispositivos compatibles",
+        "sellDevicesWithEase": "Vende Tus Dispositivos Con Facilidad",
+        "scrollThroughDevices": "Desplázate por nuestros dispositivos compatibles y obtén una cotización instantánea en segundos",
+        "turnInSellMoney": "Entrega, vende y obtén tu dinero inmediatamente",
+        "chooseWideRange": "Elige de nuestra amplia gama de dispositivos compatibles",
+        "chooseFromSelection": "Elige de nuestra selección de dispositivos compatibles para obtener una cotización instantánea",
+        "findDeviceType": "Encuentra Tu Tipo de Dispositivo",
+        "selectDeviceToStart": "Selecciona tu categoría de dispositivo para comenzar con una cotización instantánea",
+        "viewAllModels": "Ver Todos los Modelos",
+        "sellPhones": "Vender Teléfonos",
+        "sellTablets": "Vender Tablets"
+    },
+    "HeroVariants": {
+        "tradeInCashOut": "Intercambia. Obtén dinero.",
+        "trustedByCustomers": "Confiado por {count}+ clientes",
+        "popularDevices": "Popular: iPhone 16, Samsung Galaxy S24, MacBook Pro...",
+        "livePricingUpdates": "Actualizaciones de Precios en Vivo",
+        "bestPriceGuarantee": "Garantía del Mejor Precio",
+        "fastPayment": "Pago Rápido",
+        "secureProcess": "Proceso 100% Seguro",
+        "dataSecure": "Datos Seguros",
+        "happyCustomers": "Clientes Felices",
+        "satisfiedUsers": "Usuarios Satisfechos",
+        "searchPlaceholderDefault": "Busca tu dispositivo (ej. iPhone 15 Pro)",
+        "searchPlaceholderCentered": "¿Qué dispositivo estás vendiendo?",
+        "searchPlaceholderMinimalist": "Ingresa el nombre del dispositivo (ej. iPhone 14)",
+        "searchPlaceholderSplit": "Encuentra tu dispositivo (ej. Pixel 8)",
+        "searchPlaceholderVideo": "Busca el modelo de tu dispositivo...",
+        "searchPlaceholderGradient": "Busca cualquier dispositivo... (ej. iPhone 15)",
+        "searchPlaceholderSimple": "Buscar Producto...",
+        "sellDevicesWithConfidence": "Vende tus dispositivos con confianza",
+        "fastPaymentTime": "24h",
+        "ratingScore": "4,9/5",
+        "satisfactionRate": "95%",
+        "securityRate": "100%",
+        "customersThisMonth": "4.500+ clientes felices este mes",
+        "topPrices": "MEJORES\nPRECIOS"
+    },
+    "Checkout": {
+        "title": "Pago",
+        "variants": {
+            "classicSideBySide": "Clásico Lado a Lado",
+            "classicSideBySideDescription": "Diseño de pago tradicional con formulario a la izquierda y resumen de pedido a la derecha.",
+            "multiStepFlow": "Flujo Multi-Paso", 
+            "multiStepFlowDescription": "Flujo de pago progresivo con carrito, envío y pasos de revisión.",
+            "minimalistDesign": "Diseño Minimalista",
+            "minimalistDesignDescription": "Pago limpio y optimizado con campos simplificados y jerarquía visual.",
+            "accordionSteps": "Pasos Acordeón",
+            "accordionStepsDescription": "Secciones plegables con indicadores de progreso claros para cada paso de pago.",
+            "cardLayout": "Diseño de Tarjetas",
+            "cardLayoutDescription": "Bloques de información basados en tarjetas con separación clara de secciones y barra lateral flotante."
+        },
+        "emptyCart": {
+            "title": "Tu Carrito Está Vacío",
+            "description": "Parece que aún no has agregado dispositivos para estimación.",
+            "browseDevices": "Explorar Dispositivos para Vender"
+        },
+        "form": {
+            "email": "Correo Electrónico",
+            "emailPlaceholder": "tu.correo@ejemplo.com",
+            "phoneNumber": "Número de Teléfono",
+            "phoneNumberPlaceholder": "Ingresa número de teléfono",
+            "accountNumber": "IBAN (Cuenta Bancaria)",
+            "accountNumberOptional": "IBAN - Cuenta Bancaria (Opcional)",
+            "accountNumberPlaceholder": "ej. ES9121000418450200051332",
+            "firstName": "Nombre",
+            "firstNamePlaceholder": "Nombre",
+            "lastName": "Apellido", 
+            "lastNamePlaceholder": "Apellido",
+            "streetName": "Nombre de Calle",
+            "streetNamePlaceholder": "Nombre de calle",
+            "houseNumber": "Número de Casa",
+            "houseNumberPlaceholder": "Núm.",
+            "postalCode": "Código Postal",
+            "postalCodePlaceholder": "Código postal",
+            "city": "Ciudad",
+            "cityPlaceholder": "Ciudad",
+            "stateProvince": "Estado/Provincia",
+            "stateProvincePlaceholder": "ej. California o Noord-Holland",
+            "countryCode": "Código de país (2 letras)",
+            "countryCodePlaceholder": "ej. ES o MX",
+            "country": "País",
+            "selectCountryPlaceholder": "Seleccione un país",
+            "companyName": "Nombre de Empresa",
+            "companyNameOptional": "Nombre de Empresa (Opcional)",
+            "companyNamePlaceholder": "Nombre de empresa (si aplica)"
+        },
+        "sections": {
+            "customerInformation": "Información del Cliente",
+            "shippingAddress": "Dirección de Envío",
+            "shippingInformation": "Información de Envío",
+            "orderSummary": "Resumen del Pedido",
+            "yourOrder": "Tu Pedido",
+            "yourDevices": "Tus Dispositivos"
+        },
+        "summary": {
+            "subtotal": "Subtotal",
+            "shipping": "Envío",
+            "free": "Gratis",
+            "total": "Total",
+            "condition": "Condición"
+        },
+        "buttons": {
+            "completeOrder": "Completar Pedido",
+            "placeOrder": "Realizar Pedido",
+            "processing": "Procesando...",
+            "continueToShipping": "Continuar al Envío",
+            "addMoreDevices": "Agregar Más Dispositivos",
+            "addAnotherDevice": "Agregar Otro Dispositivo",
+            "reviewOrder": "Revisar Pedido",
+            "confirmAndPlaceOrder": "Confirmar y Realizar Pedido",
+            "back": "Atrás",
+            "backToInformation": "Volver a Información",
+            "edit": "Editar",
+            "remove": "Eliminar",
+            "editItem": "Editar artículo",
+            "removeItem": "Eliminar artículo"
+        },
+        "steps": {
+            "cart": "Carrito",
+            "shipping": "Envío", 
+            "review": "Revisión",
+            "reviewAndComplete": "Revisar y Completar Pedido"
+        },
+        "messages": {
+            "emptyCartAlert": "Tu carrito está vacío. Por favor agrega artículos para proceder al pago.",
+            "deviceConfigError": "Hubo un problema con la información del dispositivo en tu carrito. Por favor intenta volver a agregar el dispositivo.",
+            "configurationError": "El envío del pedido falló debido a un error de configuración. Por favor contacta soporte.",
+            "invalidConfigError": "El envío del pedido falló debido a una configuración inválida. Por favor contacta soporte.",
+            "orderError": "No se pudo enviar el pedido. Por favor intenta de nuevo.",
+            "termsAndConditions": "Al completar tu pedido, aceptas nuestros Términos y Condiciones. Enviaremos un correo de confirmación junto con una etiqueta de envío a tu dirección de correo.",
+            "termsAndConditionsSimple": "Al realizar este pedido, aceptas nuestros Términos de Servicio y Política de Privacidad. Se enviará una etiqueta de envío a tu dirección de correo después de la confirmación del pedido.",
+            "termsAndConditionsShort": "Al realizar el pedido, aceptas nuestros términos y condiciones."
+        },
+        "validation": {
+            "emailRequired": "El correo electrónico es requerido",
+            "emailInvalid": "Dirección de correo electrónico inválida",
+            "phoneRequired": "El número de teléfono es requerido", 
+            "phoneInvalid": "Número de teléfono inválido",
+            "ibanInvalid": "Formato IBAN inválido",
+            "firstNameRequired": "El nombre es requerido",
+            "firstNameTooLong": "El nombre debe tener 50 caracteres o menos",
+            "firstNameInvalidChars": "El nombre solo puede contener letras, espacios, apostrofes y guiones",
+            "lastNameRequired": "El apellido es requerido",
+            "lastNameTooLong": "El apellido debe tener 50 caracteres o menos",
+            "lastNameInvalidChars": "El apellido solo puede contener letras, espacios, apostrofes y guiones",
+            "streetNameRequired": "El nombre de calle es requerido",
+            "streetNameTooLong": "El nombre de calle debe tener 100 caracteres o menos",
+            "streetNameInvalidChars": "El nombre de calle solo puede contener letras, números, espacios, guiones, apostrofes y barras diagonales",
+            "houseNumberRequired": "El número de casa es requerido",
+            "houseNumberTooLong": "El número de casa debe tener 20 caracteres o menos",
+            "houseNumberInvalidChars": "El número de casa solo puede contener letras, números, espacios, guiones y barras diagonales",
+            "postalCodeRequired": "El código postal es requerido",
+            "postalCodeTooLong": "El código postal debe tener 20 caracteres o menos",
+            "postalCodeInvalidChars": "El código postal solo puede contener letras, números, espacios y guiones",
+            "cityRequired": "La ciudad es requerida",
+            "cityTooLong": "El nombre de la ciudad debe tener 100 caracteres o menos",
+            "cityInvalidChars": "El nombre de la ciudad solo puede contener letras, espacios, guiones y apostrofes",
+            "stateProvinceRequired": "El estado/provincia es requerido",
+            "stateProvinceTooLong": "El estado/provincia debe tener 100 caracteres o menos",
+            "stateProvinceInvalidChars": "El estado/provincia solo puede contener letras, espacios, guiones y apostrofes",
+            "countryCodeRequired": "El código de país es obligatorio",
+            "countryCodeLength": "El código de país debe tener 2 caracteres",
+            "countryRequired": "El país es obligatorio",
+            "accountNumberRequired": "El número de cuenta es obligatorio"
+        }
+    },
+    "FAQSection": {
+        "loadingText": "Cargando FAQs...",
+        "errorText": "Error al cargar las FAQs. Por favor intente de nuevo más tarde.",
+        "viewAllButton": "Ver todas las FAQs",
+        "defaultTitle": "Preguntas Frecuentes",
+        "defaultSubtitle": "Encuentra respuestas a preguntas frecuentes sobre nuestros servicios."
+    },
+    "ThankYou": {
+        "title": "¡Pedido Enviado Exitosamente!",
+        "subtitle": "Gracias por elegirnos. Su pedido ha sido recibido y está siendo procesado.",
+        "orderReference": "Referencia del Pedido",
+        "nextSteps": {
+            "title": "¿Qué Pasa Ahora?",
+            "confirmation": {
+                "title": "Confirmación por Email",
+                "description": "Recibirá un email de confirmación con los detalles de su pedido y la etiqueta de envío en unos minutos."
+            },
+            "shipping": {
+                "title": "Etiqueta de Envío",
+                "description": "Use la etiqueta de envío proporcionada para enviarnos su dispositivo. ¡El envío es completamente gratis!"
+            },
+            "processing": {
+                "title": "Procesamiento del Dispositivo",
+                "description": "Una vez que recibamos su dispositivo, lo inspeccionaremos y procesaremos su pago dentro de 24-48 horas."
+            }
+        },
+        "importantInfo": {
+            "title": "Información Importante",
+            "keepEmail": "Mantenga su email de confirmación seguro para propósitos de seguimiento",
+            "packageSecurely": "Empaque su dispositivo de forma segura para prevenir daños durante el envío",
+            "includeItems": "Incluya todos los accesorios originales mencionados en su cotización",
+            "trackShipment": "Puede rastrear su envío usando el número de seguimiento proporcionado"
+        },
+        "buttons": {
+            "sellMoreDevices": "Vender Más Dispositivos",
+            "backToHome": "Volver al Inicio"
+        },
+        "support": {
+            "needHelp": "¿Necesita ayuda? Nuestro equipo de soporte está aquí para asistirle.",
+            "email": "Contactar Soporte",
+            "phone": "Teléfono"
+        }
+    },
+    "FeaturedDevicesSection": {
+        "featuredBadge": "Destacado",
+        "title": "Dispositivos de Mejor Valor",
+        "subtitle": "Estos modelos populares ofrecen las tasas de recompra más altas en nuestra plataforma",
+        "bestValueBadge": "Mejor Valor",
+        "defaultModelTitle": "Modelo Desconocido",
+        "tradeInValueFor": "Obtenga el mejor valor de intercambio para su {modelTitle}.",
+        "tradeInValueUpTo": "Valor de intercambio hasta"
+    },
+    "ModelListVariants": {
+        "noModelsFound": "No se encontraron modelos en esta categoría.",
+        "noImageAvailable": "No hay imagen disponible",
+        "estimateValue": "Estimar Valor",
+        "sellYourDevice": "Venda su dispositivo hoy",
+        "chooseFromDevices": "Elija entre nuestra amplia gama de modelos compatibles",
+        "unnamedModel": "Modelo Sin Nombre"
+    }
+}

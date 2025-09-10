@@ -1,0 +1,298 @@
+{
+    "HomePage": {
+        "about": "Über uns"
+    },
+    "AdminPage": {
+        "dashboard": "Dashboard",
+        "users": "Benutzer",
+        "settings": "Einstellungen"
+    },
+    "AdminSidebar": {
+        "dashboards": "Dashboards",
+        "customers": "Kunden",
+        "users": "Benutzer",
+        "domains": "Domains",
+        "catalog": "Katalog",
+        "categories": "Kategorien",
+        "brands": "Marken",
+        "modelSeries": "Modellreihen",
+        "models": "Modelle",
+        "featuredProducts": "Empfohlene Produkte",
+        "emailTemplates": "E-Mail-Vorlagen",
+        "order": "Bestellung",
+        "site": "Website",
+        "settings": "Einstellungen",
+        "shops": "Shops",
+        "orders": "Bestellungen",
+        "deviceQuestions": "Gerätefragen",
+        "faqs": "FAQs",
+        "myShop": "Mein Shop",
+        "diagnostics": "Diagnostik",
+        "testedDevices": "Getestete Geräte",
+        "userManagement": "Benutzerverwaltung",
+        "buyDevice": "Gerät kaufen",
+        "stock": "Lager",
+        "locations": "Standorte"
+    },
+    "CategoryVariants": {
+        "getQuote": "Angebot Erhalten",
+        "viewAll": "Alle Anzeigen",
+        "viewDevices": "Geräte anzeigen",
+        "sellDevice": "{deviceName} Verkaufen",
+        "sellYourDevice": "Ihr Gerät Verkaufen",
+        "browseCategories": "Kategorien Durchsuchen",
+        "discoverDeviceValue": "Gerätewert Entdecken",
+        "selectDeviceCategory": "Wählen Sie aus unserem breiten Angebot an unterstützten Gerätekategorien",
+        "sellDevicesWithEase": "Verkaufen Sie Ihre Geräte Mit Leichtigkeit",
+        "scrollThroughDevices": "Scrollen Sie durch unsere unterstützten Geräte und erhalten Sie in Sekunden ein sofortiges Angebot",
+        "turnInSellMoney": "Abgeben, verkaufen und sofort Geld erhalten",
+        "chooseWideRange": "Wählen Sie aus unserem breiten Angebot an unterstützten Geräten",
+        "chooseFromSelection": "Wählen Sie aus unserer Auswahl unterstützter Geräte, um ein sofortiges Angebot zu erhalten",
+        "findDeviceType": "Finden Sie Ihren Gerätetyp",
+        "selectDeviceToStart": "Wählen Sie Ihre Gerätekategorie aus, um mit einem sofortigen Angebot zu beginnen",
+        "viewAllModels": "Alle Modelle Anzeigen",
+        "sellPhones": "Telefone Verkaufen",
+        "sellTablets": "Tablets Verkaufen"
+    },
+    "HeroVariants": {
+        "tradeInCashOut": "Eintauschen. Geld erhalten.",
+        "trustedByCustomers": "Vertraut von {count}+ Kunden",
+        "popularDevices": "Beliebt: iPhone 16, Samsung Galaxy S24, MacBook Pro...",
+        "livePricingUpdates": "Live-PreisUpdates",
+        "bestPriceGuarantee": "Bestpreisgarantie",
+        "fastPayment": "Schnelle Zahlung",
+        "secureProcess": "100% Sicherer Prozess",
+        "dataSecure": "Datensicherheit",
+        "happyCustomers": "Zufriedene Kunden",
+        "satisfiedUsers": "Zufriedene Nutzer",
+        "searchPlaceholderDefault": "Suchen Sie nach Ihrem Gerät (z.B. iPhone 15 Pro)",
+        "searchPlaceholderCentered": "Welches Gerät verkaufen Sie?",
+        "searchPlaceholderMinimalist": "Gerätename eingeben (z.B. iPhone 14)",
+        "searchPlaceholderSplit": "Finden Sie Ihr Gerät (z.B. Pixel 8)",
+        "searchPlaceholderVideo": "Suchen Sie Ihr Gerätemodell...",
+        "searchPlaceholderGradient": "Beliebiges Gerät suchen... (z.B. iPhone 15)",
+        "searchPlaceholderSimple": "Produkt suchen...",
+        "sellDevicesWithConfidence": "Verkaufen Sie Ihre Geräte mit Vertrauen",
+        "fastPaymentTime": "24h",
+        "ratingScore": "4,9/5",
+        "satisfactionRate": "95%",
+        "securityRate": "100%",
+        "customersThisMonth": "4.500+ zufriedene Kunden diesen Monat",
+        "topPrices": "TOP\nPREISE"
+    },
+    "Checkout": {
+        "title": "Kasse",
+        "variants": {
+            "classicSideBySide": "Klassisch Nebeneinander",
+            "classicSideBySideDescription": "Traditionelles Checkout-Layout mit Formular links und Bestellübersicht rechts.",
+            "multiStepFlow": "Mehrstufiger Ablauf", 
+            "multiStepFlowDescription": "Progressiver Checkout-Ablauf mit Warenkorb, Versand und Überprüfungsschritten.",
+            "minimalistDesign": "Minimalistisches Design",
+            "minimalistDesignDescription": "Sauberes, stromlinienförmiges Checkout mit vereinfachten Feldern und visueller Hierarchie.",
+            "accordionSteps": "Akkordeon-Schritte",
+            "accordionStepsDescription": "Einklappbare Abschnitte mit klaren Fortschrittsindikatoren für jeden Checkout-Schritt.",
+            "cardLayout": "Karten-Layout",
+            "cardLayoutDescription": "Kartenbasierte Informationsblöcke mit klarer Abschnittstrennung und schwebender Seitenleiste."
+        },
+        "emptyCart": {
+            "title": "Ihr Warenkorb ist Leer",
+            "description": "Es sieht so aus, als hätten Sie noch keine Geräte zur Schätzung hinzugefügt.",
+            "browseDevices": "Geräte zum Verkaufen Durchsuchen"
+        },
+        "form": {
+            "email": "E-Mail",
+            "emailPlaceholder": "ihre.email@beispiel.com",
+            "phoneNumber": "Telefonnummer",
+            "phoneNumberPlaceholder": "Telefonnummer eingeben",
+            "accountNumber": "IBAN (Bankkonto)",
+            "accountNumberOptional": "IBAN - Bankkonto (Optional)",
+            "accountNumberPlaceholder": "z.B. DE89370400440532013000",
+            "firstName": "Vorname",
+            "firstNamePlaceholder": "Vorname",
+            "lastName": "Nachname", 
+            "lastNamePlaceholder": "Nachname",
+            "streetName": "Straßenname",
+            "streetNamePlaceholder": "Straßenname",
+            "houseNumber": "Hausnummer",
+            "houseNumberPlaceholder": "Hausnr.",
+            "postalCode": "Postleitzahl",
+            "postalCodePlaceholder": "Postleitzahl",
+            "city": "Stadt",
+            "cityPlaceholder": "Stadt",
+            "stateProvince": "Bundesland/Provinz",
+            "stateProvincePlaceholder": "z.B. Bayern oder Noord-Holland",
+            "countryCode": "Ländercode (2 Buchstaben)",
+            "countryCodePlaceholder": "z.B. DE oder AT",
+            "country": "Land",
+            "selectCountryPlaceholder": "Land auswählen",
+            "companyName": "Firmenname",
+            "companyNameOptional": "Firmenname (Optional)",
+            "companyNamePlaceholder": "Firmenname (falls zutreffend)"
+        },
+        "sections": {
+            "customerInformation": "Kundeninformationen",
+            "shippingAddress": "Versandadresse",
+            "shippingInformation": "Versandinformationen",
+            "orderSummary": "Bestellübersicht",
+            "yourOrder": "Ihre Bestellung",
+            "yourDevices": "Ihre Geräte"
+        },
+        "summary": {
+            "subtotal": "Zwischensumme",
+            "shipping": "Versand",
+            "free": "Kostenlos",
+            "total": "Gesamt",
+            "condition": "Zustand"
+        },
+        "buttons": {
+            "completeOrder": "Bestellung Abschließen",
+            "placeOrder": "Bestellung Aufgeben",
+            "processing": "Verarbeitung...",
+            "continueToShipping": "Weiter zum Versand",
+            "addMoreDevices": "Weitere Geräte Hinzufügen",
+            "addAnotherDevice": "Weiteres Gerät Hinzufügen",
+            "reviewOrder": "Bestellung Überprüfen",
+            "confirmAndPlaceOrder": "Bestätigen & Bestellung Aufgeben",
+            "back": "Zurück",
+            "backToInformation": "Zurück zu Informationen",
+            "edit": "Bearbeiten",
+            "remove": "Entfernen",
+            "editItem": "Artikel bearbeiten",
+            "removeItem": "Artikel entfernen"
+        },
+        "steps": {
+            "cart": "Warenkorb",
+            "shipping": "Versand", 
+            "review": "Überprüfung",
+            "reviewAndComplete": "Überprüfen & Bestellung Abschließen"
+        },
+        "messages": {
+            "emptyCartAlert": "Ihr Warenkorb ist leer. Bitte fügen Sie Artikel hinzu, um zur Kasse zu gehen.",
+            "deviceConfigError": "Es gab ein Problem mit den Geräteinformationen in Ihrem Warenkorb. Bitte versuchen Sie, das Gerät erneut hinzuzufügen.",
+            "configurationError": "Bestellungsübermittlung fehlgeschlagen aufgrund eines Konfigurationsfehlers. Bitte kontaktieren Sie den Support.",
+            "invalidConfigError": "Bestellungsübermittlung fehlgeschlagen aufgrund einer ungültigen Konfiguration. Bitte kontaktieren Sie den Support.",
+            "orderError": "Bestellung konnte nicht übermittelt werden. Bitte versuchen Sie es erneut.",
+            "termsAndConditions": "Durch den Abschluss Ihrer Bestellung stimmen Sie unseren Allgemeinen Geschäftsbedingungen zu. Wir senden eine Bestätigungs-E-Mail zusammen mit einem Versandetikett an Ihre E-Mail-Adresse.",
+            "termsAndConditionsSimple": "Durch die Aufgabe dieser Bestellung stimmen Sie unseren Nutzungsbedingungen und Datenschutzrichtlinien zu. Ein Versandetikett wird nach der Bestellbestätigung an Ihre E-Mail-Adresse gesendet.",
+            "termsAndConditionsShort": "Durch die Aufgabe der Bestellung stimmen Sie unseren Allgemeinen Geschäftsbedingungen zu."
+        },
+        "validation": {
+            "emailRequired": "E-Mail ist erforderlich",
+            "emailInvalid": "Ungültige E-Mail-Adresse",
+            "phoneRequired": "Telefonnummer ist erforderlich", 
+            "phoneInvalid": "Ungültige Telefonnummer",
+            "ibanInvalid": "Ungültiges IBAN-Format",
+            "firstNameRequired": "Vorname ist erforderlich",
+            "firstNameTooLong": "Vorname darf maximal 50 Zeichen lang sein",
+            "firstNameInvalidChars": "Vorname darf nur Buchstaben, Leerzeichen, Apostrophe und Bindestriche enthalten",
+            "lastNameRequired": "Nachname ist erforderlich",
+            "lastNameTooLong": "Nachname darf maximal 50 Zeichen lang sein",
+            "lastNameInvalidChars": "Nachname darf nur Buchstaben, Leerzeichen, Apostrophe und Bindestriche enthalten",
+            "streetNameRequired": "Straßenname ist erforderlich",
+            "streetNameTooLong": "Straßenname darf maximal 100 Zeichen lang sein",
+            "streetNameInvalidChars": "Straßenname darf nur Buchstaben, Zahlen, Leerzeichen, Bindestriche, Apostrophe und Schrägstriche enthalten",
+            "houseNumberRequired": "Hausnummer ist erforderlich",
+            "houseNumberTooLong": "Hausnummer darf maximal 20 Zeichen lang sein",
+            "houseNumberInvalidChars": "Hausnummer darf nur Buchstaben, Zahlen, Leerzeichen, Bindestriche und Schrägstriche enthalten",
+            "postalCodeRequired": "Postleitzahl ist erforderlich",
+            "postalCodeTooLong": "Postleitzahl darf maximal 20 Zeichen lang sein",
+            "postalCodeInvalidChars": "Postleitzahl darf nur Buchstaben, Zahlen, Leerzeichen und Bindestriche enthalten",
+            "cityRequired": "Stadt ist erforderlich",
+            "cityTooLong": "Stadtname darf maximal 100 Zeichen lang sein",
+            "cityInvalidChars": "Stadtname darf nur Buchstaben, Leerzeichen, Bindestriche und Apostrophe enthalten",
+            "stateProvinceRequired": "Bundesland/Provinz ist erforderlich",
+            "stateProvinceTooLong": "Bundesland/Provinz darf maximal 100 Zeichen lang sein",
+            "stateProvinceInvalidChars": "Bundesland/Provinz darf nur Buchstaben, Leerzeichen, Bindestriche und Apostrophe enthalten",
+            "countryCodeRequired": "Ländercode ist erforderlich",
+            "countryCodeLength": "Ländercode muss 2 Zeichen lang sein",
+            "countryRequired": "Land ist erforderlich",
+            "accountNumberRequired": "Kontonummer ist erforderlich"
+        }
+    },
+    "Cart": {
+        "title": "Ihr Warenkorb",
+        "emptyCart": {
+            "title": "Ihr Warenkorb ist Leer",
+            "description": "Sie haben keine Artikel in Ihrem Warenkorb. Beginnen Sie mit dem Hinzufügen von Geräten für den Rückkauf.",
+            "browseDevices": "Geräte Durchsuchen"
+        },
+        "sections": {
+            "cartItems": "WARENKORB ARTIKEL",
+            "orderSummary": "BESTELLUNGSÜBERSICHT"
+        },
+        "summary": {
+            "condition": "Zustand",
+            "noConditionInfo": "Keine Zustandsinformationen verfügbar.",
+            "subtotal": "Zwischensumme",
+            "shipping": "Versand",
+            "free": "Kostenlos",
+            "total": "Gesamt"
+        },
+        "buttons": {
+            "editItem": "Artikel bearbeiten",
+            "removeItem": "Artikel entfernen",
+            "proceedToCheckout": "Zur Kasse gehen",
+            "continueShopping": "Einkauf Fortsetzen"
+        }
+    },
+    "FAQSection": {
+        "loadingText": "FAQs werden geladen...",
+        "errorText": "Fehler beim Laden der FAQs. Bitte versuchen Sie es später noch einmal.",
+        "viewAllButton": "Alle FAQs anzeigen",
+        "defaultTitle": "Häufig Gestellte Fragen",
+        "defaultSubtitle": "Finden Sie Antworten auf häufig gestellte Fragen zu unseren Dienstleistungen."
+    },
+    "ThankYou": {
+        "title": "Bestellung Erfolgreich Eingereicht!",
+        "subtitle": "Vielen Dank, dass Sie sich für uns entschieden haben. Ihre Bestellung wurde erhalten und wird bearbeitet.",
+        "orderReference": "Bestellungsreferenz",
+        "nextSteps": {
+            "title": "Was Passiert Als Nächstes?",
+            "confirmation": {
+                "title": "E-Mail-Bestätigung",
+                "description": "Sie erhalten innerhalb weniger Minuten eine Bestätigungs-E-Mail mit Ihren Bestelldetails und dem Versandetikett."
+            },
+            "shipping": {
+                "title": "Versandetikett",
+                "description": "Verwenden Sie das bereitgestellte Versandetikett, um Ihr Gerät an uns zu senden. Der Versand ist völlig kostenlos!"
+            },
+            "processing": {
+                "title": "Geräteverarbeitung",
+                "description": "Sobald wir Ihr Gerät erhalten, prüfen wir es und bearbeiten Ihre Zahlung innerhalb von 24-48 Stunden."
+            }
+        },
+        "importantInfo": {
+            "title": "Wichtige Informationen",
+            "keepEmail": "Bewahren Sie Ihre Bestätigungs-E-Mail sicher für Tracking-Zwecke auf",
+            "packageSecurely": "Verpacken Sie Ihr Gerät sicher, um Schäden während des Versands zu vermeiden",
+            "includeItems": "Fügen Sie alle Original-Zubehörteile hinzu, die in Ihrem Angebot erwähnt wurden",
+            "trackShipment": "Sie können Ihre Sendung mit der bereitgestellten Tracking-Nummer verfolgen"
+        },
+        "buttons": {
+            "sellMoreDevices": "Weitere Geräte Verkaufen",
+            "backToHome": "Zurück zur Startseite"
+        },
+        "support": {
+            "needHelp": "Brauchen Sie Hilfe? Unser Support-Team steht Ihnen zur Verfügung.",
+            "email": "Support Kontaktieren",
+            "phone": "Telefon"
+        }
+    },
+    "FeaturedDevicesSection": {
+        "featuredBadge": "Empfohlen",
+        "title": "Geräte mit bestem Wert",
+        "subtitle": "Diese beliebten Modelle bieten die höchsten Rückkaufraten auf unserer Plattform",
+        "bestValueBadge": "Bester Wert",
+        "defaultModelTitle": "Unbekanntes Modell",
+        "tradeInValueFor": "Erhalten Sie den besten Rückkaufwert für Ihr {modelTitle}.",
+        "tradeInValueUpTo": "Rückkaufwert bis zu"
+    },
+    "ModelListVariants": {
+        "noModelsFound": "Keine Modelle in dieser Kategorie gefunden.",
+        "noImageAvailable": "Kein Bild verfügbar",
+        "estimateValue": "Wert schätzen",
+        "sellYourDevice": "Verkaufen Sie Ihr Gerät heute",
+        "chooseFromDevices": "Wählen Sie aus unserer großen Auswahl an unterstützten Modellen",
+        "unnamedModel": "Unbenanntes Modell"
+    }
+}

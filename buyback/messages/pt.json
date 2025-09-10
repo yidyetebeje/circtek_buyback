@@ -1,0 +1,258 @@
+{
+    "HomePage": {
+        "about": "Sobre"
+    },
+    "AdminPage": {
+        "dashboard": "Painel de Controle",
+        "users": "Usuários",
+        "settings": "Configurações"
+    },
+    "AdminSidebar": {
+        "dashboards": "Painéis",
+        "customers": "Clientes",
+        "users": "Usuários",
+        "domains": "Domínios",
+        "catalog": "Catálogo",
+        "categories": "Categorias",
+        "brands": "Marcas",
+        "modelSeries": "Séries de Modelos",
+        "models": "Modelos",
+        "featuredProducts": "Produtos em Destaque",
+        "emailTemplates": "Modelos de Email",
+        "order": "Pedido",
+        "site": "Site",
+        "settings": "Configurações",
+        "shops": "Lojas",
+        "orders": "Pedidos",
+        "deviceQuestions": "Perguntas de Dispositivos",
+        "faqs": "Perguntas Frequentes",
+        "myShop": "Minha Loja",
+        "diagnostics": "Diagnósticos",
+        "testedDevices": "Dispositivos Testados",
+        "userManagement": "Gestão de Usuários",
+        "buyDevice": "Comprar Dispositivo",
+        "stock": "Estoque",
+        "locations": "Localizações"
+    },
+    "CategoryVariants": {
+        "getQuote": "Obter Cotação",
+        "viewAll": "Ver Tudo",
+        "viewDevices": "Ver dispositivos",
+        "sellDevice": "Vender {deviceName}",
+        "sellYourDevice": "Venda Seu Dispositivo",
+        "browseCategories": "Navegar por Categorias",
+        "discoverDeviceValue": "Descubra o Valor do Seu Dispositivo",
+        "selectDeviceCategory": "Selecione da nossa ampla gama de categorias de dispositivos suportados",
+        "sellDevicesWithEase": "Venda Seus Dispositivos Com Facilidade",
+        "scrollThroughDevices": "Role através dos nossos dispositivos suportados e obtenha uma cotação instantânea em segundos",
+        "turnInSellMoney": "Entregue, venda e obtenha seu dinheiro imediatamente",
+        "chooseWideRange": "Escolha da nossa ampla gama de dispositivos suportados",
+        "chooseFromSelection": "Escolha da nossa seleção de dispositivos suportados para obter uma cotação instantânea",
+        "findDeviceType": "Encontre Seu Tipo de Dispositivo",
+        "selectDeviceToStart": "Selecione sua categoria de dispositivo para começar com uma cotação instantânea",
+        "viewAllModels": "Ver Todos os Modelos",
+        "sellPhones": "Vender Telefones",
+        "sellTablets": "Vender Tablets"
+    },
+    "HeroVariants": {
+        "tradeInCashOut": "Troque. Receba dinheiro.",
+        "trustedByCustomers": "Confiado por {count}+ clientes",
+        "popularDevices": "Popular: iPhone 16, Samsung Galaxy S24, MacBook Pro...",
+        "livePricingUpdates": "Atualizações de Preços ao Vivo",
+        "bestPriceGuarantee": "Garantia do Melhor Preço",
+        "fastPayment": "Pagamento Rápido",
+        "secureProcess": "Processo 100% Seguro",
+        "dataSecure": "Dados Seguros",
+        "happyCustomers": "Clientes Felizes",
+        "satisfiedUsers": "Usuários Satisfeitos",
+        "searchPlaceholderDefault": "Procure seu dispositivo (ex. iPhone 15 Pro)",
+        "searchPlaceholderCentered": "Que dispositivo você está vendendo?",
+        "searchPlaceholderMinimalist": "Digite o nome do dispositivo (ex. iPhone 14)",
+        "searchPlaceholderSplit": "Encontre seu dispositivo (ex. Pixel 8)",
+        "searchPlaceholderVideo": "Procure seu modelo de dispositivo...",
+        "searchPlaceholderGradient": "Procure qualquer dispositivo... (ex. iPhone 15)",
+        "searchPlaceholderSimple": "Buscar Produto...",
+        "sellDevicesWithConfidence": "Venda seus dispositivos com confiança",
+        "fastPaymentTime": "24h",
+        "ratingScore": "4,9/5",
+        "satisfactionRate": "95%",
+        "securityRate": "100%",
+        "customersThisMonth": "4.500+ clientes felizes este mês",
+        "topPrices": "MELHORES\nPREÇOS"
+    },
+    "Checkout": {
+        "title": "Finalizar Compra",
+        "variants": {
+            "classicSideBySide": "Clássico Lado a Lado",
+            "classicSideBySideDescription": "Layout de checkout tradicional com formulário à esquerda e resumo do pedido à direita.",
+            "multiStepFlow": "Fluxo Multi-Etapas", 
+            "multiStepFlowDescription": "Fluxo de checkout progressivo com carrinho, envio e etapas de revisão.",
+            "minimalistDesign": "Design Minimalista",
+            "minimalistDesignDescription": "Checkout limpo e simplificado com campos simplificados e hierarquia visual.",
+            "accordionSteps": "Etapas Accordion",
+            "accordionStepsDescription": "Seções retráteis com indicadores de progresso claros para cada etapa do checkout.",
+            "cardLayout": "Layout de Cartões",
+            "cardLayoutDescription": "Blocos de informação baseados em cartões com separação clara de seções e barra lateral flutuante."
+        },
+        "emptyCart": {
+            "title": "Seu Carrinho Está Vazio",
+            "description": "Parece que você ainda não adicionou dispositivos para estimativa.",
+            "browseDevices": "Navegar Dispositivos para Vender"
+        },
+        "form": {
+            "email": "E-mail",
+            "emailPlaceholder": "seu.email@exemplo.com",
+            "phoneNumber": "Número de Telefone",
+            "phoneNumberPlaceholder": "Digite o número de telefone",
+            "accountNumber": "IBAN (Conta Bancária)",
+            "accountNumberOptional": "IBAN - Conta Bancária (Opcional)",
+            "accountNumberPlaceholder": "ex. PT50000201231234567890154",
+            "firstName": "Nome",
+            "firstNamePlaceholder": "Nome",
+            "lastName": "Sobrenome", 
+            "lastNamePlaceholder": "Sobrenome",
+            "streetName": "Nome da Rua",
+            "streetNamePlaceholder": "Nome da rua",
+            "houseNumber": "Número da Casa",
+            "houseNumberPlaceholder": "Núm.",
+            "postalCode": "Código Postal",
+            "postalCodePlaceholder": "Código postal",
+            "city": "Cidade",
+            "cityPlaceholder": "Cidade",
+            "stateProvince": "Estado/Província",
+            "stateProvincePlaceholder": "ex. São Paulo ou Noord-Holland",
+            "countryCode": "Código do País (2 letras)",
+            "countryCodePlaceholder": "ex. PT ou BR",
+            "country": "País",
+            "selectCountryPlaceholder": "Selecione um país",
+            "companyName": "Nome da Empresa",
+            "companyNameOptional": "Nome da Empresa (Opcional)",
+            "companyNamePlaceholder": "Nome da empresa (se aplicável)"
+        },
+        "sections": {
+            "customerInformation": "Informações do Cliente",
+            "shippingAddress": "Endereço de Entrega",
+            "shippingInformation": "Informações de Entrega",
+            "orderSummary": "Resumo do Pedido",
+            "yourOrder": "Seu Pedido",
+            "yourDevices": "Seus Dispositivos"
+        },
+        "summary": {
+            "subtotal": "Subtotal",
+            "shipping": "Envio",
+            "free": "Grátis",
+            "total": "Total",
+            "condition": "Condição"
+        },
+        "buttons": {
+            "completeOrder": "Finalizar Pedido",
+            "placeOrder": "Fazer Pedido",
+            "processing": "Processando...",
+            "continueToShipping": "Continuar para Envio",
+            "addMoreDevices": "Adicionar Mais Dispositivos",
+            "addAnotherDevice": "Adicionar Outro Dispositivo",
+            "reviewOrder": "Revisar Pedido",
+            "confirmAndPlaceOrder": "Confirmar e Fazer Pedido",
+            "back": "Voltar",
+            "backToInformation": "Voltar às Informações",
+            "edit": "Editar",
+            "remove": "Remover",
+            "editItem": "Editar item",
+            "removeItem": "Remover item"
+        },
+        "steps": {
+            "cart": "Carrinho",
+            "shipping": "Envio", 
+            "review": "Revisão",
+            "reviewAndComplete": "Revisar e Finalizar Pedido"
+        },
+        "messages": {
+            "emptyCartAlert": "Seu carrinho está vazio. Por favor adicione itens para finalizar a compra.",
+            "deviceConfigError": "Houve um problema com as informações do dispositivo no seu carrinho. Por favor tente adicionar o dispositivo novamente.",
+            "configurationError": "O envio do pedido falhou devido a um erro de configuração. Por favor entre em contato com o suporte.",
+            "invalidConfigError": "O envio do pedido falhou devido a uma configuração inválida. Por favor entre em contato com o suporte.",
+            "orderError": "Não foi possível enviar o pedido. Por favor tente novamente.",
+            "termsAndConditions": "Ao finalizar seu pedido, você concorda com nossos Termos e Condições. Enviaremos um e-mail de confirmação junto com uma etiqueta de envio para seu endereço de e-mail.",
+            "termsAndConditionsSimple": "Ao fazer este pedido, você concorda com nossos Termos de Serviço e Política de Privacidade. Uma etiqueta de envio será enviada para seu endereço de e-mail após a confirmação do pedido.",
+            "termsAndConditionsShort": "Ao fazer o pedido, você concorda com nossos termos e condições."
+        },
+        "validation": {
+            "emailRequired": "O e-mail é obrigatório",
+            "emailInvalid": "Endereço de e-mail inválido",
+            "phoneRequired": "O número de telefone é obrigatório", 
+            "phoneInvalid": "Número de telefone inválido",
+            "ibanInvalid": "Formato IBAN inválido",
+            "firstNameRequired": "O nome é obrigatório",
+            "lastNameRequired": "O sobrenome é obrigatório",
+            "streetNameRequired": "O nome da rua é obrigatório",
+            "houseNumberRequired": "O número da casa é obrigatório",
+            "postalCodeRequired": "O código postal é obrigatório",
+            "cityRequired": "A cidade é obrigatória",
+            "stateProvinceRequired": "O estado/província é obrigatório",
+            "countryCodeRequired": "Código do país é obrigatório",
+            "countryCodeLength": "Código do país deve ter 2 caracteres",
+            "countryRequired": "País é obrigatório",
+            "accountNumberRequired": "O número da conta é obrigatório"
+        }
+    },
+    "FAQSection": {
+        "loadingText": "Carregando FAQs...",
+        "errorText": "Erro ao carregar as FAQs. Por favor, tente novamente mais tarde.",
+        "viewAllButton": "Ver todas as FAQs",
+        "defaultTitle": "Perguntas Frequentes",
+        "defaultSubtitle": "Encontre respostas para perguntas frequentes sobre nossos serviços."
+    },
+    "ThankYou": {
+        "title": "Pedido Enviado com Sucesso!",
+        "subtitle": "Obrigado por nos escolher. Seu pedido foi recebido e está sendo processado.",
+        "orderReference": "Referência do Pedido",
+        "nextSteps": {
+            "title": "O Que Acontece Agora?",
+            "confirmation": {
+                "title": "Confirmação por Email",
+                "description": "Você receberá um email de confirmação com os detalhes do seu pedido e a etiqueta de envio em alguns minutos."
+            },
+            "shipping": {
+                "title": "Etiqueta de Envio",
+                "description": "Use a etiqueta de envio fornecida para nos enviar seu dispositivo. O envio é completamente gratuito!"
+            },
+            "processing": {
+                "title": "Processamento do Dispositivo",
+                "description": "Assim que recebermos seu dispositivo, iremos inspecioná-lo e processar seu pagamento dentro de 24-48 horas."
+            }
+        },
+        "importantInfo": {
+            "title": "Informações Importantes",
+            "keepEmail": "Mantenha seu email de confirmação seguro para fins de rastreamento",
+            "packageSecurely": "Embale seu dispositivo com segurança para evitar danos durante o envio",
+            "includeItems": "Inclua todos os acessórios originais mencionados em sua cotação",
+            "trackShipment": "Você pode rastrear sua remessa usando o número de rastreamento fornecido"
+        },
+        "buttons": {
+            "sellMoreDevices": "Vender Mais Dispositivos",
+            "backToHome": "Voltar ao Início"
+        },
+        "support": {
+            "needHelp": "Precisa de ajuda? Nossa equipe de suporte está aqui para ajudá-lo.",
+            "email": "Contatar Suporte",
+            "phone": "Telefone"
+        }
+    },
+    "FeaturedDevicesSection": {
+        "featuredBadge": "Destaque",
+        "title": "Dispositivos de Melhor Valor",
+        "subtitle": "Estes modelos populares oferecem as melhores taxas de recompra em nossa plataforma",
+        "bestValueBadge": "Melhor Valor",
+        "defaultModelTitle": "Modelo Desconhecido",
+        "tradeInValueFor": "Obtenha o melhor valor de troca para seu {modelTitle}.",
+        "tradeInValueUpTo": "Valor de troca até"
+    },
+    "ModelListVariants": {
+        "noModelsFound": "Nenhum modelo encontrado nesta categoria.",
+        "noImageAvailable": "Nenhuma imagem disponível",
+        "estimateValue": "Estimar Valor",
+        "sellYourDevice": "Venda seu dispositivo hoje",
+        "chooseFromDevices": "Escolha entre nossa ampla gama de modelos suportados",
+        "unnamedModel": "Modelo Sem Nome"
+    }
+}
