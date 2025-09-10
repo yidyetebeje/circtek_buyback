@@ -24,7 +24,7 @@ export type FeaturedDevice = {
   id: number;
   modelId: number;
   shopId: number;
-  clientId?: number;
+  tenantId?: number;
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;

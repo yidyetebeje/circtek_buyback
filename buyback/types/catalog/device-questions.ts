@@ -82,7 +82,7 @@ export interface QuestionSet {
   internalName: string;
   displayName: string;
   description?: string | null;
-  client_id: number; // Added from API doc
+  tenant_id: number; // Updated from client_id to tenant_id
   createdAt?: string;
   updatedAt?: string;
   questions: IndividualQuestion[];
@@ -94,10 +94,6 @@ export interface DeviceModelQuestionSetAssignment {
   deviceId: number; // Changed to number, assuming modelId is numeric
   questionSetId: number; // Changed to number
   assignmentOrder?: number;
-  // API response includes nested model and questionSet objects, omitted for brevity here
-  // but can be added if needed for frontend state.
-  // model?: Partial<DeviceModel>; // Assuming DeviceModel type exists
-  // questionSet?: Partial<QuestionSet>; 
   createdAt?: string;
   updatedAt?: string;
 }
@@ -107,7 +103,7 @@ export interface QuestionSetRow {
   internalName: string;
   displayName: string;
   description?: string | null;
-  client_id: number; // Added
+  tenant_id: number; // Updated from client_id to tenant_id
   questionCount: number;
   createdAt?: string;
   updatedAt?: string;

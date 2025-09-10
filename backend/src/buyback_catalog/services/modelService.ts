@@ -462,7 +462,7 @@ export class ModelService {
     categoryId?: number;
     brandId?: number;
     modelSeriesId?: number;
-    clientId?: number;
+    tenantId?: number;
   }) {
     // Check if shop exists
     const shopResult = await db.select().from(shops)
@@ -484,7 +484,7 @@ export class ModelService {
       options.categoryId,
       options.brandId,
       options.modelSeriesId,
-      options.clientId
+      options.tenantId
     );
   }
 
@@ -503,7 +503,7 @@ export class ModelService {
     search?: string;
     brandId?: number;
     modelSeriesId?: number;
-    clientId?: number;
+    tenantId?: number;
   }) {
     // Check if shop exists
     const shopResult = await db.select().from(shops)
@@ -547,7 +547,7 @@ export class ModelService {
       category.id, // Use the found category ID here
       options.brandId,
       options.modelSeriesId,
-      options.clientId
+      options.tenantId
     );
   }
 

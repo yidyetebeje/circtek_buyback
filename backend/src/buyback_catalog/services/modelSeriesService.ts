@@ -434,7 +434,7 @@ export class ModelSeriesService {
     orderBy?: string;
     order?: 'asc' | 'desc';
     search?: string;
-    clientId?: number;
+    tenantId?: number;
   }) {
     // Check if shop exists
     const shopExists = await db.select().from(shops).where(eq(shops.id, shopId)).limit(1);
@@ -451,7 +451,7 @@ export class ModelSeriesService {
       options.orderBy || 'title',
       options.order || 'asc',
       options.search,
-      options.clientId
+      options.tenantId
     );
   }
 }

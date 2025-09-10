@@ -317,7 +317,7 @@ export class ModelSeriesRepository {
    * @param orderBy Column to sort by
    * @param order Sort order
    * @param search Optional search term
-   * @param clientId Optional client ID filter
+   * @param tenantId Optional tenant ID filter
    * @returns Paginated list of model series published in the shop
    */
   async findPublishedInShop(

@@ -48,7 +48,7 @@ export interface CreateQuestionSetPayload {
   internalName: string;
   displayName: string;
   description?: string;
-  client_id: number;
+  tenant_id: number;
   questions?: Omit<IndividualQuestion, 'id' | 'questionSetId' | 'createdAt' | 'updatedAt'>[]; // For createWithQuestions
 }
 
@@ -71,7 +71,7 @@ export interface UpdateQuestionSetPayload {
   internalName?: string; // Retaining, as per existing definition, though typically not changed often post-creation
   displayName?: string;
   description?: string;
-  // client_id?: number; // Usually not updatable or handled with care - omitting as it wasn't in the original UpdateQuestionSetPayload
+  // tenant_id?: number; // Usually not updatable or handled with care - omitting as it wasn't in the original UpdateQuestionSetPayload
   questions?: QuestionForUpdatePayload[]; // Array of questions to be created/updated/deleted
 }
 
@@ -141,9 +141,9 @@ export class DeviceQuestionSetService {
     return this.apiClient.get<ApiResponse<QuestionSet>>(`${this.baseEndpoint}/${questionSetId}`);
   }
 
-  // 3. Get Question Set by Internal Name and Client ID
-  async getQuestionSetByInternalNameAndClientId(internalName: string, clientId: number): Promise<ApiResponse<QuestionSet>> {
-    return this.apiClient.get<ApiResponse<QuestionSet>>(`${this.baseEndpoint}/by-name/${internalName}/client/${clientId}`);
+  // 3. Get Question Set by Internal Name and Tenant ID
+  async getQuestionSetByInternalNameAndTenantId(internalName: string, tenantId: number): Promise<ApiResponse<QuestionSet>> {
+    return this.apiClient.get<ApiResponse<QuestionSet>>(`${this.baseEndpoint}/by-name/${internalName}/tenant/${tenantId}`);
   }
 
   // 4. Create New Question Set

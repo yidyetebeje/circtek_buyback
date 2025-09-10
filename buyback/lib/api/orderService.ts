@@ -43,7 +43,7 @@ export interface CreateOrderPayload {
   conditionAnswers: ConditionAnswer[];
   sellerAddress: SellerAddress;
   sellerNotes?: string;
-  clientId: number;
+  tenantId: number;
   shopId: number;
 }
 

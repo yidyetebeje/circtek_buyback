@@ -40,7 +40,7 @@ export const USE_QUESTION_SETS_FOR_MODEL_QUERY_KEY = 'questionSetsForModel';
 /**
  * Hook for retrieving a paginated list of device question sets
  */
-export const useDeviceQuestionSets = (params?: QueryParams & { clientId?: number; search?: string }) => {
+export const useDeviceQuestionSets = (params?: QueryParams & { tenantId?: number; search?: string }) => {
   return useQuery<PaginatedResponse<QuestionSet>, Error>({
     queryKey: [USE_DEVICE_QUESTION_SETS_QUERY_KEY, params],
     queryFn: () => deviceQuestionSetService.getQuestionSets(params),
@@ -60,13 +60,13 @@ export const useDeviceQuestionSet = (questionSetId: number | undefined) => {
 };
 
 /**
- * Hook for retrieving a single device question set by internal name and client ID
+ * Hook for retrieving a single device question set by internal name and tenant ID
  */
-export const useDeviceQuestionSetByInternalName = (internalName: string | undefined, clientId: number | undefined) => {
+export const useDeviceQuestionSetByInternalName = (internalName: string | undefined, tenantId: number | undefined) => {
   return useQuery<ApiResponse<QuestionSet>, Error>({
-    queryKey: [USE_DEVICE_QUESTION_SET_QUERY_KEY, 'byInternalName', internalName, clientId],
-    queryFn: () => deviceQuestionSetService.getQuestionSetByInternalNameAndClientId(internalName!, clientId!),
-    enabled: !!internalName && !!clientId,
+    queryKey: [USE_DEVICE_QUESTION_SET_QUERY_KEY, 'byInternalName', internalName, tenantId],
+    queryFn: () => deviceQuestionSetService.getQuestionSetByInternalNameAndTenantId(internalName!, tenantId!),
+    enabled: !!internalName && !!tenantId,
   });
 };
 

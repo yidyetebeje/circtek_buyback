@@ -12,7 +12,7 @@ import { useDeviceQuestionSets } from '@/hooks/catalog/useDeviceQuestionSets';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { QuestionSet, QuestionSetRow } from '@/types/catalog/device-questions';
-import { getSession } from 'next-auth/react';
+
 
 export default function DeviceQuestionSetsPage() {
   const t = useTranslations('AdminCatalog');
@@ -34,7 +34,7 @@ export default function DeviceQuestionSetsPage() {
       internalName: qs.internalName,
       displayName: qs.displayName,
       description: qs.description,
-      client_id: qs.client_id,
+      tenant_id: qs.tenant_id,
       questionCount: qs.questions?.length || 0,
       createdAt: qs.createdAt,
       updatedAt: qs.updatedAt,

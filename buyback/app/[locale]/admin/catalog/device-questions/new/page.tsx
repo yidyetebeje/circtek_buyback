@@ -4,12 +4,10 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
 import { AdminEditCard } from '@/components/admin/AdminEditCard';
 
 import { DeviceQuestionSetForm, QuestionSetFormValues } from '@/components/admin/catalog/device-question-set-form';
 import { useCreateQuestionSetWithQuestions } from '@/hooks/catalog/useDeviceQuestionSets';
-import { Button } from '@/components/ui/button';
 import { CreateQuestionSetPayload } from '@/lib/api/catalog/deviceQuestionSetService';
 import { QuestionInputType } from '@/types/catalog/device-questions';
 
@@ -21,8 +19,8 @@ export default function NewDeviceQuestionSetPage() {
   const { mutate: createQuestionSet, isPending: isLoading } = useCreateQuestionSetWithQuestions();
 
   const handleSubmit = (values: QuestionSetFormValues) => {
-    // TODO: Replace hardcoded client_id with a dynamic value from user context or env
-    const clientId = 1; 
+    // TODO: Replace hardcoded tenant_id with a dynamic value from user context or env
+    const tenantId = 1; 
 
     // Transform our form data to match the API's expected structure
     // The API expects questions without id/questionSetId/createdAt/updatedAt
@@ -49,11 +47,12 @@ export default function NewDeviceQuestionSetPage() {
       internalName: values.internalName,
       displayName: values.displayName,
       description: values.description,
-      client_id: clientId,
+      tenant_id: tenantId,
       questions: formattedQuestions
     };
 
-    // Use a type assertion here - the backend will handle ID generation
+    // The backend will handle ID generation
+    // Type assertion needed due to slight structural differences in options array
     createQuestionSet(payload as CreateQuestionSetPayload, {
       onSuccess: (response) => {
         toast.success(t('deviceQuestionSetCreated', { name: response?.data?.displayName || values.displayName }));

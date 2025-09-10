@@ -20,7 +20,7 @@ export interface SeoFields {
 // Base entity with common fields
 interface BaseEntity {
   id?: number;
-  client_id: number;
+  tenant_id: number;
   order_no?: number | null;
   created_at?: string;
   updated_at?: string;
@@ -138,7 +138,7 @@ export interface Language {
 export interface Shop {
   id: number;
   name: string;
-  client_id: number;
+  tenant_id: number;
   owner_id: number;
   logo: string | null;
   icon?: string | null;
@@ -158,7 +158,7 @@ export interface FAQ {
   order_no?: number;
   is_published?: boolean;
   shop_id: number;
-  client_id: number;
+  tenant_id: number;
   created_at?: string;
   updated_at?: string;
   translations?: FAQTranslation[];
@@ -192,7 +192,7 @@ export interface FAQFormValues {
   order_no?: number;
   is_published?: boolean;
   shop_id: number;
-  client_id: number;
+  tenant_id: number;
   translations?: {
     language_id: number;
     question: string;
@@ -239,7 +239,7 @@ export interface QuestionSet {
   internalName: string;
   displayName: string;
   description?: string;
-  client_id: number;
+  tenant_id: number;
   translations?: ItemTranslation[];
   questions: Question[];
 }

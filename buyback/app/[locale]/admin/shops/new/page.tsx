@@ -51,7 +51,7 @@ export default function CreateShopPage() {
 
     const shopPayload = {
       ...values,
-      client_id: session.user.clientId ? Number(session.user.clientId) : 0,
+      tenant_id: session.user.tenantId ? Number(session.user.tenantId) : 0,
       owner_id: Number(session.user.id),
       logo: values.logo || '',
       icon: null,

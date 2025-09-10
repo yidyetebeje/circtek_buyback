@@ -9,7 +9,7 @@ declare module "next-auth" {
     userName?: string;
     roleSlug: string;
     shopId?: number; // Potentially managed_shop_id, review for consistency
-    clientId?: number;
+    tenantId?: number;
     token: string;
   }
 
@@ -22,7 +22,7 @@ declare module "next-auth" {
       roleSlug: string;
       shopId?: number; // Potentially managed_shop_id, review for consistency
       managed_shop_id?: number;
-      clientId?: number;
+      tenantId?: number;
       name?: string | null;
       image?: string | null;
     };
@@ -39,7 +39,7 @@ declare module "next-auth/jwt" {
     roleSlug: string;
     shopId?: number; // Potentially managed_shop_id, review for consistency
     managed_shop_id?: number;
-    clientId?: number;
+    tenantId?: number;
     accessToken: string;
   }
 } 

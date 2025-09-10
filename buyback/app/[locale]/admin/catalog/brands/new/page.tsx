@@ -24,8 +24,8 @@ export default function CreateBrandPage() {
       return;
     }
 
-    const brandPayload: Omit<Brand, 'id' | 'created_at' | 'updated_at'> & { client_id: number } = {
-      client_id: 1,
+    const brandPayload: Omit<Brand, 'id' | 'created_at' | 'updated_at' | 'client_id'> & { tenant_id: number } = {
+      tenant_id: 1,
       title: values.title,
       icon: null,
       sef_url: '',
@@ -38,7 +38,7 @@ export default function CreateBrandPage() {
     };
 
     try {
-      const createdBrandResponse = await createBrand(brandPayload as Brand);
+      const createdBrandResponse = await createBrand(brandPayload);
       const brandId = createdBrandResponse?.data?.id;
 
       if (!brandId) {

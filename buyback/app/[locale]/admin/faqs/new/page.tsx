@@ -55,7 +55,7 @@ export default function NewFAQPage() {
     const payload = {
       ...data,
       shop_id: parseInt(shopId, 10),
-      client_id: 1, // This will be overwritten by the backend
+      tenant_id: 1, // This will be overwritten by the backend
     };
     
     createFAQ(payload, {

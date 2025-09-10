@@ -25,7 +25,7 @@ export default function CreateCategoryPage() {
     }
 
     const categoryPayload: Partial<Omit<Category, 'id' | 'created_at' | 'updated_at' | 'icon'>> = {
-      client_id: 1,
+      tenant_id: 1,
       title: values.title,
       description: values.description || null,
       sef_url: '',

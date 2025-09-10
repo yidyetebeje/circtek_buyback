@@ -20,9 +20,9 @@ export default function CreateModelSeriesPage() {
   const handleCreateModelSeries = async (values: ModelSeriesFormValues) => {
     try {
       // Prepare payload without image (image will be uploaded separately if needed)
-      const modelSeriesPayload: ModelSeries = {
+      const modelSeriesPayload: Omit<ModelSeries, 'client_id'> & { tenant_id: number } = {
         id: undefined,
-        client_id: 1,
+        tenant_id: 1,
         title: values.name,
         image: null, // initial image is handled separately
         description: values.description || null,

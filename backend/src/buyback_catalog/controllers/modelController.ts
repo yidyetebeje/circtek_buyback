@@ -430,7 +430,7 @@ export class ModelController {
       categoryId?: number;
       brandId?: number;
       modelSeriesId?: number;
-      clientId?: number;
+      tenantId?: number;
     },
     ctx: Context
   ) {
@@ -445,14 +445,14 @@ export class ModelController {
       const categoryId = options.categoryId;
       const brandId = options.brandId;
       const modelSeriesId = options.modelSeriesId;
-      const clientId = options.clientId;
+      const tenantId = options.tenantId;
 
       if (isNaN(page) || page < 1) throw new BadRequestError('Invalid page number.');
       if (isNaN(limit) || limit < 1) throw new BadRequestError('Invalid limit value.');
       if (categoryId !== undefined && isNaN(categoryId)) throw new BadRequestError('Invalid category ID.');
       if (brandId !== undefined && isNaN(brandId)) throw new BadRequestError('Invalid brand ID.');
       if (modelSeriesId !== undefined && isNaN(modelSeriesId)) throw new BadRequestError('Invalid model series ID.');
-      if (clientId !== undefined && isNaN(clientId)) throw new BadRequestError('Invalid client ID.');
+      if (tenantId !== undefined && isNaN(tenantId)) throw new BadRequestError('Invalid client ID.');
 
       const result = await modelService.getPublishedInShop(shopId, {
         page,
@@ -463,7 +463,7 @@ export class ModelController {
         categoryId,
         brandId,
         modelSeriesId,
-        clientId
+        tenantId
       });
 
       return result;
@@ -501,7 +501,7 @@ export class ModelController {
       search?: string;
       brandId?: number;
       modelSeriesId?: number;
-      clientId?: number;
+      tenantId?: number;
     },
     ctx: Context
   ) {
@@ -516,13 +516,13 @@ export class ModelController {
       const search = options.search || '';
       const brandId = options.brandId;
       const modelSeriesId = options.modelSeriesId;
-      const clientId = options.clientId;
+      const tenantId = options.tenantId;
 
       if (isNaN(page) || page < 1) throw new BadRequestError('Invalid page number.');
       if (isNaN(limit) || limit < 1) throw new BadRequestError('Invalid limit value.');
       if (brandId !== undefined && isNaN(brandId)) throw new BadRequestError('Invalid brand ID.');
       if (modelSeriesId !== undefined && isNaN(modelSeriesId)) throw new BadRequestError('Invalid model series ID.');
-      if (clientId !== undefined && isNaN(clientId)) throw new BadRequestError('Invalid client ID.');
+      if (tenantId !== undefined && isNaN(tenantId)) throw new BadRequestError('Invalid client ID.');
 
       const result = await modelService.getPublishedInShopByCategory(shopId, categorySlug, {
         page,
@@ -532,7 +532,7 @@ export class ModelController {
         search,
         brandId,
         modelSeriesId,
-        clientId
+        tenantId
       });
 
       return result;

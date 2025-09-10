@@ -38,7 +38,7 @@ export default function CreateModelPage() {
     const seriesIdNumber = values.series_id ? parseInt(values.series_id, 10) : NaN;
 
     const modelPayload = {
-      client_id: 1,
+      tenant_id: 1,
       title: values.title,
       category_id: parseInt(values.category_id, 10),
       brand_id: parseInt(values.brand_id, 10),

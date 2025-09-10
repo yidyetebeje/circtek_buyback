@@ -19,7 +19,7 @@ export const featuredDeviceController = {
     
     // Check if user has access to the shop
     if (data.shopId) {
-        const hasShopAccess = await shopAccessService.hasShopAccess(currentUserId, data.shopId);
+        const hasShopAccess = await shopAccessService.hasShopAccess(currentUserId, data.shopId, currentTenantId);
         if (!hasShopAccess && currentRole !== 'super_admin') {
             ctx.set.status = 403;
             return { error: 'You do not have access to this shop.' };
@@ -97,7 +97,7 @@ export const featuredDeviceController = {
       shopIdsToFilter = queriedShopIds;
     } else if (currentUserId) {
       // Regular authenticated user – restrict to shops they manage/have access to
-      const userAccessibleShopIds = await shopAccessService.getAccessibleShopIds(currentUserId);
+      const userAccessibleShopIds = await shopAccessService.getAccessibleShopIds(currentTenantId, currentUserId);
       if (queriedShopIds) {
         shopIdsToFilter = userAccessibleShopIds.filter((id: number) => queriedShopIds!.includes(id));
       } else {
@@ -163,7 +163,7 @@ export const featuredDeviceController = {
       const hasPermission = 
         currentRole === 'super_admin' || 
         (featuredDevice.tenantId === currentTenantId) || 
-        (await shopAccessService.hasShopAccess(currentUserId, featuredDevice.shopId));
+        (await shopAccessService.hasShopAccess(currentUserId, featuredDevice.shopId, currentTenantId));
         
       if (!hasPermission) {
         ctx.set.status = 403;
@@ -196,7 +196,7 @@ export const featuredDeviceController = {
       const hasPermission = 
         currentRole === 'super_admin' || 
         (existingDevice.tenantId === currentTenantId) || 
-        (await shopAccessService.hasShopAccess(currentUserId, existingDevice.shopId));
+        (await shopAccessService.hasShopAccess(currentUserId, existingDevice.shopId,currentTenantId));
         
       if (!hasPermission) {
         ctx.set.status = 403;
@@ -233,7 +233,7 @@ export const featuredDeviceController = {
       const hasPermission = 
         currentRole === 'super_admin' || 
         (existingDevice.tenantId === currentTenantId) || 
-        (await shopAccessService.hasShopAccess(currentUserId, existingDevice.shopId));
+        (await shopAccessService.hasShopAccess(currentUserId, existingDevice.shopId, currentTenantId));
         
       if (!hasPermission) {
         ctx.set.status = 403;

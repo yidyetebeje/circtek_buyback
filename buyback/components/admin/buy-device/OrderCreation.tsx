@@ -106,7 +106,7 @@ export function OrderCreation({
 
     // Prepare order data according to CreateAdminOrderPayload interface
     const orderData: CreateAdminOrderPayload = {
-      clientId: 1,
+      tenantId: 1,
       // Device Information
       deviceId: product.id!,
       deviceSnapshot: {

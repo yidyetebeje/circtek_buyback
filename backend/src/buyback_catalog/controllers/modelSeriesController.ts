@@ -371,7 +371,7 @@ export class ModelSeriesController {
       orderBy?: string;
       order?: 'asc' | 'desc';
       search?: string;
-      clientId?: number;
+      tenantId?: number;
     },
     ctx: Context
   ) {
@@ -383,11 +383,11 @@ export class ModelSeriesController {
       const orderBy = options.orderBy || 'title';
       const order = options.order || 'asc';
       const search = options.search || '';
-      const clientId = options.clientId;
+      const tenantId = options.tenantId;
 
       if (isNaN(page) || page < 1) throw new BadRequestError('Invalid page number.');
       if (isNaN(limit) || limit < 1) throw new BadRequestError('Invalid limit value.');
-      if (clientId !== undefined && isNaN(clientId)) throw new BadRequestError('Invalid client ID.');
+      if (tenantId !== undefined && isNaN(tenantId)) throw new BadRequestError('Invalid tenant ID.');
 
       const result = await modelSeriesService.getPublishedInShop(shopId, {
         page,
@@ -395,7 +395,7 @@ export class ModelSeriesController {
         orderBy,
         order,
         search,
-        clientId
+        tenantId
       });
 
       return result;

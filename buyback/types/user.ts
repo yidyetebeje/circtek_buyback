@@ -18,8 +18,8 @@ export interface User {
   password?: string | null; // Usually not sent to frontend
   roleId?: number | null;
   status?: boolean;
-  clientId?: number | null;
-  client_id?: number | null; // Alternative form for clientId
+  tenantId?: number | null;
+  tenant_id?: number | null; // Alternative form for tenantId
   warehouseId?: number | null;
   daysForImei?: number | null;
   createdAt?: string | null;
@@ -68,6 +68,6 @@ export interface UserFormValues {
   confirmPassword?: string;
   organizationName?: string;
   managed_shop_id?: number; // Added for shop managers
-  client_id?: number; // Added for client identification
+  tenant_id?: number; // Added for tenant identification
   warehouseId?: number; // Added for warehouse assignment
 } 

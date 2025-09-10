@@ -130,8 +130,8 @@ export default function FAQDetailPage() {
             <p className="text-sm">{faq.shop_id}</p>
           </div>
           <div>
-            <h4 className="font-medium text-sm text-muted-foreground mb-1">Client ID</h4>
-            <p className="text-sm">{faq.client_id}</p>
+            <h4 className="font-medium text-sm text-muted-foreground mb-1">Tenant ID</h4>
+            <p className="text-sm">{faq.tenant_id}</p>
           </div>
         </div>
       </div>
