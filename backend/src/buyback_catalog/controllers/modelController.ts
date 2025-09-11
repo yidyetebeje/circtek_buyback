@@ -29,12 +29,13 @@ export class ModelController {
       const limit = ctx.query.limit ? parseInt(ctx.query.limit as string, 10) : 20;
       const orderBy = ctx.query.orderBy as string || 'title';
       const order = (ctx.query.order as string) === 'desc' ? 'desc' : 'asc';
-      const titleSearch = ctx.query.title as string | undefined;
+      console.log('query', ctx.query);
+      const titleSearch = ctx.query.title  || undefined;
       const categoryIds = parseIds(ctx.query.category_id);
       const brandIds = parseIds(ctx.query.brand_id);
       const seriesIds = parseIds(ctx.query.series_id);
       const {currentUserId, currentTenantId} = ctx as any;
-
+      console.log('titleSearch', titleSearch);
       
       let effectiveTenantId: number | undefined = undefined;
       if(currentTenantId !== undefined){
@@ -47,6 +48,7 @@ export class ModelController {
       const result = await modelService.getAllModels(page, limit, orderBy, order, titleSearch, categoryIds, brandIds, seriesIds, effectiveTenantId);
       return result;
     } catch (error: any) {
+      console.error("Error in ModelController.getAll:", error);
       if (error instanceof BadRequestError) {
         ctx.set.status = 400;
         return { error: error.message };

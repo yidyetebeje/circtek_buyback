@@ -203,6 +203,10 @@ export function useColumns(): ColumnDef<Category>[] {
     },
   }] : []),
   {
+    accessorKey: "usage",
+    header: "Usage",
+  },
+  {
     id: "actions",
     header: "Actions",
     enableHiding: false,

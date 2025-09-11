@@ -82,7 +82,6 @@ export const ModelSeriesCreateSchema = t.Object({
     meta_description: t.Optional(t.Nullable(t.String())),
     meta_keywords: t.Optional(t.Nullable(t.String())),
     order_no: t.Optional(t.Nullable(t.Numeric())),
-    client_id: t.Numeric(),
     translations: t.Optional(t.Array(ModelSeriesTranslationSchema))
 });
 

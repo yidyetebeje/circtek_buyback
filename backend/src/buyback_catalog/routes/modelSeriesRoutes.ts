@@ -12,7 +12,7 @@ export const modelSeriesRoutes = new Elysia({ prefix: '/model-series' })
         limit: t.Optional(t.Numeric({ minimum: 1, default: 20 })),
         orderBy: t.Optional(t.String({ default: 'order_no' })),
         order: t.Optional(t.Enum({ asc: 'asc', desc: 'desc' }, { default: 'asc' })),
-        clientId: t.Optional(t.Numeric()),
+        tenantId: t.Optional(t.Numeric()),
         q: t.Optional(t.String()),
     }),
     detail: {
@@ -30,9 +30,9 @@ export const modelSeriesRoutes = new Elysia({ prefix: '/model-series' })
       // Add tenant_id to the data
       data.tenant_id = currentTenantId;
       // Ensure client_id is a number as required by the schema
-      const clientId = currentTenantId; // Using tenant as client for now
-      if (clientId !== undefined) {
-        data.client_id = clientId;
+      const tenantId = currentTenantId; // Using tenant as client for now
+      if (tenantId !== undefined) {
+        data.tenantId = tenantId;
       } else {
         ctx.set.status = 400;
         return { error: 'Client ID could not be determined from user information' };

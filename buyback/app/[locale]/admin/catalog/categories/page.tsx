@@ -96,6 +96,7 @@ export default function CategoriesPage() {
         searchKey="title"
         filterOptions={filterOptions}
         entityType="category"
+        initialColumnVisibility={{ usage: false }}
       />
     </div>
   );

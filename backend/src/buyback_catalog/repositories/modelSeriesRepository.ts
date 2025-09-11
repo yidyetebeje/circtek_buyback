@@ -1,4 +1,4 @@
-import { asc, desc, eq, and, sql, inArray, InferSelectModel, like } from "drizzle-orm";
+import { asc, desc, eq, and, sql, inArray, InferSelectModel, like, getTableColumns } from "drizzle-orm";
 import { db } from "../../db";
 import { model_series } from "../../db/buyback_catalogue.schema";
 import { model_series_translations, shop_model_series } from "../../db/shops.schema";
@@ -22,11 +22,11 @@ export class ModelSeriesRepository {
     order: "asc" | "desc" = "asc",
     tenantId?: number,
     search?: string,
-    includeTranslations = true,
     includePublishedShops = true
   ) {
     const offset = (page - 1) * limit;
 
+    // Build where clause based on filters
     const conditions = [];
     if (tenantId) {
       conditions.push(eq(model_series.tenant_id, tenantId));
@@ -37,6 +37,7 @@ export class ModelSeriesRepository {
 
     const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
 
+    // Create a column mapping for type safety
     const columnMapping = {
       id: model_series.id,
       title: model_series.title,
@@ -54,113 +55,204 @@ export class ModelSeriesRepository {
       updatedAt: model_series.updatedAt
     };
 
+    // Make sure orderBy is a valid column
     if (!(orderBy in columnMapping)) {
-      orderBy = "order_no";
+      orderBy = "order_no"; // Default to a safe column if invalid
     }
 
-    const orderColumn = columnMapping[orderBy as keyof typeof columnMapping];
-    const orderClause = order === "desc" ? desc(orderColumn) : asc(orderColumn);
+    // Build the select object conditionally
+    const selectFields: any = {
+      ...getTableColumns(model_series),
+      translations: sql<any[]>`COALESCE(
+        JSON_ARRAYAGG(
+          CASE 
+            WHEN ${model_series_translations.id} IS NOT NULL 
+            THEN JSON_OBJECT(
+              'id', ${model_series_translations.id},
+              'title', ${model_series_translations.title},
+              'description', ${model_series_translations.description},
+              'language_id', ${model_series_translations.language_id}
+            )
+          END
+        ), 
+        JSON_ARRAY()
+      )`.as('translations')
+    };
+
+    if (includePublishedShops) {
+      selectFields.publishedInShops = sql<any[]>`CASE 
+        WHEN MAX(${shop_model_series.shop_id}) IS NULL 
+        THEN NULL
+        ELSE JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'shop_id', ${shop_model_series.shop_id},
+            'is_published', ${shop_model_series.is_published},
+            'createdAt', ${shop_model_series.createdAt},
+            'updatedAt', ${shop_model_series.updatedAt}
+          )
+        )
+      END`.as('publishedInShops');
+    }
+
+    // Build the main query
+    let query = db.select(selectFields)
+      .from(model_series)
+      .leftJoin(model_series_translations, eq(model_series.id, model_series_translations.series_id));
+
+    if (includePublishedShops) {
+      query = query.leftJoin(shop_model_series, eq(model_series.id, shop_model_series.series_id));
+    }
 
     const [items, totalCount] = await Promise.all([
-      db.select()
-        .from(model_series)
-        .where(whereCondition)
-        .orderBy(orderClause)
+      query
+        .where(whereCondition || sql`1=1`)
+        .groupBy(model_series.id)
         .limit(limit)
-        .offset(offset),
+        .offset(offset)
+        .orderBy(
+          order === "asc" 
+            ? asc(columnMapping[orderBy as keyof typeof columnMapping])
+            : desc(columnMapping[orderBy as keyof typeof columnMapping])
+        ),
       db.select({ count: sql<number>`count(*)` })
         .from(model_series)
-        .where(whereCondition)
-        .then(result => result[0].count)
+        .where(whereCondition ? whereCondition : sql`1=1`)
     ]);
 
     return {
       data: items,
       meta: {
-        total: totalCount,
+        total: totalCount[0].count,
         page,
         limit,
-        totalPages: Math.ceil(totalCount / limit)
+        totalPages: Math.ceil(totalCount[0].count / limit)
       }
     };
   }
 
   async findById(id: number, includeTranslations = true, includePublishedShops = true) {
-    const baseQuery = db.select().from(model_series).where(eq(model_series.id, id));
-    const series = await baseQuery;
+    // Build the select object conditionally
+    const selectFields: any = {
+      ...getTableColumns(model_series),
+      ...(includeTranslations ? {
+        translations: sql<any[]>`COALESCE(
+          JSON_ARRAYAGG(
+            CASE 
+              WHEN ${model_series_translations.id} IS NOT NULL 
+              THEN JSON_OBJECT(
+                'id', ${model_series_translations.id},
+                'title', ${model_series_translations.title},
+                'description', ${model_series_translations.description},
+                'language_id', ${model_series_translations.language_id}
+              )
+            END
+          ), 
+          JSON_ARRAY()
+        )`.as('translations')
+      } : {}),
+      ...(includePublishedShops ? {
+        publishedInShops: sql<any[]>`CASE 
+          WHEN MAX(${shop_model_series.shop_id}) IS NULL 
+          THEN NULL
+          ELSE JSON_ARRAYAGG(
+            JSON_OBJECT(
+              'shop_id', ${shop_model_series.shop_id},
+              'is_published', ${shop_model_series.is_published},
+              'createdAt', ${shop_model_series.createdAt},
+              'updatedAt', ${shop_model_series.updatedAt}
+            )
+          )
+        END`.as('publishedInShops')
+      } : {})
+    };
+
+    // Build the complete query based on what should be included
+    let query;
     
-    if (series.length === 0) {
-      return undefined;
+    if (includeTranslations && includePublishedShops) {
+      query = db.select(selectFields)
+        .from(model_series)
+        .leftJoin(model_series_translations, eq(model_series.id, model_series_translations.series_id))
+        .leftJoin(shop_model_series, eq(model_series.id, shop_model_series.series_id));
+    } else if (includeTranslations) {
+      query = db.select(selectFields)
+        .from(model_series)
+        .leftJoin(model_series_translations, eq(model_series.id, model_series_translations.series_id));
+    } else if (includePublishedShops) {
+      query = db.select(selectFields)
+        .from(model_series)
+        .leftJoin(shop_model_series, eq(model_series.id, shop_model_series.series_id));
+    } else {
+      query = db.select(selectFields)
+        .from(model_series);
     }
+
+    const result = await query
+      .where(eq(model_series.id, id))
+      .groupBy(model_series.id)
+      .limit(1);
     
-    const result = series[0];
-    
-    // Add translations if requested
-    if (includeTranslations) {
-      const translations = await db.select()
-        .from(model_series_translations)
-        .leftJoin(languages, eq(model_series_translations.language_id, languages.id))
-        .where(eq(model_series_translations.series_id, id));
-      
-      (result as any).translations = translations.map(t => ({
-        ...t.model_series_translations,
-        language: t.languages
-      }));
-    }
-    
-    // Add published shops if requested
-    if (includePublishedShops) {
-      const publishedShops = await db.select({ shop_id: shop_model_series.shop_id })
-        .from(shop_model_series)
-        .where(and(
-          eq(shop_model_series.series_id, id),
-          eq(shop_model_series.is_published, 1)
-        ));
-      
-      (result as any).publishedInShops = publishedShops;
-    }
-    
-    return result;
+    return result[0] || null;
   }
 
   async findBySlug(slug: string, tenantId: number, includePublishedShops = true) {
-    const baseQuery = db.select().from(model_series).where(and(
-      eq(model_series.sef_url, slug),
-      eq(model_series.tenant_id, tenantId)
-    ));
-    
-    const series = await baseQuery;
-    
-    if (series.length === 0) {
-      return undefined;
-    }
-    
-    const result = series[0];
-    
-    // Add translations
-    const translations = await db.select()
-      .from(model_series_translations)
-      .leftJoin(languages, eq(model_series_translations.language_id, languages.id))
-      .where(eq(model_series_translations.series_id, result.id));
-    
-    (result as any).translations = translations.map(t => ({
-      ...t.model_series_translations,
-      language: t.languages
-    }));
-    
-    // Add published shops if requested
+    // Build the select object conditionally
+    const selectFields: any = {
+      ...getTableColumns(model_series),
+      translations: sql<any[]>`COALESCE(
+        JSON_ARRAYAGG(
+          CASE 
+            WHEN ${model_series_translations.id} IS NOT NULL 
+            THEN JSON_OBJECT(
+              'id', ${model_series_translations.id},
+              'title', ${model_series_translations.title},
+              'description', ${model_series_translations.description},
+              'language_id', ${model_series_translations.language_id}
+            )
+          END
+        ), 
+        JSON_ARRAY()
+      )`.as('translations')
+    };
+
     if (includePublishedShops) {
-      const publishedShops = await db.select({ shop_id: shop_model_series.shop_id })
-        .from(shop_model_series)
-        .where(and(
-          eq(shop_model_series.series_id, result.id),
-          eq(shop_model_series.is_published, 1)
-        ));
-      
-      (result as any).publishedInShops = publishedShops;
+      selectFields.publishedInShops = sql<any[]>`CASE 
+        WHEN MAX(${shop_model_series.shop_id}) IS NULL 
+        THEN NULL
+        ELSE JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'shop_id', ${shop_model_series.shop_id},
+            'is_published', ${shop_model_series.is_published},
+            'createdAt', ${shop_model_series.createdAt},
+            'updatedAt', ${shop_model_series.updatedAt}
+          )
+        )
+      END`.as('publishedInShops');
     }
+
+    // Build the complete query based on what should be included
+    let query;
     
-    return result;
+    if (includePublishedShops) {
+      query = db.select(selectFields)
+        .from(model_series)
+        .leftJoin(model_series_translations, eq(model_series.id, model_series_translations.series_id))
+        .leftJoin(shop_model_series, eq(model_series.id, shop_model_series.series_id));
+    } else {
+      query = db.select(selectFields)
+        .from(model_series)
+        .leftJoin(model_series_translations, eq(model_series.id, model_series_translations.series_id));
+    }
+
+    const result = await query
+      .where(and(
+        eq(model_series.sef_url, slug),
+        eq(model_series.tenant_id, tenantId)
+      ))
+      .groupBy(model_series.id)
+      .limit(1);
+    
+    return result[0] || null;
   }
 
   async create(data: Omit<TModelSeriesCreate, 'translations'>) {

@@ -125,11 +125,11 @@ export class StatsRepository {
     switch (period) {
       case 'daily':
         dateFormat = '%Y-%m-%d';
-        dateGroupBy = sql`DATE(${orders.created_at})`;
+        dateGroupBy = sql`DATE_FORMAT(${orders.created_at}, '%Y-%m-%d')`;
         break;
       case 'weekly':
         dateFormat = '%Y-%u';
-        dateGroupBy = sql`YEARWEEK(${orders.created_at}, 1)`;
+        dateGroupBy = sql`DATE_FORMAT(${orders.created_at}, '%Y-%u')`;
         break;
       case 'monthly':
         dateFormat = '%Y-%m';
@@ -152,7 +152,7 @@ export class StatsRepository {
     .from(orders)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .groupBy(dateGroupBy)
-    .orderBy(sql`${dateGroupBy} ASC`);
+    .orderBy(dateGroupBy);
 
     return result;
   }
@@ -175,11 +175,11 @@ export class StatsRepository {
     switch (period) {
       case 'daily':
         dateFormat = '%Y-%m-%d';
-        dateGroupBy = sql`DATE(${orders.created_at})`;
+        dateGroupBy = sql`DATE_FORMAT(${orders.created_at}, '%Y-%m-%d')`;
         break;
       case 'weekly':
         dateFormat = '%Y-%u';
-        dateGroupBy = sql`YEARWEEK(${orders.created_at}, 1)`;
+        dateGroupBy = sql`DATE_FORMAT(${orders.created_at}, '%Y-%u')`;
         break;
       case 'monthly':
         dateFormat = '%Y-%m';
@@ -202,7 +202,7 @@ export class StatsRepository {
     .from(orders)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .groupBy(dateGroupBy)
-    .orderBy(sql`${dateGroupBy} ASC`);
+    .orderBy(dateGroupBy);
 
     return result;
   }

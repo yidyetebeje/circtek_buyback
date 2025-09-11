@@ -32,6 +32,7 @@ export interface Category extends BaseEntity, SeoFields {
   title: string;
   icon?: string | null;
   description?: string | null;
+  usage?: string;
 }
 
 // Category Translation

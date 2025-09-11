@@ -58,7 +58,10 @@ export function PublishToShopsModal({
   const isShopManager = session?.user?.roleSlug === 'shop_manager';
   const managedShopId = session?.user?.managed_shop_id;
   // Extract shop IDs from the publishedInShops array
-  const publishedShopIds = publishedInShops.map(item => item.shop_id);
+  const filterNullFormPublishedInShops = publishedInShops.filter(item => item !== null);
+
+  console.log('filterNullFormPublishedInShops', filterNullFormPublishedInShops);
+  const publishedShopIds = filterNullFormPublishedInShops.map(item => item?.shop_id);
   
   const [selectedShops, setSelectedShops] = useState<number[]>(publishedShopIds);
   const [isLoading, setIsLoading] = useState(false);

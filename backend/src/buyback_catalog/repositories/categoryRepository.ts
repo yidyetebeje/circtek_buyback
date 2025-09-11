@@ -52,18 +52,51 @@ export class CategoryRepository {
       orderBy = "order_no"; // Default to a safe column if invalid
     }
     
+    // Build the select object conditionally
+    const selectFields: any = {
+      ...getTableColumns(device_categories),
+      translations: sql<any[]>`COALESCE(
+        JSON_ARRAYAGG(
+          CASE 
+            WHEN ${device_categories_translations.id} IS NOT NULL 
+            THEN JSON_OBJECT(
+              'id', ${device_categories_translations.id},
+              'title', ${device_categories_translations.title},
+              'description', ${device_categories_translations.description},
+              'language_id', ${device_categories_translations.language_id}
+            )
+          END
+        ), 
+        JSON_ARRAY()
+      )`.as('translations')
+    };
+
+    if (includePublishedShops) {
+      selectFields.publishedInShops = sql<any[]>`CASE 
+        WHEN MAX(${shop_device_categories.shop_id}) IS NULL 
+        THEN NULL
+        ELSE JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'shop_id', ${shop_device_categories.shop_id},
+            'is_published', ${shop_device_categories.is_published},
+            'createdAt', ${shop_device_categories.createdAt},
+            'updatedAt', ${shop_device_categories.updatedAt}
+          )
+        )
+      END`.as('publishedInShops');
+    }
+    
+    // Build the main query
+    let query = db.select(selectFields)
+      .from(device_categories)
+      .leftJoin(device_categories_translations, eq(device_categories.id, device_categories_translations.category_id));
+
+    if (includePublishedShops) {
+      query = query.leftJoin(shop_device_categories, eq(device_categories.id, shop_device_categories.category_id));
+    }
+
     const [items, totalCount] = await Promise.all([
-      db.select({
-        ...getTableColumns(device_categories),
-        translations: sql<any[]>`JSON_ARRAYAGG(JSON_OBJECT(
-          'id', ${device_categories_translations.id},
-          'title', ${device_categories_translations.title},
-          'description', ${device_categories_translations.description},
-          'language_id', ${device_categories_translations.language_id}
-        ))`
-      })
-        .from(device_categories)
-        .leftJoin(device_categories_translations, eq(device_categories.id, device_categories_translations.category_id))
+      query
         .where(whereCondition || sql`1=1`)
         .groupBy(device_categories.id)
         .limit(limit)
@@ -90,20 +123,63 @@ export class CategoryRepository {
   }
 
   async findById(id: number, includeTranslations = true, includePublishedShops = true) {
-    const result = await db
-      .select({
-        ...getTableColumns(device_categories),
-        ...(includeTranslations ? {
-          translations: sql<any[]>`JSON_ARRAYAGG(JSON_OBJECT(
-            'id', ${device_categories_translations.id},
-            'title', ${device_categories_translations.title},
-            'description', ${device_categories_translations.description},
-            'language_id', ${device_categories_translations.language_id}
-          ))`
-        } : {})
-      })
-      .from(device_categories)
-      .leftJoin(device_categories_translations, includeTranslations ? eq(device_categories.id, device_categories_translations.category_id) : sql`FALSE`)
+    // Build the select object conditionally
+    const selectFields: any = {
+      ...getTableColumns(device_categories),
+      ...(includeTranslations ? {
+        translations: sql<any[]>`COALESCE(
+          JSON_ARRAYAGG(
+            CASE 
+              WHEN ${device_categories_translations.id} IS NOT NULL 
+              THEN JSON_OBJECT(
+                'id', ${device_categories_translations.id},
+                'title', ${device_categories_translations.title},
+                'description', ${device_categories_translations.description},
+                'language_id', ${device_categories_translations.language_id}
+              )
+            END
+          ), 
+          JSON_ARRAY()
+        )`.as('translations')
+      } : {}),
+      ...(includePublishedShops ? {
+        publishedInShops: sql<any[]>`CASE 
+          WHEN MAX(${shop_device_categories.shop_id}) IS NULL 
+          THEN NULL
+          ELSE JSON_ARRAYAGG(
+            JSON_OBJECT(
+              'shop_id', ${shop_device_categories.shop_id},
+              'is_published', ${shop_device_categories.is_published},
+              'createdAt', ${shop_device_categories.createdAt},
+              'updatedAt', ${shop_device_categories.updatedAt}
+            )
+          )
+        END`.as('publishedInShops')
+      } : {})
+    };
+
+    // Build the complete query based on what should be included
+    let query;
+    
+    if (includeTranslations && includePublishedShops) {
+      query = db.select(selectFields)
+        .from(device_categories)
+        .leftJoin(device_categories_translations, eq(device_categories.id, device_categories_translations.category_id))
+        .leftJoin(shop_device_categories, eq(device_categories.id, shop_device_categories.category_id));
+    } else if (includeTranslations) {
+      query = db.select(selectFields)
+        .from(device_categories)
+        .leftJoin(device_categories_translations, eq(device_categories.id, device_categories_translations.category_id));
+    } else if (includePublishedShops) {
+      query = db.select(selectFields)
+        .from(device_categories)
+        .leftJoin(shop_device_categories, eq(device_categories.id, shop_device_categories.category_id));
+    } else {
+      query = db.select(selectFields)
+        .from(device_categories);
+    }
+
+    const result = await query
       .where(eq(device_categories.id, id))
       .groupBy(device_categories.id)
       .limit(1);
@@ -112,18 +188,55 @@ export class CategoryRepository {
   }
 
   async findBySlug(slug: string, tenantId: number, includePublishedShops = true) {
-    const result = await db
-      .select({
-        ...getTableColumns(device_categories),
-        translations: sql<any[]>`JSON_ARRAYAGG(JSON_OBJECT(
-          'id', ${device_categories_translations.id},
-          'title', ${device_categories_translations.title},
-          'description', ${device_categories_translations.description},
-          'language_id', ${device_categories_translations.language_id}
-        ))`
-      })
-      .from(device_categories)
-      .leftJoin(device_categories_translations, eq(device_categories.id, device_categories_translations.category_id))
+    // Build the select object conditionally
+    const selectFields: any = {
+      ...getTableColumns(device_categories),
+      translations: sql<any[]>`COALESCE(
+        JSON_ARRAYAGG(
+          CASE 
+            WHEN ${device_categories_translations.id} IS NOT NULL 
+            THEN JSON_OBJECT(
+              'id', ${device_categories_translations.id},
+              'title', ${device_categories_translations.title},
+              'description', ${device_categories_translations.description},
+              'language_id', ${device_categories_translations.language_id}
+            )
+          END
+        ), 
+        JSON_ARRAY()
+      )`.as('translations')
+    };
+
+    if (includePublishedShops) {
+      selectFields.publishedInShops = sql<any[]>`CASE 
+        WHEN MAX(${shop_device_categories.shop_id}) IS NULL 
+        THEN NULL
+        ELSE JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'shop_id', ${shop_device_categories.shop_id},
+            'is_published', ${shop_device_categories.is_published},
+            'createdAt', ${shop_device_categories.createdAt},
+            'updatedAt', ${shop_device_categories.updatedAt}
+          )
+        )
+      END`.as('publishedInShops');
+    }
+
+    // Build the complete query based on what should be included
+    let query;
+    
+    if (includePublishedShops) {
+      query = db.select(selectFields)
+        .from(device_categories)
+        .leftJoin(device_categories_translations, eq(device_categories.id, device_categories_translations.category_id))
+        .leftJoin(shop_device_categories, eq(device_categories.id, shop_device_categories.category_id));
+    } else {
+      query = db.select(selectFields)
+        .from(device_categories)
+        .leftJoin(device_categories_translations, eq(device_categories.id, device_categories_translations.category_id));
+    }
+
+    const result = await query
       .where(and(
         eq(device_categories.sef_url, slug),
         eq(device_categories.tenant_id, tenantId)

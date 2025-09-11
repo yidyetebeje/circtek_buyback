@@ -22,21 +22,16 @@ export class BrandRepository {
     orderBy = "order_no",
     order: "asc" | "desc" = "asc",
     tenantId?: number,
-    includeTranslations = true,
     includePublishedShops = true
   ) {
     const offset = (page - 1) * limit;
 
-    let whereConditions: any[] = [];
-    
-    if (tenantId !== undefined) {
-      whereConditions.push(eq(brands.tenant_id, tenantId));
-    }
-
-    const whereCondition = whereConditions.length > 0 
-      ? and(...whereConditions)
+    // Build where clause based on filters
+    const whereCondition = tenantId 
+      ? eq(brands.tenant_id, tenantId)
       : undefined;
 
+    // Create a column mapping for type safety
     const columnMapping = {
       id: brands.id,
       title: brands.title,
@@ -44,43 +39,74 @@ export class BrandRepository {
       description: brands.description,
       meta_title: brands.meta_title,
       sef_url: brands.sef_url,
+      order_no: brands.order_no,
       meta_canonical_url: brands.meta_canonical_url,
       meta_description: brands.meta_description,
       meta_keywords: brands.meta_keywords,
-      order_no: brands.order_no,
       tenant_id: brands.tenant_id,
       createdAt: brands.createdAt,
       updatedAt: brands.updatedAt
     };
 
+    // Make sure orderBy is a valid column
     if (!(orderBy in columnMapping)) {
-      orderBy = "order_no";
+      orderBy = "order_no"; // Default to a safe column if invalid
     }
 
-    // Build query conditionally to avoid type issues
-    const baseQuery = db
-      .select({
-        ...getTableColumns(brands),
-        testPriceDrops: sql`NULL` // Placeholder for consistency
-      })
-      .from(brands);
-    
-    const query = includePublishedShops
-      ? baseQuery.leftJoin(
-          shop_brands,
-          and(
-            eq(brands.id, shop_brands.brand_id),
-            eq(shop_brands.is_published, 1)
+    // Build the select object conditionally
+    const selectFields: any = {
+      ...getTableColumns(brands),
+      translations: sql<any[]>`COALESCE(
+        JSON_ARRAYAGG(
+          CASE 
+            WHEN ${brand_translations.id} IS NOT NULL 
+            THEN JSON_OBJECT(
+              'id', ${brand_translations.id},
+              'title', ${brand_translations.title},
+              'description', ${brand_translations.description},
+              'language_id', ${brand_translations.language_id}
+            )
+          END
+        ), 
+        JSON_ARRAY()
+      )`.as('translations')
+    };
+
+    if (includePublishedShops) {
+      selectFields.publishedInShops = sql<any[]>`CASE 
+        WHEN MAX(${shop_brands.shop_id}) IS NULL 
+        THEN NULL
+        ELSE JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'shop_id', ${shop_brands.shop_id},
+            'is_published', ${shop_brands.is_published},
+            'createdAt', ${shop_brands.createdAt},
+            'updatedAt', ${shop_brands.updatedAt}
           )
         )
-      : baseQuery;
+      END`.as('publishedInShops');
+    }
+
+    // Build the main query
+    let query = db.select(selectFields)
+      .from(brands)
+      .leftJoin(brand_translations, eq(brands.id, brand_translations.brand_id));
+
+    if (includePublishedShops) {
+      query = query.leftJoin(shop_brands, eq(brands.id, shop_brands.brand_id));
+    }
 
     const [items, totalCount] = await Promise.all([
       query
-        .where(whereCondition ? whereCondition : sql`1=1`)
+        .where(whereCondition || sql`1=1`)
+        .groupBy(brands.id)
         .limit(limit)
         .offset(offset)
-        .orderBy(order === "asc" ? asc(columnMapping[orderBy as keyof typeof columnMapping]) : desc(columnMapping[orderBy as keyof typeof columnMapping])),
+        .orderBy(
+          order === "asc" 
+            ? asc(columnMapping[orderBy as keyof typeof columnMapping])
+            : desc(columnMapping[orderBy as keyof typeof columnMapping])
+        ),
       db.select({ count: sql<number>`count(*)` })
         .from(brands)
         .where(whereCondition ? whereCondition : sql`1=1`)
@@ -98,77 +124,128 @@ export class BrandRepository {
   }
 
   async findById(id: number, includeTranslations = true, includePublishedShops = true) {
-    // Get the base brand record
-    const brandResult = await db
-      .select(getTableColumns(brands))
-      .from(brands)
-      .where(eq(brands.id, id));
+    // Build the select object conditionally
+    const selectFields: any = {
+      ...getTableColumns(brands),
+      ...(includeTranslations ? {
+        translations: sql<any[]>`COALESCE(
+          JSON_ARRAYAGG(
+            CASE 
+              WHEN ${brand_translations.id} IS NOT NULL 
+              THEN JSON_OBJECT(
+                'id', ${brand_translations.id},
+                'title', ${brand_translations.title},
+                'description', ${brand_translations.description},
+                'language_id', ${brand_translations.language_id}
+              )
+            END
+          ), 
+          JSON_ARRAY()
+        )`.as('translations')
+      } : {}),
+      ...(includePublishedShops ? {
+        publishedInShops: sql<any[]>`CASE 
+          WHEN MAX(${shop_brands.shop_id}) IS NULL 
+          THEN NULL
+          ELSE JSON_ARRAYAGG(
+            JSON_OBJECT(
+              'shop_id', ${shop_brands.shop_id},
+              'is_published', ${shop_brands.is_published},
+              'createdAt', ${shop_brands.createdAt},
+              'updatedAt', ${shop_brands.updatedAt}
+            )
+          )
+        END`.as('publishedInShops')
+      } : {})
+    };
+
+    // Build the complete query based on what should be included
+    let query;
     
-    if (!brandResult[0]) return null;
-    
-    let response: any = brandResult[0];
-    
-    // Add translations if requested
-    if (includeTranslations) {
-      const translations = await db
-        .select(getTableColumns(brand_translations))
-        .from(brand_translations)
-        .where(eq(brand_translations.brand_id, id));
-      response.brand_translations = translations;
+    if (includeTranslations && includePublishedShops) {
+      query = db.select(selectFields)
+        .from(brands)
+        .leftJoin(brand_translations, eq(brands.id, brand_translations.brand_id))
+        .leftJoin(shop_brands, eq(brands.id, shop_brands.brand_id));
+    } else if (includeTranslations) {
+      query = db.select(selectFields)
+        .from(brands)
+        .leftJoin(brand_translations, eq(brands.id, brand_translations.brand_id));
+    } else if (includePublishedShops) {
+      query = db.select(selectFields)
+        .from(brands)
+        .leftJoin(shop_brands, eq(brands.id, shop_brands.brand_id));
+    } else {
+      query = db.select(selectFields)
+        .from(brands);
     }
+
+    const result = await query
+      .where(eq(brands.id, id))
+      .groupBy(brands.id)
+      .limit(1);
     
-    // Add shop brands if requested
-    if (includePublishedShops) {
-      const shopBrands = await db
-        .select(getTableColumns(shop_brands))
-        .from(shop_brands)
-        .where(eq(shop_brands.brand_id, id));
-      response.shop_brands = shopBrands;
-    }
-    
-    return response;
+    return result[0] || null;
   }
 
   async findBySlug(slug: string, tenantId: number, includePublishedShops = true) {
-    const baseQuery = db
-      .select({
-        ...getTableColumns(brands)
-      })
-      .from(brands);
+    // Build the select object conditionally
+    const selectFields: any = {
+      ...getTableColumns(brands),
+      translations: sql<any[]>`COALESCE(
+        JSON_ARRAYAGG(
+          CASE 
+            WHEN ${brand_translations.id} IS NOT NULL 
+            THEN JSON_OBJECT(
+              'id', ${brand_translations.id},
+              'title', ${brand_translations.title},
+              'description', ${brand_translations.description},
+              'language_id', ${brand_translations.language_id}
+            )
+          END
+        ), 
+        JSON_ARRAY()
+      )`.as('translations')
+    };
 
-    const query = includePublishedShops
-      ? baseQuery.leftJoin(
-          shop_brands,
-          and(
-            eq(brands.id, shop_brands.brand_id),
-            eq(shop_brands.is_published, 1)
+    if (includePublishedShops) {
+      selectFields.publishedInShops = sql<any[]>`CASE 
+        WHEN MAX(${shop_brands.shop_id}) IS NULL 
+        THEN NULL
+        ELSE JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'shop_id', ${shop_brands.shop_id},
+            'is_published', ${shop_brands.is_published},
+            'createdAt', ${shop_brands.createdAt},
+            'updatedAt', ${shop_brands.updatedAt}
           )
         )
-      : baseQuery;
+      END`.as('publishedInShops');
+    }
 
-    const result = await query.where(
-      and(
+    // Build the complete query based on what should be included
+    let query;
+    
+    if (includePublishedShops) {
+      query = db.select(selectFields)
+        .from(brands)
+        .leftJoin(brand_translations, eq(brands.id, brand_translations.brand_id))
+        .leftJoin(shop_brands, eq(brands.id, shop_brands.brand_id));
+    } else {
+      query = db.select(selectFields)
+        .from(brands)
+        .leftJoin(brand_translations, eq(brands.id, brand_translations.brand_id));
+    }
+
+    const result = await query
+      .where(and(
         eq(brands.sef_url, slug),
         eq(brands.tenant_id, tenantId)
-      )
-    );
-
-    if (!result[0]) return null;
-
-    // Get translations separately
-    const translations = await db
-      .select({
-        ...getTableColumns(brand_translations),
-        language: getTableColumns(languages)
-      })
-      .from(brand_translations)
-      .leftJoin(languages, eq(brand_translations.language_id, languages.id))
-      .where(eq(brand_translations.brand_id, result[0].id));
-
-    return {
-      ...result[0],
-      translations
-    };
+      ))
+      .groupBy(brands.id)
+      .limit(1);
+    
+    return result[0] || null;
   }
 
   async create(data: Omit<TBrandCreate, 'translations'>) {

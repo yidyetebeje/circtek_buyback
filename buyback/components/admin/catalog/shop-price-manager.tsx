@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Loader2, DollarSign, Save, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,34 +38,53 @@ export const ShopPriceManager: React.FC<ShopPriceManagerProps> = ({
 
   // Fetch shops
   const { data: shopsResponse, isLoading: isLoadingShops } = useShops();
-  const shops = shopsResponse?.data || [];
+  const shops = useMemo(() => shopsResponse?.data || [], [shopsResponse?.data]);
 
   // Mutations
   const updateSinglePrice = useUpdateModelPrice();
   const updateBulkPrice = useUpdateModelPriceAllShops();
 
   // Get model statuses for all shops to see current prices and publish status
-  const shopIds = shops.map(shop => shop.id);
+  const shopIds = useMemo(() => shops.map(shop => shop.id), [shops]);
   const { data: modelStatusesData, isLoading: isLoadingStatuses } = useModelStatusesForShops(modelId, shopIds);
+
+  // Stabilize the model statuses data to prevent unnecessary re-renders
+  const stableModelStatusesData = useMemo(() => modelStatusesData, [modelStatusesData]);
+
+  // Create status map for efficient lookups
+  const statusMap = useMemo(() => {
+    if (!stableModelStatusesData) return new Map();
+    return new Map(
+      stableModelStatusesData.map(item => [
+        item.shopId,
+        item.data
+      ])
+    );
+  }, [stableModelStatusesData]);
 
   // Initialize shop prices data
   useEffect(() => {
-    console.log('modelStatusesData:', modelStatusesData);
-    if (shops.length > 0 && modelStatusesData) {
-      // Create a map of shop statuses
-      const statusMap = new Map(
-        modelStatusesData.map(item => [
-          item.shopId,
-          item.data
-        ])
-      );
-      console.log('statusMap:', statusMap);
-
+    if (shops.length > 0 && stableModelStatusesData) {
       setShopPrices(prevShopPrices => {
+        // Check if we actually need to update
+        const needsUpdate = shops.some(shop => {
+          const existingShop = prevShopPrices.find(sp => sp.shopId === shop.id);
+          const status = statusMap.get(shop.id);
+          const currentPrice = status?.base_price ?? defaultPrice;
+          
+          return !existingShop || 
+                 existingShop.currentPrice !== currentPrice ||
+                 existingShop.shopName !== shop.name ||
+                 existingShop.isPublished !== Boolean(status?.is_published);
+        });
+
+        if (!needsUpdate && prevShopPrices.length === shops.length) {
+          return prevShopPrices; // No update needed
+        }
+
         return shops.map(shop => {
           const status = statusMap.get(shop.id);
           const currentPrice = status?.base_price ?? defaultPrice;
-          console.log(`Shop ${shop.id}: status=${JSON.stringify(status)}, currentPrice=${currentPrice}`);
           
           // For existing shop entries, preserve the newPrice unless currentPrice changed
           const existingShop = prevShopPrices.find(sp => sp.shopId === shop.id);
@@ -84,9 +103,9 @@ export const ShopPriceManager: React.FC<ShopPriceManagerProps> = ({
         });
       });
     }
-  }, [shops, modelStatusesData, defaultPrice]);
+  }, [shops, statusMap, defaultPrice, stableModelStatusesData]);
 
-  const handleShopPriceChange = (shopId: number, newPrice: string) => {
+  const handleShopPriceChange = useCallback((shopId: number, newPrice: string) => {
     setShopPrices(prev => 
       prev.map(shop => 
         shop.shopId === shopId 
@@ -94,9 +113,9 @@ export const ShopPriceManager: React.FC<ShopPriceManagerProps> = ({
           : shop
       )
     );
-  };
+  }, []);
 
-  const handleSingleShopUpdate = async (shopData: ShopPriceData) => {
+  const handleSingleShopUpdate = useCallback(async (shopData: ShopPriceData) => {
     const price = parseFloat(shopData.newPrice);
     if (isNaN(price) || price < 0) {
       toast.error('Please enter a valid price');
@@ -108,9 +127,9 @@ export const ShopPriceManager: React.FC<ShopPriceManagerProps> = ({
       modelId,
       basePrice: price
     });
-  };
+  }, [updateSinglePrice, modelId]);
 
-  const handleBulkUpdate = async () => {
+  const handleBulkUpdate = useCallback(async () => {
     const price = parseFloat(bulkPrice);
     if (isNaN(price) || price < 0) {
       toast.error('Please enter a valid bulk price');
@@ -131,9 +150,9 @@ export const ShopPriceManager: React.FC<ShopPriceManagerProps> = ({
         setSelectedShops(new Set());
       }
     });
-  };
+  }, [bulkPrice, selectedShops, shopPrices, updateBulkPrice, modelId]);
 
-  const handleShopSelection = (shopId: number, selected: boolean) => {
+  const handleShopSelection = useCallback((shopId: number, selected: boolean) => {
     setSelectedShops(prev => {
       const newSet = new Set(prev);
       if (selected) {
@@ -143,15 +162,15 @@ export const ShopPriceManager: React.FC<ShopPriceManagerProps> = ({
       }
       return newSet;
     });
-  };
+  }, []);
 
-  const selectAllShops = () => {
+  const selectAllShops = useCallback(() => {
     setSelectedShops(new Set(shopPrices.map(shop => shop.shopId)));
-  };
+  }, [shopPrices]);
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setSelectedShops(new Set());
-  };
+  }, []);
 
   if (isLoadingShops || isLoadingStatuses) {
     return (

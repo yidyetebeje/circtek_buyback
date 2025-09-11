@@ -64,6 +64,7 @@ export interface DataTableProps<TData extends { id?: number | string; publishedI
     React.SetStateAction<ColumnFiltersState>
   >;
   onRowClick?: (row: TData) => void;
+  initialColumnVisibility?: VisibilityState;
 }
 
 export function DataTable<TData extends { id?: number | string; publishedInShops?: PublishedShop[] }, TValue>({
@@ -84,10 +85,11 @@ export function DataTable<TData extends { id?: number | string; publishedInShops
   filterOptions,
   entityType,
   onRowClick,
+  initialColumnVisibility = {},
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+    React.useState<VisibilityState>(initialColumnVisibility);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [internalColumnFilters, setInternalColumnFilters] =
     React.useState<ColumnFiltersState>([]);

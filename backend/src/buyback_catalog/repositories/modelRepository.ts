@@ -34,12 +34,12 @@ export class ModelRepository {
     brandIds?: number[],
     seriesIds?: number[],
     tenantId?: number,
-    includeTranslations = true,
     includePublishedShops = true,
     search?: string
   ) {
     const offset = (page - 1) * limit;
 
+    // Build where clause based on filters
     let whereConditions: any[] = [];
     
     if (tenantId !== undefined) {
@@ -71,6 +71,7 @@ export class ModelRepository {
     }
 
     // Add search LIKE condition if provided
+    console.log("search", search);
     if (search && search.trim() !== '') {
       whereConditions.push(like(models.title, `%${search}%`));
     }
@@ -79,6 +80,7 @@ export class ModelRepository {
       ? and(...whereConditions)
       : undefined;
 
+    // Create a column mapping for type safety
     const columnMapping = {
       id: models.id,
       title: models.title,
@@ -92,36 +94,124 @@ export class ModelRepository {
       updatedAt: models.updatedAt
     };
 
+    // Make sure orderBy is a valid column
     if (!(orderBy in columnMapping)) {
-      orderBy = "title";
+      orderBy = "title"; // Default to a safe column if invalid
     }
-    let query = db
-  .select({
-    ...getTableColumns(models),
-    category: getTableColumns(device_categories),
-    brand: getTableColumns(brands),
-    series: getTableColumns(model_series),
-    testPriceDrops: getTableColumns(model_test_price_drops),
-  })
-  .from(models)
-  .leftJoin(device_categories, eq(models.category_id, device_categories.id))
-  .leftJoin(brands, eq(models.brand_id, brands.id))
-  .leftJoin(model_series, eq(models.model_series_id, model_series.id))
-  .leftJoin(model_test_price_drops, eq(models.id, model_test_price_drops.model_id));
 
-  
-  // Conditionally add the join for published shops
-  if (includePublishedShops) {
-    query = query.leftJoin(
-      shop_models,
-      and(
-        eq(models.id, shop_models.model_id),
-        eq(shop_models.is_published, 1)
-      )
-    );
-  }
+    // Build the select object conditionally
+    const selectFields: any = {
+      ...getTableColumns(models),
+      category: sql<any>`CASE 
+        WHEN ${device_categories.id} IS NOT NULL 
+        THEN JSON_OBJECT(
+          'id', ${device_categories.id},
+          'title', ${device_categories.title},
+          'icon', ${device_categories.icon},
+          'description', ${device_categories.description},
+          'meta_title', ${device_categories.meta_title},
+          'sef_url', ${device_categories.sef_url},
+          'order_no', ${device_categories.order_no},
+          'meta_canonical_url', ${device_categories.meta_canonical_url},
+          'meta_description', ${device_categories.meta_description},
+          'meta_keywords', ${device_categories.meta_keywords},
+          'tenant_id', ${device_categories.tenant_id},
+          'createdAt', ${device_categories.createdAt},
+          'updatedAt', ${device_categories.updatedAt}
+        )
+      END`.as('category'),
+      brand: sql<any>`CASE 
+        WHEN ${brands.id} IS NOT NULL 
+        THEN JSON_OBJECT(
+          'id', ${brands.id},
+          'title', ${brands.title},
+          'icon', ${brands.icon},
+          'description', ${brands.description},
+          'meta_title', ${brands.meta_title},
+          'sef_url', ${brands.sef_url},
+          'meta_canonical_url', ${brands.meta_canonical_url},
+          'meta_description', ${brands.meta_description},
+          'meta_keywords', ${brands.meta_keywords},
+          'order_no', ${brands.order_no},
+          'tenant_id', ${brands.tenant_id},
+          'createdAt', ${brands.createdAt},
+          'updatedAt', ${brands.updatedAt}
+        )
+      END`.as('brand'),
+      series: sql<any>`CASE 
+        WHEN ${model_series.id} IS NOT NULL 
+        THEN JSON_OBJECT(
+          'id', ${model_series.id},
+          'title', ${model_series.title},
+          'icon_image', ${model_series.icon_image},
+          'image', ${model_series.image},
+          'description', ${model_series.description},
+          'meta_title', ${model_series.meta_title},
+          'sef_url', ${model_series.sef_url},
+          'meta_canonical_url', ${model_series.meta_canonical_url},
+          'meta_description', ${model_series.meta_description},
+          'meta_keywords', ${model_series.meta_keywords},
+          'order_no', ${model_series.order_no},
+          'tenant_id', ${model_series.tenant_id},
+          'createdAt', ${model_series.createdAt},
+          'updatedAt', ${model_series.updatedAt}
+        )
+      END`.as('series'),
+      translations: sql<any[]>`COALESCE(
+        JSON_ARRAYAGG(
+          CASE 
+            WHEN ${model_translations.id} IS NOT NULL 
+            THEN JSON_OBJECT(
+              'id', ${model_translations.id},
+              'title', ${model_translations.title},
+              'description', ${model_translations.description},
+              'language_id', ${model_translations.language_id}
+            )
+          END
+        ), 
+        JSON_ARRAY()
+      )`.as('translations')
+    };
+
+    if (includePublishedShops) {
+      selectFields.publishedInShops = sql<any[]>`CASE 
+        WHEN MAX(${shop_models.shop_id}) IS NULL 
+        THEN NULL
+        ELSE JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'shop_id', ${shop_models.shop_id},
+            'is_published', ${shop_models.is_published},
+            'base_price', ${shop_models.base_price},
+            'createdAt', ${shop_models.createdAt},
+            'updatedAt', ${shop_models.updatedAt}
+          )
+        )
+      END`.as('publishedInShops');
+    }
+
+    // Build the main query
+    let query = db.select(selectFields)
+      .from(models)
+      .leftJoin(device_categories, eq(models.category_id, device_categories.id))
+      .leftJoin(brands, eq(models.brand_id, brands.id))
+      .leftJoin(model_series, eq(models.model_series_id, model_series.id))
+      .leftJoin(model_translations, eq(models.id, model_translations.model_id));
+
+    if (includePublishedShops) {
+      query = query.leftJoin(shop_models, eq(models.id, shop_models.model_id));
+    }
+
     const [items, totalCount] = await Promise.all([
-      query.limit(limit).offset(offset).orderBy(order === "asc" ? asc(columnMapping[orderBy as keyof typeof columnMapping]) : desc(columnMapping[orderBy as keyof typeof columnMapping])),
+      query
+        .where(whereCondition || sql`1=1`)
+        .groupBy(models.id)
+        .limit(limit)
+        .offset(offset)
+        .orderBy(
+          order === "asc" 
+            ? asc(columnMapping[orderBy as keyof typeof columnMapping])
+            : desc(columnMapping[orderBy as keyof typeof columnMapping])
+        ),
       db.select({ count: sql<number>`count(*)` })
         .from(models)
         .where(whereCondition ? whereCondition : sql`1=1`)
@@ -139,104 +229,232 @@ export class ModelRepository {
   }
 
   async findById(id: number, includeTranslations = true, includePublishedShops = true) {
-    // Build the base query without conditional columns in select
-    let query = db.select({
-      models: getTableColumns(models),
-      device_categories: getTableColumns(device_categories),
-      brands: getTableColumns(brands),
-      model_series: getTableColumns(model_series),
-      model_test_price_drops: getTableColumns(model_test_price_drops)
-    }).from(models)
-    .leftJoin(device_categories, eq(models.category_id, device_categories.id))
-    .leftJoin(brands, eq(models.brand_id, brands.id))
-    .leftJoin(model_series, eq(models.model_series_id, model_series.id))
-    .leftJoin(model_test_price_drops, eq(models.id, model_test_price_drops.model_id));
+    // Build the select object conditionally
+    const selectFields: any = {
+      ...getTableColumns(models),
+      category: sql<any>`CASE 
+        WHEN ${device_categories.id} IS NOT NULL 
+        THEN JSON_OBJECT(
+          'id', ${device_categories.id},
+          'title', ${device_categories.title},
+          'icon', ${device_categories.icon},
+          'description', ${device_categories.description},
+          'meta_title', ${device_categories.meta_title},
+          'sef_url', ${device_categories.sef_url},
+          'order_no', ${device_categories.order_no},
+          'meta_canonical_url', ${device_categories.meta_canonical_url},
+          'meta_description', ${device_categories.meta_description},
+          'meta_keywords', ${device_categories.meta_keywords},
+          'tenant_id', ${device_categories.tenant_id},
+          'createdAt', ${device_categories.createdAt},
+          'updatedAt', ${device_categories.updatedAt}
+        )
+      END`.as('category'),
+      brand: sql<any>`CASE 
+        WHEN ${brands.id} IS NOT NULL 
+        THEN JSON_OBJECT(
+          'id', ${brands.id},
+          'title', ${brands.title},
+          'icon', ${brands.icon},
+          'description', ${brands.description},
+          'meta_title', ${brands.meta_title},
+          'sef_url', ${brands.sef_url},
+          'meta_canonical_url', ${brands.meta_canonical_url},
+          'meta_description', ${brands.meta_description},
+          'meta_keywords', ${brands.meta_keywords},
+          'order_no', ${brands.order_no},
+          'tenant_id', ${brands.tenant_id},
+          'createdAt', ${brands.createdAt},
+          'updatedAt', ${brands.updatedAt}
+        )
+      END`.as('brand'),
+      series: sql<any>`CASE 
+        WHEN ${model_series.id} IS NOT NULL 
+        THEN JSON_OBJECT(
+          'id', ${model_series.id},
+          'title', ${model_series.title},
+          'icon_image', ${model_series.icon_image},
+          'image', ${model_series.image},
+          'description', ${model_series.description},
+          'meta_title', ${model_series.meta_title},
+          'sef_url', ${model_series.sef_url},
+          'meta_canonical_url', ${model_series.meta_canonical_url},
+          'meta_description', ${model_series.meta_description},
+          'meta_keywords', ${model_series.meta_keywords},
+          'order_no', ${model_series.order_no},
+          'tenant_id', ${model_series.tenant_id},
+          'createdAt', ${model_series.createdAt},
+          'updatedAt', ${model_series.updatedAt}
+        )
+      END`.as('series'),
+      ...(includeTranslations ? {
+        translations: sql<any[]>`COALESCE(
+          JSON_ARRAYAGG(
+            CASE 
+              WHEN ${model_translations.id} IS NOT NULL 
+              THEN JSON_OBJECT(
+                'id', ${model_translations.id},
+                'title', ${model_translations.title},
+                'description', ${model_translations.description},
+                'language_id', ${model_translations.language_id}
+              )
+            END
+          ), 
+          JSON_ARRAY()
+        )`.as('translations')
+      } : {}),
+      ...(includePublishedShops ? {
+        publishedInShops: sql<any[]>`CASE 
+          WHEN MAX(${shop_models.shop_id}) IS NULL 
+          THEN NULL
+          ELSE JSON_ARRAYAGG(
+            JSON_OBJECT(
+              'shop_id', ${shop_models.shop_id},
+              'is_published', ${shop_models.is_published},
+              'base_price', ${shop_models.base_price},
+              'createdAt', ${shop_models.createdAt},
+              'updatedAt', ${shop_models.updatedAt}
+            )
+          )
+        END`.as('publishedInShops')
+      } : {})
+    };
+
+    // Build the complete query based on what should be included
+    let query = db.select(selectFields)
+      .from(models)
+      .leftJoin(device_categories, eq(models.category_id, device_categories.id))
+      .leftJoin(brands, eq(models.brand_id, brands.id))
+      .leftJoin(model_series, eq(models.model_series_id, model_series.id));
     
-    // Add joins conditionally
     if (includeTranslations) {
       query = query.leftJoin(model_translations, eq(models.id, model_translations.model_id));
     }
+    
     if (includePublishedShops) {
       query = query.leftJoin(shop_models, eq(models.id, shop_models.model_id));
     }
+
+    const result = await query
+      .where(eq(models.id, id))
+      .groupBy(models.id)
+      .limit(1);
     
-    const result = await query.where(eq(models.id, id));
-    
-    if (!result[0]) return null;
-    
-    // Build the response object conditionally
-    const baseResult = result[0];
-    let response: any = baseResult;
-    
-    // Add translations if requested and available
-    if (includeTranslations) {
-      const translations = await db
-        .select(getTableColumns(model_translations))
-        .from(model_translations)
-        .where(eq(model_translations.model_id, id));
-      response.model_translations = translations;
-    }
-    
-    // Add shop models if requested and available
-    if (includePublishedShops) {
-      const shopModels = await db
-        .select(getTableColumns(shop_models))
-        .from(shop_models)
-        .where(eq(shop_models.model_id, id));
-      response.shop_models = shopModels;
-    }
-    
-    return response;
+    return result[0] || null;
   }
 
   async findBySlug(slug: string, tenant_id: number, includePublishedShops = true) {
-    let query = db
-      .select({
-        ...getTableColumns(models),
-        category: getTableColumns(device_categories),
-        brand: getTableColumns(brands),
-        series: getTableColumns(model_series),
-        testPriceDrops: getTableColumns(model_test_price_drops)
-      })
+    // Build the select object conditionally
+    const selectFields: any = {
+      ...getTableColumns(models),
+      category: sql<any>`CASE 
+        WHEN ${device_categories.id} IS NOT NULL 
+        THEN JSON_OBJECT(
+          'id', ${device_categories.id},
+          'title', ${device_categories.title},
+          'icon', ${device_categories.icon},
+          'description', ${device_categories.description},
+          'meta_title', ${device_categories.meta_title},
+          'sef_url', ${device_categories.sef_url},
+          'order_no', ${device_categories.order_no},
+          'meta_canonical_url', ${device_categories.meta_canonical_url},
+          'meta_description', ${device_categories.meta_description},
+          'meta_keywords', ${device_categories.meta_keywords},
+          'tenant_id', ${device_categories.tenant_id},
+          'createdAt', ${device_categories.createdAt},
+          'updatedAt', ${device_categories.updatedAt}
+        )
+      END`.as('category'),
+      brand: sql<any>`CASE 
+        WHEN ${brands.id} IS NOT NULL 
+        THEN JSON_OBJECT(
+          'id', ${brands.id},
+          'title', ${brands.title},
+          'icon', ${brands.icon},
+          'description', ${brands.description},
+          'meta_title', ${brands.meta_title},
+          'sef_url', ${brands.sef_url},
+          'meta_canonical_url', ${brands.meta_canonical_url},
+          'meta_description', ${brands.meta_description},
+          'meta_keywords', ${brands.meta_keywords},
+          'order_no', ${brands.order_no},
+          'tenant_id', ${brands.tenant_id},
+          'createdAt', ${brands.createdAt},
+          'updatedAt', ${brands.updatedAt}
+        )
+      END`.as('brand'),
+      series: sql<any>`CASE 
+        WHEN ${model_series.id} IS NOT NULL 
+        THEN JSON_OBJECT(
+          'id', ${model_series.id},
+          'title', ${model_series.title},
+          'icon_image', ${model_series.icon_image},
+          'image', ${model_series.image},
+          'description', ${model_series.description},
+          'meta_title', ${model_series.meta_title},
+          'sef_url', ${model_series.sef_url},
+          'meta_canonical_url', ${model_series.meta_canonical_url},
+          'meta_description', ${model_series.meta_description},
+          'meta_keywords', ${model_series.meta_keywords},
+          'order_no', ${model_series.order_no},
+          'tenant_id', ${model_series.tenant_id},
+          'createdAt', ${model_series.createdAt},
+          'updatedAt', ${model_series.updatedAt}
+        )
+      END`.as('series'),
+      translations: sql<any[]>`COALESCE(
+        JSON_ARRAYAGG(
+          CASE 
+            WHEN ${model_translations.id} IS NOT NULL 
+            THEN JSON_OBJECT(
+              'id', ${model_translations.id},
+              'title', ${model_translations.title},
+              'description', ${model_translations.description},
+              'language_id', ${model_translations.language_id}
+            )
+          END
+        ), 
+        JSON_ARRAY()
+      )`.as('translations')
+    };
+
+    if (includePublishedShops) {
+      selectFields.publishedInShops = sql<any[]>`CASE 
+        WHEN MAX(${shop_models.shop_id}) IS NULL 
+        THEN NULL
+        ELSE JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'shop_id', ${shop_models.shop_id},
+            'is_published', ${shop_models.is_published},
+            'base_price', ${shop_models.base_price},
+            'createdAt', ${shop_models.createdAt},
+            'updatedAt', ${shop_models.updatedAt}
+          )
+        )
+      END`.as('publishedInShops');
+    }
+
+    // Build the complete query with joins
+    let query = db.select(selectFields)
       .from(models)
       .leftJoin(device_categories, eq(models.category_id, device_categories.id))
       .leftJoin(brands, eq(models.brand_id, brands.id))
       .leftJoin(model_series, eq(models.model_series_id, model_series.id))
-      .leftJoin(model_test_price_drops, eq(models.id, model_test_price_drops.model_id));
-
+      .leftJoin(model_translations, eq(models.id, model_translations.model_id));
+    
     if (includePublishedShops) {
-      query = query.leftJoin(
-        shop_models,
-        and(
-          eq(models.id, shop_models.model_id),
-          eq(shop_models.is_published, 1)
-        )
-      );
+      query = query.leftJoin(shop_models, eq(models.id, shop_models.model_id));
     }
 
-    const result = await query.where(
-      and(
+    const result = await query
+      .where(and(
         eq(models.sef_url, slug),
         eq(models.tenant_id, tenant_id)
-      )
-    );
-
-    if (!result[0]) return null;
-
-    // Get translations separately
-    const translations = await db
-      .select({
-        ...getTableColumns(model_translations),
-        language: getTableColumns(languages)
-      })
-      .from(model_translations)
-      .leftJoin(languages, eq(model_translations.language_id, languages.id))
-      .where(eq(model_translations.model_id, result[0].id));
-
-    return {
-      ...result[0],
-      translations
-    };
+      ))
+      .groupBy(models.id)
+      .limit(1);
+    
+    return result[0] || null;
   }
 
   async create(data: Omit<TModelCreate, 'translations'>) {
@@ -482,10 +700,68 @@ export class ModelRepository {
         searchable_words: models.searchable_words,
         createdAt: models.createdAt,
         updatedAt: models.updatedAt,
-        is_published: shop_models.is_published
+        is_published: shop_models.is_published,
+        category: sql<any>`CASE 
+          WHEN ${device_categories.id} IS NOT NULL 
+          THEN JSON_OBJECT(
+            'id', ${device_categories.id},
+            'title', ${device_categories.title},
+            'icon', ${device_categories.icon},
+            'description', ${device_categories.description},
+            'meta_title', ${device_categories.meta_title},
+            'sef_url', ${device_categories.sef_url},
+            'order_no', ${device_categories.order_no},
+            'meta_canonical_url', ${device_categories.meta_canonical_url},
+            'meta_description', ${device_categories.meta_description},
+            'meta_keywords', ${device_categories.meta_keywords},
+            'tenant_id', ${device_categories.tenant_id},
+            'createdAt', ${device_categories.createdAt},
+            'updatedAt', ${device_categories.updatedAt}
+          )
+        END`.as('category'),
+        brand: sql<any>`CASE 
+          WHEN ${brands.id} IS NOT NULL 
+          THEN JSON_OBJECT(
+            'id', ${brands.id},
+            'title', ${brands.title},
+            'icon', ${brands.icon},
+            'description', ${brands.description},
+            'meta_title', ${brands.meta_title},
+            'sef_url', ${brands.sef_url},
+            'meta_canonical_url', ${brands.meta_canonical_url},
+            'meta_description', ${brands.meta_description},
+            'meta_keywords', ${brands.meta_keywords},
+            'order_no', ${brands.order_no},
+            'tenant_id', ${brands.tenant_id},
+            'createdAt', ${brands.createdAt},
+            'updatedAt', ${brands.updatedAt}
+          )
+        END`.as('brand'),
+        series: sql<any>`CASE 
+          WHEN ${model_series.id} IS NOT NULL 
+          THEN JSON_OBJECT(
+            'id', ${model_series.id},
+            'title', ${model_series.title},
+            'icon_image', ${model_series.icon_image},
+            'image', ${model_series.image},
+            'description', ${model_series.description},
+            'meta_title', ${model_series.meta_title},
+            'sef_url', ${model_series.sef_url},
+            'meta_canonical_url', ${model_series.meta_canonical_url},
+            'meta_description', ${model_series.meta_description},
+            'meta_keywords', ${model_series.meta_keywords},
+            'order_no', ${model_series.order_no},
+            'tenant_id', ${model_series.tenant_id},
+            'createdAt', ${model_series.createdAt},
+            'updatedAt', ${model_series.updatedAt}
+          )
+        END`.as('series')
       })
       .from(models)
       .innerJoin(shop_models, eq(models.id, shop_models.model_id))
+      .leftJoin(device_categories, eq(models.category_id, device_categories.id))
+      .leftJoin(brands, eq(models.brand_id, brands.id))
+      .leftJoin(model_series, eq(models.model_series_id, model_series.id))
       .where(whereClause)
       .limit(limit)
       .offset(offset)

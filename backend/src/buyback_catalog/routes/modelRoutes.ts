@@ -16,7 +16,7 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
         brand_id: t.Optional(t.String()),
         series_id: t.Optional(t.String()),
         title: t.Optional(t.String()),
-        client_id: t.Optional(t.Numeric())
+        tenant_id: t.Optional(t.Numeric())
     }),
     detail: {
         summary: "Get List of Models",
@@ -50,19 +50,19 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
     
     // POST /models - Create a new model
     .post('/', (ctx) => {
-      // Get clientId from authenticated user
+      // Get tenantId from authenticated user
       const data = { ...ctx.body } as any;
       const { currentUserId, currentTenantId } = ctx as any;
       if (currentUserId) {
         // Add tenant_id to the data
         data.tenant_id = currentTenantId;
         // Ensure client_id is a number as required by the schema
-        const clientId = currentTenantId; // Using tenant as client for now
-        if (clientId !== undefined) {
-          data.client_id = clientId;
+        const tenantId = currentTenantId; // Using tenant as client for now
+        if (tenantId !== undefined) {
+          data.tenant_id = tenantId;
         } else {
           ctx.set.status = 400;
-          return { error: 'Client ID could not be determined from user information' };
+          return { error: 'Tenant ID could not be determined from user information' };
         }
       } else {
         ctx.set.status = 401;

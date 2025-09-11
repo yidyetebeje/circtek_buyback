@@ -94,7 +94,6 @@ export const ModelCreateSchema = t.Object({
     category_id: t.Numeric(),
     brand_id: t.Numeric(),
     model_series_id: t.Optional(t.Nullable(t.Numeric())),
-    client_id: t.Numeric(),
     meta_canonical_url: t.Optional(t.Nullable(t.String())),
     meta_description: t.Optional(t.Nullable(t.String())),
     meta_keywords: t.Optional(t.Nullable(t.String())),
