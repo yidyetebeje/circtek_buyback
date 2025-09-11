@@ -31,7 +31,7 @@ interface ApiResponse<T> {
 export type UserResponse = ApiResponse<User>;
 export type PaginatedUsersApiResponse = ApiResponse<User[]> & { meta: NonNullable<ApiResponse<User[]>['meta']> };
 
-const USERS_ENDPOINT = '/api/roles-management/users'; // Updated endpoint
+const USERS_ENDPOINT = '/roles-management/users'; // Updated endpoint
 
 export const userService = {
   listUsers: async (params: ListUsersQueryParams = {}): Promise<PaginatedUsersResponse> => {
@@ -73,7 +73,7 @@ export const userService = {
   },
 
   deleteUser: async (id: string | number): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.delete<ApiResponse<null>>(`/api/auth/users/${id}`, { isProtected: true });
+    const response = await apiClient.delete<ApiResponse<null>>(`/auth/users/${id}`, { isProtected: true });
     return {
       success: response.success,
       message: response.message

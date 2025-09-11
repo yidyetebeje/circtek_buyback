@@ -9,7 +9,7 @@ import { Brand, BrandTranslation } from '@/types/catalog';
 
 export class BrandService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/catalog/brands';
+  private baseEndpoint = '/catalog/brands';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

@@ -109,7 +109,7 @@ export interface ShopTimeSeriesResponse extends TimeSeriesResponse {
 
 export class StatsService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/stats';
+  private baseEndpoint = '/stats';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

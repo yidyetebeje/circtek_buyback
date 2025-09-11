@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['imageio.forbes.com', "images.unsplash.com", "www.apple.com", "store.storeimages.cdn-apple.com", "images.samsung.com", "lh3.googleusercontent.com", "images.prismic.io", "s3.eu-west-1.amazonaws.com"],
+    domains: ['example.com', 'imageio.forbes.com', "images.unsplash.com", "www.apple.com", "store.storeimages.cdn-apple.com", "images.samsung.com", "lh3.googleusercontent.com", "images.prismic.io", "s3.eu-west-1.amazonaws.com"],
   },
   // Enable strict mode for React
   reactStrictMode: true,

@@ -123,7 +123,7 @@ export interface AssignQuestionSetToModelPayload {
 
 export class DeviceQuestionSetService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/catalog/question-sets'; // Updated base endpoint
+  private baseEndpoint = '/catalog/question-sets'; // Updated base endpoint
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

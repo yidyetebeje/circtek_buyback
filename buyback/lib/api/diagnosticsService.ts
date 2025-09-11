@@ -52,7 +52,7 @@ const diagnosticsService = {
         const filteredParams = Object.fromEntries(
             Object.entries(mergedParams).filter(([, value]) => value !== '' && value !== undefined)
         );
-        return apiClient.get('/api/diagnostics/tested-devices', { params: filteredParams });
+        return apiClient.get('/diagnostics/tested-devices', { params: filteredParams });
     }
 };
 

@@ -103,7 +103,7 @@ export interface AIHealthCheckResponse {
 
 export class AITranslationService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/catalog/ai-translation';
+  private baseEndpoint = '/catalog/ai-translation';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

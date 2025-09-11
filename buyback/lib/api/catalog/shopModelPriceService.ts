@@ -42,7 +42,7 @@ export interface BulkUpdateAllShopsPayload {
 
 export class ShopModelPriceService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/catalog/shop-catalog';
+  private baseEndpoint = '/catalog/shop-catalog';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

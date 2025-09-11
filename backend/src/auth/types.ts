@@ -18,3 +18,11 @@ export const RegisterBody = t.Object({
 
 export type RegisterBodyInput = Static<typeof RegisterBody>
 
+export const ShopLoginBody = t.Object({
+	identifier: t.String(),
+	password: t.String(),
+	shopId: t.Number(),
+})
+
+export type ShopLoginBodyInput = Static<typeof ShopLoginBody>
+

@@ -3,7 +3,7 @@ import { db } from '../db'
 import { UsersRepository } from '../users/repository'
 import { AuthRepository } from './repository'
 import { AuthController } from './controller'
-import { LoginBody, RegisterBody } from './types'
+import { LoginBody, RegisterBody, ShopLoginBody } from './types'
 
 const usersRepo = new UsersRepository(db)
 const authRepo = new AuthRepository(db)
@@ -15,6 +15,10 @@ export const auth_routes = new Elysia({ prefix: '/auth' })
 		const { body, jwt } = ctx as any
 		return controller.login(body, (payload) => jwt.sign(payload))
 	}, { body: LoginBody, detail: { tags: ['Auth'], summary: 'Login and get JWT' } })
+	.post('/shop-login', async (ctx) => {
+		const { body, jwt } = ctx as any
+		return controller.loginToShop(body, (payload) => jwt.sign(payload))
+	}, { body: ShopLoginBody, detail: { tags: ['Auth'], summary: 'Login to specific shop and get JWT with shop context' } })
 	.get('/me', async (ctx) => {
 		const token = (ctx as any).bearer as string | undefined
 		if (!token) return { data: null, message: 'Access Denied', status: 401 }

@@ -8,7 +8,7 @@ import { modelRoutes } from './modelRoutes';
 import { aiTranslationRoutes } from './aiTranslationRoutes';
 
 // Create and export the catalog API with Swagger documentation
-export const catalogApi = new Elysia({ prefix: '/api/catalog' })
+export const catalogApi = new Elysia({ prefix: '/catalog' })
   // Add Swagger documentation
   .use(swagger({
     path: '/docs',

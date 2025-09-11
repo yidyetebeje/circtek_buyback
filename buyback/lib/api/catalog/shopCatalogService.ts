@@ -62,7 +62,7 @@ export interface SelectedEntities {
 
 export class ShopCatalogService {
   private apiClient: ApiClient;
-  private basePath = '/api/catalog/shops/catalog/shop-catalog';
+  private basePath = '/catalog/shops/catalog/shop-catalog';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

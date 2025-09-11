@@ -3,6 +3,22 @@ import { roles, users, tenants, warehouses, devices, test_results } from './circ
 import { shops } from './shops.schema';
 import bcrypt from 'bcryptjs'
 import { faker } from '@faker-js/faker';
+import { sql } from 'drizzle-orm';
+
+async function cleanup() {
+    console.log('🧹 Cleaning up existing data...');
+    
+    // Delete in reverse order of dependencies to avoid foreign key constraints
+    await db.delete(test_results);
+    await db.delete(devices);
+    await db.delete(warehouses);
+    await db.delete(shops);
+    await db.delete(users);
+    await db.delete(roles);
+    await db.delete(tenants);
+    
+    console.log('✅ Cleanup completed');
+}
 
 async function seed_tenants() {
     const tenants_data = [
@@ -23,6 +39,7 @@ async function seed_shops() {
             id: 1,
             name: 'Main Shop',
             tenant_id: 1,
+            owner_id: 1, // References the super_admin user
         }
     ];
     await db.insert(shops).values(shops_data);
@@ -159,15 +176,114 @@ async function seed_test_results() {
     await db.insert(test_results).values(test_results_data);
     console.log('Test results seeded successfully');
 }
+async function seed_shop() {
+    const shop_data = [
+        {
+            name: 'CircTek Electronics Store',
+            tenant_id: 1,
+            owner_id: 1, // References the super_admin user created in seed_users
+            logo: 'https://example.com/logo.png',
+            organization: 'CircTek Electronics Ltd.',
+            config: {
+                theme: {
+                    primaryColor: '#1f2937',
+                    secondaryColor: '#3b82f6',
+                    accentColor: '#10b981'
+                },
+                features: {
+                    deviceTesting: true,
+                    repairService: true,
+                    buybackProgram: true,
+                    diagnostics: true
+                },
+                settings: {
+                    currency: 'USD',
+                    timezone: 'America/New_York',
+                    language: 'en'
+                },
+                contact: {
+                    supportEmail: 'support@circtek.com',
+                    salesEmail: 'sales@circtek.com'
+                }
+            },
+            phone: '+1-555-0123',
+            active: 1
+        },
+        {
+            name: 'Mobile Repair Hub',
+            tenant_id: 1,
+            owner_id: 1,
+            logo: 'https://example.com/mobile-hub-logo.png',
+            organization: 'Mobile Solutions Inc.',
+            config: {
+                theme: {
+                    primaryColor: '#dc2626',
+                    secondaryColor: '#f59e0b',
+                    accentColor: '#8b5cf6'
+                },
+                features: {
+                    deviceTesting: true,
+                    repairService: true,
+                    buybackProgram: false,
+                    diagnostics: true
+                },
+                settings: {
+                    currency: 'EUR',
+                    timezone: 'Europe/Amsterdam',
+                    language: 'en'
+                },
+                contact: {
+                    supportEmail: 'help@mobilehub.com',
+                    salesEmail: 'sales@mobilehub.com'
+                }
+            },
+            phone: '+31-20-1234567',
+            active: 1
+        },
+        {
+            name: 'TechBuy Solutions',
+            tenant_id: 1,
+            owner_id: 1,
+            logo: 'https://example.com/techbuy-logo.png',
+            organization: 'TechBuy Corp.',
+            config: {
+                theme: {
+                    primaryColor: '#059669',
+                    secondaryColor: '#0ea5e9',
+                    accentColor: '#f97316'
+                },
+                features: {
+                    deviceTesting: false,
+                    repairService: false,
+                    buybackProgram: true,
+                    diagnostics: true
+                },
+                settings: {
+                    currency: 'GBP',
+                    timezone: 'Europe/London',
+                    language: 'en'
+                },
+                contact: {
+                    supportEmail: 'support@techbuy.com',
+                    salesEmail: 'buyback@techbuy.com'
+                }
+            },
+            phone: '+44-20-7946-0958',
+            active: 1
+        }
+    ];
 
+    await db.insert(shops).values(shop_data);
+    console.log('Detailed shops seeded successfully');
+}
 async function seed() {
-    await seed_tenants();
-    await seed_shops();
-    await seed_warehouses();
-    await seed_roles();
-    await seed_users();
-    await seed_devices();
-    await seed_test_results();
+    await seed_shop();
+    console.log('🎉 All seeding completed successfully!');
 }
 
-seed();
+// Alternative: Seed without cleanup (handles duplicates gracefully)
+
+
+// Choose which approach to use:
+seed(); // This will clean up first
+// seedWithoutCleanup(); // This will skip duplicates

@@ -9,7 +9,7 @@ import { Category, CategoryTranslation } from '@/types/catalog';
 
 export class CategoryService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/catalog/categories';
+  private baseEndpoint = '/catalog/categories';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

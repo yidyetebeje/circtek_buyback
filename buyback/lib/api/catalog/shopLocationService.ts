@@ -15,7 +15,7 @@ export interface LocationQueryParams extends QueryParams {
 
 export class ShopLocationService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/catalog/shops'; // Base URL for shops
+  private baseEndpoint = '/catalog/shops'; // Base URL for shops
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

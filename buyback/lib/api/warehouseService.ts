@@ -30,7 +30,7 @@ export interface WarehouseListParams {
  */
 class WarehouseService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/warehouses';
+  private baseEndpoint = '/warehouses';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

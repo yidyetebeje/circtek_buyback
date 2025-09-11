@@ -26,7 +26,7 @@ import { external_api_routes } from "./external-api";
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
         .use(cors({
-            origin: ["http://localhost:4200", "http://127.0.0.1:4200", "https://circtek-aws.vercel.app"],
+            origin: ["*"],
             methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
             allowedHeaders: ["Content-Type", "Authorization", "Accept", "Cookie"],
             credentials: true,
@@ -99,5 +99,6 @@ export const buildApp = () =>
 		.use(upload_routes)
 		.use(dashboard_stats_routes)
 		.use(external_api_routes)
+		.use(catalogApi)
 
 

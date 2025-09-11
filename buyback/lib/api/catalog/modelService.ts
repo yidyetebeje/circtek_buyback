@@ -9,7 +9,7 @@ import { Model, ModelTranslation } from '@/types/catalog';
 
 export class ModelService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/catalog/models';
+  private baseEndpoint = '/catalog/models';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

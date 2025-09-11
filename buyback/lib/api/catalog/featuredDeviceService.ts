@@ -63,7 +63,7 @@ export interface FeaturedDeviceFilters extends Record<string, string | number | 
  */
 export class FeaturedDeviceService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/catalog/featured-devices'; // Full endpoint path for featured devices API
+  private baseEndpoint = '/catalog/featured-devices'; // Full endpoint path for featured devices API
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

@@ -6,7 +6,7 @@ export const shops = mysqlTable("shops", {
 	id: serial("id").notNull(),
 	name: varchar("name", { length: 255 }),
 	tenant_id:bigint("tenant_id", { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
-	owner_id: int("owner_id"),
+	owner_id: bigint("owner_id", { mode: 'number', unsigned: true }).references(():AnyMySqlColumn => users.id).notNull(),
 	logo: text("logo"),
 	organization: varchar("organization", { length: 255 }),
 	config: json("config"),

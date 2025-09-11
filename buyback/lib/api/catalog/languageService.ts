@@ -7,7 +7,7 @@ import { Language } from '@/types/catalog';
  */
 export class LanguageService {
   private apiClient: ApiClient;
-  private baseEndpoint: string = '/api/catalog/languages';
+  private baseEndpoint: string = '/catalog/languages';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

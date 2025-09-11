@@ -33,7 +33,7 @@ export interface UpdateUserShopAccessPayload {
 
 export class UserShopAccessService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/catalog/shop-access';
+  private baseEndpoint = '/catalog/shop-access';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

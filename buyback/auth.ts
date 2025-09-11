@@ -23,6 +23,8 @@ interface ExtendedSession extends Session {
     managed_shop_id?: number; // Added for shop_manager role
     name?: string | null;
     image?: string | null;
+    tenantId?: number;
+    
   };
   accessToken: string;
 }
@@ -116,7 +118,7 @@ export const authConfig: NextAuthConfig = {
           }
 
           const shopId = process.env.NEXT_PUBLIC_SHOP_ID;
-          const endpoint = `${BASE_API_URL}/api/auth/shop-login`;
+          const endpoint = `${BASE_API_URL}/auth/shop-login`;
           console.log("endpoint", endpoint)
         
           const payload: { identifier: string; password: string; shopId?: number } = {
@@ -162,17 +164,21 @@ export const authConfig: NextAuthConfig = {
           }
           console.log("data", data)
 
-          if (data && data.token) {
+          if (data && data.data?.token) {
+            const user = data.data.user;
+            const token = data.data.token;
             return {
-              id: data.user.id,
-              fName: data.user.fName,
-              lName: data.user.lName,
-              email: data.user.email,
-              userName: data.user.userName,
-              roleSlug: data.user.roleSlug,
-              shopId: data.user.shopId,
-              managed_shop_id: data.user.managed_shop_id,
-              token: data.token
+              id: user.id,
+              name: user.name,
+              fName: user.name,
+              lName: user.name,
+              email: user.email,
+              userName: user.user_name,
+              roleSlug: user.roleSlug,
+              shopId: user.shopId,
+              managed_shop_id: user.managed_shop_id,
+              token: token,
+              tenantId: user.tenant_id
             };
           }
           

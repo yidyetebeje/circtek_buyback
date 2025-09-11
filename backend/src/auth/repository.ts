@@ -1,6 +1,7 @@
-import { eq, or } from 'drizzle-orm'
+import { eq, or, and, sql } from 'drizzle-orm'
 import { db } from '../db'
 import { users, roles } from '../db/circtek.schema'
+import { shops, user_shop_access } from '../db/shops.schema'
 
 const userPublicSelection = {
 	id: users.id,
@@ -39,6 +40,52 @@ export class AuthRepository {
 		if (!roleId) return null
 		const [r] = await this.database.select({ name: roles.name }).from(roles).where(eq(roles.id, roleId))
 		return r?.name ?? null
+	}
+
+	async findShopById(shopId: number) {
+		const [shop] = await this.database
+			.select({
+				id: shops.id,
+				name: shops.name,
+				tenant_id: shops.tenant_id,
+				owner_id: shops.owner_id,
+				active: shops.active,
+			})
+			.from(shops)
+			.where(eq(shops.id, shopId))
+			.limit(1)
+		return shop
+	}
+
+	async getUserRoleDetails(roleId: number | null) {
+		if (!roleId) return null
+		const [role] = await this.database
+			.select({
+				id: roles.id,
+				name: roles.name,
+				slug: roles.name, // Assuming name is the slug, adjust if you have a separate slug field
+			})
+			.from(roles)
+			.where(eq(roles.id, roleId))
+			.limit(1)
+		return role ? { id: role.id, title: role.name, slug: role.slug.toLowerCase().replace(/\s+/g, '_') } : null
+	}
+
+	async getUserShopAccess(userId: number, shopId: number) {
+		const [access] = await this.database
+			.select({
+				id: user_shop_access.id,
+				can_view: user_shop_access.can_view,
+				can_edit: user_shop_access.can_edit,
+			})
+			.from(user_shop_access)
+			.where(and(
+				eq(user_shop_access.user_id, userId),
+				eq(user_shop_access.shop_id, shopId),
+				eq(user_shop_access.can_view, true)
+			))
+			.limit(1)
+		return access
 	}
 }
 

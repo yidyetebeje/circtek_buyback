@@ -173,7 +173,7 @@ export interface AdminListOrdersParams {
 
 export class OrderService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/buyback/orders'; // Base endpoint for orders
+  private baseEndpoint = '/buyback/orders'; // Base endpoint for orders
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

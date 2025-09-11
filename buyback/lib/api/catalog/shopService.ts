@@ -23,7 +23,7 @@ export interface PublishedModelsParams extends QueryParams {
 
 export class ShopService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/catalog/shops'; // Use the exact URL path from the API docs
+  private baseEndpoint = '/catalog/shops'; // Use the exact URL path from the API docs
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

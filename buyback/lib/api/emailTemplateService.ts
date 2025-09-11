@@ -19,7 +19,7 @@ import {
 
 export class EmailTemplateService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/email-templates';
+  private baseEndpoint = '/email-templates';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();

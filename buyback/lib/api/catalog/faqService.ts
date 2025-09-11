@@ -9,7 +9,7 @@ import { FAQ, FAQTranslation, PaginatedFAQsResponse } from '@/types/catalog';
 
 export class FAQService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/catalog/faqs';
+  private baseEndpoint = '/catalog/faqs';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();
@@ -34,7 +34,7 @@ export class FAQService {
    */
   async getFAQsByShopId(shopId: number, isPublished?: boolean): Promise<ApiResponse<FAQ[]>> {
     const params = isPublished !== undefined ? { published: isPublished } : {};
-    return this.apiClient.get<ApiResponse<FAQ[]>>(`/api/catalog/shops/${shopId}/faqs`, { params });
+    return this.apiClient.get<ApiResponse<FAQ[]>>(`/catalog/shops/${shopId}/faqs`, { params });
   }
 
   /**

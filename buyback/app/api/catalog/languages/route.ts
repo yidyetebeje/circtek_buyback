@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
     
-    const response = await fetch(`${BACKEND_URL}/api/catalog/languages?${queryString}`, {
+    const response = await fetch(`${BACKEND_URL}/api/v1/catalog/languages?${queryString}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

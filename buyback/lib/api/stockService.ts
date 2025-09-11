@@ -44,7 +44,7 @@ export interface StockListResponse extends PaginatedResponse<StockItem> {
 
 class StockService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/api/stock';
+  private baseEndpoint = '/stock';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();
