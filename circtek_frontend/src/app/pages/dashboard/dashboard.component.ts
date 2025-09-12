@@ -138,9 +138,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
       this.apiService.getDashboardMonthlyTrends(params).toPromise().then(trends => {
         this.monthlyTrends.set(trends!.data);
-        if (this.viewInitialized) {
+        // Defer chart setup to ensure canvas is rendered
+        requestAnimationFrame(() => {
           this.setupMonthlyTrendsChart();
-        }
+        });
       }).catch(error => {
         console.error('Error loading monthly trends data:', error);
       });

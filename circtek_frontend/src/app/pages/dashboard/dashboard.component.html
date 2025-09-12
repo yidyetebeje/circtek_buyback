@@ -222,24 +222,31 @@
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold text-base-content">Monthly Diagnostics Trends</h3>
         <div class="flex space-x-2">
-          <input 
-            type="date" 
-            class="input input-bordered input-sm"
-            placeholder="From Date"
-            (change)="onFromDateChange($event)"
-            [value]="selectedFromDate()"
-            [max]="maxDate"
-            [min]="minDate"
-          />
-          <input 
-            type="date" 
-            class="input input-bordered input-sm"
-            placeholder="To Date"
-            (change)="onToDateChange($event)"
-            [value]="selectedToDate()"
-            [max]="maxDate"
-            [min]="selectedFromDate()"
-          />
+          <div class="flex flex-row items-center justify-center space-x-2">
+            <span class="text-sm font-medium text-base-content/70 whitespace-nowrap">From Date</span>
+            <input 
+              type="date" 
+              class="input input-bordered w-40"
+              placeholder="From Date"
+              (change)="onFromDateChange($event)"
+              [value]="selectedFromDate()"
+              [max]="maxDate"
+              [min]="minDate"
+            />
+          </div>
+          
+          <div class="flex flex-row items-center space-x-2">
+            <span class="text-sm font-medium text-base-content/70 whitespace-nowrap">To Date</span>
+            <input 
+              type="date" 
+              class="input input-bordered w-40"
+              placeholder="To Date"
+              (change)="onToDateChange($event)"
+              [value]="selectedToDate()"
+              [max]="maxDate"
+              [min]="selectedFromDate()"
+            />
+          </div>
           <button 
             class="btn btn-primary btn-sm"
             (click)="resetDateRange()"
