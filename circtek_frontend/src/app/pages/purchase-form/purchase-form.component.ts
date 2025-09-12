@@ -295,9 +295,17 @@ export class PurchaseFormComponent implements OnInit {
 
   onActionClick(event: { action: string; data?: any }): void {
     if (event.action === 'Cancel') {
-      this.router.navigate(['/stock-management'], { 
-        queryParams: { tab: 'purchases' }
-      });
+      this.navigateBack();
     }
+  }
+
+  onBackClick(): void {
+    this.navigateBack();
+  }
+
+  private navigateBack(): void {
+    this.router.navigate(['/stock-management'], { 
+      queryParams: { tab: 'purchases' }
+    });
   }
 }

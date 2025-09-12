@@ -211,9 +211,17 @@ export class TransferFormComponent {
 
   onActionClick(event: { action: string; data?: any }): void {
     if (event.action === 'Cancel') {
-      this.router.navigate(['/stock-management'], { 
-        queryParams: { tab: 'transfers' }
-      });
+      this.navigateBack();
     }
+  }
+
+  onBackClick(): void {
+    this.navigateBack();
+  }
+
+  private navigateBack(): void {
+    this.router.navigate(['/stock-management'], { 
+      queryParams: { tab: 'transfers' }
+    });
   }
 }

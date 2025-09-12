@@ -128,7 +128,15 @@ export class StockManagementComponent {
           } },
           { header: 'PO No.', accessorKey: 'purchase_order_no' as any },
           { header: 'Supplier', accessorKey: 'supplier_name' as any },
-          { header: 'Expected', accessorKey: 'expected_delivery_date' as any },
+          { header: 'Expected', id: 'expected_delivery_date', accessorFn: (r: any) => {
+            if (!r.expected_delivery_date) return '-';
+            const date = new Date(r.expected_delivery_date);
+            return date.toLocaleDateString('en-US', { 
+              year: 'numeric',
+              month: 'long', 
+              day: 'numeric'
+            });
+          } },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {

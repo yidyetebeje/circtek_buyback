@@ -237,4 +237,8 @@ export class SkuSpecsFormComponent implements OnInit {
       this.onCancel();
     }
   }
+
+  onBackClick(): void {
+    this.onCancel();
+  }
 }

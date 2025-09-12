@@ -110,10 +110,6 @@ export class GenericFormPageComponent {
     this.backClick.emit();
   }
 
-  navigateBack() {
-    this.router.navigate([this.backUrl()]);
-  }
-
   getFieldError(field: FormField): string | null {
     const control = this.form().get(field.key);
     if (!control || !control.touched || !control.errors) {
