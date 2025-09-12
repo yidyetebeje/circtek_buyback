@@ -6,6 +6,7 @@ import { GenericFormPageComponent, type FormField, type FormAction } from '../..
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastrService } from 'ngx-toastr';
+import { ToastService } from '../../../core/services/toast.service';
 import type { Tenant } from '../../../core/models/tenant';
 
 @Component({
@@ -22,6 +23,7 @@ export class TenantFormComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
+  private readonly toast = inject(ToastService);
 
   // State
   loading = signal(false);
@@ -194,7 +196,7 @@ export class TenantFormComponent {
         next: () => {
           this.submitting.set(false);
           this.successMessage.set('Tenant updated successfully.');
-          this.toastr.success('Tenant updated successfully!', 'Success');
+          this.toast.saveSuccess('Tenant', 'updated');
           setTimeout(() => {
             this.router.navigate(['/management'], { queryParams: { tab: 'tenants' } });
           }, 1200);
@@ -210,7 +212,7 @@ export class TenantFormComponent {
         next: () => {
           this.submitting.set(false);
           this.successMessage.set('Tenant created successfully.');
-          this.toastr.success('Tenant created successfully!', 'Success');
+          this.toast.saveSuccess('Tenant', 'created');
           setTimeout(() => {
             this.router.navigate(['/management'], { queryParams: { tab: 'tenants' } });
           }, 1200);

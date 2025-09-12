@@ -6,6 +6,7 @@ import { HttpParams } from '@angular/common/http';
 
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { TransferItemModalComponent, type TransferItem } from './transfer-item-modal/transfer-item-modal.component';
 
 interface TransferFormData {
@@ -26,6 +27,7 @@ export class TransferFormComponent {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   // State
   loading = signal(false);
@@ -195,6 +197,7 @@ export class TransferFormComponent {
       next: (response) => {
         this.submitting.set(false);
         if (response.data) {
+          this.toast.saveSuccess('Transfer', 'created');
           this.router.navigate(['/stock-management'], { 
             queryParams: { tab: 'transfers' }
           });

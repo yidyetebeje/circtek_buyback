@@ -7,6 +7,7 @@ import { GenericModalComponent, type ModalAction } from '../../../shared/compone
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastrService } from 'ngx-toastr';
+import { ToastService } from '../../../core/services/toast.service';
 import { User } from '../../../core/models/user';
 import { HttpParams } from '@angular/common/http';
 
@@ -24,6 +25,7 @@ export class UserFormComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
+  private readonly toast = inject(ToastService);
 
   // State
   loading = signal(false);
@@ -401,7 +403,7 @@ export class UserFormComponent {
         next: () => {
           this.submitting.set(false);
           this.successMessage.set('User updated successfully.');
-          this.toastr.success('User updated successfully!', 'Success');
+          this.toast.saveSuccess('User', 'updated');
           // Navigate after a short delay so the success is visible
           setTimeout(() => {
             this.router.navigate(['/management'], { queryParams: { tab: 'users' } });
@@ -419,7 +421,7 @@ export class UserFormComponent {
         next: () => {
           this.submitting.set(false);
           this.successMessage.set('User created successfully.');
-          this.toastr.success('User created successfully!', 'Success');
+          this.toast.saveSuccess('User', 'created');
           setTimeout(() => {
             this.router.navigate(['/management'], { queryParams: { tab: 'users' } });
           }, 1200);

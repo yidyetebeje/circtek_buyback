@@ -15,6 +15,7 @@ import { RepairReasonRecord } from '../../core/models/repair-reason';
 import { LabelTemplateRecord } from '../../core/models/label-template';
 import { WorkflowRecord } from '../../core/models/workflow';
 import { ToastrService } from 'ngx-toastr';
+import { ToastService } from '../../core/services/toast.service';
 
 // Union to drive the generic table
 export type MgmtRow = User | Warehouse | WiFiProfile | Tenant | RepairReasonRecord | LabelTemplateRecord | WorkflowRecord;
@@ -32,6 +33,7 @@ export class ManagementComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
+  private readonly toast = inject(ToastService);
 
   // Loading & data
   loading = signal(false);
@@ -192,20 +194,20 @@ export class ManagementComponent {
                              ctx.tab === 'wifi' ? 'WiFi Profile' :
                              ctx.tab === 'labels' ? 'Label Template' :
                              'Workflow';
-          this.toastr.success(`${entityName} deleted successfully!`, 'Delete Successful');
+          this.toast.deleteSuccess(entityName);
         },
         error: (error: any) => {
           console.error('Failed to delete:', error);
           this.loading.set(false);
           this.closeDeleteModal();
           // Show error message
-          const entityName = ctx.tab === 'tenants' ? 'tenant' : 
-                             ctx.tab === 'users' ? 'user' :
-                             ctx.tab === 'warehouses' ? 'warehouse' :
-                             ctx.tab === 'wifi' ? 'WiFi profile' :
-                             ctx.tab === 'labels' ? 'label template' :
-                             'workflow';
-          this.toastr.error(`Failed to delete ${entityName}. Please try again.`, 'Delete Failed');
+          const entityName = ctx.tab === 'tenants' ? 'Tenant' : 
+                             ctx.tab === 'users' ? 'User' :
+                             ctx.tab === 'warehouses' ? 'Warehouse' :
+                             ctx.tab === 'wifi' ? 'WiFi Profile' :
+                             ctx.tab === 'labels' ? 'Label Template' :
+                             'Workflow';
+          this.toast.deleteError(entityName);
         }
       });
     }
@@ -772,7 +774,7 @@ export class ManagementComponent {
       error: (error) => {
         console.error('Failed to load tester options:', error);
         this.testerOptions.set([]);
-        this.toastr.error('Failed to load available testers', 'Loading Error');
+        this.toast.loadingError('available testers');
       }
     });
   }
@@ -836,7 +838,7 @@ export class ManagementComponent {
   submitAssign() {
     const testerId = this.selectedAssignTesterId();
     if (testerId == null) {
-      this.toastr.error('Please select a tester before assigning', 'Selection Required');
+      this.toast.validationError('Please select a tester before assigning');
       return;
     }
     this.loading.set(true);
@@ -846,19 +848,19 @@ export class ManagementComponent {
       const profileId = profile ? profile.id : this.selectedAssignProfileId();
       if (profileId == null) { 
         this.loading.set(false); 
-        this.toastr.error('Please select a WiFi profile before assigning', 'Selection Required');
+        this.toast.validationError('Please select a WiFi profile before assigning');
         return; 
       }
       this.api.assignWifiProfile(profileId, testerId).subscribe({ 
         next: () => { 
           this.loading.set(false); 
           this.closeAssignModal(); 
-          this.toastr.success('WiFi Profile assigned to tester successfully!', 'Assignment Successful');
+          this.toast.assignmentSuccess('WiFi Profile');
         }, 
         error: (error) => { 
           this.loading.set(false); 
           console.error('Failed to assign WiFi profile:', error);
-          this.toastr.error('Failed to assign WiFi profile to tester', 'Assignment Failed');
+          this.toast.assignmentError('WiFi profile');
         }
       });
       return;
@@ -868,19 +870,19 @@ export class ManagementComponent {
       const rec = this.selectedLabelTemplate();
       if (!rec) { 
         this.loading.set(false); 
-        this.toastr.error('Please select a label template before assigning', 'Selection Required');
+        this.toast.validationError('Please select a label template before assigning');
         return; 
       }
       this.api.assignLabelTemplate(rec.id, testerId).subscribe({ 
         next: () => { 
           this.loading.set(false); 
           this.closeAssignModal(); 
-          this.toastr.success('Label Template assigned to tester successfully!', 'Assignment Successful');
+          this.toast.assignmentSuccess('Label Template');
         }, 
         error: (error) => { 
           this.loading.set(false); 
           console.error('Failed to assign label template:', error);
-          this.toastr.error('Failed to assign label template to tester', 'Assignment Failed');
+          this.toast.assignmentError('Label template');
         }
       });
       return;
@@ -890,19 +892,19 @@ export class ManagementComponent {
       const rec = this.selectedWorkflow();
       if (!rec) { 
         this.loading.set(false); 
-        this.toastr.error('Please select a workflow before assigning', 'Selection Required');
+        this.toast.validationError('Please select a workflow before assigning');
         return; 
       }
       this.api.assignWorkflow(rec.id, testerId).subscribe({ 
         next: () => { 
           this.loading.set(false); 
           this.closeAssignModal(); 
-          this.toastr.success('Workflow assigned to tester successfully!', 'Assignment Successful');
+          this.toast.assignmentSuccess('Workflow');
         }, 
         error: (error) => { 
           this.loading.set(false); 
           console.error('Failed to assign workflow:', error);
-          this.toastr.error('Failed to assign workflow to tester', 'Assignment Failed');
+          this.toast.assignmentError('Workflow');
         }
       });
     }
@@ -954,7 +956,7 @@ export class ManagementComponent {
           console.error('Failed to load assigned testers:', error);
           this.assignedTesters.set([]); 
           this.assignedTestersLoading.set(false);
-          this.toastr.error('Failed to load assigned testers', 'Loading Error');
+          this.toast.loadingError('assigned testers');
         }, 
       });
       return;
@@ -970,7 +972,7 @@ export class ManagementComponent {
           console.error('Failed to load assigned testers:', error);
           this.assignedTesters.set([]); 
           this.assignedTestersLoading.set(false);
-          this.toastr.error('Failed to load assigned testers', 'Loading Error');
+          this.toast.loadingError('assigned testers');
         }, 
       });
       return;
@@ -986,7 +988,7 @@ export class ManagementComponent {
           console.error('Failed to load assigned testers:', error);
           this.assignedTesters.set([]); 
           this.assignedTestersLoading.set(false);
-          this.toastr.error('Failed to load assigned testers', 'Loading Error');
+          this.toast.loadingError('assigned testers');
         }, 
       });
     }
@@ -1006,19 +1008,19 @@ export class ManagementComponent {
               this.assignedTesters.set(res.data ?? []); 
               this.loading.set(false); 
               this.assignedTestersLoading.set(false);
-              this.toastr.success('Tester unassigned from WiFi Profile successfully!', 'Unassignment Successful');
+              this.toast.unassignmentSuccess('Tester from WiFi Profile');
             }, 
             error: () => { 
               this.loading.set(false); 
               this.assignedTestersLoading.set(false);
-              this.toastr.error('Failed to refresh tester list', 'Refresh Failed');
+              this.toast.loadingError('tester list');
             }, 
           });
         },
         error: (error) => { 
           this.loading.set(false); 
           console.error('Failed to unassign WiFi profile:', error);
-          this.toastr.error('Failed to unassign tester from WiFi profile', 'Unassignment Failed');
+          this.toast.unassignmentError('tester from WiFi profile');
         },
       });
       return;
@@ -1033,19 +1035,19 @@ export class ManagementComponent {
               this.assignedTesters.set(res.data ?? []); 
               this.loading.set(false); 
               this.assignedTestersLoading.set(false);
-              this.toastr.success('Tester unassigned from Label Template successfully!', 'Unassignment Successful');
+              this.toast.unassignmentSuccess('Tester from Label Template');
             }, 
             error: () => { 
               this.loading.set(false); 
               this.assignedTestersLoading.set(false);
-              this.toastr.error('Failed to refresh tester list', 'Refresh Failed');
+              this.toast.loadingError('tester list');
             }, 
           });
         },
         error: (error) => { 
           this.loading.set(false); 
           console.error('Failed to unassign label template:', error);
-          this.toastr.error('Failed to unassign tester from label template', 'Unassignment Failed');
+          this.toast.unassignmentError('tester from label template');
         },
       });
       return;
@@ -1060,19 +1062,19 @@ export class ManagementComponent {
               this.assignedTesters.set(res.data ?? []); 
               this.loading.set(false); 
               this.assignedTestersLoading.set(false);
-              this.toastr.success('Tester unassigned from Workflow successfully!', 'Unassignment Successful');
+              this.toast.unassignmentSuccess('Tester from Workflow');
             }, 
             error: () => { 
               this.loading.set(false); 
               this.assignedTestersLoading.set(false);
-              this.toastr.error('Failed to refresh tester list', 'Refresh Failed');
+              this.toast.loadingError('tester list');
             }, 
           });
         },
         error: (error) => { 
           this.loading.set(false); 
           console.error('Failed to unassign workflow:', error);
-          this.toastr.error('Failed to unassign tester from workflow', 'Unassignment Failed');
+          this.toast.unassignmentError('tester from workflow');
         },
       });
     }

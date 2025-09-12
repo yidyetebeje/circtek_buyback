@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { RepairReasonRecord, RepairReasonCreateInput, RepairReasonUpdateInput } from '../../core/models/repair-reason';
 import { ToastrService } from 'ngx-toastr';
 
@@ -32,6 +33,7 @@ export class RepairReasonsFormComponent {
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
   private readonly toastr = inject(ToastrService);
 
   // Form state
@@ -146,13 +148,13 @@ export class RepairReasonsFormComponent {
     request.subscribe({
       next: (response) => {
         if (response.data) {
-          this.toastr.success(`Repair Reason ${this.isEditMode() ? 'updated' : 'created'} successfully!`, 'Success');
+          this.toast.saveSuccess('Repair Reason', this.isEditMode() ? 'updated' : 'created');
           this.router.navigate(['/repair'], { 
             queryParams: { tab: 'repair-reasons' } 
           });
         } else {
           this.error.set(response.message || 'Operation failed');
-          this.toastr.error(response.message || 'Operation failed', 'Error');
+          this.toast.saveError('Repair Reason', this.isEditMode() ? 'update' : 'create');
         }
         this.submitting.set(false);
       },
@@ -160,7 +162,7 @@ export class RepairReasonsFormComponent {
         this.error.set('Operation failed. Please try again.');
         this.submitting.set(false);
         console.error('Error submitting repair reason:', err);
-        this.toastr.error('Operation failed. Please try again.', 'Error');
+        this.toast.saveError('Repair Reason', this.isEditMode() ? 'update' : 'create');
       }
     });
   }

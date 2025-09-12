@@ -6,6 +6,7 @@ import { GenericFormPageComponent, type FormField, type FormAction } from '../..
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastrService } from 'ngx-toastr';
+import { ToastService } from '../../../core/services/toast.service';
 import { WiFiProfile } from '../../../core/models/wifi-profile';
 import { HttpParams } from '@angular/common/http';
 
@@ -23,6 +24,7 @@ export class WiFiProfileFormComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
+  private readonly toast = inject(ToastService);
 
   // State
   loading = signal(false);
@@ -226,7 +228,7 @@ export class WiFiProfileFormComponent {
       this.api.updateWifiProfile(this.wifiProfileId()!, wifiProfileData).subscribe({
         next: () => {
           this.submitting.set(false);
-          this.toastr.success('WiFi Profile updated successfully!', 'Success');
+          this.toast.saveSuccess('WiFi Profile', 'updated');
           this.router.navigate(['/management'], { queryParams: { tab: 'wifi' } });
         },
         error: (error) => {
@@ -240,7 +242,7 @@ export class WiFiProfileFormComponent {
       this.api.createWifiProfile(wifiProfileData).subscribe({
         next: () => {
           this.submitting.set(false);
-          this.toastr.success('WiFi Profile created successfully!', 'Success');
+          this.toast.saveSuccess('WiFi Profile', 'created');
           this.router.navigate(['/management'], { queryParams: { tab: 'wifi' } });
         },
         error: (error) => {

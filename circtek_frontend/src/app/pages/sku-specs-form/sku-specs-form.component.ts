@@ -6,6 +6,7 @@ import { ToastrService } from 'ngx-toastr';
 
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { SkuSpecsCreateInput, SkuSpecsUpdateInput, SkuSpecsRecord } from '../../core/models/sku-specs';
 
 interface SkuSpecsFormData {
@@ -32,6 +33,7 @@ export class SkuSpecsFormComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly toast = inject(ToastService);
   private readonly toastr = inject(ToastrService);
 
   // State
@@ -208,20 +210,20 @@ export class SkuSpecsFormComponent implements OnInit {
     request.subscribe({
       next: (response) => {
         if (response.status === 200 || response.status === 201) {
-          this.toastr.success(`SKU Specs ${this.isEditMode() ? 'updated' : 'created'} successfully!`, 'Success');
+          this.toast.saveSuccess('SKU Specs', this.isEditMode() ? 'updated' : 'created');
           this.router.navigate(['/stock-management'], { 
             queryParams: { tab: 'sku-specs' } 
           });
         } else {
           this.error.set(response.message || 'Operation failed');
-          this.toastr.error(response.message || 'Operation failed', 'Error');
+          this.toast.saveError('SKU Specs', this.isEditMode() ? 'update' : 'create');
         }
         this.submitting.set(false);
       },
       error: (error) => {
         this.error.set(error.error?.message || 'Operation failed');
         this.submitting.set(false);
-        this.toastr.error(error.error?.message || 'Operation failed', 'Error');
+        this.toast.saveError('SKU Specs', this.isEditMode() ? 'update' : 'create');
       },
     });
   }

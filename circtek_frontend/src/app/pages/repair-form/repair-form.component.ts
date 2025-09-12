@@ -7,6 +7,7 @@ import { HttpParams } from '@angular/common/http';
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
 import { RepairCreateInput, RepairConsumeItemsInput, RepairCreateWithConsumeInput } from '../../core/models/repair';
 import { BarcodeScannerComponent, ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 import { SkuAutocompleteComponent } from '../../shared/components/sku-autocomplete/sku-autocomplete.component';
@@ -24,6 +25,7 @@ export class RepairFormComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   // State
   loading = signal(false);
@@ -278,6 +280,7 @@ export class RepairFormComponent implements OnInit {
       next: (response: any) => {
         this.submitting.set(false);
         if (response.status === 201) {
+          this.toast.saveSuccess('Repair', 'created');
           // Success - navigate back to repairs list
           this.router.navigate(['/repair'], { 
             queryParams: { tab: 'repairs' } 

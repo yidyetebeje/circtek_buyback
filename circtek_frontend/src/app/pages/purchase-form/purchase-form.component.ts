@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 import { PurchaseItemModalComponent, type PurchaseItem } from './purchase-item-modal/purchase-item-modal.component';
 
 
@@ -35,6 +36,7 @@ export class PurchaseFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   // State
   loading = signal(false);
@@ -307,6 +309,7 @@ export class PurchaseFormComponent implements OnInit {
       next: (response) => {
         this.submitting.set(false);
         if (response.data) {
+          this.toast.saveSuccess('Purchase Order', 'created');
           this.router.navigate(['/stock-management'], { 
             queryParams: { tab: 'purchases' }
           });
