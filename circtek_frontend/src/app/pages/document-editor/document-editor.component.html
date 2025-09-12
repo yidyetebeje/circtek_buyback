@@ -143,31 +143,31 @@
                 <!-- Standard Elements -->
                 <div class="element-item mb-3 p-2 flex items-center justify-center rounded bg-base-200 hover:bg-base-300 transition-all cursor-grab min-h-10"
                   draggable="true" (dragstart)="onDragStart($event, 'text')">
-                  <div style="font-weight: 500; font-size: 0.9rem">Text</div>
+                  <div style="font-weight: bold; font-size: 0.9rem">Text</div>
                 </div>
                 <div class="element-item mb-3 p-2 flex items-center justify-center rounded bg-base-200 hover:bg-base-300 transition-all cursor-grab min-h-10"
                   draggable="true" (dragstart)="onDragStart($event, 'image')">
-                  <div style="font-weight: 500; font-size: 0.9rem">Image</div>
+                  <div style="font-weight: bold; font-size: 0.9rem">Image</div>
                 </div>
 
                 <!-- Shapes -->
-                <h6 class="uppercase text-base-content/60 mb-2 mt-4 text-xs">Shapes</h6>
+                <h6 class="uppercase text-base-content/70 mb-2 mt-4 text-xs font-bold">Shapes</h6>
                 <div class="element-item mb-2 p-2 flex items-center justify-center rounded bg-base-200 hover:bg-base-300 transition-all cursor-grab min-h-10"
                   draggable="true" (dragstart)="onDragStart($event, 'filled-rectangle')">
-                  <div style="font-weight: 500; font-size: 0.9rem">Filled Rectangle</div>
+                  <div style="font-weight: bold; font-size: 0.9rem">Filled Rectangle</div>
                 </div>
                 <div class="element-item mb-2 p-2 flex items-center justify-center rounded bg-base-200 hover:bg-base-300 transition-all cursor-grab min-h-10"
                   draggable="true" (dragstart)="onDragStart($event, 'outlined-rectangle')">
-                  <div style="font-weight: 500; font-size: 0.9rem">Outlined Rectangle</div>
+                  <div style="font-weight: bold; font-size: 0.9rem">Outlined Rectangle</div>
                 </div>
                 <div class="element-item mb-3 p-2 flex items-center justify-center rounded bg-base-200 hover:bg-base-300 transition-all cursor-grab min-h-10"
                   draggable="true" (dragstart)="onDragStart($event, 'line')">
-                  <div style="font-weight: 500; font-size: 0.9rem">Line</div>
+                  <div style="font-weight: bold; font-size: 0.9rem">Line</div>
                 </div>
 
                 <!-- Placeholders Section -->
                 <div class="mt-4">
-                  <h6 class="uppercase text-base-content/60 mb-3 text-xs">Placeholders</h6>
+                  <h6 class="uppercase text-base-content/70 mb-3 text-xs font-bold">Placeholders</h6>
                   <div class="mb-3">
                     <input type="text" placeholder="Search placeholders..." class="input input-bordered input-sm w-full" [(ngModel)]="placeholderSearchTerm" (ngModelChange)="updateFilteredPlaceholders()" />
                   </div>
@@ -177,7 +177,7 @@
                       <div *ngFor="let placeholder of group.items" class="element-item bg-base-100 shadow mb-1 text-center p-1 rounded cursor-grab min-h-8 text-sm"
                         draggable="true" (dragstart)="onDragStart($event, 'placeholder', placeholder.id)">
                         <div class="placeholder-item flex items-center justify-center h-full">
-                          <span [textContent]="placeholder.name"></span>
+                          <span [textContent]="placeholder.name" class="font-bold"></span>
                         </div>
                       </div>
                     </div>
