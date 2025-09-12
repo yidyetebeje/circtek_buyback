@@ -34,7 +34,7 @@
     
     <!-- Theme toggle -->
     <button type="button" class="group rounded-md p-2 hover:bg-base-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      [attr.aria-pressed]="isDarkMode()" [attr.aria-label]="isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
+      [attr.aria-pressed]="isDarkMode()" [matTooltip]="themeTooltip()"
       (click)="toggleTheme()">
       @if (isDarkMode()) {
         <!-- Moon icon (dark mode active) -->
