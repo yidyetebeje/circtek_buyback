@@ -28,7 +28,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   protected readonly recentActivity = signal<RecentActivity[]>([]);
   protected readonly monthlyTrends = signal<MonthlyTrend[]>([]);
   protected readonly deviceTypes = signal<{ device_type: string; test_count: number }[]>([]);
-  protected readonly dateRange = signal<{from: string, to: string} | null>(null);
+  
+  // New signals for date picker values
+  protected readonly selectedFromDate = signal<string | null>(null);
+  protected readonly selectedToDate = signal<string | null>(null);
   
   protected maxDate!: string;
   protected minDate!: string;
@@ -58,6 +61,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   });
 
   ngOnInit() {
+    this.selectedFromDate.set(this.getFirstDayOfMonth());
+    this.selectedToDate.set(this.getCurrentDate());
     this.loadDashboardData();
     this.maxDate = new Date().toISOString().split('T')[0];
     const twoYearsAgo = new Date();
@@ -94,26 +99,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private loadDashboardData() {
     this.isLoading.set(true);
     
-    // Get date range parameters
-    const dateRange = this.dateRange();
-    let params = new HttpParams();
-    if (dateRange) {
-      params = params.append('from', dateRange.from);
-      params = params.append('to', dateRange.to);
-    }
-    
-    // Load all dashboard data
+    // Load all dashboard data except monthly trends initially
     Promise.all([
       this.apiService.getDashboardOverview().toPromise(),
       this.apiService.getDashboardWarehouseStats().toPromise(),
-      this.apiService.getDashboardRecentActivity().toPromise(),
-      this.apiService.getDashboardMonthlyTrends(params).toPromise()
-    ]).then(([overview, warehouses, activity, trends]) => {
-      console.log('Dashboard data loaded:', { overview: overview?.data, warehouses: warehouses?.data, activity: activity?.data, trends: trends?.data });
+      this.apiService.getDashboardRecentActivity().toPromise()
+    ]).then(([overview, warehouses, activity]) => {
+      console.log('Dashboard data loaded:', { overview: overview?.data, warehouses: warehouses?.data, activity: activity?.data });
       this.overviewData.set(overview!.data);
       this.warehouseStats.set(warehouses!.data);
       this.recentActivity.set(activity!.data);
-      this.monthlyTrends.set(trends!.data);
       if (overview?.data?.test_devices_by_type) {
         this.deviceTypes.set(overview.data.test_devices_by_type);
       }
@@ -125,10 +120,31 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         console.log('View not initialized yet, charts will be created in ngAfterViewInit');
       }
       this.isLoading.set(false);
+      this.updateMonthlyTrendsChart(); // Load monthly trends after initial data
     }).catch(error => {
       console.error('Error loading dashboard data:', error);
       this.isLoading.set(false);
     });
+  }
+
+  private updateMonthlyTrendsChart() {
+    const fromDate = this.selectedFromDate();
+    const toDate = this.selectedToDate();
+
+    if (fromDate && toDate) {
+      let params = new HttpParams();
+      params = params.append('from', fromDate);
+      params = params.append('to', toDate);
+
+      this.apiService.getDashboardMonthlyTrends(params).toPromise().then(trends => {
+        this.monthlyTrends.set(trends!.data);
+        if (this.viewInitialized) {
+          this.setupMonthlyTrendsChart();
+        }
+      }).catch(error => {
+        console.error('Error loading monthly trends data:', error);
+      });
+    }
   }
 
   private createCharts() {
@@ -402,24 +418,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     const target = event.target as HTMLInputElement;
     const fromDate = target.value;
     
-    if (fromDate) {
-      const currentRange = this.dateRange();
-      const toDate = currentRange?.to || this.getCurrentDate();
+    this.selectedFromDate.set(fromDate);
+    
+    // If the new fromDate is after the current toDate, reset toDate to fromDate
+    if (this.selectedToDate() && new Date(fromDate) > new Date(this.selectedToDate()!)) {
+      this.selectedToDate.set(fromDate);
+    }
 
-      // If the new fromDate is after the current toDate, reset toDate to fromDate
-      if (new Date(fromDate) > new Date(toDate)) {
-        this.dateRange.set({
-          from: fromDate,
-          to: fromDate
-        });
-      } else {
-        this.dateRange.set({
-          from: fromDate,
-          to: toDate
-        });
-      }
-      
-      this.loadDashboardData();
+    if (this.selectedFromDate() && this.selectedToDate()) {
+      this.updateMonthlyTrendsChart();
     }
   }
 
@@ -427,28 +434,25 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     const target = event.target as HTMLInputElement;
     const toDate = target.value;
     
-    if (toDate) {
-      const currentRange = this.dateRange();
-      this.dateRange.set({
-        from: currentRange?.from || this.getFirstDayOfMonth(),
-        to: toDate
-      });
-      
-      this.loadDashboardData();
+    this.selectedToDate.set(toDate);
+
+    if (this.selectedFromDate() && this.selectedToDate()) {
+      this.updateMonthlyTrendsChart();
     }
   }
 
   protected getFromDate(): string {
-    return this.dateRange()?.from || this.getFirstDayOfMonth();
+    return this.selectedFromDate() || this.getFirstDayOfMonth();
   }
 
   protected getToDate(): string {
-    return this.dateRange()?.to || this.getCurrentDate();
+    return this.selectedToDate() || this.getCurrentDate();
   }
 
   protected resetDateRange(): void {
-    this.dateRange.set(null);
-    this.loadDashboardData();
+    this.selectedFromDate.set(this.getFirstDayOfMonth());
+    this.selectedToDate.set(this.getCurrentDate());
+    this.updateMonthlyTrendsChart();
   }
 
   private getCurrentDate(): string {
