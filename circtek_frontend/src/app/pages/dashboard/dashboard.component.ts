@@ -28,6 +28,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   protected readonly recentActivity = signal<RecentActivity[]>([]);
   protected readonly monthlyTrends = signal<MonthlyTrend[]>([]);
   protected readonly dateRange = signal<{from: string, to: string} | null>(null);
+  
+  protected maxDate!: string;
+  protected minDate!: string;
 
   // Chart configurations
   protected deviceTypeChart: ChartConfiguration | null = null;
@@ -55,6 +58,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit() {
     this.loadDashboardData();
+    this.maxDate = new Date().toISOString().split('T')[0];
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+    this.minDate = twoYearsAgo.toISOString().split('T')[0];
   }
 
   ngAfterViewInit() {
@@ -380,10 +387,20 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     
     if (fromDate) {
       const currentRange = this.dateRange();
-      this.dateRange.set({
-        from: fromDate,
-        to: currentRange?.to || this.getCurrentDate()
-      });
+      const toDate = currentRange?.to || this.getCurrentDate();
+
+      // If the new fromDate is after the current toDate, reset toDate to fromDate
+      if (new Date(fromDate) > new Date(toDate)) {
+        this.dateRange.set({
+          from: fromDate,
+          to: fromDate
+        });
+      } else {
+        this.dateRange.set({
+          from: fromDate,
+          to: toDate
+        });
+      }
       
       this.loadDashboardData();
     }

@@ -228,6 +228,8 @@
             placeholder="From Date"
             (change)="onFromDateChange($event)"
             [value]="getFromDate()"
+            [max]="maxDate"
+            [min]="minDate"
           />
           <input 
             type="date" 
@@ -235,6 +237,8 @@
             placeholder="To Date"
             (change)="onToDateChange($event)"
             [value]="getToDate()"
+            [max]="maxDate"
+            [min]="getFromDate()"
           />
           <button 
             class="btn btn-primary btn-sm"
