@@ -1,15 +1,30 @@
 import type { response } from '../../types/response'
 import { LabelTemplatesRepository } from './repository'
-import type { LabelTemplateCreateInput, LabelTemplatePublic, LabelTemplateUpdateInput } from './types'
+import type { LabelTemplateCreateInput, LabelTemplateListQueryInput, LabelTemplatePublic, LabelTemplateUpdateInput } from './types'
 
 export class LabelTemplatesController {
     constructor(private readonly repo: LabelTemplatesRepository) {}
 
-    async list(queryTenantId: number | null | undefined, currentRole: string | undefined, currentTenantId: number): Promise<response<LabelTemplatePublic[]>> {
-        const hasValidQueryTenant = typeof queryTenantId === 'number' && Number.isFinite(queryTenantId)
-        const resolvedTenantId = currentRole === 'super_admin' ? (hasValidQueryTenant ? queryTenantId! : null) : currentTenantId
-        const rows = await this.repo.list(resolvedTenantId)
-        return { data: rows, message: 'OK', status: 200 }
+    async list(filters: LabelTemplateListQueryInput, currentRole: string | undefined, currentTenantId: number): Promise<response<LabelTemplatePublic[]>> {
+        const hasValidQueryTenant = typeof filters.tenant_id === 'number' && Number.isFinite(filters.tenant_id)
+        const resolvedTenantId = currentRole === 'super_admin' ? (hasValidQueryTenant ? filters.tenant_id! : undefined) : currentTenantId
+        
+        const queryFilters: LabelTemplateListQueryInput = {
+            ...filters,
+            tenant_id: resolvedTenantId
+        }
+        
+        const result = await this.repo.list(queryFilters)
+        return { 
+            data: result.rows, 
+            meta: {
+                total: result.total,
+                page: result.page,
+                limit: result.limit
+            },
+            message: 'OK', 
+            status: 200 
+        }
     }
 
     async create(payload: LabelTemplateCreateInput, tenantId: number): Promise<response<LabelTemplatePublic | null>> {

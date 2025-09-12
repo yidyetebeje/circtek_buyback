@@ -1,7 +1,16 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, asc, count, desc, eq, like, SQL } from 'drizzle-orm'
 import { db } from '../../db'
 import { label_templates, users, tenants } from '../../db/circtek.schema'
-import type { LabelTemplateCreateInput, LabelTemplatePublic, LabelTemplateUpdateInput } from './types'
+import type { LabelTemplateCreateInput, LabelTemplateListQueryInput, LabelTemplateListResult, LabelTemplatePublic, LabelTemplateUpdateInput } from './types'
+
+const sortableFields = {
+    id: label_templates.id,
+    name: label_templates.name,
+    description: label_templates.description,
+    status: label_templates.status,
+    created_at: label_templates.created_at,
+    updated_at: label_templates.updated_at,
+} as const
 
 const labelTemplateSelection = {
     id: label_templates.id,
@@ -18,22 +27,43 @@ const labelTemplateSelection = {
 export class LabelTemplatesRepository {
     constructor(private readonly database: typeof db) {}
 
-    async list(tenantId?: number | null): Promise<LabelTemplatePublic[]> {
-        if (tenantId == null) {
-            const rows = await this.database
+    async list(filters: LabelTemplateListQueryInput): Promise<LabelTemplateListResult> {
+        const conditions: SQL<unknown>[] = []
+        if (typeof filters.tenant_id === 'number') conditions.push(eq(label_templates.tenant_id, filters.tenant_id))
+
+        const page = Math.max(1, filters.page ?? 1)
+        const limit = Math.max(1, Math.min(100, filters.limit ?? 10))
+        const offset = (page - 1) * limit
+
+        // Handle sorting
+        const sortField = filters.sort && sortableFields[filters.sort as keyof typeof sortableFields] 
+            ? sortableFields[filters.sort as keyof typeof sortableFields]
+            : label_templates.updated_at // default sort by updated_at
+        const sortOrder = filters.order === 'desc' ? desc : asc
+
+        const whereCond = conditions.length ? and(...conditions) : undefined
+        const [totalRow] = await (whereCond
+            ? this.database.select({ total: count() }).from(label_templates).where(whereCond)
+            : this.database.select({ total: count() }).from(label_templates))
+
+        const rows = await (whereCond
+            ? this.database
                 .select(labelTemplateSelection)
                 .from(label_templates)
                 .leftJoin(tenants, eq(label_templates.tenant_id, tenants.id))
-                .orderBy(desc(label_templates.updated_at))
-            return rows as any
-        }
-        const rows = await this.database
-            .select(labelTemplateSelection)
-            .from(label_templates)
-            .leftJoin(tenants, eq(label_templates.tenant_id, tenants.id))
-            .where(eq(label_templates.tenant_id, tenantId))
-            .orderBy(desc(label_templates.updated_at))
-        return rows as any
+                .where(whereCond)
+                .orderBy(sortOrder(sortField))
+                .limit(limit)
+                .offset(offset)
+            : this.database
+                .select(labelTemplateSelection)
+                .from(label_templates)
+                .leftJoin(tenants, eq(label_templates.tenant_id, tenants.id))
+                .orderBy(sortOrder(sortField))
+                .limit(limit)
+                .offset(offset))
+
+        return { rows: rows as any, total: totalRow?.total ?? 0, page, limit }
     }
 
     async create(payload: LabelTemplateCreateInput & { tenant_id: number }): Promise<LabelTemplatePublic | undefined> {

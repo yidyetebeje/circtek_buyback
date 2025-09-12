@@ -1,7 +1,17 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, asc, count, desc, eq, like, SQL } from 'drizzle-orm'
 import { db } from '../../db'
 import { users, workflows, tenants } from '../../db/circtek.schema'
-import type { WorkflowCreateInput, WorkflowPublic, WorkflowUpdateInput } from './types'
+import type { WorkflowCreateInput, WorkflowListQueryInput, WorkflowListResult, WorkflowPublic, WorkflowUpdateInput } from './types'
+
+const sortableFields = {
+    id: workflows.id,
+    name: workflows.name,
+    description: workflows.description,
+    status: workflows.status,
+    is_published: workflows.is_published,
+    created_at: workflows.created_at,
+    updated_at: workflows.updated_at,
+} as const
 
 const workflowSelection = {
     id: workflows.id,
@@ -27,22 +37,43 @@ const workflowSelection = {
 export class WorkflowsRepository {
     constructor(private readonly database: typeof db) {}
 
-    async list(tenantId?: number | null): Promise<WorkflowPublic[]> {
-        if (tenantId == null) {
-            const rows = await this.database
+    async list(filters: WorkflowListQueryInput): Promise<WorkflowListResult> {
+        const conditions: SQL<unknown>[] = []
+        if (typeof filters.tenant_id === 'number') conditions.push(eq(workflows.tenant_id, filters.tenant_id))
+
+        const page = Math.max(1, filters.page ?? 1)
+        const limit = Math.max(1, Math.min(100, filters.limit ?? 10))
+        const offset = (page - 1) * limit
+
+        // Handle sorting
+        const sortField = filters.sort && sortableFields[filters.sort as keyof typeof sortableFields] 
+            ? sortableFields[filters.sort as keyof typeof sortableFields]
+            : workflows.updated_at // default sort by updated_at
+        const sortOrder = filters.order === 'desc' ? desc : asc
+
+        const whereCond = conditions.length ? and(...conditions) : undefined
+        const [totalRow] = await (whereCond
+            ? this.database.select({ total: count() }).from(workflows).where(whereCond)
+            : this.database.select({ total: count() }).from(workflows))
+
+        const rows = await (whereCond
+            ? this.database
                 .select(workflowSelection)
                 .from(workflows)
                 .leftJoin(tenants, eq(workflows.tenant_id, tenants.id))
-                .orderBy(desc(workflows.updated_at))
-            return rows as any
-        }
-        const rows = await this.database
-            .select(workflowSelection)
-            .from(workflows)
-            .leftJoin(tenants, eq(workflows.tenant_id, tenants.id))
-            .where(eq(workflows.tenant_id, tenantId))
-            .orderBy(desc(workflows.updated_at))
-        return rows as any
+                .where(whereCond)
+                .orderBy(sortOrder(sortField))
+                .limit(limit)
+                .offset(offset)
+            : this.database
+                .select(workflowSelection)
+                .from(workflows)
+                .leftJoin(tenants, eq(workflows.tenant_id, tenants.id))
+                .orderBy(sortOrder(sortField))
+                .limit(limit)
+                .offset(offset))
+
+        return { rows: rows as any, total: totalRow?.total ?? 0, page, limit }
     }
 
     async create(payload: WorkflowCreateInput & { tenant_id: number }): Promise<WorkflowPublic | undefined> {

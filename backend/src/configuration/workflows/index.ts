@@ -12,9 +12,14 @@ export const workflows_routes = new Elysia({ prefix: '/workflows' })
     .use(requireRole([]))
     .get('/', async (ctx) => {
         const { currentRole, currentTenantId, query } = ctx as any
-        const tenantParam = query?.tenant_id
-        const queryTenantId = tenantParam !== undefined ? Number(tenantParam) : undefined
-        return controller.list(queryTenantId, currentRole, Number(currentTenantId))
+        const filters = {
+            tenant_id: query?.tenant_id ? Number(query.tenant_id) : undefined,
+            page: query?.page ? Number(query.page) : undefined,
+            limit: query?.limit ? Number(query.limit) : undefined,
+            sort: query?.sort,
+            order: query?.order
+        }
+        return controller.list(filters, currentRole, Number(currentTenantId))
     }, { detail: { tags: ['Configuration'], summary: 'List workflows (tenant-scoped)' } })
     .post('/', async (ctx) => {
         const { body, currentTenantId } = ctx as any

@@ -1,15 +1,30 @@
 import type { response } from '../../types/response'
 import { WorkflowsRepository } from './repository'
-import type { WorkflowCreateInput, WorkflowPublic, WorkflowUpdateInput } from './types'
+import type { WorkflowCreateInput, WorkflowListQueryInput, WorkflowPublic, WorkflowUpdateInput } from './types'
 
 export class WorkflowsController {
     constructor(private readonly repo: WorkflowsRepository) {}
 
-    async list(queryTenantId: number | null | undefined, currentRole: string | undefined, currentTenantId: number): Promise<response<WorkflowPublic[]>> {
-        const hasValidQueryTenant = typeof queryTenantId === 'number' && Number.isFinite(queryTenantId)
-        const resolvedTenantId = currentRole === 'super_admin' ? (hasValidQueryTenant ? queryTenantId! : null) : currentTenantId
-        const rows = await this.repo.list(resolvedTenantId)
-        return { data: rows, message: 'OK', status: 200 }
+    async list(filters: WorkflowListQueryInput, currentRole: string | undefined, currentTenantId: number): Promise<response<WorkflowPublic[]>> {
+        const hasValidQueryTenant = typeof filters.tenant_id === 'number' && Number.isFinite(filters.tenant_id)
+        const resolvedTenantId = currentRole === 'super_admin' ? (hasValidQueryTenant ? filters.tenant_id! : undefined) : currentTenantId
+        
+        const queryFilters: WorkflowListQueryInput = {
+            ...filters,
+            tenant_id: resolvedTenantId
+        }
+        
+        const result = await this.repo.list(queryFilters)
+        return { 
+            data: result.rows, 
+            meta: {
+                total: result.total,
+                page: result.page,
+                limit: result.limit
+            },
+            message: 'OK', 
+            status: 200 
+        }
     }
 
     async create(payload: WorkflowCreateInput, tenantId: number): Promise<response<WorkflowPublic | null>> {

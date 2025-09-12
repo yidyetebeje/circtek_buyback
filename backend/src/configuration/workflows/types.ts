@@ -35,6 +35,16 @@ export const WorkflowUpdate = t.Object({
 export type WorkflowCreateInput = Static<typeof WorkflowCreate> & { tenant_id?: number }
 export type WorkflowUpdateInput = Static<typeof WorkflowUpdate> & { tenant_id?: number }
 
+export const WorkflowListQuery = t.Object({
+    tenant_id: t.Optional(t.Number()),
+    page: t.Optional(t.Number({ default: 1 })),
+    limit: t.Optional(t.Number({ default: 10 })),
+    sort: t.Optional(t.String()),
+    order: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
+})
+
+export type WorkflowListQueryInput = Static<typeof WorkflowListQuery>
+
 export type WorkflowPublic = {
     id: number
     name: string
@@ -54,6 +64,13 @@ export type WorkflowPublic = {
     tenant_name?: string | null
     created_at: string | null
     updated_at: string | null
+}
+
+export type WorkflowListResult = {
+    rows: WorkflowPublic[]
+    total: number
+    page: number
+    limit: number
 }
 
 

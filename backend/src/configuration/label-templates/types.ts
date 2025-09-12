@@ -17,6 +17,16 @@ export const LabelTemplateUpdate = t.Object({
 export type LabelTemplateCreateInput = Static<typeof LabelTemplateCreate> & { tenant_id?: number }
 export type LabelTemplateUpdateInput = Static<typeof LabelTemplateUpdate> & { tenant_id?: number }
 
+export const LabelTemplateListQuery = t.Object({
+    tenant_id: t.Optional(t.Number()),
+    page: t.Optional(t.Number({ default: 1 })),
+    limit: t.Optional(t.Number({ default: 10 })),
+    sort: t.Optional(t.String()),
+    order: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
+})
+
+export type LabelTemplateListQueryInput = Static<typeof LabelTemplateListQuery>
+
 export type LabelTemplatePublic = {
     id: number
     name: string
@@ -27,6 +37,13 @@ export type LabelTemplatePublic = {
     tenant_name?: string | null
     created_at: string | null
     updated_at: string | null
+}
+
+export type LabelTemplateListResult = {
+    rows: LabelTemplatePublic[]
+    total: number
+    page: number
+    limit: number
 }
 
 

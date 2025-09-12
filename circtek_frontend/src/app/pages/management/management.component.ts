@@ -575,64 +575,46 @@ export class ManagementComponent {
       return;
     }
     if (tab === 'labels') {
+      let params = new HttpParams()
+        .set('page', String(this.pageIndex() + 1))
+        .set('limit', String(this.pageSize()));
+      const s = this.search().trim(); if (s) params = params.set('search', s);
+      if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
+      const sort = this.sortField(); if (sort) params = params.set('sort', sort);
+      const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getLabelTemplates(params).subscribe({
-        next: (res) => {
-          if (seq !== this.requestSeq) return;
-          const all = ((res.data ?? []) as LabelTemplateRecord[]).map(r => ({
+        next: (res) => { 
+          if (seq !== this.requestSeq) return; 
+          const labels = (res.data ?? []).map(r => ({
             ...r,
             tenant_name: (r as any).tenant_name ?? String(r.tenant_id)
           }));
-          const s = this.search().trim().toLowerCase();
-          let filtered = s ? all.filter(r => `${r.name} ${r.description ?? ''}`.toLowerCase().includes(s)) : all;
-          
-          // Apply client-side sorting
-          const sortField = this.sortField();
-          const sortOrder = this.sortOrder();
-          if (sortField) {
-            filtered.sort((a: any, b: any) => {
-              const aVal = a[sortField] ?? '';
-              const bVal = b[sortField] ?? '';
-              const comparison = String(aVal).localeCompare(String(bVal));
-              return sortOrder === 'desc' ? -comparison : comparison;
-            });
-          }
-          this.total.set(filtered.length);
-          const start = this.pageIndex() * this.pageSize();
-          const paged = filtered.slice(start, start + this.pageSize());
-          this.data.set(paged);
-          this.loading.set(false);
+          this.data.set(labels); 
+          this.total.set(res.meta?.total ?? 0); 
+          this.loading.set(false); 
         },
         error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
       });
       return;
     }
     if (tab === 'workflows') {
+      let params = new HttpParams()
+        .set('page', String(this.pageIndex() + 1))
+        .set('limit', String(this.pageSize()));
+      const s = this.search().trim(); if (s) params = params.set('search', s);
+      if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
+      const sort = this.sortField(); if (sort) params = params.set('sort', sort);
+      const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getWorkflows(params).subscribe({
-        next: (res) => {
-          if (seq !== this.requestSeq) return;
-          const all = ((res.data ?? []) as WorkflowRecord[]).map(r => ({
+        next: (res) => { 
+          if (seq !== this.requestSeq) return; 
+          const workflows = (res.data ?? []).map(r => ({
             ...r,
             tenant_name: (r as any).tenant_name ?? String(r.tenant_id)
           }));
-          const s = this.search().trim().toLowerCase();
-          let filtered = s ? all.filter(r => `${r.name} ${r.description ?? ''}`.toLowerCase().includes(s)) : all;
-          
-          // Apply client-side sorting
-          const sortField = this.sortField();
-          const sortOrder = this.sortOrder();
-          if (sortField) {
-            filtered.sort((a: any, b: any) => {
-              const aVal = a[sortField] ?? '';
-              const bVal = b[sortField] ?? '';
-              const comparison = String(aVal).localeCompare(String(bVal));
-              return sortOrder === 'desc' ? -comparison : comparison;
-            });
-          }
-          this.total.set(filtered.length);
-          const start = this.pageIndex() * this.pageSize();
-          const paged = filtered.slice(start, start + this.pageSize());
-          this.data.set(paged);
-          this.loading.set(false);
+          this.data.set(workflows); 
+          this.total.set(res.meta?.total ?? 0); 
+          this.loading.set(false); 
         },
         error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
       });
