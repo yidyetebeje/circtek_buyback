@@ -27,6 +27,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   protected readonly warehouseStats = signal<WarehouseStats[]>([]);
   protected readonly recentActivity = signal<RecentActivity[]>([]);
   protected readonly monthlyTrends = signal<MonthlyTrend[]>([]);
+  protected readonly deviceTypes = signal<{ device_type: string; test_count: number }[]>([]);
   protected readonly dateRange = signal<{from: string, to: string} | null>(null);
   
   protected maxDate!: string;
@@ -113,6 +114,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       this.warehouseStats.set(warehouses!.data);
       this.recentActivity.set(activity!.data);
       this.monthlyTrends.set(trends!.data);
+      if (overview?.data?.test_devices_by_type) {
+        this.deviceTypes.set(overview.data.test_devices_by_type);
+      }
       // Create charts after data and view are ready
       if (this.viewInitialized) {
         console.log('Creating charts - view initialized');
@@ -148,6 +152,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const testDeviceTypes = this.overviewData()!.test_devices_by_type;
     console.log('Test device types data:', testDeviceTypes);
+
+    if (!testDeviceTypes || testDeviceTypes.length === 0) {
+      console.log('No device types data available for chart');
+      if (this.deviceTypeChartInstance) {
+        this.deviceTypeChartInstance.destroy();
+        this.deviceTypeChartInstance = undefined;
+      }
+      return;
+    }
     
     this.deviceTypeChart = {
       type: 'doughnut' as ChartType,
@@ -199,6 +212,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     console.log('setupMonthlyTrendsChart called, monthlyTrends:', this.monthlyTrends());
     if (!this.monthlyTrends() || this.monthlyTrends().length === 0) {
       console.log('No monthly trends data available');
+      if (this.monthlyTrendsChartInstance) {
+        this.monthlyTrendsChartInstance.destroy();
+        this.monthlyTrendsChartInstance = undefined;
+      }
       return;
     }
 

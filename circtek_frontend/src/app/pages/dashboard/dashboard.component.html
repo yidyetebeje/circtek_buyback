@@ -248,9 +248,15 @@
           </button>
         </div>
       </div>
-      <div class="h-64">
-        <canvas #monthlyTrendsChart></canvas>
-      </div>
+      @if (monthlyTrends().length > 0) {
+        <div class="h-64">
+          <canvas #monthlyTrendsChart></canvas>
+        </div>
+      } @else {
+        <div class="h-64 flex items-center justify-center">
+          <p class="text-base-content/70">No data available</p>
+        </div>
+      }
     </div>
   }
 </div>
