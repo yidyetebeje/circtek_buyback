@@ -159,12 +159,15 @@ export class WiFiProfileFormComponent {
   }
 
   private loadTenantOptions() {
-    this.api.getTenants(new HttpParams().set('limit', '1000')).subscribe({
+    // Only load active tenants
+    this.api.getTenants(new HttpParams().set('limit', '1000').set('status', 'true')).subscribe({
       next: (res) => {
-        const options = (res.data ?? []).map(tenant => ({
-          label: tenant.name,
-          value: tenant.id
-        }));
+        const options = (res.data ?? [])
+          .filter(tenant => tenant.status) // Additional client-side filter
+          .map(tenant => ({
+            label: tenant.name,
+            value: tenant.id
+          }));
         this.tenantOptions.set(options);
       },
       error: (error) => {

@@ -12,7 +12,10 @@ export const warehouse_routes = new Elysia({ prefix: '/warehouses' })
 	.use(requireRole([]))
 	.get('/', (ctx) => {
 		const { query, currentRole, currentTenantId } = ctx as any
-		const tenantScoped = currentRole === 'super_admin' ? undefined : currentTenantId
+		// For super_admin, allow filtering by tenant_id from query params, otherwise use their tenant_id
+		const tenantScoped = currentRole === 'super_admin' 
+			? (query as any).tenant_id 
+			: currentTenantId
 		return controller.list({ ...(query as any), tenant_id: tenantScoped } as any)
 	}, { query: WarehouseListQuery, detail: { tags: ['Warehouses'], summary: 'List warehouses' } })
 	.get('/:id', (ctx) => {
