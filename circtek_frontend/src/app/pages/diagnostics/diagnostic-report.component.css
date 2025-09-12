@@ -3,44 +3,198 @@
   display: block;
 }
 
-#report-root {
-    height: 100vh;
-    width: 100vw;
+.report-page-container {
+  background-color: #f0f2f5; /* Light gray background for the whole page */
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.report-document {
+  background-color: #ffffff; /* White background for the document itself */
+  width: 250mm; /* Increased width for the document */
+  min-height: 297mm; /* A4 height */
+  padding: 30mm; /* Margins for the document */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  border-radius: 8px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.company-logo {
+  max-height: 80px;
+  width: auto;
+}
+
+.report-title-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.report-title {
+  font-size: 2.2em;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 5px;
+}
+
+.report-id {
+  font-size: 0.9em;
+  color: #7f8c8d;
+}
+
+.report-id-value {
+  background-color: #ecf0f1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.report-meta-section {
+  text-align: right;
+}
+
+.tested-on-label {
+  font-size: 0.85em;
+  color: #7f8c8d;
+  margin-top: 10px;
+}
+
+.tested-on-value {
+  font-weight: 600;
+  font-size: 0.95em;
+  color: #555;
+}
+
+.qr-code-placeholder {
+  width: 100px;
+  height: 100px;
+  border: 1px dashed #ccc;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-top: 15px;
+  color: #999;
+  font-size: 0.75em;
+}
+
+.report-section {
+  margin-bottom: 30px;
+}
+
+.report-section h3 {
+  font-size: 1.5em;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 15px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #eee;
 }
 
 .card {
-    height: 100%;
-    width: 100%;
-    overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #fdfdfd;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.card-title {
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #34495e;
+  margin-bottom: 10px;
+}
+
+.grid-cols-2 > div {
+  padding: 8px 0;
+}
+
+.report-footer-summary {
+  margin-top: auto; /* Pushes the footer to the bottom */
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  text-align: center;
+  color: #555;
+}
+
+.badge {
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75em;
+}
+
+.badge-error {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.badge-warning {
+  background-color: #f39c12;
+  color: white;
+}
+
+.badge-success {
+  background-color: #27ae60;
+  color: white;
 }
 
 /* Print-specific styles */
 @media print {
+  body {
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .report-page-container {
+    background-color: #ffffff !important;
+    padding: 0 !important;
+    display: block;
+  }
+
+  .report-document {
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 15mm !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
   .no-print {
     display: none !important;
   }
 
-  :host, body, #report-root {
-    background: #ffffff !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .shadow-lg {
-    box-shadow: none !important;
-  }
-
-  .border-base-300 {
-    border-color: #E5E7EB !important; /* gray-200 */
-  }
-
-  .bg-base-200\/60, .bg-base-300\/60 {
-    background-color: #F3F4F6 !important; /* gray-100 */
-    print-color-adjust: exact;
-  }
-
-  .card-body {
-    padding: 1.25rem !important;
+  .report-header, .report-section, .report-footer-summary {
+    page-break-inside: avoid;
   }
 
   h1, h2, h3, p {
@@ -50,5 +204,11 @@
 
   .grid {
     page-break-inside: avoid;
+  }
+
+  .functional-tests-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1.5rem !important; /* Equivalent to Tailwind's gap-6 */
   }
 }

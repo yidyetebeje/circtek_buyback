@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } 
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { ToastrService } from 'ngx-toastr';
 
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
@@ -31,6 +32,7 @@ export class SkuSpecsFormComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly toastr = inject(ToastrService);
 
   // State
   loading = signal(false);
@@ -206,17 +208,20 @@ export class SkuSpecsFormComponent implements OnInit {
     request.subscribe({
       next: (response) => {
         if (response.status === 200 || response.status === 201) {
+          this.toastr.success(`SKU Specs ${this.isEditMode() ? 'updated' : 'created'} successfully!`, 'Success');
           this.router.navigate(['/stock-management'], { 
             queryParams: { tab: 'sku-specs' } 
           });
         } else {
           this.error.set(response.message || 'Operation failed');
+          this.toastr.error(response.message || 'Operation failed', 'Error');
         }
         this.submitting.set(false);
       },
       error: (error) => {
         this.error.set(error.error?.message || 'Operation failed');
         this.submitting.set(false);
+        this.toastr.error(error.error?.message || 'Operation failed', 'Error');
       },
     });
   }
@@ -225,5 +230,11 @@ export class SkuSpecsFormComponent implements OnInit {
     this.router.navigate(['/stock-management'], { 
       queryParams: { tab: 'sku-specs' } 
     });
+  }
+
+  onActionClick(event: { action: string; data?: any }): void {
+    if (event.action === 'Cancel') {
+      this.onCancel();
+    }
   }
 }

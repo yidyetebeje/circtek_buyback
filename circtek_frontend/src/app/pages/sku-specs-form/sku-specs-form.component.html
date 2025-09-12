@@ -6,4 +6,8 @@
   [form]="form"
   [loading]="loading()"
   [error]="error()"
+  [submitting]="submitting()"
+  [submitLabel]="submitLabel()"
+  (formSubmit)="onSubmit()"
+  (actionClick)="onActionClick($event)"
 ></app-generic-form-page>
