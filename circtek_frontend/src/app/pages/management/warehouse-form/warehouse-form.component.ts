@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ToastrService } from 'ngx-toastr';
 import { Warehouse } from '../../../core/models/warehouse';
 import { HttpParams } from '@angular/common/http';
 
@@ -21,6 +22,7 @@ export class WarehouseFormComponent {
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly toastr = inject(ToastrService);
 
   // State
   loading = signal(false);
@@ -220,6 +222,7 @@ export class WarehouseFormComponent {
         next: () => {
           this.submitting.set(false);
           this.successMessage.set('Warehouse updated successfully.');
+          this.toastr.success('Warehouse updated successfully!', 'Success');
           setTimeout(() => {
             this.router.navigate(['/management'], { queryParams: { tab: 'warehouses' } });
           }, 1200);
@@ -236,6 +239,7 @@ export class WarehouseFormComponent {
         next: () => {
           this.submitting.set(false);
           this.successMessage.set('Warehouse created successfully.');
+          this.toastr.success('Warehouse created successfully!', 'Success');
           setTimeout(() => {
             this.router.navigate(['/management'], { queryParams: { tab: 'warehouses' } });
           }, 1200);
