@@ -118,15 +118,6 @@ export class StockManagementComponent {
           { header: 'Warehouse', accessorKey: 'warehouse_name' as any },
           { header: 'Quantity', accessorKey: 'quantity' as any },
           { header: 'Type', id: 'is_part', accessorFn: (r: any) => (r.is_part ? 'Part' : 'Device') },
-          {
-            header: 'Actions', id: 'actions' as any, enableSorting: false as any,
-            meta: {
-              actions: [
-                { key: 'edit', label: 'Edit', class: 'text-primary' },
-              ],
-              cellClass: () => 'text-right'
-            }
-          } as any,
         ];
       case 'purchases':
         return [
@@ -144,7 +135,6 @@ export class StockManagementComponent {
               actions: [
                 { key: 'detail', label: 'Detail', class: 'text-info', icon: 'eye' },
                 { key: 'receive', label: 'Receive Items', class: 'text-secondary', icon: 'package-plus' },
-                { key: 'edit', label: 'Edit', class: 'text-primary', icon: 'edit' },
               ],
               cellClass: () => 'text-right'
             }
