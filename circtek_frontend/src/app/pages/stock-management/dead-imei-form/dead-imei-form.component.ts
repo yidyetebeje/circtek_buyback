@@ -82,7 +82,7 @@ export class DeadIMEIFormComponent {
         this.loading.set(false);
         if (res.status >= 200 && res.status < 300) {
           // Navigate back to stock management with dead-imei tab
-          this.router.navigate(['/stock-management'], { 
+          this.router.navigate(['/repair'], { 
             queryParams: { tab: 'dead-imei' } 
           });
         } else {
@@ -98,7 +98,7 @@ export class DeadIMEIFormComponent {
   }
 
   protected onCancel() {
-    this.router.navigate(['/stock-management'], { 
+    this.router.navigate(['/repair'], { 
       queryParams: { tab: 'dead-imei' } 
     });
   }

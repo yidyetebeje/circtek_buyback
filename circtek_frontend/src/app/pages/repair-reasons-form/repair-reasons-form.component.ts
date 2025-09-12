@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
 import { RepairReasonRecord, RepairReasonCreateInput, RepairReasonUpdateInput } from '../../core/models/repair-reason';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-repair-reasons-form',
@@ -31,6 +32,7 @@ export class RepairReasonsFormComponent {
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly toastr = inject(ToastrService);
 
   // Form state
   form: FormGroup;
@@ -144,11 +146,13 @@ export class RepairReasonsFormComponent {
     request.subscribe({
       next: (response) => {
         if (response.data) {
-          this.router.navigate(['/stock-management'], { 
+          this.toastr.success(`Repair Reason ${this.isEditMode() ? 'updated' : 'created'} successfully!`, 'Success');
+          this.router.navigate(['/repair'], { 
             queryParams: { tab: 'repair-reasons' } 
           });
         } else {
           this.error.set(response.message || 'Operation failed');
+          this.toastr.error(response.message || 'Operation failed', 'Error');
         }
         this.submitting.set(false);
       },
@@ -156,6 +160,7 @@ export class RepairReasonsFormComponent {
         this.error.set('Operation failed. Please try again.');
         this.submitting.set(false);
         console.error('Error submitting repair reason:', err);
+        this.toastr.error('Operation failed. Please try again.', 'Error');
       }
     });
   }
@@ -172,7 +177,7 @@ export class RepairReasonsFormComponent {
 
   onActionClick(event: { action: string; data?: any }): void {
     if (event.action === 'Cancel') {
-      this.router.navigate(['/stock-management'], { 
+      this.router.navigate(['/repair'], { 
         queryParams: { tab: 'repair-reasons' } 
       });
     }

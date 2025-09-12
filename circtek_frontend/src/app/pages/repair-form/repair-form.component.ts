@@ -279,7 +279,7 @@ export class RepairFormComponent implements OnInit {
         this.submitting.set(false);
         if (response.status === 201) {
           // Success - navigate back to repairs list
-          this.router.navigate(['/stock-management'], { 
+          this.router.navigate(['/repair'], { 
             queryParams: { tab: 'repairs' } 
           });
         } else {
@@ -303,7 +303,7 @@ export class RepairFormComponent implements OnInit {
   }
 
   onCancel() {
-    this.router.navigate(['/stock-management'], { queryParams: { tab: 'repairs' } });
+    this.router.navigate(['/repair'], { queryParams: { tab: 'repairs' } });
   }
 
   disableImeiScanner() {
