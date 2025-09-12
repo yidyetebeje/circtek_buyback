@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { DiagnosticListResponse } from '../models/diagnostic';
 import { WarehouseListResponse } from '../models/warehouse';
-import { TenantListResponse } from '../models/tenant';
+import { Tenant, TenantListResponse } from '../models/tenant';
 import { ApiResponse } from '../models/api';
 import { User } from '../models/user';
 import { Role } from '../models/role';
@@ -140,6 +140,10 @@ export class ApiService {
   // Tenants list (super_admin only)
   getTenants(params: HttpParams = new HttpParams()): Observable<TenantListResponse> {
     return this.get<TenantListResponse>('/tenants', params);
+  }
+
+  getTenant(id: number): Observable<ApiResponse<Tenant>> {
+    return this.get<ApiResponse<Tenant>>(`/tenants/${id}`);
   }
 
   // Create tenant (super_admin only)

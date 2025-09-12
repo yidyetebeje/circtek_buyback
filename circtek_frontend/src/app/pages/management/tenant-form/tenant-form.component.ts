@@ -63,6 +63,12 @@ export class TenantFormComponent {
       type: 'checkbox',
       placeholder: 'Tenant is active',
     },
+    {
+      key: 'logo',
+      label: 'Logo',
+      type: 'file',
+      placeholder: 'Upload logo',
+    },
   ]);
 
   actions = computed<FormAction[]>(() => [
@@ -119,6 +125,7 @@ export class TenantFormComponent {
         this.noWhitespaceValidator
       ]],
       status: [true],
+      logo: [''],
     });
   }
 
@@ -132,22 +139,22 @@ export class TenantFormComponent {
         name: s.name ?? '',
         description: s.description ?? '',
         status: !!s.status,
+        logo: s.logo ?? '',
       });
       this.loading.set(false);
       return;
     }
 
-    // Fallback: fetch tenants and find by id (backend lacks GET /tenants/:id)
-    this.api.getTenants().subscribe({
+    this.api.getTenant(tenantId).subscribe({
       next: (res) => {
-        const all = res.data ?? [];
-        const t = all.find((x) => x.id === tenantId);
+        const t = res.data;
         if (t) {
           this.tenantForm.set(this.createForm());
           this.tenantForm().patchValue({
             name: t.name ?? '',
             description: t.description ?? '',
             status: !!t.status,
+            logo: t.logo ?? '',
           });
         } else {
           // If not found, navigate back

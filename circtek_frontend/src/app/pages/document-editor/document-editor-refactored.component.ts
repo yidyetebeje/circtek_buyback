@@ -300,10 +300,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
           this.isEditingDocument = true;
           this.loadDocument(this.documentId);
         } else {
-          const clientId = parseInt(
-            localStorage.getItem("clientId") || "10000000000000000",
-          );
-          this.logoService.loadClientLogo(clientId);
+        
           this.isEditingDocument = false;
         }
       }),
@@ -343,8 +340,6 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
       this.documentService.getDocument(Number(id)).subscribe({
         next: async (document: any) => {
           this.currentDocumentData = document;
-          let clientId = document?.client_id;
-          await this.logoService.loadClientLogo(clientId, true);
 
           if (!this.canvasService.stage) {
             if (

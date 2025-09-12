@@ -52,7 +52,8 @@ const updateOrderStatusSchema = {
       finalPrice: t.Number({ minimum: 0, error: "Final price is required when marking an order as PAID" }),
       imei: t.String({ minLength: 1, error: "IMEI is required when marking an order as PAID" }),
       sku: t.String({ minLength: 1, error: "SKU is required when marking an order as PAID" }),
-      warehouseId: t.Number({ minimum: 1, error: "Warehouse ID is required when marking an order as PAID" })
+      warehouseId: t.Number({ minimum: 1, error: "Warehouse ID is required when marking an order as PAID" }),
+      serialNumber: t.Optional(t.String())
     }),
     // Schema for other statuses - additional fields are optional
     t.Object({
@@ -61,7 +62,8 @@ const updateOrderStatusSchema = {
       finalPrice: t.Optional(t.Number({ minimum: 0 })),
       imei: t.Optional(t.String()),
       sku: t.Optional(t.String()),
-      warehouseId: t.Optional(t.Number({ minimum: 1 }))
+      warehouseId: t.Optional(t.Number({ minimum: 1 })),
+      serialNumber: t.Optional(t.String())
     })
   ]),
   params: t.Object({ orderId: t.String({ minLength: 1 }) })

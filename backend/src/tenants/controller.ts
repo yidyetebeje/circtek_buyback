@@ -25,6 +25,12 @@ export class TenantsController {
 		return { data: { id }, message: 'Tenant deleted', status: 200 }
 	}
 
+	async getById(id: number): Promise<response<TenantPublic | null>> {
+		const tenant = await this.repo.findOne(id)
+		if (!tenant) return { data: null, message: 'Tenant not found', status: 404 }
+		return { data: tenant, message: 'OK', status: 200 }
+	}
+
 	async list(query: TenantListQueryInput): Promise<response<TenantPublic[]>> {
 		try {
 			const { rows, total, page, limit } = await this.repo.findAll(query)
@@ -34,6 +40,7 @@ export class TenantsController {
 		}
 	}
 }
+
 
 
 

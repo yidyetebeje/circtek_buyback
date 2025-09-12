@@ -65,7 +65,7 @@ export class OrderController {
             orderId: result.id,
             orderNumber: result.orderNumber,
             status: result.status,
-            shippingLabelUrl: result.shippingDetails?.shippingLabelUrl,
+            shippingLabelUrl: result.shippingDetails?.shipping_label_url,
         },
         message: "Order created successfully. Please check your email for shipping instructions."
       };
@@ -160,8 +160,67 @@ export class OrderController {
       if (!order) {
         throw new NotFoundError("Order not found or you don't have access to it");
       }
-      
-      return { data: order };
+
+      // Map DB shape to frontend expected shape
+      const mapped = {
+        id: order.id,
+        order_number: order.order_number,
+        device_id: order.device_id,
+        device_snapshot: order.device_snapshot,
+        estimated_price: order.estimated_price,
+        final_price: order.final_price,
+        status: order.status,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+        seller_notes: order.seller_notes,
+        admin_notes: order.admin_notes,
+        tenant_id: order.tenant_id,
+        shop_id: order.shop_id,
+        device: order.device,
+        // Condition answers -> camel-cased keys expected by FE
+        condition_answers: Array.isArray(order.conditionAnswers)
+          ? order.conditionAnswers.map((a: any) => ({
+              questionKey: a.question_key,
+              questionTextSnapshot: a.question_text_snapshot,
+              answerValue: a.answer_value,
+              answerTextSnapshot: a.answer_text_snapshot ?? undefined
+            }))
+          : [],
+        // Shipping -> camel-cased nested object
+        shipping: order.shipping
+          ? {
+              id: order.shipping.id,
+              orderId: order.shipping.orderId,
+              sellerName: order.shipping.sellerName,
+              sellerStreet1: order.shipping.seller_street1,
+              sellerStreet2: order.shipping.seller_street2 ?? undefined,
+              sellerCity: order.shipping.seller_city,
+              sellerStateProvince: order.shipping.seller_state_province,
+              sellerPostalCode: order.shipping.seller_postal_code,
+              sellerCountryCode: order.shipping.seller_country_code,
+              sellerPhoneNumber: order.shipping.seller_phone_number ?? undefined,
+              sellerEmail: order.shipping.seller_email ?? undefined,
+              shippingLabelUrl: order.shipping.shipping_label_url ?? undefined,
+              trackingNumber: order.shipping.tracking_number ?? undefined,
+              shippingProvider: order.shipping.shipping_provider ?? undefined,
+              labelData: order.shipping.label_data ?? undefined,
+              createdAt: order.shipping.created_at,
+              updatedAt: order.shipping.updated_at
+            }
+          : null,
+        // Status history -> keep snake_case keys that FE expects
+        status_history: Array.isArray(order.statusHistory)
+          ? order.statusHistory.map((h: any) => ({
+              id: h.id,
+              status: h.status,
+              changed_at: h.changed_at,
+              notes: h.notes ?? undefined,
+              changed_by_user_name: h.changedByUserName ?? undefined
+            }))
+          : []
+      } as any;
+
+      return { data: mapped };
     } catch (error: any) {
       console.error("[OrderController] Get order error:", error);
       if (error instanceof NotFoundError) {
@@ -286,7 +345,7 @@ export class OrderController {
         throw new ForbiddenError("Shop manager configuration error: No managed shop ID assigned.");
       }
       
-      const { newStatus, adminNotes, finalPrice, imei, sku, warehouseId } = body as any;
+      const { newStatus, adminNotes, finalPrice, imei, sku, warehouseId, serialNumber } = body as any;
       if (!newStatus) {
         throw new BadRequestError("New status is required");
       }
@@ -314,7 +373,8 @@ export class OrderController {
         finalPrice,
         imei,
         sku,
-        warehouseId
+        warehouseId,
+        serialNumber
       }, user);
       
       // Send email notification for status change

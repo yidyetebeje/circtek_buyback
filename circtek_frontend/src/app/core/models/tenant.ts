@@ -5,6 +5,7 @@ export interface Tenant {
   name: string;
   description: string;
   status: boolean | null;
+  logo: string | null;
 }
 
 export type TenantListResponse = ApiResponse<Tenant[]>;

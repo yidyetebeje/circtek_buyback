@@ -26,7 +26,7 @@ import { external_api_routes } from "./external-api";
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
         .use(cors({
-            origin: ["*"],
+            origin: ["http://localhost:4200"],
             methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
             allowedHeaders: ["Content-Type", "Authorization", "Accept", "Cookie"],
             credentials: true,

@@ -485,8 +485,8 @@ export const orderRepository = {
   },
   
   // Update order status
-  updateOrderStatus: async (params: UpdateOrderStatusParams) => {
-    const { orderId, newStatus, changedByUserId, notes, finalPrice, imei } = params;
+  updateOrderStatus: async (params: UpdateOrderStatusParams & { serialNumber?: string; notes?: string }) => {
+    const { orderId, newStatus, changedByUserId, notes, finalPrice, imei, sku, warehouseId, serialNumber } = params;
     
     return await db.transaction(async (tx) => {
       // Update the order status
@@ -496,6 +496,9 @@ export const orderRepository = {
           status: newStatus,
           final_price: finalPrice !== undefined ? String(finalPrice) : undefined,
           imei: imei || undefined,
+          sku: sku || undefined,
+          serial_number: serialNumber || undefined,
+          admin_notes: notes || undefined,
           updated_at: new Date()
         })
         .where(eq(orders.id, orderId));

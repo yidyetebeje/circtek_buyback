@@ -224,11 +224,11 @@ export default function OrderDetailPage() {
   useEffect(() => {
     if (order) {
       setCurrentStatus(order.status);
-      if (order.finalPrice) {
-        setFinalPrice(order.finalPrice.toString());
+      if (order.final_price) {
+        setFinalPrice(order.final_price.toString());
       }
-      if (order.adminNotes) {
-        setAdminNotes(order.adminNotes);
+      if (order.admin_notes) {
+        setAdminNotes(order.admin_notes);
       }
     }
   }, [order]);
@@ -245,9 +245,9 @@ export default function OrderDetailPage() {
     }
 
     try {
-      if (order?.shopId) {
+      if (order?.shop_id) {
         // Fetch the corresponding product model from catalog
-        const response = await shopService.getPublishedModels(order.shopId, {
+        const response = await shopService.getPublishedModels(order.shop_id, {
           search: device.modelName,
           limit: 1,
         });
@@ -410,7 +410,7 @@ export default function OrderDetailPage() {
       breadcrumbs={[
         { href: '/admin/dashboards', label: 'Admin' },
         { href: '/admin/orders', label: 'Orders' },
-        { label: `Order #${order.orderNumber}`, isCurrentPage: true }
+        { label: `Order #${order.order_number}`, isCurrentPage: true }
       ]}
       actionButtons={
         <div className="flex items-center gap-4">
@@ -453,7 +453,7 @@ export default function OrderDetailPage() {
           </CardContent>
         </Card>
 
-        {order.finalPrice && (
+        {order.final_price && (
           <Card className="border border-purple-200 bg-purple-50/50">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -462,7 +462,7 @@ export default function OrderDetailPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-purple-900">Final Price</p>
-                  <p className="text-lg font-semibold text-purple-800">{formatCurrency(order.finalPrice)}</p>
+                  <p className="text-lg font-semibold text-purple-800">{formatCurrency(order.final_price)}</p>
                 </div>
               </div>
             </CardContent>
@@ -546,10 +546,10 @@ export default function OrderDetailPage() {
                     <span className="text-muted-foreground">Estimated Price:</span>
                     <span className="font-semibold text-lg">{formatCurrency(order.estimated_price)}</span>
                   </div>
-                  {order.finalPrice && (
+                  {order.final_price && (
                     <div className="flex justify-between items-center pt-2 border-t">
                       <span className="text-muted-foreground">Final Price:</span>
-                      <span className="font-semibold text-lg text-primary">{formatCurrency(order.finalPrice)}</span>
+                      <span className="font-semibold text-lg text-primary">{formatCurrency(order.final_price)}</span>
                     </div>
                   )}
                 </div>
@@ -559,7 +559,7 @@ export default function OrderDetailPage() {
 
           {/* Notes Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-            {order.sellerNotes && (
+            {order.seller_notes && (
               <Card className="border-0 shadow-sm">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center text-lg">
@@ -568,13 +568,13 @@ export default function OrderDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground whitespace-pre-line bg-muted/50 p-4 rounded-lg">
-                    {order.sellerNotes}
+                    {order.seller_notes}
                   </p>
                 </CardContent>
               </Card>
             )}
 
-            {order.adminNotes && (
+            {order.admin_notes && (
               <Card className="border-0 shadow-sm">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center text-lg">
@@ -583,7 +583,7 @@ export default function OrderDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground whitespace-pre-line bg-muted/50 p-4 rounded-lg">
-                    {order.adminNotes}
+                    {order.admin_notes}
                   </p>
                 </CardContent>
               </Card>
@@ -600,13 +600,13 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="relative space-y-6">
-                {order.statusHistory?.map((entry, idx) => (
+                {order.status_history?.map((entry, idx) => (
                   <div key={idx} className="flex items-start">
                     <div className="flex flex-col items-center mr-6">
                       <div className="bg-primary text-primary-foreground p-2.5 rounded-full z-10 shadow-sm">
                         <Clock className="h-4 w-4" />
                       </div>
-                      {idx < (order.statusHistory?.length || 0) - 1 && (
+                      {idx < (order.status_history?.length || 0) - 1 && (
                         <div className="w-0.5 h-full bg-border mt-3 flex-grow"></div>
                       )}
                     </div>
@@ -616,7 +616,7 @@ export default function OrderDetailPage() {
                           <OrderStatusBadge status={entry.status} />
                         </h4>
                         <time className="text-sm text-muted-foreground">
-                          {formatDate(entry.changedAt)}
+                          {formatDate(entry.changed_at)}
                         </time>
                       </div>
                       {entry.notes && (
@@ -624,15 +624,15 @@ export default function OrderDetailPage() {
                           {entry.notes}
                         </p>
                       )}
-                      {entry.changedByUserName && (
+                      {entry.changed_by_user_name && (
                         <p className="text-xs text-muted-foreground">
-                          Updated by: <span className="font-medium">{entry.changedByUserName}</span>
+                          Updated by: <span className="font-medium">{entry.changed_by_user_name}</span>
                         </p>
                       )}
                     </div>
                   </div>
                 ))}
-                {(!order.statusHistory || order.statusHistory.length === 0) && (
+                {(!order.status_history || order.status_history.length === 0) && (
                   <div className="text-center py-8">
                     <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">No status history available.</p>
@@ -737,7 +737,7 @@ export default function OrderDetailPage() {
                 </Table>
               </AdminTable>
 
-              {order.conditionAnswers && order.conditionAnswers.length > 0 && (
+              {order.condition_answers && order.condition_answers.length > 0 && (
                 <div className="mt-8">
                   <AdminTable title="Condition Assessment">
                     <Table>
@@ -748,7 +748,7 @@ export default function OrderDetailPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {order.conditionAnswers.map((answer, idx) => (
+                        {order.condition_answers.map((answer, idx) => (
                           <TableRow key={idx} className="hover:bg-muted/50">
                             <TableCell className="font-medium">{answer.questionTextSnapshot}</TableCell>
                             <TableCell>{answer.answerTextSnapshot || String(answer.answerValue)}</TableCell>
@@ -804,7 +804,7 @@ export default function OrderDetailPage() {
                {dialogStep === 'questions' && matchedProduct && (
                  <QuestionFlow
                    productSefUrl={matchedProduct.sef_url}
-                   shopId={order.shopId}
+                   shopId={order.shop_id}
                    onCompleted={handleQuestionsCompleted}
                    onBack={() => setDialogStep('search')}
                    locale={locale}
@@ -843,13 +843,13 @@ export default function OrderDetailPage() {
                      </CardHeader>
                      <CardContent>
                        <div className="space-y-2">
-                         {order.conditionAnswers.map(ans => (
+                         {order.condition_answers.map(ans => (
                            <div key={ans.questionKey} className="flex justify-between items-center py-2 border-b border-yellow-200 last:border-b-0">
                              <span className="text-sm">{ans.questionTextSnapshot}</span>
                              <span className="text-sm font-semibold">{ans.answerTextSnapshot || String(ans.answerValue)}</span>
                            </div>
                          ))}
-                         {order.conditionAnswers.length === 0 && (
+                         {order.condition_answers.length === 0 && (
                            <p className="text-sm text-muted-foreground">No condition answers were provided.</p>
                          )}
                        </div>

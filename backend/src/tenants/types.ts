@@ -4,12 +4,14 @@ export const TenantCreate = t.Object({
 	name: t.String(),
 	description: t.String(),
 	status: t.Optional(t.Boolean()),
+	logo: t.Optional(t.String()),
 })
 
 export const TenantUpdate = t.Object({
 	name: t.Optional(t.String()),
 	description: t.Optional(t.String()),
 	status: t.Optional(t.Boolean()),
+	logo: t.Optional(t.String()),
 })
 
 export type TenantCreateInput = Static<typeof TenantCreate>
@@ -20,6 +22,7 @@ export type TenantPublic = {
 	name: string
 	description: string
 	status: boolean | null
+	logo: string | null
 }
 
 export const TenantListQuery = t.Object({
