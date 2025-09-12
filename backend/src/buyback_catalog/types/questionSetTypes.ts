@@ -16,7 +16,7 @@ export type TQuestionSetBase = {
   internalName: string;
   displayName: string;
   description?: string;
-  tenant_id: number;
+  tenantId: number;
 };
 
 export type TQuestionBase = {
@@ -140,14 +140,14 @@ export const QuestionSetCreateSchema = t.Object({
   internalName: t.String({ minLength: 1, maxLength: 255 }),
   displayName: t.String({ minLength: 1, maxLength: 255 }),
   description: t.Optional(t.String()),
-  client_id: t.Numeric({ minimum: 1 })
+ 
 });
 
 export const QuestionSetUpdateSchema = t.Object({
   internalName: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
   displayName: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
   description: t.Optional(t.String()),
-  client_id: t.Optional(t.Numeric({ minimum: 1 }))
+ 
 });
 
 // Question Schemas
@@ -314,7 +314,7 @@ export const PaginationQuerySchema = t.Object({
   limit: t.Optional(t.Numeric({ minimum: 1, maximum: 1000, default: 20 })),
   orderBy: t.Optional(t.String()),
   order: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')], { default: 'asc' })),
-  clientId: t.Optional(t.Numeric({ minimum: 1 })),
+  tenantId: t.Optional(t.Numeric({ minimum: 1 })),
   search: t.Optional(t.String())
 });
 

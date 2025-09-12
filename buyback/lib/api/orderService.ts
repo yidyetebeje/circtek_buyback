@@ -78,15 +78,15 @@ export type CreateOrderResponse = ApiResponse<CreateOrderResponseData>;
 
 export interface OrderListItem {
   id: string;
-  orderNumber: string;
-  deviceId: number;
-  deviceSnapshot: DeviceSnapshot; // Re-using existing DeviceSnapshot
-  estimatedPrice: string; // As per doc, repository returns string
-  finalPrice?: string;
+  order_number: string;
+  device_id: number;
+device_snapshot: DeviceSnapshot; // Re-using existing DeviceSnapshot
+  estimated_price: string; // As per doc, repository returns string
+  final_price?: string;
   status: string; // OrderStatus enum
-  createdAt: string; // date-time
-  updatedAt: string; // date-time
-  sellerName?: string; 
+  created_at: string; // date-time
+  updated_at: string; // date-time
+  seller_name?: string; 
   shop?: ShopInfo;
 }
 
@@ -124,22 +124,22 @@ export interface ShippingInfo {
 
 export interface AdminOrderDetail {
     id: string;
-    orderNumber: string;
-    deviceId: number;
-    deviceSnapshot: DeviceSnapshot;
-    estimatedPrice: number; // Assuming conversion to number here, or keep as string
-    finalPrice?: number;
+    order_number: string;
+    device_id: number;
+    device_snapshot: DeviceSnapshot;
+    estimated_price: number; // Assuming conversion to number here, or keep as string
+    final_price?: number;
     status: string;
-    createdAt: string;
-    updatedAt: string;
-    conditionAnswers: ConditionAnswer[];
+    created_at: string;
+    updated_at: string;
+    condition_answers: ConditionAnswer[];
     shipping: ShippingInfo;
-    sellerNotes?: string;
-    clientId: number;
-    shopId: number;
+    seller_notes?: string;
+    tenant_id: number;
+    shop_id: number;
     shop?: ShopInfo;
-    statusHistory?: { status: string; changedAt: string; notes?: string; changedByUserName?: string }[];
-    adminNotes?: string;
+    status_history?: { status: string; changed_at: string; notes?: string; changed_by_user_name?: string }[];
+    admin_notes?: string;
 }
 export type AdminGetOrderDetailsResponse = ApiResponse<AdminOrderDetail>;
 

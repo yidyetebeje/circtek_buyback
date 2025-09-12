@@ -30,7 +30,7 @@ export type CreateOrderParams = {
     email?: string;
   };
   sellerNotes?: string;
-  tenantId: number;
+ 
   shopId: number;
 };
 
@@ -110,14 +110,14 @@ export const orderRepository = {
       conditionAnswers,
       sellerAddress,
       sellerNotes,
-      tenantId,
+      
       shopId
     } = params;
     const shop = await db.select().from(shops).where(eq(shops.id, shopId)).limit(1);
     if(!shop || shop.length == 0){
       throw new Error("Shop not found");
     }
-    const tenant_id = shop[0].tenant_id || tenantId;
+    const tenant_id = shop[0].tenant_id;
     return await db.transaction(async (tx) => {
       const orderId = generateId();
       const orderNumber = await generateOrderNumber();
@@ -193,7 +193,7 @@ export const orderRepository = {
       conditionAnswers,
       sellerAddress,
       sellerNotes,
-      tenantId,
+      
       shopId,
       status,
       imei,
@@ -210,7 +210,7 @@ export const orderRepository = {
       if(!shop || shop.length == 0){
         throw new Error("Shop not found");
       }
-      const tenant_id = shop[0].tenant_id || tenantId;
+      const tenant_id = shop[0].tenant_id;
 
       await tx.insert(orders).values({
         id: orderId,

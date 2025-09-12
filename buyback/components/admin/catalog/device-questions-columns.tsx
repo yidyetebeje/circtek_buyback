@@ -158,12 +158,7 @@ export const columns: ColumnDef<QuestionSetRow>[] = [
     },
     size: 250,
   },
-  {
-    accessorKey: "questionCount",
-    header: "Questions",
-    cell: ({ row }) => <div className="text-center">{row.getValue("questionCount")}</div>,
-    size: 80,
-  },
+ 
   {
     accessorKey: "createdAt",
     header: ({ column }) => (

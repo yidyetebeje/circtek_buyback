@@ -22,10 +22,10 @@ export const questionSetRoutes = new Elysia({ prefix: '/question-sets' })
   // GET all question sets
   .get('/', 
     async (ctx) => {
-      const { page, limit, orderBy, order, clientId, search } = ctx.query;
+      const { page, limit, orderBy, order, tenantId, search } = ctx.query;
       const { currentTenantId } = ctx as any;
-      let client_id: number | undefined = clientId || currentTenantId;  
-      return await questionSetController.getAllQuestionSets(page, limit, orderBy, order, client_id, search);
+      let tenant_id: number | undefined = tenantId || currentTenantId;  
+      return await questionSetController.getAllQuestionSets(page, limit, orderBy, order, tenant_id, search);
     }, {
       query: PaginationQuerySchema,
       detail: {

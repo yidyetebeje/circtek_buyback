@@ -212,7 +212,7 @@ export default async function DeviceEstimatePage({ params }: DeviceEstimatePageP
   // The DeviceEstimationPageClient expects 'initialDevice' of type 'DeviceInformation'
   // We'll need to update DeviceEstimationPageClient props later.
   // For now, let's pass the full model and necessary simple props.
-
+  console.log('deviceDetails', deviceDetails);
   return (
     <DeviceEstimationPageClient 
       // initialDevice={deviceDetails} // This will be of type Model from catalog

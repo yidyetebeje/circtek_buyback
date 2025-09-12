@@ -26,7 +26,7 @@ export class OrderController {
         shopId
       } = body as any; // Use 'as any' for now or define a proper type for body
       
-      if (!deviceId || !estimatedPrice || !conditionAnswers || !sellerAddress || !tenantId || !shopId) {
+      if (!deviceId || !estimatedPrice || !conditionAnswers || !sellerAddress || !shopId) {
         throw new BadRequestError("Missing required fields (deviceId, estimatedPrice, conditionAnswers, sellerAddress, tenantId, shopId)");
       }
       
@@ -37,7 +37,6 @@ export class OrderController {
         conditionAnswers,
         sellerAddress,
         sellerNotes,
-        tenantId,
         shopId 
       });
       
@@ -372,11 +371,11 @@ export class OrderController {
   checkDeviceEligibility = async (context: Context) => {
     try {
       const { query } = context as any;
-      const { user } = context as any;
-      if(!user) {
+      const { currentUserId, currentTenantId } = context as any;
+      if(!currentUserId) {
         throw new ForbiddenError("Authentication required");
       }
-      const tenantId = user.tenant_id;
+      const tenantId = currentTenantId;
       const { imei, serial } = query as { imei?: string; serial?: string };
 
       const result = await orderService.checkDeviceEligibility({ imei, serialNumber: serial, tenant_id: tenantId });

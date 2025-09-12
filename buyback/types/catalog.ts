@@ -217,7 +217,7 @@ export interface QuestionOption {
   question_id: number;
   key: string;
   title: string;
-  priceModifier: number;
+  price_modifier: number;
   isDefault: boolean;
   orderNo: number;
   translations?: ItemTranslation[];

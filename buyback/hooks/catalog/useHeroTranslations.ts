@@ -10,6 +10,7 @@ import {
   getStaticTranslation
 } from '@/utils/heroTranslationUtils';
 import { HeroSection, TranslatableText } from '@/types/shop';
+import { getSession } from 'next-auth/react';
 
 /**
  * Hook to get translated hero content based on current language
@@ -49,7 +50,7 @@ export const useHeroTranslationContent = (heroSection: HeroSection, useStaticFal
  */
 export const useHeroAITranslation = () => {
   const currentLanguage = useAtomValue(currentLanguageObjectAtom);
-  
+  // nextauth token
   return {
     translateHeroContent: async (
       heroSection: HeroSection, 
@@ -61,13 +62,22 @@ export const useHeroAITranslation = () => {
       }
 
       const texts = prepareHeroContentForAITranslation(heroSection);
-      
+      let token = undefined;
+      try {
+        const session = await getSession();
+        token = session?.accessToken;
+      } catch (error) {
+        console.error('Error getting client-side session:', error);
+        token = undefined;
+      }
       try {
         // Call the AI translation API
+        
         const response = await fetch('/api/catalog/ai-translation/component', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
             componentType: 'hero',

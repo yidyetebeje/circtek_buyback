@@ -127,26 +127,26 @@ export const columns: ColumnDef<OrderListItem>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "orderNumber",
+    accessorKey: "order_number",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Order Number" />
     ),
     cell: ({ row }) => (
       <div className="font-medium text-primary">
-        #{row.getValue("orderNumber")}
+        #{row.getValue("order_number")}
       </div>
     ),
     enableHiding: false,
   },
   {
-    accessorFn: (row) => row.deviceSnapshot?.modelName,
+    accessorFn: (row) => row.device_snapshot?.modelName,
     id: "modelName",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Device Model" />
     ),
     cell: ({ row }) => {
-      const modelName = row.original.deviceSnapshot?.modelName;
-      const brandName = row.original.deviceSnapshot?.brandName;
+      const modelName = row.original.device_snapshot?.modelName;
+      const brandName = row.original.device_snapshot?.brandName;
       
       return (
         <div>
@@ -184,12 +184,12 @@ export const columns: ColumnDef<OrderListItem>[] = [
     },
   },
   {
-    accessorKey: "estimatedPrice",
+    accessorKey: "estimated_price",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Estimated Price" />
     ),
     cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("estimatedPrice"));
+      const amount = parseFloat(row.getValue("estimated_price"));
       if (isNaN(amount)) return <div className="font-medium text-muted-foreground">N/A</div>;
       
       const formatted = new Intl.NumberFormat("en-NL", {
@@ -201,12 +201,12 @@ export const columns: ColumnDef<OrderListItem>[] = [
     },
   },
   {
-    accessorKey: "finalPrice",
+    accessorKey: "final_price",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Final Price" />
     ),
     cell: ({ row }) => {
-      const finalPrice = row.getValue("finalPrice") as string | null;
+      const finalPrice = row.getValue("final_price") as string | null;
       if (!finalPrice) return <div className="font-medium text-muted-foreground">-</div>;
 
       const amount = parseFloat(finalPrice);
@@ -221,12 +221,12 @@ export const columns: ColumnDef<OrderListItem>[] = [
     },
   },
   {
-    accessorKey: "createdAt",
+    accessorKey: "created_at",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Created" />
     ),
     cell: ({ row }) => {
-      const date = new Date(row.getValue("createdAt"));
+      const date = new Date(row.getValue("created_at"));
       return (
         <div className="text-sm">
           <div className="font-medium">{format(date, 'dd MMM yyyy')}</div>

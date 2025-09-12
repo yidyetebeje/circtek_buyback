@@ -198,7 +198,10 @@ export class ModelRepository {
       .leftJoin(model_translations, eq(models.id, model_translations.model_id));
 
     if (includePublishedShops) {
-      query = query.leftJoin(shop_models, eq(models.id, shop_models.model_id));
+      query = query.leftJoin(shop_models, and(
+        eq(models.id, shop_models.model_id),
+        eq(shop_models.is_published, 1)
+      ));
     }
 
     const [items, totalCount] = await Promise.all([
@@ -332,7 +335,10 @@ export class ModelRepository {
     }
     
     if (includePublishedShops) {
-      query = query.leftJoin(shop_models, eq(models.id, shop_models.model_id));
+      query = query.leftJoin(shop_models, and(
+        eq(models.id, shop_models.model_id),
+        eq(shop_models.is_published, 1)
+      ));
     }
 
     const result = await query
@@ -443,7 +449,10 @@ export class ModelRepository {
       .leftJoin(model_translations, eq(models.id, model_translations.model_id));
     
     if (includePublishedShops) {
-      query = query.leftJoin(shop_models, eq(models.id, shop_models.model_id));
+      query = query.leftJoin(shop_models, and(
+        eq(models.id, shop_models.model_id),
+        eq(shop_models.is_published, 1)
+      ));
     }
 
     const result = await query

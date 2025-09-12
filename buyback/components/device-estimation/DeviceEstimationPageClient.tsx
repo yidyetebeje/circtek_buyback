@@ -220,7 +220,7 @@ export function DeviceEstimationPageClient({
               if ((catalogQ.key || catalogQ.id.toString()) === qId) {
                 const selectedOpt = catalogQ.options.find(opt => (opt.key || opt.id.toString()) === answeredOptionValue);
                 if (selectedOpt) {
-                  totalModifier += selectedOpt.priceModifier;
+                  totalModifier += selectedOpt.price_modifier;
                 }
               }
             });
@@ -253,7 +253,7 @@ export function DeviceEstimationPageClient({
               if ((catalogQ.key || catalogQ.id.toString()) === qId) {
                 const selectedOpt = catalogQ.options.find(opt => (opt.key || opt.id.toString()) === answeredOptionValue);
                 if (selectedOpt) {
-                  totalModifier += selectedOpt.priceModifier;
+                  totalModifier += selectedOpt.price_modifier;
                 }
               }
             });

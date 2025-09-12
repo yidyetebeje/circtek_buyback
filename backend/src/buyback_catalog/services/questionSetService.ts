@@ -52,7 +52,7 @@ export class QuestionSetService {
     if (existingSet) {
       throw new BadRequestError(`Question set with internal name '${data.internalName}' already exists for this tenant`);
     }
-    data.tenant_id = tenantId;
+    data.tenantId = tenantId;
 
     return questionSetRepository.create(data);
   }
@@ -65,8 +65,8 @@ export class QuestionSetService {
     }
 
     // If updating the internal name, check for duplicates
-    if (data.internalName && data.internalName !== questionSet.internal_name && data.tenant_id) {
-      const existingSet = await questionSetRepository.findByInternalName(data.internalName, data.tenant_id);
+    if (data.internalName && data.internalName !== questionSet.internalName && data.tenantId) {
+      const existingSet = await questionSetRepository.findByInternalName(data.internalName, data.tenantId);
       if (existingSet && existingSet.id !== id) {
         throw new BadRequestError(`Question set with internal name '${data.internalName}' already exists for this tenant`);
       }

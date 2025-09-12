@@ -23,7 +23,8 @@ export class ApiClient {
   private baseUrl: string;
   private clientId?: number;
 
-  constructor(baseUrl = API_BASE_URL) {
+  constructor(baseUrl = API_BASE_URL)
+   {
     this.baseUrl = baseUrl;
   }
 

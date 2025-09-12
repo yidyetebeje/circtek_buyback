@@ -93,7 +93,10 @@ export class BrandRepository {
       .leftJoin(brand_translations, eq(brands.id, brand_translations.brand_id));
 
     if (includePublishedShops) {
-      query = query.leftJoin(shop_brands, eq(brands.id, shop_brands.brand_id));
+      query = query.leftJoin(shop_brands, and(
+        eq(brands.id, shop_brands.brand_id),
+        eq(shop_brands.is_published, 1)
+      ));
     }
 
     const [items, totalCount] = await Promise.all([
@@ -166,7 +169,10 @@ export class BrandRepository {
       query = db.select(selectFields)
         .from(brands)
         .leftJoin(brand_translations, eq(brands.id, brand_translations.brand_id))
-        .leftJoin(shop_brands, eq(brands.id, shop_brands.brand_id));
+        .leftJoin(shop_brands, and(
+          eq(brands.id, shop_brands.brand_id),
+          eq(shop_brands.is_published, 1)
+        ));
     } else if (includeTranslations) {
       query = db.select(selectFields)
         .from(brands)
@@ -174,7 +180,10 @@ export class BrandRepository {
     } else if (includePublishedShops) {
       query = db.select(selectFields)
         .from(brands)
-        .leftJoin(shop_brands, eq(brands.id, shop_brands.brand_id));
+        .leftJoin(shop_brands, and(
+          eq(brands.id, shop_brands.brand_id),
+          eq(shop_brands.is_published, 1)
+        ));
     } else {
       query = db.select(selectFields)
         .from(brands);
@@ -230,7 +239,10 @@ export class BrandRepository {
       query = db.select(selectFields)
         .from(brands)
         .leftJoin(brand_translations, eq(brands.id, brand_translations.brand_id))
-        .leftJoin(shop_brands, eq(brands.id, shop_brands.brand_id));
+        .leftJoin(shop_brands, and(
+          eq(brands.id, shop_brands.brand_id),
+          eq(shop_brands.is_published, 1)
+        ));
     } else {
       query = db.select(selectFields)
         .from(brands)

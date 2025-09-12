@@ -39,7 +39,6 @@ const baseOrderObject = {
 const createOrderSchema = {
   body: t.Object({
     ...baseOrderObject,
-    tenantId: t.Number({ minimum: 1, error: "Tenant ID is required" }),
     shopId: t.Number({ minimum: 1, error: "Shop ID is required" })
   })
 };
@@ -152,7 +151,7 @@ export const orderRoutes = new Elysia({ prefix: "/orders" })
   
   // Admin/ShopManager specific endpoints - following warehouse pattern
   .group("/admin", (app) => app
-    .use(requireRole(['admin', 'shop_manager']))
+    .use(requireRole(['admin', 'super_admin', 'shop_manager']))
     .post("/", orderController.createAdminOrder, {
       body: createAdminOrderSchema.body,
       detail: {

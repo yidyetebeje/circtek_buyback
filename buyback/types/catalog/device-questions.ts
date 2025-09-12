@@ -82,7 +82,7 @@ export interface QuestionSet {
   internalName: string;
   displayName: string;
   description?: string | null;
-  tenant_id: number; // Updated from client_id to tenant_id
+  tenantId: number; // Updated from client_id to tenant_id, now camelCase
   createdAt?: string;
   updatedAt?: string;
   questions: IndividualQuestion[];
@@ -103,7 +103,7 @@ export interface QuestionSetRow {
   internalName: string;
   displayName: string;
   description?: string | null;
-  tenant_id: number; // Updated from client_id to tenant_id
+  tenantId: number; // Updated from client_id to tenant_id, now camelCase
   questionCount: number;
   createdAt?: string;
   updatedAt?: string;

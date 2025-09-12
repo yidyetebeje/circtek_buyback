@@ -62,10 +62,10 @@ export class QuestionSetRepository {
     
     const items = await db.select({
       id: question_sets.id,
-      internal_name: question_sets.internal_name,
-      display_name: question_sets.display_name,
+      internalName: question_sets.internal_name,
+      displayName: question_sets.display_name,
       description: question_sets.description,
-      tenant_id: question_sets.tenant_id,
+      tenantId: question_sets.tenant_id,
       createdAt: question_sets.createdAt,
       updatedAt: question_sets.updatedAt
     })
@@ -95,10 +95,10 @@ export class QuestionSetRepository {
   async findById(id: number, includeQuestions = true, includeTranslations = true) {
     const questionSet = await db.select({
       id: question_sets.id,
-      internal_name: question_sets.internal_name,
-      display_name: question_sets.display_name,
+      internalName: question_sets.internal_name,
+      displayName: question_sets.display_name,
       description: question_sets.description,
-      tenant_id: question_sets.tenant_id,
+      tenantId: question_sets.tenant_id,
       createdAt: question_sets.createdAt,
       updatedAt: question_sets.updatedAt
     })
@@ -152,10 +152,10 @@ export class QuestionSetRepository {
   async findByInternalName(internalName: string, tenantId: number) {
     const questionSet = await db.select({
       id: question_sets.id,
-      internal_name: question_sets.internal_name,
-      display_name: question_sets.display_name,
+      internalName: question_sets.internal_name,
+      displayName: question_sets.display_name,
       description: question_sets.description,
-      tenant_id: question_sets.tenant_id,
+      tenantId: question_sets.tenant_id,
       createdAt: question_sets.createdAt,
       updatedAt: question_sets.updatedAt
     })
@@ -199,8 +199,8 @@ export class QuestionSetRepository {
     const result = await db.insert(question_sets).values({
       internal_name: data.internalName,
       display_name: data.displayName,
-      description: data.description,
-      tenant_id: data.tenant_id,
+      description: data.description || null,
+      tenant_id: data.tenantId,
       createdAt: formattedDate,
       updatedAt: formattedDate
     });
@@ -217,7 +217,7 @@ export class QuestionSetRepository {
         internal_name: data.internalName,
         display_name: data.displayName,
         description: data.description,
-        tenant_id: data.tenant_id,
+        tenant_id: data.tenantId,
         updatedAt: formattedDate
       })
       .where(eq(question_sets.id, id));
@@ -335,7 +335,15 @@ export class QuestionSetRepository {
     const questionSetIds = assignments.map(a => a.question_set_id);
     if (questionSetIds.length === 0) return [];
     
-    const questionSets = await db.select()
+    const questionSets = await db.select({
+      id: question_sets.id,
+      internalName: question_sets.internal_name,
+      displayName: question_sets.display_name,
+      description: question_sets.description,
+      tenantId: question_sets.tenant_id,
+      createdAt: question_sets.createdAt,
+      updatedAt: question_sets.updatedAt
+    })
       .from(question_sets)
       .where(inArray(question_sets.id, questionSetIds));
     

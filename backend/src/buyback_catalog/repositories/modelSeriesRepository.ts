@@ -100,7 +100,10 @@ export class ModelSeriesRepository {
       .leftJoin(model_series_translations, eq(model_series.id, model_series_translations.series_id));
 
     if (includePublishedShops) {
-      query = query.leftJoin(shop_model_series, eq(model_series.id, shop_model_series.series_id));
+      query = query.leftJoin(shop_model_series, and(
+        eq(model_series.id, shop_model_series.series_id),
+        eq(shop_model_series.is_published, 1)
+      ));
     }
 
     const [items, totalCount] = await Promise.all([
@@ -173,7 +176,10 @@ export class ModelSeriesRepository {
       query = db.select(selectFields)
         .from(model_series)
         .leftJoin(model_series_translations, eq(model_series.id, model_series_translations.series_id))
-        .leftJoin(shop_model_series, eq(model_series.id, shop_model_series.series_id));
+        .leftJoin(shop_model_series, and(
+        eq(model_series.id, shop_model_series.series_id),
+        eq(shop_model_series.is_published, 1)
+      ));
     } else if (includeTranslations) {
       query = db.select(selectFields)
         .from(model_series)
@@ -181,7 +187,10 @@ export class ModelSeriesRepository {
     } else if (includePublishedShops) {
       query = db.select(selectFields)
         .from(model_series)
-        .leftJoin(shop_model_series, eq(model_series.id, shop_model_series.series_id));
+        .leftJoin(shop_model_series, and(
+        eq(model_series.id, shop_model_series.series_id),
+        eq(shop_model_series.is_published, 1)
+      ));
     } else {
       query = db.select(selectFields)
         .from(model_series);
@@ -237,7 +246,10 @@ export class ModelSeriesRepository {
       query = db.select(selectFields)
         .from(model_series)
         .leftJoin(model_series_translations, eq(model_series.id, model_series_translations.series_id))
-        .leftJoin(shop_model_series, eq(model_series.id, shop_model_series.series_id));
+        .leftJoin(shop_model_series, and(
+        eq(model_series.id, shop_model_series.series_id),
+        eq(shop_model_series.is_published, 1)
+      ));
     } else {
       query = db.select(selectFields)
         .from(model_series)

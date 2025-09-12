@@ -19,7 +19,7 @@ export default function NewDeviceQuestionSetPage() {
   const { mutate: createQuestionSet, isPending: isLoading } = useCreateQuestionSetWithQuestions();
 
   const handleSubmit = (values: QuestionSetFormValues) => {
-    // TODO: Replace hardcoded tenant_id with a dynamic value from user context or env
+    // TODO: Replace hardcoded tenantId with a dynamic value from user context or env
     const tenantId = 1; 
 
     // Transform our form data to match the API's expected structure
@@ -47,7 +47,7 @@ export default function NewDeviceQuestionSetPage() {
       internalName: values.internalName,
       displayName: values.displayName,
       description: values.description,
-      tenant_id: tenantId,
+      tenantId: tenantId,
       questions: formattedQuestions
     };
 

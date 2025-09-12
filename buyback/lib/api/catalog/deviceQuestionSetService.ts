@@ -48,7 +48,7 @@ export interface CreateQuestionSetPayload {
   internalName: string;
   displayName: string;
   description?: string;
-  tenant_id: number;
+  tenantId: number;
   questions?: Omit<IndividualQuestion, 'id' | 'questionSetId' | 'createdAt' | 'updatedAt'>[]; // For createWithQuestions
 }
 

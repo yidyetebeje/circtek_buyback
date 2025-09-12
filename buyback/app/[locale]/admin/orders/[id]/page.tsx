@@ -288,8 +288,8 @@ export default function OrderDetailPage() {
           if (ansVal) {
             const opt = q.options.find((o) => (o.key || o.id.toString()) === ansVal);
             if (opt) {
-              modifierTotal += opt.priceModifier;
-              breakdown.push({ question: q.title, answer: opt.title, modifier: opt.priceModifier });
+              modifierTotal += opt.price_modifier;
+              breakdown.push({ question: q.title, answer: opt.title, modifier: opt.price_modifier });
             }
           }
         });
@@ -405,8 +405,8 @@ export default function OrderDetailPage() {
 
   return (
     <AdminEditCard
-      title={`Order #${order.orderNumber}`}
-      description={`Created on ${formatDate(order.createdAt)}`}
+      title={`Order #${order.order_number}`}
+      description={`Created on ${formatDate(order.created_at)}`}
       breadcrumbs={[
         { href: '/admin/dashboards', label: 'Admin' },
         { href: '/admin/orders', label: 'Orders' },
@@ -433,7 +433,7 @@ export default function OrderDetailPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-blue-900">Device</p>
-                <p className="text-lg font-semibold text-blue-800">{order.deviceSnapshot.modelName}</p>
+                <p className="text-lg font-semibold text-blue-800">{order.device_snapshot.modelName}</p>
               </div>
             </div>
           </CardContent>
@@ -447,7 +447,7 @@ export default function OrderDetailPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-green-900">Estimated Price</p>
-                <p className="text-lg font-semibold text-green-800">{formatCurrency(order.estimatedPrice)}</p>
+                <p className="text-lg font-semibold text-green-800">{formatCurrency(order.estimated_price)}</p>
               </div>
             </div>
           </CardContent>
@@ -477,7 +477,7 @@ export default function OrderDetailPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-900">Created</p>
-                <p className="text-lg font-semibold text-gray-800">{formatDate(order.createdAt)}</p>
+                <p className="text-lg font-semibold text-gray-800">{formatDate(order.created_at)}</p>
               </div>
             </div>
           </CardContent>
@@ -513,13 +513,13 @@ export default function OrderDetailPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-lg font-semibold">{order.deviceSnapshot.modelName}</p>
-                  {typeof order.deviceSnapshot.brandName === "string" && order.deviceSnapshot.brandName.trim() !== "" && (
-                    <p className="text-muted-foreground">Brand: {order.deviceSnapshot.brandName}</p>
+                  <p className="text-lg font-semibold">{order.device_snapshot.modelName}</p>
+                  {typeof order.device_snapshot.brandName === "string" && order.device_snapshot.brandName.trim() !== "" && (
+                    <p className="text-muted-foreground">Brand: {order.device_snapshot.brandName}</p>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-4 pt-2">
-                  {Object.entries(order.deviceSnapshot)
+                  {Object.entries(order.device_snapshot)
                     .filter(([key]) => !['modelName', 'brandName'].includes(key))
                     .slice(0, 4)
                     .map(([key, value]) => (
@@ -544,7 +544,7 @@ export default function OrderDetailPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Estimated Price:</span>
-                    <span className="font-semibold text-lg">{formatCurrency(order.estimatedPrice)}</span>
+                    <span className="font-semibold text-lg">{formatCurrency(order.estimated_price)}</span>
                   </div>
                   {order.finalPrice && (
                     <div className="flex justify-between items-center pt-2 border-t">
@@ -725,7 +725,7 @@ export default function OrderDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {Object.entries(order.deviceSnapshot).map(([key, value]) => (
+                    {Object.entries(order.device_snapshot).map(([key, value]) => (
                       <TableRow key={key} className="hover:bg-muted/50">
                         <TableCell className="font-medium">
                           {key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}

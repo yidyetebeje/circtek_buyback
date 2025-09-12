@@ -34,7 +34,7 @@ export default function DeviceQuestionSetsPage() {
       internalName: qs.internalName,
       displayName: qs.displayName,
       description: qs.description,
-      tenant_id: qs.tenant_id,
+      tenantId: qs.tenantId,
       questionCount: qs.questions?.length || 0,
       createdAt: qs.createdAt,
       updatedAt: qs.updatedAt,

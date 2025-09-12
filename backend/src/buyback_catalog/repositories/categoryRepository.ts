@@ -92,7 +92,10 @@ export class CategoryRepository {
       .leftJoin(device_categories_translations, eq(device_categories.id, device_categories_translations.category_id));
 
     if (includePublishedShops) {
-      query = query.leftJoin(shop_device_categories, eq(device_categories.id, shop_device_categories.category_id));
+      query = query.leftJoin(shop_device_categories, and(
+        eq(device_categories.id, shop_device_categories.category_id),
+        eq(shop_device_categories.is_published, 1)
+      ));
     }
 
     const [items, totalCount] = await Promise.all([
@@ -165,7 +168,10 @@ export class CategoryRepository {
       query = db.select(selectFields)
         .from(device_categories)
         .leftJoin(device_categories_translations, eq(device_categories.id, device_categories_translations.category_id))
-        .leftJoin(shop_device_categories, eq(device_categories.id, shop_device_categories.category_id));
+        .leftJoin(shop_device_categories, and(
+        eq(device_categories.id, shop_device_categories.category_id),
+        eq(shop_device_categories.is_published, 1)
+      ));
     } else if (includeTranslations) {
       query = db.select(selectFields)
         .from(device_categories)
@@ -173,7 +179,10 @@ export class CategoryRepository {
     } else if (includePublishedShops) {
       query = db.select(selectFields)
         .from(device_categories)
-        .leftJoin(shop_device_categories, eq(device_categories.id, shop_device_categories.category_id));
+        .leftJoin(shop_device_categories, and(
+        eq(device_categories.id, shop_device_categories.category_id),
+        eq(shop_device_categories.is_published, 1)
+      ));
     } else {
       query = db.select(selectFields)
         .from(device_categories);
@@ -229,7 +238,10 @@ export class CategoryRepository {
       query = db.select(selectFields)
         .from(device_categories)
         .leftJoin(device_categories_translations, eq(device_categories.id, device_categories_translations.category_id))
-        .leftJoin(shop_device_categories, eq(device_categories.id, shop_device_categories.category_id));
+        .leftJoin(shop_device_categories, and(
+        eq(device_categories.id, shop_device_categories.category_id),
+        eq(shop_device_categories.is_published, 1)
+      ));
     } else {
       query = db.select(selectFields)
         .from(device_categories)
