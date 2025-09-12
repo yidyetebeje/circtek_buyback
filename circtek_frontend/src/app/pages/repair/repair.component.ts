@@ -94,6 +94,11 @@ export class RepairComponent {
     switch (this.activeTab()) {
       case 'repairs':
         return [
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
           { header: 'Device SKU', accessorKey: 'device_sku' as any },
           { header: 'IMEI', accessorKey: 'device_imei' as any },
           { header: 'Serial', accessorKey: 'device_serial' as any },
@@ -119,7 +124,7 @@ export class RepairComponent {
         ];
       case 'repair-reasons':
         return [
-          { header: '#', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
             const idx = this.data().indexOf(r as any);
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
@@ -138,7 +143,7 @@ export class RepairComponent {
         ];
       case 'dead-imei':
         return [
-          { header: '#', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
             const idx = this.data().indexOf(r as any);
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
