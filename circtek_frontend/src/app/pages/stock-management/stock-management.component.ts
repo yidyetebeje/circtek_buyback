@@ -6,6 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { GenericPageComponent, type Facet, type GenericTab } from '../../shared/components/generic-page/generic-page.component';
 import { ApiService } from '../../core/services/api.service';
+import { PaginationService } from '../../shared/services/pagination.service';
 import { StockWithWarehouse } from '../../core/models/stock';
 import { PurchaseRecord } from '../../core/models/purchase';
 import { TransferWithDetails } from '../../core/models/transfer';
@@ -25,6 +26,7 @@ export class StockManagementComponent {
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly paginationService = inject(PaginationService);
 
   // State
   loading = signal(false);
@@ -41,6 +43,10 @@ export class StockManagementComponent {
   selectedWarehouseId = signal<number | null>(null); // stock, transfers
   selectedIsPart = signal<'any' | 'true' | 'false'>('any'); // stock
   lowStockThreshold = signal<number | null>(null); // stock
+
+  // Sorting (server-side)
+  sortBy = signal<string | null>(null);
+  sortDir = signal<'asc' | 'desc' | null>(null);
 
   fromWarehouseId = signal<number | null>(null); // transfers
   toWarehouseId = signal<number | null>(null); // transfers
@@ -223,8 +229,16 @@ export class StockManagementComponent {
     else this.activeTab.set('stock');
 
     this.pageIndex.set(Math.max(0, num('page', 1) - 1));
-    this.pageSize.set(num('limit', 10) || 10);
+    // Use pagination service with URL fallback
+    const urlPageSize = num('limit', 0);
+    const preferredPageSize = this.paginationService.getPageSizeWithFallback(urlPageSize > 0 ? urlPageSize : null);
+    this.pageSize.set(preferredPageSize);
     this.search.set(str('search', ''));
+    // Sorting from URL
+    const sb = qp.get('sort_by');
+    const sd = qp.get('sort_dir') as 'asc' | 'desc' | null;
+    this.sortBy.set(sb ?? null);
+    this.sortDir.set(sd ?? null);
 
     this.selectedWarehouseId.set(optNum('warehouse_id'));
     const ip = str('is_part', 'any'); this.selectedIsPart.set(ip === 'true' || ip === 'false' ? (ip as any) : 'any');
@@ -261,6 +275,9 @@ export class StockManagementComponent {
       this.pageIndex();
       this.pageSize();
       this.search();
+      // sorting
+      this.sortBy();
+      this.sortDir();
       // stock
       this.selectedWarehouseId();
       this.selectedIsPart();
@@ -281,6 +298,10 @@ export class StockManagementComponent {
         limit: this.pageSize(),
       };
       const s = this.search().trim(); if (s) query['search'] = s;
+      const sb = this.sortBy();
+      const sd = this.sortDir();
+      if (sb) query['sort_by'] = sb;
+      if (sd) query['sort_dir'] = sd;
       if (this.activeTab() === 'stock') {
         const wid = this.selectedWarehouseId(); if (wid != null) query['warehouse_id'] = String(wid);
         if (this.selectedIsPart() !== 'any') query['is_part'] = this.selectedIsPart();
@@ -322,6 +343,9 @@ export class StockManagementComponent {
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
       const s = this.search().trim(); if (s) params = params.set('search', s);
+      const sb = this.sortBy(); const sd = this.sortDir();
+      if (sb) params = params.set('sort_by', sb);
+      if (sd) params = params.set('sort_dir', sd);
       const wid = this.selectedWarehouseId(); if (wid != null) params = params.set('warehouse_id', String(wid));
       const ip = this.selectedIsPart(); if (ip !== 'any') params = params.set('is_part', ip === 'true' ? 'true' : 'false');
       const lst = this.lowStockThreshold(); if (lst != null) params = params.set('low_stock_threshold', String(lst));
@@ -342,6 +366,9 @@ export class StockManagementComponent {
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
       const s = this.search().trim(); if (s) params = params.set('search', s);
+      const sb = this.sortBy(); const sd = this.sortDir();
+      if (sb) params = params.set('sort_by', sb);
+      if (sd) params = params.set('sort_dir', sd);
       this.api.getPurchases(params).subscribe({
         next: (res) => {
           if (seq !== this.requestSeq) return;
@@ -359,6 +386,9 @@ export class StockManagementComponent {
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
       const s = this.search().trim(); if (s) params = params.set('search', s);
+      const sb = this.sortBy(); const sd = this.sortDir();
+      if (sb) params = params.set('sort_by', sb);
+      if (sd) params = params.set('sort_dir', sd);
       const fw = this.fromWarehouseId(); if (fw != null) params = params.set('from_warehouse_id', String(fw));
       const tw = this.toWarehouseId(); if (tw != null) params = params.set('to_warehouse_id', String(tw));
       const st = this.transferStatus(); if (st !== 'any') params = params.set('status', st);
@@ -380,6 +410,9 @@ export class StockManagementComponent {
       .set('page', String(this.pageIndex() + 1))
       .set('limit', String(this.pageSize()));
     const s = this.search().trim(); if (s) params = params.set('search', s);
+    const sb = this.sortBy(); const sd = this.sortDir();
+    if (sb) params = params.set('sort_by', sb);
+    if (sd) params = params.set('sort_dir', sd);
     this.api.getSkuSpecs(params).subscribe({
       next: (res) => {
         if (seq !== this.requestSeq) return;
@@ -397,7 +430,12 @@ export class StockManagementComponent {
     const size = event.pageSize;
     let changed = false;
     if (idx !== this.pageIndex()) { this.pageIndex.set(idx); changed = true; }
-    if (size !== this.pageSize()) { this.pageSize.set(size); changed = true; }
+    if (size !== this.pageSize()) { 
+      this.pageSize.set(size); 
+      // Persist the page size preference
+      this.paginationService.setPageSize(size);
+      changed = true; 
+    }
     if (!changed) return;
   }
 
@@ -422,8 +460,17 @@ export class StockManagementComponent {
     this.pageIndex.set(0); // reset
   }
 
-  onSortingChange(_state: Array<{ id: string; desc: boolean }>) {
-    // Server-side sorting not implemented
+  onSortingChange(state: Array<{ id: string; desc: boolean }>) {
+    const first = state?.[0];
+    if (first) {
+      this.sortBy.set(first.id);
+      this.sortDir.set(first.desc ? 'desc' : 'asc');
+    } else {
+      this.sortBy.set(null);
+      this.sortDir.set(null);
+    }
+    // Reset to first page on sort change
+    this.pageIndex.set(0);
   }
 
   onTabChange(key: string | null) {
@@ -433,6 +480,9 @@ export class StockManagementComponent {
       // reset filters per tab
       this.search.set('');
       this.pageIndex.set(0);
+      // reset sorting when tab changes
+      this.sortBy.set(null);
+      this.sortDir.set(null);
     }
   }
 
@@ -459,7 +509,9 @@ export class StockManagementComponent {
     }
 
     if (tab === 'purchases' && event.action === 'receive') {
-      this.router.navigate(['/stock-management/purchases/receive']);
+      this.router.navigate(['/stock-management/purchases/receive'], {
+        queryParams: { purchaseId: row.id }
+      });
       return;
     }
 

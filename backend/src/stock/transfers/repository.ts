@@ -1,4 +1,4 @@
-import { and, count, eq, like, or, SQL, gte, lte, desc, sum, sql } from "drizzle-orm";
+import { and, count, eq, like, or, SQL, gte, lte, desc, asc, sum, sql } from "drizzle-orm";
 import { transfers, transfer_items, warehouses, devices, stock } from "../../db/circtek.schema";
 import { 
   TransferCreateInput, 
@@ -160,6 +160,10 @@ export class TransfersRepository {
     const limit = Math.max(1, Math.min(100, filters.limit ?? 10));
     const offset = (page - 1) * limit;
 
+    // Determine sorting
+    const sortColumn = this.getSortColumn(filters.sort_by);
+    const sortDirection = filters.sort_dir === 'desc' ? desc : asc;
+
     // Get total count
     let totalRow: { total: number } | undefined;
     if (conditions.length) {
@@ -201,12 +205,12 @@ export class TransfersRepository {
       const finalCondition = and(...conditions as any);
       rows = await baseQuery
         .where(finalCondition as any)
-        .orderBy(desc(transfers.created_at))
+        .orderBy(sortDirection(sortColumn))
         .limit(limit)
         .offset(offset);
     } else {
       rows = await baseQuery
-        .orderBy(desc(transfers.created_at))
+        .orderBy(sortDirection(sortColumn))
         .limit(limit)
         .offset(offset);
     }
@@ -441,5 +445,24 @@ export class TransfersRepository {
       .limit(1);
 
     return device;
+  }
+
+  private getSortColumn(sortBy?: string): any {
+    switch (sortBy) {
+      case 'from_warehouse_name':
+        return sql`fw.name`;
+      case 'to_warehouse_name':
+        return sql`tw.name`;
+      case 'total_items':
+        return sql`COUNT(${transfer_items.id})`;
+      case 'total_quantity':
+        return sql`SUM(${transfer_items.quantity})`;
+      case 'is_completed':
+      case 'status':
+        return transfers.status;
+      case 'created_at':
+      default:
+        return transfers.created_at;
+    }
   }
 }

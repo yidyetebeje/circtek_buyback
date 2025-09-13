@@ -145,6 +145,8 @@
                         [placeholder]="field.placeholder || ''"
                         [disabled]="field.disabled || loading() || submitting()"
                         [maxlength]="field.validation?.maxLength || null"
+                        [min]="field.type === 'date' ? field.validation?.min : null"
+                        [max]="field.type === 'date' ? field.validation?.max : null"
                       />
                     }
                   }

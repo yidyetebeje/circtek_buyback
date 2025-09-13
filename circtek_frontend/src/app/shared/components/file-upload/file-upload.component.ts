@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, forwardRef, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, forwardRef, inject, input, signal, ViewChild, ElementRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../../core/services/api.service';
@@ -102,6 +102,9 @@ interface UploadedFile {
 export class FileUploadComponent implements ControlValueAccessor {
   private readonly api = inject(ApiService);
 
+  // ViewChild
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+
   // Inputs
   accept = input<string>('.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif');
   folder = input<string>('purchases');
@@ -119,7 +122,7 @@ export class FileUploadComponent implements ControlValueAccessor {
   private onTouched = () => {};
 
   writeValue(value: string | null): void {
-    if (value && typeof value === 'string') {
+    if (value && typeof value === 'string' && value.trim() !== '') {
       // If we receive a URL, we need to parse it or treat it as an existing file
       // For now, we'll just store the URL
       this.uploadedFile.set({
@@ -130,6 +133,7 @@ export class FileUploadComponent implements ControlValueAccessor {
         type: ''
       });
     } else {
+      // Clear the uploaded file when value is null, undefined, or empty string
       this.uploadedFile.set(null);
     }
   }
@@ -194,7 +198,15 @@ export class FileUploadComponent implements ControlValueAccessor {
       // Optionally delete from S3
       // this.api.deleteFile(file.fileName).subscribe();
       
+      // Clear the file input element
+      if (this.fileInput?.nativeElement) {
+        this.fileInput.nativeElement.value = '';
+      }
+      
+      // Clear the uploaded file and update form control
       this.uploadedFile.set(null);
+      this.selectedFileName.set('');
+      this.error.set(null);
       this.onChange(null);
       this.onTouched();
     }

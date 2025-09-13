@@ -3,17 +3,35 @@
   subtitle="Scan and receive items from purchase orders"
   [form]="form"
   [fields]="[]"
-  [loading]="loading()"
+  [loading]="loading() || loadingSpecificPurchase()"
   [submitting]="submitting()"
   [error]="error()"
   submitLabel="Submit Received Order"
   (formSubmit)="onSubmit()"
   (backClick)="onCancel()"
 >
+  <!-- Auto-selection message -->
+  @if (autoSelectionMessage()) {
+    <div class="alert alert-success mb-6">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <span>{{ autoSelectionMessage() }}</span>
+    </div>
+  }
+
+  <!-- Loading message for specific purchase -->
+  @if (loadingSpecificPurchase()) {
+    <div class="alert alert-info mb-6">
+      <span class="loading loading-spinner loading-sm"></span>
+      <span>{{ loadingMessage() }}</span>
+    </div>
+  }
+
   <!-- Custom form content -->
   <div class="space-y-6" [formGroup]="form">
     <!-- Purchase Order Selection -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="max-w-md">
       <div>
         <label class="label">
           <span class="label-text font-medium">Purchase Order No<span class="text-error">*</span></span>
@@ -22,7 +40,7 @@
           formControlName="purchase_id"
           class="select select-bordered w-full"
           [class.select-error]="form.get('purchase_id')?.invalid && form.get('purchase_id')?.touched"
-          [disabled]="loading() || submitting()"
+          [disabled]="loading() || loadingSpecificPurchase() || submitting()"
         >
           <option value="">Select Purchase Order</option>
           @for (option of purchaseOptions(); track option.value) {
@@ -35,46 +53,48 @@
           </div>
         }
       </div>
-
-      <div>
-        <label class="label">
-          <span class="label-text font-medium">Warehouse<span class="text-error">*</span></span>
-        </label>
-        <select 
-          formControlName="warehouse_id"
-          class="select select-bordered w-full"
-          [class.select-error]="form.get('warehouse_id')?.invalid && form.get('warehouse_id')?.touched"
-          [disabled]="loading() || submitting()"
-        >
-          <option value="">Select Warehouse</option>
-          @for (warehouse of warehouses(); track warehouse.id) {
-            <option [value]="warehouse.id">{{ warehouse.name }}</option>
-          }
-        </select>
-        @if (form.get('warehouse_id')?.invalid && form.get('warehouse_id')?.touched) {
-          <div class="label">
-            <span class="label-text-alt text-error">Warehouse is required</span>
-          </div>
-        }
-      </div>
     </div>
 
-    <!-- SKU Selection -->
+    <!-- Purchase Information -->
     @if (selectedPurchase()) {
+      <div class="bg-base-100 rounded-xl border border-base-300/20 p-6">
+        <h3 class="text-lg font-semibold mb-4">Purchase Details</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+          <div>
+            <span class="text-base-content/60">Purchase Order:</span>
+            <p class="font-medium">{{ selectedPurchase()!.purchase.purchase_order_no }}</p>
+          </div>
+          <div>
+            <span class="text-base-content/60">Supplier:</span>
+            <p class="font-medium">{{ selectedPurchase()!.purchase.supplier_name }}</p>
+          </div>
+          <div>
+            <span class="text-base-content/60">Receiving Warehouse:</span>
+            <p class="font-medium">Warehouse {{ selectedPurchase()!.purchase.warehouse_id }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- SKU Selection -->
       <div>
         <label class="label">
           <span class="label-text font-medium">SKUs<span class="text-error">*</span></span>
         </label>
         <select 
           class="select select-bordered w-full"
-          [disabled]="loading() || submitting()"
-          (change)="onSkuSelected(($any($event.target)).value || '')"
+          [disabled]="loading() || loadingSpecificPurchase() || submitting()"
+          (change)="onSkuSelected(($any($event.target)).value || ''); ($any($event.target)).value = ''"
         >
           <option value="">Select SKU to add</option>
           @for (sku of availableSkus(); track sku.value) {
             <option [value]="sku.value">{{ sku.label }}</option>
           }
         </select>
+        @if (form.get('items')?.invalid && form.get('items')?.touched && itemsFormArray().length === 0) {
+          <div class="label">
+            <span class="label-text-alt text-error">Please select at least one SKU</span>
+          </div>
+        }
       </div>
     }
 
@@ -97,17 +117,17 @@
                 type="button"
                 class="btn btn-ghost btn-sm text-error"
                 (click)="removeItem(i)"
-                [disabled]="loading() || submitting()"
+                [disabled]="loading() || loadingSpecificPurchase() || submitting()"
               >
                 <lucide-icon [img]="Trash2" class="size-4"></lucide-icon>
               </button>
             </div>
 
-            <!-- Received Amount (for parts only) -->
+            <!-- Quantity (for parts only) -->
             @if (itemControl.get('is_part')?.value) {
               <div class="mb-4">
                 <label class="label">
-                  <span class="label-text font-medium">Received Amount<span class="text-error">*</span></span>
+                  <span class="label-text font-medium">Quantity<span class="text-error">*</span></span>
                 </label>
                 <input 
                   type="number"
@@ -122,11 +142,13 @@
                   <div class="label">
                     <span class="label-text-alt text-error">
                       @if (itemControl.get('quantity_received')?.errors?.['required']) {
-                        Received amount is required
+                        Quantity is required
                       } @else if (itemControl.get('quantity_received')?.errors?.['min']) {
                         Minimum quantity is 1
                       } @else if (itemControl.get('quantity_received')?.errors?.['max']) {
                         Cannot exceed remaining quantity
+                      } @else if (itemControl.get('quantity_received')?.errors?.['invalidFormat']) {
+                        Please enter a valid positive number
                       }
                     </span>
                   </div>
@@ -146,7 +168,7 @@
                   <app-barcode-scanner
                     label="Scan IMEI/Serial"
                     placeholder="Scan or enter IMEI/Serial number..."
-                    [disabled]="loading() || submitting()"
+                    [disabled]="loading() || loadingSpecificPurchase() || submitting()"
                     [autoClear]="true"
                     [enableCamera]="true"
                     (scanned)="onScanResult(i, $event)"
@@ -173,7 +195,7 @@
                             type="button"
                             class="btn btn-ghost btn-xs text-error"
                             (click)="removeIdentifier(i, j)"
-                            [disabled]="loading() || submitting()"
+                            [disabled]="loading() || loadingSpecificPurchase() || submitting()"
                           >
                             <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
                           </button>
@@ -186,7 +208,7 @@
                 <!-- Quantity Display for devices -->
                 <div>
                   <label class="label">
-                    <span class="label-text font-medium">Received Amount</span>
+                    <span class="label-text font-medium">Quantity</span>
                   </label>
                   <input 
                     type="number"

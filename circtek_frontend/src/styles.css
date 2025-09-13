@@ -286,3 +286,32 @@ body { margin: 0; font-family: "Poppins", sans-serif; }
   left: 50%;
   transform: translateX(-50%);
 }
+
+/* Global DaisyUI button fixes for better visibility */
+.btn-primary {
+  --tw-bg-opacity: 1;
+  --tw-border-opacity: 1;
+  --tw-text-opacity: 1;
+}
+
+.btn-outline {
+  --tw-bg-opacity: 1;
+  --tw-border-opacity: 1;
+  --tw-text-opacity: 1;
+  background-color: transparent;
+}
+
+/* Ensure button text is always readable */
+.btn {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+/* Override any theme-specific button opacity issues */
+.btn:not(:disabled):not(.btn-disabled) {
+  opacity: 1 !important;
+}
+
+.btn:not(:disabled):not(.btn-disabled):hover {
+  opacity: 1 !important;
+}

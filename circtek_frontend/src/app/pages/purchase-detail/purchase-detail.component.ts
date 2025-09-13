@@ -138,7 +138,7 @@ export class PurchaseDetailComponent {
   navigateToReceiving(): void {
     const purchaseId = this.purchase()?.purchase.id;
     if (purchaseId) {
-      this.router.navigate(['/stock-management/receive-items'], { 
+      this.router.navigate(['/stock-management/purchases/receive'], { 
         queryParams: { purchaseId } 
       });
     }
@@ -173,6 +173,37 @@ export class PurchaseDetailComponent {
       case 'Partial': return 'badge-warning';
       case 'Pending': return 'badge-ghost';
       default: return 'badge-ghost';
+    }
+  }
+
+  // Document styling methods
+  getDocumentIconClass(type: string): string {
+    switch (type) {
+      case 'invoice': return 'bg-blue-50 text-blue-600 border border-blue-200';
+      case 'transport': return 'bg-green-50 text-green-600 border border-green-200';
+      case 'image': return 'bg-purple-50 text-purple-600 border border-purple-200';
+      case 'confirmation': return 'bg-emerald-50 text-emerald-600 border border-emerald-200';
+      default: return 'bg-gray-50 text-gray-600 border border-gray-200';
+    }
+  }
+
+  getDocumentBadgeClass(type: string): string {
+    switch (type) {
+      case 'invoice': return 'bg-blue-100 text-blue-800';
+      case 'transport': return 'bg-green-100 text-green-800';
+      case 'image': return 'bg-purple-100 text-purple-800';
+      case 'confirmation': return 'bg-emerald-100 text-emerald-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  getDocumentTypeLabel(type: string): string {
+    switch (type) {
+      case 'invoice': return 'Invoice';
+      case 'transport': return 'Transport';
+      case 'image': return 'Image';
+      case 'confirmation': return 'Confirmation';
+      default: return 'Document';
     }
   }
 }

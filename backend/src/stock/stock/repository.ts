@@ -1,4 +1,4 @@
-import { and, count, eq, like, or, SQL, gte, lte, sql } from "drizzle-orm";
+import { and, count, eq, like, or, SQL, gte, lte, desc, asc, sql } from "drizzle-orm";
 import { stock, warehouses } from "../../db/circtek.schema";
 import { StockCreateInput, StockQueryInput, StockUpdateInput, StockWithWarehouse, StockListResult, StockSummary } from "./types";
 import { db } from "../../db/index";
@@ -123,6 +123,10 @@ export class StockRepository {
     const limit = Math.max(1, Math.min(100, filters.limit ?? 10));
     const offset = (page - 1) * limit;
 
+    // Determine sorting
+    const sortColumn = this.getSortColumn(filters.sort_by);
+    const sortDirection = filters.sort_dir === 'desc' ? desc : asc;
+
     // Get total count
     let totalRow: { total: number } | undefined;
     if (conditions.length) {
@@ -144,6 +148,7 @@ export class StockRepository {
         .from(stock)
         .leftJoin(warehouses, eq(stock.warehouse_id, warehouses.id))
         .where(finalCondition as any)
+        .orderBy(sortDirection(sortColumn))
         .limit(limit)
         .offset(offset);
     } else {
@@ -151,6 +156,7 @@ export class StockRepository {
         .select(stockWithWarehouseSelection)
         .from(stock)
         .leftJoin(warehouses, eq(stock.warehouse_id, warehouses.id))
+        .orderBy(sortDirection(sortColumn))
         .limit(limit)
         .offset(offset);
     }
@@ -253,5 +259,21 @@ export class StockRepository {
       .from(stock)
       .leftJoin(warehouses, eq(stock.warehouse_id, warehouses.id))
       .where(and(...conditions));
+  }
+
+  private getSortColumn(sortBy?: string): any {
+    switch (sortBy) {
+      case 'sku':
+        return stock.sku;
+      case 'quantity':
+        return stock.quantity;
+      case 'warehouse_name':
+        return warehouses.name;
+      case 'is_part':
+        return stock.is_part;
+      case 'created_at':
+      default:
+        return stock.created_at;
+    }
   }
 }

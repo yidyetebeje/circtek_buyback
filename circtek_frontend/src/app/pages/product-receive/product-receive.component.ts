@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
 import { LucideAngularModule, QrCode, Plus, Trash2 } from 'lucide-angular';
 import { GenericFormPageComponent } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { BarcodeScannerComponent, ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
@@ -27,6 +27,49 @@ export class ProductReceiveComponent {
   private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly autoSelectedPurchaseId = signal<number | null>(null);
+
+  // Custom validators
+  static positiveNumberValidator(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    if (value === null || value === undefined || value === '') {
+      return null; // Let required validator handle empty values
+    }
+    
+    const stringValue = String(value);
+    
+    // Check for invalid characters like '+' at the beginning or other invalid patterns
+    if (stringValue.startsWith('+') || stringValue.startsWith('-') || 
+        stringValue.includes('e') || stringValue.includes('E') || 
+        stringValue.includes('.') || isNaN(Number(value)) || 
+        Number(value) <= 0 || !Number.isInteger(Number(value))) {
+      return { invalidFormat: true };
+    }
+    
+    return null;
+  }
+  
+  static imeiSerialValidator(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    if (!value || value.trim() === '') {
+      return null; // Let required validator handle empty values
+    }
+    
+    const trimmedValue = value.trim();
+    
+    // Check for minimum and maximum length (IMEI is typically 15 digits, but allow serial numbers too)
+    if (trimmedValue.length < 8 || trimmedValue.length > 20) {
+      return { invalidLength: true };
+    }
+    
+    // Check for valid characters (alphanumeric only)
+    if (!/^[A-Za-z0-9]+$/.test(trimmedValue)) {
+      return { invalidCharacters: true };
+    }
+    
+    return null;
+  }
 
   // Icons
   readonly QrCode = QrCode;
@@ -35,27 +78,35 @@ export class ProductReceiveComponent {
 
   // Signals
   protected readonly loading = signal(false);
+  protected readonly loadingSpecificPurchase = signal(false);
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly purchases = signal<PurchaseWithItems[]>([]);
   protected readonly selectedPurchase = signal<PurchaseWithItems | null>(null);
-  protected readonly warehouses = signal<any[]>([]);
+  protected readonly loadingMessage = signal<string>('Loading...');
 
   // Form
   protected readonly form = this.fb.group({
     purchase_id: ['', [Validators.required]],
-    warehouse_id: ['', [Validators.required]],
-    items: this.fb.array([])
+    items: this.fb.array([], [Validators.minLength(1)])
   });
 
   // Computed values
   protected readonly purchaseOptions = computed(() => {
-    return this.purchases()
-      .filter(p => !p.is_fully_received)
-      .map(p => ({
-        label: `${p.purchase.purchase_order_no} - ${p.purchase.supplier_name}`,
-        value: p.purchase.id
-      }));
+    const purchases = this.purchases();
+    const autoSelectedId = this.autoSelectedPurchaseId();
+    
+    // Include not fully received purchases, plus the auto-selected one if it exists
+    const filteredPurchases = purchases.filter(p => {
+      const isNotFullyReceived = !this.calculateIsFullyReceived(p);
+      const isAutoSelected = autoSelectedId && p.purchase.id === autoSelectedId;
+      return isNotFullyReceived || isAutoSelected;
+    });
+    
+    return filteredPurchases.map(p => ({
+      label: `${p.purchase.purchase_order_no} - ${p.purchase.supplier_name}`,
+      value: p.purchase.id
+    }));
   });
 
   protected readonly availableSkus = computed(() => {
@@ -75,6 +126,18 @@ export class ProductReceiveComponent {
     return this.form.get('items') as FormArray;
   });
 
+  // Computed value to show auto-selection status
+  protected readonly autoSelectionMessage = computed(() => {
+    const autoSelectedId = this.autoSelectedPurchaseId();
+    const selectedPurchase = this.selectedPurchase();
+    
+    if (autoSelectedId && selectedPurchase && selectedPurchase.purchase.id === autoSelectedId) {
+      return `Automatically selected Purchase Order: ${selectedPurchase.purchase.purchase_order_no} - ${selectedPurchase.purchase.supplier_name}`;
+    }
+    
+    return null;
+  });
+
   constructor() {
     this.loadInitialData();
     this.setupFormSubscriptions();
@@ -85,23 +148,104 @@ export class ProductReceiveComponent {
     this.error.set(null);
 
     try {
-      // Load purchases with items (not fully received)
-      const purchasesResponse = await this.apiService.getPurchasesWithItems().toPromise();
-      if (purchasesResponse?.data) {
-        this.purchases.set(purchasesResponse.data);
-      }
-
-      // Load warehouses
-      const warehousesResponse = await this.apiService.getWarehouses().toPromise();
-      if (warehousesResponse?.data) {
-        this.warehouses.set(warehousesResponse.data);
+      const purchaseIdParam = this.route.snapshot.queryParams['purchaseId'];
+      
+      if (purchaseIdParam) {
+        this.loadingMessage.set(`Loading Purchase Order ${purchaseIdParam}...`);
+        // Optimized path: fetch specific purchase directly
+        await this.loadSpecificPurchaseAndList(Number(purchaseIdParam));
+      } else {
+        this.loadingMessage.set('Loading available purchases...');
+        // Standard path: load paginated purchases
+        await this.loadPaginatedPurchases();
       }
     } catch (error) {
       console.error('Error loading data:', error);
       this.error.set('Failed to load data. Please try again.');
     } finally {
       this.loading.set(false);
+      this.loadingSpecificPurchase.set(false);
     }
+  }
+
+  private async loadSpecificPurchaseAndList(purchaseId: number) {
+    this.autoSelectedPurchaseId.set(purchaseId);
+    this.loadingSpecificPurchase.set(true);
+    
+    try {
+      // Fetch the specific purchase directly
+      const specificPurchaseResponse = await this.apiService.getPurchaseWithItemsById(purchaseId).toPromise();
+      
+      if (specificPurchaseResponse?.status === 200 && specificPurchaseResponse.data) {
+        const targetPurchase = specificPurchaseResponse.data;
+        
+        // Check if purchase can be received
+        const isFullyReceived = this.calculateIsFullyReceived(targetPurchase);
+        
+        if (!isFullyReceived) {
+          this.loadingMessage.set('Loading additional purchases...');
+          
+          // Load the paginated list to populate the dropdown
+          const purchasesResponse = await this.apiService.getPurchasesWithItems().toPromise();
+          let allPurchases = purchasesResponse?.data || [];
+          
+          // If the specific purchase isn't in the paginated results, add it
+          const existsInList = allPurchases.some(p => p.purchase.id === purchaseId);
+          if (!existsInList) {
+            allPurchases = [targetPurchase, ...allPurchases];
+          }
+          
+          this.purchases.set(allPurchases);
+          
+          // Auto-select the purchase
+          this.form.patchValue({ purchase_id: String(purchaseId) });
+          this.selectedPurchase.set(targetPurchase);
+          
+          console.log(`Auto-selected Purchase Order: ${targetPurchase.purchase.purchase_order_no}`);
+        } else {
+          // Purchase is fully received
+          this.error.set(`Purchase Order ${targetPurchase.purchase.purchase_order_no} has been fully received and cannot receive more items.`);
+          this.loadingMessage.set('Loading available purchases...');
+          // Still load the paginated list for manual selection
+          await this.loadPaginatedPurchases();
+        }
+      } else {
+        // Purchase not found or access denied
+        this.error.set(`Purchase Order ID ${purchaseId} not found or you don't have access to it.`);
+        this.loadingMessage.set('Loading available purchases...');
+        // Fallback to loading paginated purchases
+        await this.loadPaginatedPurchases();
+      }
+    } catch (error) {
+      console.error('Error loading specific purchase:', error);
+      // Fallback to loading paginated purchases
+      this.error.set(`Could not load Purchase Order ID ${purchaseId}. Loading available purchases...`);
+      this.loadingMessage.set('Loading available purchases...');
+      await this.loadPaginatedPurchases();
+    } finally {
+      this.loadingSpecificPurchase.set(false);
+    }
+  }
+
+  private async loadPaginatedPurchases() {
+    try {
+      const purchasesResponse = await this.apiService.getPurchasesWithItems().toPromise();
+      if (purchasesResponse?.data) {
+        this.purchases.set(purchasesResponse.data);
+      }
+    } catch (error) {
+      console.error('Error loading paginated purchases:', error);
+      throw error; // Re-throw to be handled by the caller
+    }
+  }
+
+  private calculateIsFullyReceived(purchase: PurchaseWithItems): boolean {
+    if (!purchase.items || purchase.items.length === 0) return false;
+    
+    const totalOrdered = purchase.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const totalReceived = purchase.items.reduce((sum, item) => sum + (item.received_quantity || 0), 0);
+    
+    return totalReceived >= totalOrdered;
   }
 
   private setupFormSubscriptions() {
@@ -113,11 +257,6 @@ export class ProductReceiveComponent {
         
         // Clear existing items when purchase changes
         this.clearItems();
-        
-        // Set warehouse_id from purchase if available
-        if (purchase?.purchase.warehouse_id) {
-          this.form.patchValue({ warehouse_id: String(purchase.purchase.warehouse_id) });
-        }
       } else {
         this.selectedPurchase.set(null);
         this.clearItems();
@@ -144,9 +283,19 @@ export class ProductReceiveComponent {
 
     // Add new item form group
     const quantityControl = this.fb.control(
-      { value: 0, disabled: !purchaseItem.is_part },
-      purchaseItem.is_part ? [Validators.required, Validators.min(1), Validators.max(purchaseItem.remaining_quantity)] : []
+      0, // Always start with enabled control and value 0
+      purchaseItem.is_part ? [
+        Validators.required, 
+        Validators.min(1), 
+        Validators.max(purchaseItem.remaining_quantity),
+        ProductReceiveComponent.positiveNumberValidator
+      ] : []
     );
+    
+    // For devices, disable the quantity control since it's calculated from identifiers
+    if (!purchaseItem.is_part) {
+      quantityControl.disable();
+    }
 
     const itemGroup = this.fb.group({
       purchase_item_id: [purchaseItem.id, [Validators.required]],
@@ -178,12 +327,28 @@ export class ProductReceiveComponent {
   protected addIdentifier(itemIndex: number, identifier: string) {
     if (!identifier.trim()) return;
 
+    const trimmedIdentifier = identifier.trim();
+    
+    // Validate identifier format
+    const validationResult = ProductReceiveComponent.imeiSerialValidator(
+      this.fb.control(trimmedIdentifier)
+    );
+    
+    if (validationResult) {
+      if (validationResult['invalidLength']) {
+        this.error.set('Identifier must be between 8 and 20 characters long');
+      } else if (validationResult['invalidCharacters']) {
+        this.error.set('Identifier can only contain letters and numbers');
+      }
+      return;
+    }
+
     const identifiersArray = this.getIdentifiersArray(itemIndex);
     const itemGroup = this.itemsFormArray().at(itemIndex);
     
     // Check for duplicates
     const existing = identifiersArray.controls.find(
-      control => control.value === identifier.trim()
+      control => control.value === trimmedIdentifier
     );
     
     if (existing) {
@@ -191,7 +356,7 @@ export class ProductReceiveComponent {
       return;
     }
 
-    identifiersArray.push(this.fb.control(identifier.trim()));
+    identifiersArray.push(this.fb.control(trimmedIdentifier));
     
     // Update quantity_received for devices
     const isPartControl = itemGroup.get('is_part');
@@ -224,8 +389,44 @@ export class ProductReceiveComponent {
   }
 
   protected async onSubmit() {
+    // Mark all controls as touched to show validation errors
+    this.markFormGroupTouched(this.form);
+    
     if (this.form.invalid) {
-      this.markFormGroupTouched(this.form);
+      // Provide specific error messages
+      const purchaseIdControl = this.form.get('purchase_id');
+      const itemsArray = this.form.get('items') as FormArray;
+      
+      if (purchaseIdControl?.invalid) {
+        this.error.set('Please select a purchase order');
+        return;
+      }
+      
+      if (itemsArray?.invalid || itemsArray?.length === 0) {
+        this.error.set('Please select at least one SKU to receive');
+        return;
+      }
+      
+      // Check for invalid items
+      for (let i = 0; i < itemsArray.length; i++) {
+        const itemGroup = itemsArray.at(i) as FormGroup;
+        const quantityControl = itemGroup.get('quantity_received');
+        const isPartControl = itemGroup.get('is_part');
+        const identifiersArray = itemGroup.get('identifiers') as FormArray;
+        const skuValue = itemGroup.get('sku')?.value;
+        
+        if (isPartControl?.value && quantityControl?.invalid) {
+          this.error.set(`Please enter a valid quantity for SKU: ${skuValue}`);
+          return;
+        }
+        
+        if (!isPartControl?.value && identifiersArray?.length === 0) {
+          this.error.set(`Please scan at least one identifier for SKU: ${skuValue}`);
+          return;
+        }
+      }
+      
+      this.error.set('Please correct the validation errors before submitting');
       return;
     }
 
@@ -235,9 +436,14 @@ export class ProductReceiveComponent {
     try {
       const formValue = this.form.value;
       const currentUser = this.authService.currentUser();
+      const selectedPurchase = this.selectedPurchase();
       
       if (!currentUser) {
         throw new Error('User not authenticated');
+      }
+
+      if (!selectedPurchase) {
+        throw new Error('No purchase selected');
       }
 
       const items: ReceiveItemsRequestItem[] = formValue.items!.map((item: any) => ({
@@ -250,7 +456,7 @@ export class ProductReceiveComponent {
       const payload: ReceiveItemsRequest = {
         purchase_id: Number(formValue.purchase_id),
         items,
-        warehouse_id: Number(formValue.warehouse_id),
+        warehouse_id: selectedPurchase.purchase.warehouse_id,
         actor_id: currentUser.id
       };
 
@@ -276,9 +482,16 @@ export class ProductReceiveComponent {
   }
 
   protected onCancel() {
-    this.router.navigate(['/stock-management'], { 
-      queryParams: { tab: 'purchases' } 
-    });
+    // If we came from a specific purchase detail page, navigate back to it
+    const autoSelectedId = this.autoSelectedPurchaseId();
+    if (autoSelectedId) {
+      this.router.navigate(['/stock-management/purchases', autoSelectedId]);
+    } else {
+      // Otherwise go to stock management with purchases tab
+      this.router.navigate(['/stock-management'], { 
+        queryParams: { tab: 'purchases' } 
+      });
+    }
   }
 
   private markFormGroupTouched(formGroup: FormGroup) {

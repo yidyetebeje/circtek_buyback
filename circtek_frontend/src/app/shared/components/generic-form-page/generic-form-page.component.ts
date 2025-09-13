@@ -17,8 +17,8 @@ export interface FormField {
     minLength?: number;
     maxLength?: number;
     pattern?: string;
-    min?: number;
-    max?: number;
+    min?: number | string;
+    max?: number | string;
   };
 }
 
@@ -143,6 +143,9 @@ export class GenericFormPageComponent {
     }
     if (errors['whitespace']) {
       return `${field.label} cannot be empty or spaces only`;
+    }
+    if (errors['invalidDate']) {
+      return errors['invalidDate'].message;
     }
     if (errors['dateInPast']) {
       return errors['dateInPast'].message;

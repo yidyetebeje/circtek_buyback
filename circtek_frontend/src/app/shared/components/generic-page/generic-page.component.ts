@@ -302,9 +302,17 @@ export class GenericPageComponent<TData extends object> {
 
   updatePageSize(size: number) {
     const n = Number(size) || 10;
+    // Update internal signals first
+    this.pageIndex.set(0);
+    this.pageSize.set(n);
+    // Then emit the pageChange event immediately
+    this.pageChange.emit({ pageIndex: 0, pageSize: n });
+    // Also update the table state for consistency
     try {
       this.table().setPageSize(n);
       this.table().setPageIndex(0);
-    } catch {}
+    } catch {
+      // If table update fails, we've already emitted the event above
+    }
   }
 }

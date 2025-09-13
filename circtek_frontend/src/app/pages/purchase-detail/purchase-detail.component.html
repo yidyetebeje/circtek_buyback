@@ -92,11 +92,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div class="stat">
                 <div class="stat-title">PO Number</div>
-                <div class="stat-value text-lg">{{ purchase()!.purchase.purchase_order_no }}</div>
+                <div class="stat-value text-lg field-value">{{ purchase()!.purchase.purchase_order_no }}</div>
               </div>
               <div class="stat">
                 <div class="stat-title">Supplier</div>
-                <div class="stat-value text-lg">{{ purchase()!.purchase.supplier_name }}</div>
+                <div class="stat-value text-lg field-value-lg">{{ purchase()!.purchase.supplier_name }}</div>
               </div>
               <div class="stat">
                 <div class="stat-title">Expected Delivery</div>
@@ -110,7 +110,7 @@
               @if (purchase()!.purchase.tracking_number) {
                 <div class="stat">
                   <div class="stat-title">Tracking</div>
-                  <div class="stat-value text-lg">{{ purchase()!.purchase.tracking_number }}</div>
+                  <div class="stat-value text-lg field-value">{{ purchase()!.purchase.tracking_number }}</div>
                   @if (purchase()!.purchase.tracking_url) {
                     <div class="stat-actions">
                       <a [href]="purchase()!.purchase.tracking_url" target="_blank" class="btn btn-xs btn-outline">Track</a>
@@ -121,7 +121,7 @@
               @if (purchase()!.purchase.remarks) {
                 <div class="stat">
                   <div class="stat-title">Remarks</div>
-                  <div class="stat-desc text-sm">{{ purchase()!.purchase.remarks }}</div>
+                  <div class="stat-desc text-sm remarks-field">{{ purchase()!.purchase.remarks }}</div>
                 </div>
               }
             </div>
@@ -148,7 +148,7 @@
                 <tbody>
                   @for (item of tableData(); track item.id) {
                     <tr>
-                      <td class="whitespace-nowrap px-4 py-3 font-medium">{{ item.sku }}</td>
+                      <td class="px-4 py-3 font-medium table-cell-truncate">{{ item.sku }}</td>
                       <td class="whitespace-nowrap px-4 py-3">{{ item.ordered_quantity }}</td>
                       <td class="whitespace-nowrap px-4 py-3">{{ item.received_quantity }}</td>
                       <td class="whitespace-nowrap px-4 py-3 text-primary font-medium">{{ item.remaining_quantity }}</td>
@@ -178,65 +178,119 @@
 
 <!-- Documents Modal -->
 @if (showDocuments()) {
-  <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-base-100 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-      <div class="flex items-center justify-between p-6 border-b border-base-300">
-        <h2 class="text-xl font-bold">Purchase Documents</h2>
+  <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-base-100 rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-base-300/20">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-base-300/30 bg-base-50">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-base-content">Purchase Documents</h2>
+            <p class="text-sm text-base-content/60">{{ availableDocuments().length }} document(s) available</p>
+          </div>
+        </div>
         <button 
           type="button" 
-          class="btn btn-ghost btn-circle"
+          class="btn btn-ghost btn-circle hover:bg-base-200"
           (click)="toggleDocuments()"
         >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
         </button>
       </div>
-      <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          @for (doc of availableDocuments(); track doc.name) {
-            <div class="bg-base-200 rounded-lg border border-base-300/20 hover:border-primary/30 transition-colors">
-              <div class="p-6">
-                <div class="flex items-center gap-3">
-                  <div class="avatar placeholder">
-                    <div class="bg-primary text-primary-content rounded-full w-12">
-                      @switch (doc.type) {
-                        @case ('invoice') {
-                          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                          </svg>
+      
+      <!-- Modal Content -->
+      <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        @if (availableDocuments().length === 0) {
+          <div class="flex flex-col items-center justify-center py-12 text-center">
+            <div class="w-16 h-16 bg-base-200 rounded-full flex items-center justify-center mb-4">
+              <svg class="w-8 h-8 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-base-content mb-2">No Documents Available</h3>
+            <p class="text-base-content/60">There are no documents attached to this purchase order.</p>
+          </div>
+        } @else {
+          <!-- Document Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            @for (doc of availableDocuments(); track doc.name) {
+              <div class="document-card bg-base-50 rounded-xl border border-base-300/30 hover:border-primary/40 hover:shadow-lg transition-all duration-300 group">
+                <div class="p-6">
+                  <!-- Document Header -->
+                  <div class="flex items-start gap-4 mb-4">
+                    <div class="flex-shrink-0">
+                      <div class="w-14 h-14 rounded-xl flex items-center justify-center document-icon" [ngClass]="getDocumentIconClass(doc.type)">
+                        @switch (doc.type) {
+                          @case ('invoice') {
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                          }
+                          @case ('transport') {
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                          }
+                          @case ('image') {
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                          }
+                          @case ('confirmation') {
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                          }
+                          @default {
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                          }
                         }
-                        @case ('image') {
-                          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                          </svg>
-                        }
-                        @default {
-                          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                          </svg>
-                        }
-                      }
+                      </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h3 class="font-semibold text-base-content text-lg mb-1 group-hover:text-primary transition-colors">{{ doc.name }}</h3>
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium document-badge" [ngClass]="getDocumentBadgeClass(doc.type)">
+                          {{ getDocumentTypeLabel(doc.type) }}
+                        </span>
+                      </div>
+                      <p class="text-sm text-base-content/60 mt-2">Click to view or download document</p>
                     </div>
                   </div>
-                  <div class="flex-1">
-                    <h3 class="font-semibold">{{ doc.name }}</h3>
-                    <p class="text-sm text-base-content/60">Click to view document</p>
+                  
+                  <!-- Action Button -->
+                  <div class="flex items-center justify-between pt-4 border-t border-base-300/20">
+                    <div class="flex items-center gap-2 text-sm text-base-content/60">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                      </svg>
+                      <span>Ready to view</span>
+                    </div>
+                    <button 
+                      type="button" 
+                      class="btn btn-primary btn-sm px-6 gap-2 group-hover:scale-105 transition-transform"
+                      (click)="viewDocument(doc)"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                      </svg>
+                      View
+                    </button>
                   </div>
                 </div>
-                <div class="flex justify-end mt-4">
-                  <button 
-                    type="button" 
-                    class="btn btn-primary btn-sm"
-                    (click)="viewDocument(doc)"
-                  >
-                    View
-                  </button>
-                </div>
               </div>
-            </div>
-          }
-        </div>
+            }
+          </div>
+        }
       </div>
     </div>
   </div>

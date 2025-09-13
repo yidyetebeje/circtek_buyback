@@ -1,4 +1,4 @@
-import { and, count, eq, like, or, SQL, gte, lte, desc, sum, sql } from "drizzle-orm";
+import { and, count, eq, like, or, SQL, gte, lte, desc, asc, sum, sql } from "drizzle-orm";
 import { purchases, purchase_items, received_items, warehouses, devices, sku_specs, stock } from "../../db/circtek.schema";
 import { 
   PurchaseCreateInput, 
@@ -153,6 +153,10 @@ export class PurchasesRepository {
     const limit = Math.max(1, Math.min(100, filters.limit ?? 10));
     const offset = (page - 1) * limit;
 
+    // Determine sorting
+    const sortColumn = this.getSortColumn(filters.sort_by);
+    const sortDirection = filters.sort_dir === 'desc' ? desc : asc;
+
     // Get total count
     let totalRow: { total: number } | undefined;
     if (conditions.length) {
@@ -173,14 +177,14 @@ export class PurchasesRepository {
         .select()
         .from(purchases)
         .where(finalCondition as any)
-        .orderBy(desc(purchases.created_at))
+        .orderBy(sortDirection(sortColumn))
         .limit(limit)
         .offset(offset);
     } else {
       rows = await this.database
         .select()
         .from(purchases)
-        .orderBy(desc(purchases.created_at))
+        .orderBy(sortDirection(sortColumn))
         .limit(limit)
         .offset(offset);
     }
@@ -221,6 +225,10 @@ export class PurchasesRepository {
     const limit = Math.max(1, Math.min(100, filters.limit ?? 10));
     const offset = (page - 1) * limit;
 
+    // Determine sorting
+    const sortColumn = this.getSortColumn(filters.sort_by);
+    const sortDirection = filters.sort_dir === 'desc' ? desc : asc;
+
     // Get total count
     let totalRow: { total: number } | undefined;
     if (conditions.length) {
@@ -241,14 +249,14 @@ export class PurchasesRepository {
         .select()
         .from(purchases)
         .where(finalCondition as any)
-        .orderBy(desc(purchases.created_at))
+        .orderBy(sortDirection(sortColumn))
         .limit(limit)
         .offset(offset);
     } else {
       purchaseRows = await this.database
         .select()
         .from(purchases)
-        .orderBy(desc(purchases.created_at))
+        .orderBy(sortDirection(sortColumn))
         .limit(limit)
         .offset(offset);
     }
@@ -635,6 +643,24 @@ export class PurchasesRepository {
       } else {
         throw error
       }
+    }
+  }
+
+  private getSortColumn(sortBy?: string): any {
+    switch (sortBy) {
+      case 'purchase_order_no':
+        return purchases.purchase_order_no;
+      case 'supplier_name':
+        return purchases.supplier_name;
+      case 'expected_delivery_date':
+        return purchases.expected_delivery_date;
+      case 'customer_name':
+        return purchases.customer_name;
+      case 'tracking_number':
+        return purchases.tracking_number;
+      case 'created_at':
+      default:
+        return purchases.created_at;
     }
   }
 }

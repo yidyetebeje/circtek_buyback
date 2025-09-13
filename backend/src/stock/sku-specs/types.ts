@@ -45,6 +45,8 @@ export const SkuSpecsQuery = t.Object({
   search: t.Optional(t.String()),
   page: t.Optional(t.Number({ default: 1 })),
   limit: t.Optional(t.Number({ default: 10 })),
+  sort_by: t.Optional(t.String()),
+  sort_dir: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
 })
 
 export type SkuSpecsCreateInput = Static<typeof SkuSpecsCreate>

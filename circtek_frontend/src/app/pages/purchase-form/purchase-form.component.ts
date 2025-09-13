@@ -76,34 +76,50 @@ export class PurchaseFormComponent implements OnInit {
       label: 'Purchase Order Number',
       type: 'text',
       required: true,
-      placeholder: 'Enter purchase order number'
+      placeholder: 'Enter purchase order number',
+      validation: {
+        maxlength: 50
+      }
     },
     {
       key: 'supplier_name',
       label: 'Supplier Name',
       type: 'text',
       required: true,
-      placeholder: 'Enter supplier name'
+      placeholder: 'Enter supplier name',
+      validation: {
+        maxlength: 100
+      }
     },
     {
       key: 'supplier_order_no',
       label: 'Supplier Order Number',
       type: 'text',
       required: true,
-      placeholder: 'Enter supplier order number'
+      placeholder: 'Enter supplier order number',
+      validation: {
+        maxlength: 50
+      }
     },
     {
       key: 'expected_delivery_date',
       label: 'Expected Delivery Date',
       type: 'date',
       required: true,
-      placeholder: 'Select delivery date'
+      placeholder: 'Select delivery date',
+      validation: {
+        min: new Date().toISOString().split('T')[0], // Today's date
+        max: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // One year from now
+      }
     },
     {
       key: 'customer_name',
       label: 'Customer Name',
       type: 'text',
-      placeholder: 'Enter customer name'
+      placeholder: 'Enter customer name',
+      validation: {
+        maxlength: 100
+      }
     },
     {
       key: 'warehouse_id',
@@ -116,43 +132,64 @@ export class PurchaseFormComponent implements OnInit {
       key: 'remarks',
       label: 'Remarks',
       type: 'textarea',
-      placeholder: 'Additional notes or comments'
+      placeholder: 'Additional notes or comments',
+      validation: {
+        maxlength: 500
+      }
     },
     {
       key: 'invoice',
       label: 'Invoice Document',
       type: 'file',
-      placeholder: 'Upload invoice document'
+      placeholder: 'Upload invoice document (PDF only)',
+      validation: {
+        pattern: '.pdf'
+      }
     },
     {
       key: 'transport_doc',
       label: 'Transport Document',
       type: 'file',
-      placeholder: 'Upload transport document'
+      placeholder: 'Upload transport document (PDF only)',
+      validation: {
+        pattern: '.pdf'
+      }
     },
     {
       key: 'receiving_picture',
       label: 'Receiving Picture',
       type: 'file',
-      placeholder: 'Upload receiving picture'
+      placeholder: 'Upload receiving picture (Images only)',
+      validation: {
+        pattern: '.jpg,.jpeg,.png,.gif'
+      }
     },
     {
       key: 'order_confirmation_doc',
       label: 'Order Confirmation Document',
       type: 'file',
-      placeholder: 'Upload order confirmation'
+      placeholder: 'Upload order confirmation (PDF only)',
+      validation: {
+        pattern: '.pdf'
+      }
     },
     {
       key: 'tracking_number',
       label: 'Tracking Number',
       type: 'text',
-      placeholder: 'Tracking number or reference'
+      placeholder: 'Tracking number or reference',
+      validation: {
+        maxlength: 100
+      }
     },
     {
       key: 'tracking_url',
       label: 'Tracking URL',
       type: 'text',
-      placeholder: 'https://tracking.example.com/...'
+      placeholder: 'https://tracking.example.com/...',
+      validation: {
+        maxlength: 255
+      }
     }
   ]);
 
@@ -212,13 +249,50 @@ export class PurchaseFormComponent implements OnInit {
     
     return null;
   };
+  
+  private static maxLengthWithTrim(maxLength: number): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      if (!control.value) {
+        return null; // Let required validator handle empty values
+      }
+      
+      const trimmedValue = typeof control.value === 'string' ? control.value.trim() : String(control.value);
+      if (trimmedValue.length > maxLength) {
+        return { 
+          maxlength: { 
+            message: `Cannot exceed ${maxLength} characters`, 
+            actualLength: trimmedValue.length,
+            requiredLength: maxLength 
+          } 
+        };
+      }
+      
+      return null;
+    };
+  }
 
   private static dateValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
     if (!control.value) {
       return null; // Let required validator handle empty values
     }
 
+    // Parse the date value
     const selectedDate = new Date(control.value);
+    
+    // Check if the date is valid
+    if (isNaN(selectedDate.getTime())) {
+      return { invalidDate: { message: 'Please enter a valid date' } };
+    }
+
+    // Additional check for reasonable date range (prevent extreme dates)
+    const currentYear = new Date().getFullYear();
+    const selectedYear = selectedDate.getFullYear();
+    
+    // Check if year is reasonable (between 1900 and 2100)
+    if (selectedYear < 1900 || selectedYear > 2100) {
+      return { invalidDate: { message: 'Please enter a valid date' } };
+    }
+
     const today = new Date();
     const oneYearFromNow = new Date();
     oneYearFromNow.setFullYear(today.getFullYear() + 1);
@@ -268,19 +342,43 @@ export class PurchaseFormComponent implements OnInit {
 
   private createForm(): FormGroup {
     return this.fb.group({
-      purchase_order_no: ['', [Validators.required, PurchaseFormComponent.whitespaceValidator]],
-      supplier_name: ['', [Validators.required, PurchaseFormComponent.whitespaceValidator]],
-      supplier_order_no: ['', [Validators.required, PurchaseFormComponent.whitespaceValidator]],
+      purchase_order_no: ['', [
+        Validators.required, 
+        PurchaseFormComponent.whitespaceValidator,
+        PurchaseFormComponent.maxLengthWithTrim(50)
+      ]],
+      supplier_name: ['', [
+        Validators.required, 
+        PurchaseFormComponent.whitespaceValidator,
+        PurchaseFormComponent.maxLengthWithTrim(100)
+      ]],
+      supplier_order_no: ['', [
+        Validators.required, 
+        PurchaseFormComponent.whitespaceValidator,
+        PurchaseFormComponent.maxLengthWithTrim(50)
+      ]],
       expected_delivery_date: ['', [Validators.required, PurchaseFormComponent.dateValidator]],
-      customer_name: ['', [PurchaseFormComponent.whitespaceValidator]],
+      customer_name: ['', [
+        PurchaseFormComponent.whitespaceValidator,
+        PurchaseFormComponent.maxLengthWithTrim(100)
+      ]],
       warehouse_id: ['', [Validators.required]],
-      remarks: ['', [PurchaseFormComponent.whitespaceValidator]],
+      remarks: ['', [
+        PurchaseFormComponent.whitespaceValidator,
+        PurchaseFormComponent.maxLengthWithTrim(500)
+      ]],
       invoice: [''],
       transport_doc: [''],
       receiving_picture: [''],
       order_confirmation_doc: [''],
-      tracking_number: ['', [PurchaseFormComponent.whitespaceValidator]],
-      tracking_url: ['', [PurchaseFormComponent.whitespaceValidator]]
+      tracking_number: ['', [
+        PurchaseFormComponent.whitespaceValidator,
+        PurchaseFormComponent.maxLengthWithTrim(100)
+      ]],
+      tracking_url: ['', [
+        PurchaseFormComponent.whitespaceValidator,
+        Validators.maxLength(255)
+      ]]
     });
   }
 
@@ -331,18 +429,50 @@ export class PurchaseFormComponent implements OnInit {
     this.api.createPurchaseWithItems(payload).subscribe({
       next: (response) => {
         this.submitting.set(false);
-        if (response.data) {
+        
+        // Only consider success if we have a 2xx status and actual data
+        if (response.status >= 200 && response.status < 300 && response.data) {
           this.toast.saveSuccess('Purchase Order', 'created');
+          
+          // Clear the form to prevent resubmission
+          this.form().reset();
+          this.items.set([]);
+          
+          // Navigate to the purchases list
           this.router.navigate(['/stock-management'], { 
             queryParams: { tab: 'purchases' }
           });
         } else {
-          this.error.set('Failed to create purchase order');
+          // Handle server-side validation or creation errors
+          const errorMessage = response.message || 'Failed to create purchase order';
+          this.error.set(errorMessage);
+          
+          // Log for debugging
+          console.error('Purchase creation failed:', response);
         }
       },
       error: (err) => {
         this.submitting.set(false);
-        this.error.set(err.error?.message || 'An error occurred while creating the purchase order');
+        
+        // Handle HTTP errors and network issues
+        let errorMessage = 'An error occurred while creating the purchase order';
+        
+        if (err.error?.message) {
+          errorMessage = err.error.message;
+        } else if (err.message) {
+          errorMessage = err.message;
+        } else if (err.status === 0) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (err.status >= 400 && err.status < 500) {
+          errorMessage = 'Invalid data provided. Please check your inputs and try again.';
+        } else if (err.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+        
+        this.error.set(errorMessage);
+        
+        // Log for debugging
+        console.error('Purchase creation error:', err);
       }
     });
   }

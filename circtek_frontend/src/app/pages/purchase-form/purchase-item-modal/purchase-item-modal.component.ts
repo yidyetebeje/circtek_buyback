@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { GenericModalComponent, type ModalAction } from '../../../shared/components/generic-modal/generic-modal.component';
 import { SkuAutocompleteComponent, type SkuOption } from '../../../shared/components/sku-autocomplete/sku-autocomplete.component';
@@ -22,6 +22,69 @@ export interface PurchaseItem {
 })
 export class PurchaseItemModalComponent {
   private readonly fb = inject(FormBuilder);
+
+  // Custom validators
+  private static quantityValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (value === null || value === undefined || value === '') {
+      return null; // Let required validator handle empty values
+    }
+
+    const numValue = Number(value);
+    
+    // Check if it's a valid number
+    if (isNaN(numValue)) {
+      return { invalidNumber: { message: 'Please enter a valid number' } };
+    }
+
+    // Check if it's a positive integer
+    if (numValue <= 0) {
+      return { mustBePositive: { message: 'Quantity must be greater than 0' } };
+    }
+
+    if (!Number.isInteger(numValue)) {
+      return { mustBeInteger: { message: 'Quantity must be a whole number' } };
+    }
+
+    // Check for reasonable maximum (e.g., 1 million)
+    if (numValue > 1000000) {
+      return { tooLarge: { message: 'Quantity cannot exceed 1,000,000' } };
+    }
+
+    return null;
+  };
+
+  private static priceValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (value === null || value === undefined || value === '') {
+      return null; // Let required validator handle empty values
+    }
+
+    const numValue = Number(value);
+    
+    // Check if it's a valid number
+    if (isNaN(numValue)) {
+      return { invalidNumber: { message: 'Please enter a valid number' } };
+    }
+
+    // Check if it's non-negative
+    if (numValue < 0) {
+      return { mustBeNonNegative: { message: 'Price cannot be negative' } };
+    }
+
+    // Check for reasonable maximum (e.g., $1 million)
+    if (numValue > 1000000) {
+      return { tooLarge: { message: 'Price cannot exceed $1,000,000' } };
+    }
+
+    // Check for reasonable decimal places (max 2)
+    const decimalPlaces = (value.toString().split('.')[1] || '').length;
+    if (decimalPlaces > 2) {
+      return { tooManyDecimals: { message: 'Price cannot have more than 2 decimal places' } };
+    }
+
+    return null;
+  };
 
   // Inputs
   isOpen = input<boolean>(false);
@@ -81,8 +144,8 @@ export class PurchaseItemModalComponent {
     const item = this.editingItem();
     return this.fb.group({
       sku: [item?.sku || '', [Validators.required]],
-      quantity: [item?.quantity || 1, [Validators.required, Validators.min(1)]],
-      price: [item?.price || 0, [Validators.required, Validators.min(0)]],
+      quantity: [item?.quantity || 1, [Validators.required, PurchaseItemModalComponent.quantityValidator]],
+      price: [item?.price || 0, [Validators.required, PurchaseItemModalComponent.priceValidator]],
       is_part: [item?.is_part || false]
     });
   }
@@ -125,8 +188,15 @@ export class PurchaseItemModalComponent {
   getFieldError(fieldName: string): string | null {
     const field = this.form().get(fieldName);
     if (field && field.invalid && field.touched) {
-      if (field.errors?.['required']) return `${fieldName} is required`;
-      if (field.errors?.['min']) return `${fieldName} must be greater than ${field.errors['min'].min}`;
+      const errors = field.errors;
+      if (errors?.['required']) return `${fieldName} is required`;
+      if (errors?.['min']) return `${fieldName} must be greater than ${errors['min'].min}`;
+      if (errors?.['invalidNumber']) return errors['invalidNumber'].message;
+      if (errors?.['mustBePositive']) return errors['mustBePositive'].message;
+      if (errors?.['mustBeInteger']) return errors['mustBeInteger'].message;
+      if (errors?.['mustBeNonNegative']) return errors['mustBeNonNegative'].message;
+      if (errors?.['tooLarge']) return errors['tooLarge'].message;
+      if (errors?.['tooManyDecimals']) return errors['tooManyDecimals'].message;
     }
     return null;
   }

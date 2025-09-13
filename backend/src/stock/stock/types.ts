@@ -22,6 +22,8 @@ export const StockQuery = t.Object({
   low_stock_threshold: t.Optional(t.Number()),
   page: t.Optional(t.Number({ default: 1 })),
   limit: t.Optional(t.Number({ default: 10 })),
+  sort_by: t.Optional(t.String()),
+  sort_dir: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
 })
 
 export type StockCreateInput = Static<typeof StockCreate>

@@ -5,6 +5,7 @@ import { GenericModalComponent, type ModalAction } from '../../shared/components
 import { ColumnDef } from '@tanstack/angular-table';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { PaginationService } from '../../shared/services/pagination.service';
 import { HttpParams } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { User } from '../../core/models/user';
@@ -34,6 +35,7 @@ export class ManagementComponent {
   private readonly router = inject(Router);
   private readonly toastr = inject(ToastrService);
   private readonly toast = inject(ToastService);
+  private readonly paginationService = inject(PaginationService);
 
   // Loading & data
   loading = signal(false);
@@ -407,6 +409,11 @@ export class ManagementComponent {
     else if (tab === 'warehouses' || tab === 'wifi' || tab === 'users' || tab === 'labels' || tab === 'workflows') this.activeTab.set(tab as any);
     else this.activeTab.set('users');
 
+    // Initialize pagination with service fallback
+    this.pageIndex.set(Math.max(0, num('page', 1) - 1));
+    const urlPageSize = num('limit', 0);
+    const preferredPageSize = this.paginationService.getPageSizeWithFallback(urlPageSize > 0 ? urlPageSize : null);
+    this.pageSize.set(preferredPageSize);
    
     this.search.set(str('search', ''));
     this.selectedRoleId.set(optNum('role_id'));
@@ -626,8 +633,17 @@ export class ManagementComponent {
 
   // Handlers from GenericPage
   onPageChange(event: { pageIndex: number; pageSize: number }) {
-    this.pageIndex.set(event.pageIndex);
-    this.pageSize.set(event.pageSize);
+    const idx = event.pageIndex;
+    const size = event.pageSize;
+    let changed = false;
+    if (idx !== this.pageIndex()) { this.pageIndex.set(idx); changed = true; }
+    if (size !== this.pageSize()) { 
+      this.pageSize.set(size); 
+      // Persist the page size preference
+      this.paginationService.setPageSize(size);
+      changed = true; 
+    }
+    if (!changed) return;
   }
 
   onFiltersChange(event: { search: string; facets: Record<string, string> }) {

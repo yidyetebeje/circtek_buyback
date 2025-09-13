@@ -1,4 +1,4 @@
-import { and, count, eq, like, or, SQL, sql } from "drizzle-orm";
+import { and, count, eq, like, or, SQL, desc, asc, sql } from "drizzle-orm";
 import { sku_specs } from "../../db/circtek.schema";
 import { SkuSpecsCreateInput, SkuSpecsQueryInput, SkuSpecsUpdateInput, SkuSpecsRecord, SkuSpecsListResult } from "./types";
 import { db } from "../../db/index";
@@ -121,6 +121,10 @@ export class SkuSpecsRepository {
     const limit = Math.max(1, Math.min(100, filters.limit ?? 10));
     const offset = (page - 1) * limit;
 
+    // Determine sorting
+    const sortColumn = this.getSortColumn(filters.sort_by);
+    const sortDirection = filters.sort_dir === 'desc' ? desc : asc;
+
     // Get total count
     let totalRow: { total: number } | undefined;
     if (conditions.length) {
@@ -141,16 +145,16 @@ export class SkuSpecsRepository {
         .select(skuSpecsSelection)
         .from(sku_specs)
         .where(finalCondition as any)
+        .orderBy(sortDirection(sortColumn))
         .limit(limit)
-        .offset(offset)
-        .orderBy(sku_specs.created_at);
+        .offset(offset);
     } else {
       rows = await this.database
         .select(skuSpecsSelection)
         .from(sku_specs)
+        .orderBy(sortDirection(sortColumn))
         .limit(limit)
-        .offset(offset)
-        .orderBy(sku_specs.created_at);
+        .offset(offset);
     }
 
     return { rows, total: totalRow?.total ?? 0, page, limit };
@@ -203,5 +207,29 @@ export class SkuSpecsRepository {
       .orderBy(sku_specs.model_name);
 
     return results;
+  }
+
+  private getSortColumn(sortBy?: string): any {
+    switch (sortBy) {
+      case 'sku':
+        return sku_specs.sku;
+      case 'make':
+        return sku_specs.make;
+      case 'model_no':
+        return sku_specs.model_no;
+      case 'model_name':
+        return sku_specs.model_name;
+      case 'device_type':
+        return sku_specs.device_type;
+      case 'storage':
+        return sku_specs.storage;
+      case 'memory':
+        return sku_specs.memory;
+      case 'color':
+        return sku_specs.color;
+      case 'created_at':
+      default:
+        return sku_specs.created_at;
+    }
   }
 }
