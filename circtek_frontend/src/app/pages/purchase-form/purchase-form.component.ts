@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
@@ -200,6 +200,47 @@ export class PurchaseFormComponent implements OnInit {
     this.items.set(currentItems.filter(item => item.id !== itemId));
   }
 
+  // Static validators
+  private static whitespaceValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) {
+      return null; // Let required validator handle empty values
+    }
+    
+    if (typeof control.value === 'string' && control.value.trim().length === 0) {
+      return { whitespace: { message: 'Cannot be empty or spaces only' } };
+    }
+    
+    return null;
+  };
+
+  private static dateValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) {
+      return null; // Let required validator handle empty values
+    }
+
+    const selectedDate = new Date(control.value);
+    const today = new Date();
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(today.getFullYear() + 1);
+    
+    // Reset time to start of day for accurate comparison
+    today.setHours(0, 0, 0, 0);
+    selectedDate.setHours(0, 0, 0, 0);
+    oneYearFromNow.setHours(0, 0, 0, 0);
+
+    // Check if date is in the past (before today)
+    if (selectedDate < today) {
+      return { dateInPast: { message: 'Date cannot be in the past' } };
+    }
+
+    // Check if date is too far in the future (more than 1 year)
+    if (selectedDate > oneYearFromNow) {
+      return { dateTooFar: { message: 'Date cannot be more than 1 year ahead' } };
+    }
+
+    return null;
+  };
+
   ngOnInit(): void {
     this.loadWarehouses();
   }
@@ -227,53 +268,35 @@ export class PurchaseFormComponent implements OnInit {
 
   private createForm(): FormGroup {
     return this.fb.group({
-      purchase_order_no: ['', [Validators.required]],
-      supplier_name: ['', [Validators.required]],
-      supplier_order_no: ['', [Validators.required]],
-      expected_delivery_date: ['', [Validators.required, this.dateValidator]],
-      customer_name: [''],
+      purchase_order_no: ['', [Validators.required, PurchaseFormComponent.whitespaceValidator]],
+      supplier_name: ['', [Validators.required, PurchaseFormComponent.whitespaceValidator]],
+      supplier_order_no: ['', [Validators.required, PurchaseFormComponent.whitespaceValidator]],
+      expected_delivery_date: ['', [Validators.required, PurchaseFormComponent.dateValidator]],
+      customer_name: ['', [PurchaseFormComponent.whitespaceValidator]],
       warehouse_id: ['', [Validators.required]],
-      remarks: [''],
+      remarks: ['', [PurchaseFormComponent.whitespaceValidator]],
       invoice: [''],
       transport_doc: [''],
       receiving_picture: [''],
       order_confirmation_doc: [''],
-      tracking_number: [''],
-      tracking_url: ['']
+      tracking_number: ['', [PurchaseFormComponent.whitespaceValidator]],
+      tracking_url: ['', [PurchaseFormComponent.whitespaceValidator]]
     });
   }
 
-  private dateValidator(control: AbstractControl): ValidationErrors | null {
-    if (!control.value) {
-      return null; // Let required validator handle empty values
-    }
-
-    const selectedDate = new Date(control.value);
-    const today = new Date();
-    const oneYearFromNow = new Date();
-    oneYearFromNow.setFullYear(today.getFullYear() + 1);
-    
-    // Reset time to start of day for accurate comparison
-    today.setHours(0, 0, 0, 0);
-    selectedDate.setHours(0, 0, 0, 0);
-    oneYearFromNow.setHours(0, 0, 0, 0);
-
-    // Check if date is in the past (before today)
-    if (selectedDate < today) {
-      return { dateInPast: { message: 'Expected delivery date cannot be in the past' } };
-    }
-
-    // Check if date is too far in the future (more than 1 year)
-    if (selectedDate > oneYearFromNow) {
-      return { dateTooFar: { message: 'Expected delivery date cannot be more than 1 year in the future' } };
-    }
-
-    return null;
-  }
 
 
   onSubmit(): void {
-    if (this.form().invalid || this.submitting()) return;
+    // Mark all form fields as touched to show validation errors
+    this.markAllFieldsAsTouched();
+    
+    // Check form validity and items
+    if (this.form().invalid || this.items().length === 0 || this.submitting()) {
+      if (this.items().length === 0) {
+        this.error.set('Please add at least one item');
+      }
+      return;
+    }
 
     this.submitting.set(true);
     this.error.set(null);
@@ -337,6 +360,12 @@ export class PurchaseFormComponent implements OnInit {
   private navigateBack(): void {
     this.router.navigate(['/stock-management'], { 
       queryParams: { tab: 'purchases' }
+    });
+  }
+
+  private markAllFieldsAsTouched(): void {
+    Object.keys(this.form().controls).forEach(key => {
+      this.form().get(key)?.markAsTouched();
     });
   }
 }

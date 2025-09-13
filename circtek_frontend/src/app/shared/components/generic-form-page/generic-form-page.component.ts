@@ -142,7 +142,13 @@ export class GenericFormPageComponent {
       return `${field.label} cannot exceed ${errors['max'].max}`;
     }
     if (errors['whitespace']) {
-      return `${field.label} cannot be empty or contain only spaces`;
+      return `${field.label} cannot be empty or spaces only`;
+    }
+    if (errors['dateInPast']) {
+      return errors['dateInPast'].message;
+    }
+    if (errors['dateTooFar']) {
+      return errors['dateTooFar'].message;
     }
     if (errors['strongPassword']) {
       const requirements = [];
