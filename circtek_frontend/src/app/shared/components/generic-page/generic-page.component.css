@@ -191,10 +191,40 @@
   color: oklch(var(--pc));
 }
 
-/* Improve contrast for active tab in dark theme */
-[data-theme="dim"] .tabs-boxed .tab-active {
-  color: #0a0a0a;
+/* Improve contrast for active tab in dark theme and general tab styling */
+.tabs-boxed .tab-active,
+.tab.bg-primary {
+  color: #ffffff !important;
+  font-weight: 600;
 }
+
+/* Ensure inactive tabs have good contrast too */
+.tabs-boxed .tab:not(.tab-active):not(.bg-primary) {
+  color: oklch(var(--bc)) !important;
+}
+
+/* Dark theme specific adjustments */
+[data-theme="dim"] .tabs-boxed .tab-active,
+[data-theme="dim"] .tab.bg-primary {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+[data-theme="dim"] .tabs-boxed .tab:not(.tab-active):not(.bg-primary) {
+  color: oklch(var(--bc) / 0.9) !important;
+}
+
+/* Light theme specific adjustments */
+[data-theme="light"] .tabs-boxed .tab-active,
+[data-theme="light"] .tab.bg-primary {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+[data-theme="light"] .tabs-boxed .tab:not(.tab-active):not(.bg-primary) {
+  color: oklch(var(--bc) / 0.8) !important;
+}
+
 
 /* Clean filter card */
 .filter-card {
@@ -261,6 +291,79 @@
   .custom-table tbody td:last-child {
     padding-right: 1rem;
   }
+}
+
+/* Placeholder text styling for better visibility in search and filter inputs */
+.input::placeholder,
+.select::placeholder {
+  opacity: 0.5 !important;
+  font-weight: 400 !important;
+  color: oklch(var(--bc) / 0.4) !important;
+}
+
+/* Theme-specific placeholder styling */
+:host-context([data-theme="dim"]) .input::placeholder {
+  color: oklch(var(--bc) / 0.45) !important;
+}
+
+:host-context([data-theme="light"]) .input::placeholder {
+  color: oklch(var(--bc) / 0.35) !important;
+}
+
+/* Ensure regular text is distinct from placeholder */
+.input:not(:placeholder-shown) {
+  color: oklch(var(--bc)) !important;
+  font-weight: 400;
+}
+
+/* Focus state adjustments */
+.input:focus::placeholder {
+  opacity: 0.4 !important;
+  color: oklch(var(--bc) / 0.3) !important;
+}
+
+/* DaisyUI specific overrides for search inputs */
+.search-input::placeholder,
+.input.input-bordered::placeholder {
+  opacity: 0.5 !important;
+  color: oklch(var(--bc) / 0.4) !important;
+  font-weight: 400 !important;
+}
+
+/* Select dropdown styling for dark mode */
+:host .select,
+:host .select option {
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+:host .select option:hover,
+:host .select option:focus {
+  background-color: oklch(var(--b2)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+:host .select option:checked {
+  background-color: oklch(var(--p) / 0.2) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+/* Dark theme specific */
+:host-context([data-theme="dim"]) .select,
+:host-context([data-theme="dim"]) .select option {
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+:host-context([data-theme="dim"]) .select option:hover,
+:host-context([data-theme="dim"]) .select option:focus {
+  background-color: oklch(var(--b2)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+:host-context([data-theme="dim"]) .select option:checked {
+  background-color: oklch(var(--p) / 0.3) !important;
+  color: oklch(var(--bc)) !important;
 }
 
 /* Theme-specific styling */

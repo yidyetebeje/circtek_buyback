@@ -30,15 +30,39 @@
 >
   <div class="space-y-4">
     <!-- Context information based on active tab -->
-    <div class="text-sm text-base-content/70">
+    <div class="text-sm text-base-content/70 p-3 bg-base-200/30 rounded-lg border border-base-300/20 modal-context-info">
       @if (activeTab() === 'wifi' && selectedWifiProfile(); as p) {
-        <div><span class="font-medium">Profile:</span> {{ p.name }} (SSID: {{ p.ssid }})</div>
+        <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+          <span class="font-medium text-base-content/90 flex-shrink-0">Profile:</span> 
+          <div class="min-w-0 flex-1">
+            <app-truncated-text 
+              [text]="p.name + ' (SSID: ' + p.ssid + ')'"
+              [maxWidth]="'280px'"
+            ></app-truncated-text>
+          </div>
+        </div>
       }
       @if (activeTab() === 'labels' && selectedLabelTemplate(); as l) {
-        <div><span class="font-medium">Label Template:</span> {{ l.name }}</div>
+        <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+          <span class="font-medium text-base-content/90 flex-shrink-0">Label Template:</span>
+          <div class="min-w-0 flex-1">
+            <app-truncated-text 
+              [text]="l.name"
+              [maxWidth]="'280px'"
+            ></app-truncated-text>
+          </div>
+        </div>
       }
       @if (activeTab() === 'workflows' && selectedWorkflow(); as w) {
-        <div><span class="font-medium">Workflow:</span> {{ w.name }}</div>
+        <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+          <span class="font-medium text-base-content/90 flex-shrink-0">Workflow:</span>
+          <div class="min-w-0 flex-1">
+            <app-truncated-text 
+              [text]="w.name"
+              [maxWidth]="'280px'"
+            ></app-truncated-text>
+          </div>
+        </div>
       }
     </div>
     
@@ -50,10 +74,13 @@
           class="select select-bordered" 
           (change)="onAssignProfileSelect($event)"
           [disabled]="loading()"
+          [title]="'Select a WiFi profile to assign'"
         >
           <option [value]="''">Select WiFi profile…</option>
           @for (opt of wifiOptions(); track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
+            <option [value]="opt.value" [title]="opt.label">
+              {{ opt.label }}
+            </option>
           }
         </select>
       </div>
@@ -67,10 +94,13 @@
         (change)="onAssignTesterSelect($event)" 
         [value]="selectedAssignTesterId() ?? ''"
         [disabled]="loading()"
+        [title]="'Select a tester to assign'"
       >
         <option value="">Select a tester…</option>
         @for (opt of testerOptions(); track opt.value) {
-          <option [value]="opt.value">{{ opt.label }}</option>
+          <option [value]="opt.value" [title]="opt.label">
+            {{ opt.label }}
+          </option>
         }
       </select>
       @if (loading()) {
@@ -92,15 +122,39 @@
   (close)="closeAssignedModal()"
   (actionClick)="onAssignedModalAction($event)"
 >
-  <div class="text-sm text-base-content/70 mb-3">
+  <div class="text-sm text-base-content/70 p-3 bg-base-200/30 rounded-lg border border-base-300/20 mb-4 modal-context-info">
     @if (activeTab() === 'wifi' && selectedWifiProfile(); as p) {
-      <div><span class="font-medium">Profile:</span> {{ p.name }} (SSID: {{ p.ssid }})</div>
+      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+        <span class="font-medium text-base-content/90 flex-shrink-0">Profile:</span>
+        <div class="min-w-0 flex-1">
+          <app-truncated-text 
+            [text]="p.name + ' (SSID: ' + p.ssid + ')'"
+            [maxWidth]="'300px'"
+          ></app-truncated-text>
+        </div>
+      </div>
     }
     @if (activeTab() === 'labels' && selectedLabelTemplate(); as l) {
-      <div><span class="font-medium">Label Template:</span> {{ l.name }}</div>
+      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+        <span class="font-medium text-base-content/90 flex-shrink-0">Label Template:</span>
+        <div class="min-w-0 flex-1">
+          <app-truncated-text 
+            [text]="l.name"
+            [maxWidth]="'300px'"
+          ></app-truncated-text>
+        </div>
+      </div>
     }
     @if (activeTab() === 'workflows' && selectedWorkflow(); as w) {
-      <div><span class="font-medium">Workflow:</span> {{ w.name }}</div>
+      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+        <span class="font-medium text-base-content/90 flex-shrink-0">Workflow:</span>
+        <div class="min-w-0 flex-1">
+          <app-truncated-text 
+            [text]="w.name"
+            [maxWidth]="'300px'"
+          ></app-truncated-text>
+        </div>
+      </div>
     }
   </div>
   @if (assignedTestersLoading()) {
@@ -123,14 +177,25 @@
           @for (u of assignedTesters(); track u.id) {
             <tr>
               <td>{{ u.id }}</td>
-              <td>{{ u.user_name }}</td>
-              <td>{{ u.name }}</td>
+              <td>
+                <app-truncated-text 
+                  [text]="u.user_name"
+                  [maxWidth]="'120px'"
+                ></app-truncated-text>
+              </td>
+              <td>
+                <app-truncated-text 
+                  [text]="u.name"
+                  [maxWidth]="'140px'"
+                ></app-truncated-text>
+              </td>
               <td class="text-right">
                 <button 
                   class="btn btn-ghost btn-xs text-error" 
                   [disabled]="loading() || assignedTestersLoading()"
                   [class.loading]="loading()"
                   (click)="unassignTester(u.id)"
+                  [title]="'Unassign ' + u.user_name"
                 >
                   @if (loading()) {
                     <span class="loading loading-spinner loading-xs"></span>

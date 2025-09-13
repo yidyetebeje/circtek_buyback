@@ -24,9 +24,14 @@ export class BarcodeScannerComponent {
   required = input<boolean>(false);
   autoClear = input<boolean>(true); // Auto clear after successful scan
   enableCamera = input<boolean>(true); // Enable camera scanning
+  showSearchButton = input<boolean>(false); // Show search button
+  searchButtonText = input<string>('Search'); // Search button text
+  searching = input<boolean>(false); // External searching state
   
   // Outputs
   scanned = output<ScanResult>();
+  searchClicked = output<string>(); // Emitted when search button is clicked
+  inputChanged = output<string>(); // Emitted when input value changes
   
   // Internal state
   protected readonly inputValue = signal<string>('');
@@ -148,6 +153,8 @@ export class BarcodeScannerComponent {
     this.inputValue.set(value);
     // Only show visual feedback, don't emit scan result until Enter is pressed
     this.validateInputVisual(value);
+    // Emit input change for external handling
+    this.inputChanged.emit(value);
   }
   
   onInputKeyDown(event: KeyboardEvent): void {
@@ -156,7 +163,13 @@ export class BarcodeScannerComponent {
       event.stopPropagation();
       const value = this.inputValue();
       if (value.trim()) {
-        this.validateAndEmit(value.trim());
+        if (this.showSearchButton()) {
+          // If search button is enabled, emit search click instead
+          this.onSearchButtonClick();
+        } else {
+          // Original behavior
+          this.validateAndEmit(value.trim());
+        }
       }
     }
   }
@@ -215,8 +228,17 @@ export class BarcodeScannerComponent {
   }
   
   private validateIMEIOrSerial(value: string): ScanResult {
-    // Remove any spaces or dashes
-    const cleanValue = value.replace(/[\s-]/g, '');
+    // Check if value contains spaces - if so, it's invalid
+    if (value.includes(' ')) {
+      return {
+        value: value,
+        isValid: false,
+        type: 'unknown'
+      };
+    }
+    
+    // Remove any dashes (but not spaces - they're now invalid)
+    const cleanValue = value.replace(/[-]/g, '');
     
     // Check if it's a valid IMEI (15 digits)
     if (this.isValidIMEI(cleanValue)) {
@@ -276,7 +298,12 @@ export class BarcodeScannerComponent {
   }
   
   private getErrorMessage(value: string): string {
-    const cleanValue = value.replace(/[\s-]/g, '');
+    // Check if value contains spaces first
+    if (value.includes(' ')) {
+      return 'Spaces are not allowed in IMEI or serial numbers';
+    }
+    
+    const cleanValue = value.replace(/[-]/g, '');
     
     if (cleanValue.length === 0) {
       return 'Please enter a value';
@@ -318,6 +345,13 @@ export class BarcodeScannerComponent {
     this.validationType.set('unknown');
     this.errorMessage.set('');
   }
+
+  onSearchButtonClick(): void {
+    const value = this.inputValue().trim();
+    if (value) {
+      this.searchClicked.emit(value);
+    }
+  }
   
   protected getInputClasses(): string {
     const baseClasses = 'input input-bordered scanner-input w-full';
@@ -327,7 +361,11 @@ export class BarcodeScannerComponent {
     }
     
     if (this.inputValue() && this.isValid() !== null) {
-      return `${baseClasses} ${this.isValid() ? 'valid' : 'invalid'}`;
+      if (this.isValid()) {
+        return `${baseClasses} input-success border-success`;
+      } else {
+        return `${baseClasses} input-error border-error`;
+      }
     }
     
     return baseClasses;

@@ -315,3 +315,211 @@ body { margin: 0; font-family: "Poppins", sans-serif; }
 .btn:not(:disabled):not(.btn-disabled):hover {
   opacity: 1 !important;
 }
+
+/* Fix placeholder text visibility for all form inputs */
+.input::placeholder,
+.textarea::placeholder,
+.select option[disabled] {
+  opacity: 0.5 !important;
+  font-weight: 400 !important;
+  color: oklch(var(--bc) / 0.4) !important;
+}
+
+/* Theme-specific placeholder fixes */
+[data-theme="dim"] .input::placeholder,
+[data-theme="dim"] .textarea::placeholder {
+  color: oklch(var(--bc) / 0.45) !important;
+}
+
+[data-theme="light"] .input::placeholder,
+[data-theme="light"] .textarea::placeholder {
+  color: oklch(var(--bc) / 0.35) !important;
+}
+
+/* Ensure regular text color is distinct from placeholder */
+.input:not(:placeholder-shown),
+.textarea:not(:placeholder-shown) {
+  color: oklch(var(--bc)) !important;
+}
+
+/* Additional specificity for DaisyUI input components */
+.input.input-bordered::placeholder,
+.textarea.textarea-bordered::placeholder,
+.select.select-bordered::placeholder {
+  opacity: 0.5 !important;
+  color: oklch(var(--bc) / 0.4) !important;
+  font-weight: 400 !important;
+}
+
+/* Focus state placeholder adjustments */
+.input:focus::placeholder,
+.textarea:focus::placeholder {
+  opacity: 0.4 !important;
+  color: oklch(var(--bc) / 0.3) !important;
+}
+
+/* Dropdown and select option dark mode styling */
+.select,
+.select option {
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+.select option:hover,
+.select option:focus {
+  background-color: oklch(var(--b2)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+.select option:checked {
+  background-color: oklch(var(--p) / 0.2) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+/* Dark theme specific select styling */
+[data-theme="dim"] .select,
+[data-theme="dim"] .select option {
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+[data-theme="dim"] .select option:hover,
+[data-theme="dim"] .select option:focus {
+  background-color: oklch(var(--b2)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+[data-theme="dim"] .select option:checked {
+  background-color: oklch(var(--p) / 0.3) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+/* Light theme specific select styling */
+[data-theme="light"] .select,
+[data-theme="light"] .select option {
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+[data-theme="light"] .select option:hover,
+[data-theme="light"] .select option:focus {
+  background-color: oklch(var(--b2)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+[data-theme="light"] .select option:checked {
+  background-color: oklch(var(--p) / 0.2) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+/* DaisyUI select bordered styling */
+.select.select-bordered,
+.select.select-bordered option {
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+  border-color: oklch(var(--b3)) !important;
+}
+
+.select.select-bordered option:hover,
+.select.select-bordered option:focus {
+  background-color: oklch(var(--b2)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+.select.select-bordered option:checked {
+  background-color: oklch(var(--p) / 0.2) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+/* Custom dropdown styling for any dropdown components */
+.dropdown-menu,
+.dropdown-content {
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+  border: 1px solid oklch(var(--b3) / 0.3) !important;
+  box-shadow: 0 4px 12px oklch(var(--b3) / 0.15) !important;
+}
+
+.dropdown-menu .dropdown-item,
+.dropdown-content .dropdown-item {
+  color: oklch(var(--bc)) !important;
+  background-color: transparent !important;
+}
+
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus,
+.dropdown-content .dropdown-item:hover,
+.dropdown-content .dropdown-item:focus {
+  background-color: oklch(var(--b2) / 0.5) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+/* Truncated Text Component Styles */
+.truncate-text-cell {
+  @apply max-w-[200px] overflow-hidden;
+}
+
+.truncate-text-cell .truncate-content {
+  @apply whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-500 ease-in-out;
+}
+
+.truncate-text-cell:hover .truncate-content {
+  @apply overflow-visible;
+  animation: textSlideAnimation 3s ease-in-out infinite;
+}
+
+@keyframes textSlideAnimation {
+  0%, 25% {
+    transform: translateX(0);
+  }
+  50%, 75% {
+    transform: translateX(calc(-100% + 180px));
+  }
+  90%, 100% {
+    transform: translateX(0);
+  }
+}
+
+/* Responsive truncation for different screen sizes */
+@media (max-width: 768px) {
+  .truncate-text-cell {
+    @apply max-w-[120px];
+  }
+  
+  @keyframes textSlideAnimation {
+    0%, 25% {
+      transform: translateX(0);
+    }
+    50%, 75% {
+      transform: translateX(calc(-100% + 100px));
+    }
+    90%, 100% {
+      transform: translateX(0);
+    }
+  }
+}
+
+@media (min-width: 1024px) {
+  .truncate-text-cell {
+    @apply max-w-[250px];
+  }
+  
+  @keyframes textSlideAnimation {
+    0%, 25% {
+      transform: translateX(0);
+    }
+    50%, 75% {
+      transform: translateX(calc(-100% + 230px));
+    }
+    90%, 100% {
+      transform: translateX(0);
+    }
+  }
+}
+
+/* Modal Text Handling Styles - Fixed for Tailwind compatibility */
+.modal-context-info {
+  background-color: oklch(var(--b2) / 0.3);
+  border: 1px solid oklch(var(--b3) / 0.2);
+}
+

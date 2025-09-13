@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpParams } from '@angular/common/http';
@@ -37,6 +37,20 @@ export class TransferFormComponent {
   items = signal<TransferItem[]>([]);
   isModalOpen = signal(false);
   editingItem = signal<TransferItem | null>(null);
+  
+  // Computed validation error message
+  warehouseValidationError = computed(() => {
+    const form = this.form();
+    if (form?.hasError('sameWarehouse')) {
+      return 'From and To warehouses must be different';
+    }
+    return null;
+  });
+  
+  // Combined error message for display
+  displayError = computed(() => {
+    return this.error() || this.warehouseValidationError();
+  });
 
   // Form
   form = signal<FormGroup>(this.createForm());
@@ -95,12 +109,42 @@ export class TransferFormComponent {
   }
 
   private createForm(): FormGroup {
-    return this.fb.group({
+    const form = this.fb.group({
       from_warehouse_id: ['', [Validators.required]],
       to_warehouse_id: ['', [Validators.required]],
       tracking_number: [''],
       tracking_url: ['']
     });
+
+    // Add cross-field validation for warehouse selection
+    form.addValidators(this.warehouseValidator.bind(this));
+    
+    // Watch for changes to either warehouse field
+    form.get('from_warehouse_id')?.valueChanges.subscribe(() => {
+      form.get('to_warehouse_id')?.updateValueAndValidity({ emitEvent: false });
+      form.updateValueAndValidity({ emitEvent: false });
+      this.error.set(null); // Clear previous error
+    });
+    
+    form.get('to_warehouse_id')?.valueChanges.subscribe(() => {
+      form.get('from_warehouse_id')?.updateValueAndValidity({ emitEvent: false });
+      form.updateValueAndValidity({ emitEvent: false });
+      this.error.set(null); // Clear previous error
+    });
+
+    return form;
+  }
+
+  private warehouseValidator(control: AbstractControl): {[key: string]: any} | null {
+    const formGroup = control as FormGroup;
+    const fromWarehouse = formGroup.get('from_warehouse_id')?.value;
+    const toWarehouse = formGroup.get('to_warehouse_id')?.value;
+    
+    if (fromWarehouse && toWarehouse && fromWarehouse === toWarehouse) {
+      return { 'sameWarehouse': true };
+    }
+    
+    return null;
   }
 
   private loadWarehouses(): void {
@@ -159,15 +203,17 @@ export class TransferFormComponent {
   onSubmit(): void {
     if (this.form().invalid || this.submitting()) return;
 
-    // Validate that from and to warehouses are different
-    const formValue = this.form().value as TransferFormData;
-    if (formValue.from_warehouse_id === formValue.to_warehouse_id) {
+    // Check for warehouse validation errors
+    if (this.form().hasError('sameWarehouse')) {
       this.error.set('From and To warehouses must be different');
       return;
     }
 
     this.submitting.set(true);
     this.error.set(null);
+
+    // Get form values
+    const formValue = this.form().value as TransferFormData;
 
     // Validate items
     const transferItems = this.items();
@@ -196,13 +242,13 @@ export class TransferFormComponent {
     this.api.createTransferWithItems(payload).subscribe({
       next: (response) => {
         this.submitting.set(false);
-        if (response.data) {
+        if (response.status === 201) {
           this.toast.saveSuccess('Transfer', 'created');
           this.router.navigate(['/stock-management'], { 
             queryParams: { tab: 'transfers' }
           });
         } else {
-          this.error.set('Failed to create transfer');
+          this.error.set(response.message || 'Failed to create transfer');
         }
       },
       error: (err) => {

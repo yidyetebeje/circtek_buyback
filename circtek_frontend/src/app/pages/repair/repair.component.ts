@@ -99,9 +99,9 @@ export class RepairComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'Device SKU', accessorKey: 'device_sku' as any },
-          { header: 'IMEI', accessorKey: 'device_imei' as any },
-          { header: 'Serial', accessorKey: 'device_serial' as any },
+          { header: 'Device SKU', accessorKey: 'device_sku' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
+          { header: 'IMEI', accessorKey: 'device_imei' as any, meta: { truncateText: true, truncateMaxWidth: '130px' } },
+          { header: 'Serial', accessorKey: 'device_serial' as any, meta: { truncateText: true, truncateMaxWidth: '130px' } },
           { header: 'Repair Reason', id: 'reason_name', accessorFn: (r: any) => r.reason_name || `ID: ${r.reason_id}` },
           { header: 'Parts Used', id: 'parts_used', accessorFn: (r: any) => {
             // Check for consumed parts from repair items
@@ -110,7 +110,7 @@ export class RepairComponent {
             }
             return 'No parts used';
           }},
-          { header: 'Remarks', accessorKey: 'remarks' as any },
+          { header: 'Remarks', accessorKey: 'remarks' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
           { header: 'Created', accessorKey: 'created_at' as any },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
@@ -129,8 +129,8 @@ export class RepairComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'Name', accessorKey: 'name' as any },
-          { header: 'Description', accessorKey: 'description' as any },
+          { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '250px' } },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
@@ -153,7 +153,7 @@ export class RepairComponent {
           { header: 'IMEI', accessorKey: 'device_imei' as any },
           { header: 'Serial', accessorKey: 'device_serial' as any },
           { header: 'Warehouse', accessorKey: 'warehouse_name' as any },
-          { header: 'Notes', accessorKey: 'notes' as any },
+          { header: 'Notes', accessorKey: 'notes' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
           { header: 'Actor', accessorKey: 'actor_name' as any },
           { header: 'Created', accessorKey: 'created_at' as any },
           {

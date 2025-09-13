@@ -45,7 +45,7 @@ export class SkuSpecsFormComponent implements OnInit {
 
   // Form
   form = this.fb.group({
-    sku: ['', [Validators.required, Validators.minLength(1)]],
+    sku: ['', [Validators.required, Validators.minLength(2), Validators.pattern(/^[A-Za-z0-9-_]+$/)]],
     make: [''],
     model_no: [''],
     model_name: [''],
@@ -67,8 +67,12 @@ export class SkuSpecsFormComponent implements OnInit {
       label: 'SKU',
       type: 'text',
       required: true,
-      placeholder: 'Enter SKU code',
+      placeholder: 'Enter SKU code (letters, numbers, hyphens, underscores only)',
       disabled: this.isEditMode(), // SKU cannot be changed in edit mode
+      validation: {
+        minLength: 2,
+        pattern: '^[A-Za-z0-9-_]+$'
+      }
     },
     {
       key: 'make',
@@ -181,6 +185,7 @@ export class SkuSpecsFormComponent implements OnInit {
   onSubmit() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.toast.validationError('Please fill in all required fields and fix any errors.');
       return;
     }
 

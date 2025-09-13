@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { CommonModule } from '@angular/common';
 import { GenericPageComponent, type Facet, type GenericTab } from '../../shared/components/generic-page/generic-page.component';
 import { GenericModalComponent, type ModalAction } from '../../shared/components/generic-modal/generic-modal.component';
+import { TruncatedTextComponent } from '../../shared/components/truncated-text/truncated-text.component';
 import { ColumnDef } from '@tanstack/angular-table';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -23,7 +24,7 @@ export type MgmtRow = User | Warehouse | WiFiProfile | Tenant | RepairReasonReco
 
 @Component({
   selector: 'app-management',
-  imports: [CommonModule, GenericPageComponent, GenericModalComponent],
+  imports: [CommonModule, GenericPageComponent, GenericModalComponent, TruncatedTextComponent],
   templateUrl: './management.component.html',
   styleUrls: ['./management.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -225,8 +226,8 @@ export class ManagementComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'Name', accessorKey: 'name' as any },
-          { header: 'Description', accessorKey: 'description' as any },
+          { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
           { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
           {
             header: 'Actions',
@@ -248,11 +249,11 @@ export class ManagementComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'Username', accessorKey: 'user_name' as any },
-          { header: 'Name', accessorKey: 'name' as any },
-          { header: 'Email', accessorKey: 'email' as any },
-          { header: 'Role', accessorKey: 'role_name' as any },
-          { header: 'Tenant', accessorKey: 'tenant_name' as any },
+          { header: 'Username', accessorKey: 'user_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
+          { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Email', accessorKey: 'email' as any, meta: { truncateText: true, truncateMaxWidth: '180px' } },
+          { header: 'Role', accessorKey: 'role_name' as any, meta: { truncateText: true, truncateMaxWidth: '100px' } },
+          { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
           {
             header: 'Actions',
@@ -274,9 +275,9 @@ export class ManagementComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'Name', accessorKey: 'name' as any },
-          { header: 'Description', accessorKey: 'description' as any },
-          { header: 'Tenant', accessorKey: 'tenant_name' as any },
+          { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
+          { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
           {
             header: 'Actions',
@@ -298,9 +299,9 @@ export class ManagementComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'Name', accessorKey: 'name' as any },
-          { header: 'SSID', accessorKey: 'ssid' as any },
-          { header: 'Tenant', accessorKey: 'tenant_name' as any },
+          { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'SSID', accessorKey: 'ssid' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
           // Actions: assign tester, view assigned testers
           {
@@ -325,9 +326,9 @@ export class ManagementComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'Name', accessorKey: 'name' as any },
-          { header: 'Description', accessorKey: 'description' as any },
-          { header: 'Tenant', accessorKey: 'tenant_name' as any },
+          { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
+          { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           {
             header: 'Actions',
             id: 'actions' as any,
@@ -350,9 +351,9 @@ export class ManagementComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'Name', accessorKey: 'name' as any },
-          { header: 'Description', accessorKey: 'description' as any },
-          { header: 'Tenant', accessorKey: 'tenant_name' as any },
+          { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
+          { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           {
             header: 'Actions',
             id: 'actions' as any,

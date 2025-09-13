@@ -20,7 +20,7 @@
                 <h1 class="text-2xl font-bold text-base-content">
                   {{ isEditingDocument ? "Edit Label" : "New Label" }}
                 </h1>
-                <p class="text-base-content/60 text-sm">Document Editor</p>
+                <p class="text-base-content/60 text-sm">{{ isEditingDocument ? "Edit Label Template" : "Label Template Editor" }}</p>
               </div>
             </div>
             
@@ -68,16 +68,17 @@
             <!-- DPI -->
             <div class="flex items-center gap-2 flex-shrink-0">
               <label class="text-xs font-medium text-base-content/70 whitespace-nowrap">DPI:</label>
-              <input 
-                type="number" 
-                min="72" 
-                max="600" 
-                step="1"
-                class="input input-bordered input-sm w-20 max-w-20" 
-                [ngModel]="DPI"
-                (ngModelChange)="onDpiInputChange($event)"
-                (input)="validateDpiInput($event)"
-              />
+            <input 
+              type="number" 
+              min="72" 
+              max="600" 
+              step="1"
+              class="input input-bordered input-sm w-20 max-w-20" 
+              [ngModel]="DPI"
+              (ngModelChange)="onDpiInputChange($event)"
+              (blur)="onDpiBlur($event)"
+              (keydown.enter)="onDpiBlur($event)"
+            />
             </div>
 
             <!-- List Mode Toggle -->

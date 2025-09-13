@@ -48,8 +48,17 @@ export const repair_reasons_routes = new Elysia({ prefix: '/repair-reasons' })
     return result
   }, {
     body: t.Object({
-      name: t.String(),
-      description: t.Optional(t.String()),
+      name: t.String({
+        minLength: 2,
+        maxLength: 100,
+        pattern: '^[a-zA-ZÀ-ÿ\\s\'\-]+$',
+        description: 'Name must contain only letters, spaces, apostrophes, and hyphens (2-100 characters)'
+      }),
+      description: t.Optional(t.String({
+        maxLength: 500,
+        pattern: '^[a-zA-ZÀ-ÿ\\s\'\-]*$',
+        description: 'Description must contain only letters, spaces, apostrophes, and hyphens (max 500 characters)'
+      })),
       status: t.Optional(t.Boolean())
     }),
     detail: {
@@ -70,8 +79,17 @@ export const repair_reasons_routes = new Elysia({ prefix: '/repair-reasons' })
       id: t.String()
     }),
     body: t.Object({
-      name: t.Optional(t.String()),
-      description: t.Optional(t.String()),
+      name: t.Optional(t.String({
+        minLength: 2,
+        maxLength: 100,
+        pattern: '^[a-zA-ZÀ-ÿ\\s\'\-]+$',
+        description: 'Name must contain only letters, spaces, apostrophes, and hyphens (2-100 characters)'
+      })),
+      description: t.Optional(t.String({
+        maxLength: 500,
+        pattern: '^[a-zA-ZÀ-ÿ\\s\'\-]*$',
+        description: 'Description must contain only letters, spaces, apostrophes, and hyphens (max 500 characters)'
+      })),
       status: t.Optional(t.Boolean())
     }),
     detail: {

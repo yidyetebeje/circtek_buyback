@@ -1115,22 +1115,34 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   }
 
   onDpiInputChange(value: any): void {
+    // Only apply DPI changes if the value is valid and within range
+    // This method is kept for compatibility but validation is handled in onDpiBlur
     const newDpi = Number(value);
-    this.canvasService.dimensions.setDPI(newDpi);
+    if (!isNaN(newDpi) && newDpi >= 72 && newDpi <= 600) {
+      this.canvasService.dimensions.setDPI(newDpi);
+    }
   }
 
-  validateDpiInput(event: Event): void {
+  onDpiBlur(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const value = Number(input.value);
+    let value = Number(input.value);
     
-    // Enforce limits
-    if (value < 72) {
-      input.value = '72';
-      this.canvasService.dimensions.setDPI(72);
+    // Enforce limits when user finishes typing or presses Enter
+    if (isNaN(value) || input.value.trim() === '') {
+      // If invalid or empty, reset to minimum
+      value = 72;
+    } else if (value < 72) {
+      value = 72;
     } else if (value > 600) {
-      input.value = '600';
-      this.canvasService.dimensions.setDPI(600);
+      value = 600;
     }
+    
+    // Update both the input and the canvas service
+    input.value = value.toString();
+    this.canvasService.dimensions.setDPI(value);
+    
+    // Trigger change detection to update the ngModel
+    this.cdRef.detectChanges();
   }
 
   // Canvas utility methods

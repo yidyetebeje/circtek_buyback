@@ -32,9 +32,11 @@
               @for (tab of t; track tab.key) {
                 <button
                   role="tab"
-                  class="tab whitespace-nowrap transition-all duration-200 hover:bg-primary/10 rounded-xl"
+                  class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
                   [class.bg-primary]="activeTabKey() === tab.key"
-                 
+                  [class.text-white]="activeTabKey() === tab.key"
+                  [class.text-base-content]="activeTabKey() !== tab.key"
+                  [class.hover:bg-primary/10]="activeTabKey() !== tab.key"
                   (click)="setActiveTab(tab.key)"
                 >
                   <span>{{ tab.label }}</span>
@@ -91,6 +93,7 @@
                 </svg>
               </div>
               <input 
+                #searchInput
                 type="text" 
                 class="search-input input input-bordered w-full pl-10 pr-12 placeholder:text-base-content/50 placeholder:font-normal" 
                 [placeholder]="searchPlaceholder()" 
@@ -169,6 +172,11 @@
                               </button>
                             }
                           </div>
+                        } @else if (shouldTruncateText(cell)) {
+                          <app-truncated-text 
+                            [text]="cellText(cell)"
+                            [maxWidth]="getTruncationSettings(cell).maxWidth!"
+                          ></app-truncated-text>
                         } @else {
                           {{ cellText(cell) }}
                         }

@@ -258,7 +258,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            position: 'top' as const
+            display: false
           },
           title: {
             display: true,

@@ -13,6 +13,9 @@ export interface FormField {
   required?: boolean;
   options?: Array<{ label: string; value: any }>;
   disabled?: boolean;
+  helpText?: string;
+  autocomplete?: string;
+  preventPasswordManager?: boolean;
   validation?: {
     minLength?: number;
     maxLength?: number;
@@ -56,6 +59,7 @@ export class GenericFormPageComponent {
   showBackButton = input<boolean>(true);
   backUrl = input<string>('../');
   submitLabel = input<string>('Save');
+  submitDisabled = input<boolean>(false);
 
   // Outputs
   formSubmit = output<any>();
@@ -132,6 +136,9 @@ export class GenericFormPageComponent {
     if (errors['pattern']) {
       if (field.key === 'name') {
         return 'Name can only contain letters, spaces, apostrophes, hyphens, and periods';
+      }
+      if (field.key === 'sku') {
+        return 'SKU can only contain letters, numbers, hyphens, and underscores';
       }
       return `${field.label} format is invalid`;
     }

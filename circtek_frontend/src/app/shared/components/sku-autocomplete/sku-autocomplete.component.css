@@ -18,34 +18,35 @@
   left: 12px;
   width: 16px;
   height: 16px;
-  color: #9ca3af;
+  color: oklch(var(--bc) / 0.5);
   z-index: 1;
   transition: color 0.2s ease;
 }
 
 .search-icon.loading {
-  color: #3b82f6;
+  color: oklch(var(--p));
 }
 
 .sku-input {
   width: 100%;
   padding: 8px 40px 8px 40px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid oklch(var(--b3));
   border-radius: 8px;
   font-size: 14px;
-  background-color: white;
+  background-color: oklch(var(--b1));
+  color: oklch(var(--bc));
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .sku-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: oklch(var(--p));
+  box-shadow: 0 0 0 3px oklch(var(--p) / 0.1);
 }
 
 .sku-input:disabled {
-  background-color: #f9fafb;
-  color: #6b7280;
+  background-color: oklch(var(--b2));
+  color: oklch(var(--bc) / 0.5);
   cursor: not-allowed;
 }
 
@@ -54,8 +55,8 @@
   right: 12px;
   width: 16px;
   height: 16px;
-  border: 2px solid #e5e7eb;
-  border-top: 2px solid #3b82f6;
+  border: 2px solid oklch(var(--b3));
+  border-top: 2px solid oklch(var(--p));
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -68,7 +69,7 @@
 .error-message {
   margin-top: 4px;
   font-size: 12px;
-  color: #ef4444;
+  color: oklch(var(--er));
 }
 
 .dropdown {
@@ -77,10 +78,10 @@
   left: 0;
   right: 0;
   z-index: 1000;
-  background-color: white;
-  border: 1px solid #e5e7eb;
+  background-color: oklch(var(--b1));
+  border: 1px solid oklch(var(--b3) / 0.3);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px oklch(var(--b3) / 0.15);
   margin-top: 6px;
   max-height: 280px;
   overflow-y: auto;
@@ -102,7 +103,7 @@
 
 .option:hover,
 .option.highlighted {
-  background-color: #f3f4f6;
+  background-color: oklch(var(--b2) / 0.5);
 }
 
 .option-content {
@@ -120,12 +121,12 @@
 .sku {
   font-weight: 600;
   font-size: 14px;
-  color: #111827;
+  color: oklch(var(--bc));
 }
 
 .name {
   font-size: 12px;
-  color: #6b7280;
+  color: oklch(var(--bc) / 0.6);
 }
 
 .badge {
@@ -138,13 +139,13 @@
 }
 
 .badge-part {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: oklch(var(--in) / 0.2);
+  color: oklch(var(--in));
 }
 
 .badge-device {
-  background-color: #dcfce7;
-  color: #166534;
+  background-color: oklch(var(--su) / 0.2);
+  color: oklch(var(--su));
 }
 
 .create-option {
@@ -153,13 +154,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #2563eb;
+  color: oklch(var(--p));
   font-weight: 500;
   transition: background-color 0.2s ease;
 }
 
 .create-option:hover {
-  background-color: #f8fafc;
+  background-color: oklch(var(--b2) / 0.3);
 }
 
 .plus-icon {
@@ -170,7 +171,7 @@
 .no-results {
   padding: 16px 12px;
   text-align: center;
-  color: #6b7280;
+  color: oklch(var(--bc) / 0.6);
   font-size: 14px;
 }
 

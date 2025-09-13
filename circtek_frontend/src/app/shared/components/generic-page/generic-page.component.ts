@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal, inject, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CellHostDirective } from './directives/cell-host.directive';
 import { FormsModule } from '@angular/forms';
 import { ColumnDef, createAngularTable, getCoreRowModel, SortingState } from '@tanstack/angular-table';
 import { LucideAngularModule, Edit, Trash2, UserPlus, Users, Eye, PackagePlus } from 'lucide-angular';
+import { TruncatedTextComponent } from '../truncated-text/truncated-text.component';
 
 // Reusable Generic Page composed with Tailwind + DaisyUI
 // - Header title
@@ -39,14 +40,20 @@ export type CellAction = {
 
 @Component({
   selector: 'app-generic-page',
-  imports: [CommonModule, FormsModule, CellHostDirective, LucideAngularModule],
+  imports: [CommonModule, FormsModule, CellHostDirective, LucideAngularModule, TruncatedTextComponent],
   templateUrl: './generic-page.component.html',
   styleUrl: './generic-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GenericPageComponent<TData extends object> {
+export class GenericPageComponent<TData extends object> implements AfterViewInit, OnDestroy {
   // Expose Math for template usage
   protected readonly Math = Math;
+
+  // ViewChild reference to search input for focus management
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+
+  // Scroll event listener to remove focus from search input
+  private scrollListener?: () => void;
   // Header
   title = input.required<string>();
   subtitle = input<string | null>(null);
@@ -229,6 +236,19 @@ export class GenericPageComponent<TData extends object> {
     return s.trim().length ? s : 'N/A';
   }
 
+  // Check if cell should use truncated text
+  shouldTruncateText(cell: any): boolean {
+    return cell.column.columnDef.meta?.truncateText === true;
+  }
+
+  // Get truncation settings for cell
+  getTruncationSettings(cell: any): { maxWidth?: string } {
+    const meta = cell.column.columnDef.meta;
+    return {
+      maxWidth: meta?.truncateMaxWidth || '200px'
+    };
+  }
+
   getCellActions(cell: any): CellAction[] | undefined {
     return cell.column.columnDef.meta?.actions;
   }
@@ -313,6 +333,28 @@ export class GenericPageComponent<TData extends object> {
       this.table().setPageIndex(0);
     } catch {
       // If table update fails, we've already emitted the event above
+    }
+  }
+
+  ngAfterViewInit(): void {
+    // Set up scroll event listener to blur search input when scrolling
+    this.scrollListener = () => {
+      if (this.searchInput?.nativeElement === document.activeElement) {
+        this.searchInput.nativeElement.blur();
+      }
+    };
+
+    // Add scroll listener to window and the main container
+    window.addEventListener('scroll', this.scrollListener, { passive: true });
+    // Also listen for scroll events on any scrollable containers
+    document.addEventListener('scroll', this.scrollListener, { passive: true, capture: true });
+  }
+
+  ngOnDestroy(): void {
+    // Clean up scroll event listeners
+    if (this.scrollListener) {
+      window.removeEventListener('scroll', this.scrollListener);
+      document.removeEventListener('scroll', this.scrollListener, { capture: true });
     }
   }
 }

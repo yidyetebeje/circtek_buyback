@@ -93,6 +93,90 @@
   border: 1px solid oklch(var(--b3) / 0.15);
 }
 
+/* Placeholder text styling for better visibility */
+.input::placeholder,
+.textarea::placeholder,
+.select::placeholder {
+  opacity: 0.5 !important;
+  font-weight: 400 !important;
+  color: oklch(var(--bc) / 0.4) !important;
+}
+
+/* Theme-specific placeholder styling */
+:host-context([data-theme="dim"]) .input::placeholder,
+:host-context([data-theme="dim"]) .textarea::placeholder {
+  color: oklch(var(--bc) / 0.45) !important;
+}
+
+:host-context([data-theme="light"]) .input::placeholder,
+:host-context([data-theme="light"]) .textarea::placeholder {
+  color: oklch(var(--bc) / 0.35) !important;
+}
+
+/* Ensure regular text is distinct from placeholder */
+.input:not(:placeholder-shown),
+.textarea:not(:placeholder-shown) {
+  color: oklch(var(--bc)) !important;
+  font-weight: 400;
+}
+
+/* Focus state adjustments */
+.input:focus::placeholder,
+.textarea:focus::placeholder {
+  opacity: 0.4 !important;
+  color: oklch(var(--bc) / 0.3) !important;
+}
+
+/* DaisyUI specific overrides */
+.input.input-bordered::placeholder,
+.textarea.textarea-bordered::placeholder {
+  opacity: 0.5 !important;
+  color: oklch(var(--bc) / 0.4) !important;
+  font-weight: 400 !important;
+}
+
+/* Select placeholder styling */
+.select option:disabled {
+  color: oklch(var(--bc) / 0.4) !important;
+  opacity: 0.5 !important;
+}
+
+/* Select dropdown styling for dark mode */
+:host .select,
+:host .select option {
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+:host .select option:hover,
+:host .select option:focus {
+  background-color: oklch(var(--b2)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+:host .select option:checked {
+  background-color: oklch(var(--p) / 0.2) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+/* Dark theme specific */
+:host-context([data-theme="dim"]) .select,
+:host-context([data-theme="dim"]) .select option {
+  background-color: oklch(var(--b1)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+:host-context([data-theme="dim"]) .select option:hover,
+:host-context([data-theme="dim"]) .select option:focus {
+  background-color: oklch(var(--b2)) !important;
+  color: oklch(var(--bc)) !important;
+}
+
+:host-context([data-theme="dim"]) .select option:checked {
+  background-color: oklch(var(--p) / 0.3) !important;
+  color: oklch(var(--bc)) !important;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .grid-cols-1.md\\:grid-cols-2 {

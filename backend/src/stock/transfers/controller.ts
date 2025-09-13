@@ -55,19 +55,15 @@ export class TransfersController {
         }
       }
 
-      // Create the transfer
-      const transfer = await this.repo.createTransfer({ ...payload.transfer, tenant_id, created_by: payload.created_by })
-      if (!transfer) {
-        return { data: null, message: 'Failed to create transfer', status: 500 }
-      }
-
-      // Create the transfer items with validation
-      await this.repo.createTransferItems(transfer.id, payload.items, tenant_id, payload.transfer.from_warehouse_id, payload.transfer.to_warehouse_id)
+      // Use transaction to ensure atomicity - either everything succeeds or everything fails
+      const result = await this.repo.createTransferWithItemsTransaction(
+        { ...payload.transfer, tenant_id, created_by: payload.created_by },
+        payload.items,
+        tenant_id
+      )
       
-      // Return the full transfer with details
-      const fullTransfer = await this.repo.findTransferWithDetails(transfer.id, tenant_id)
       return { 
-        data: fullTransfer ?? null, 
+        data: result ?? null, 
         message: 'Transfer with items created successfully', 
         status: 201 
       }

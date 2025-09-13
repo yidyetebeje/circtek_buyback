@@ -52,6 +52,55 @@ export class TransfersRepository {
       ));
   }
 
+  async createTransferWithItemsTransaction(
+    transferData: TransferCreateInput & { tenant_id: number; created_by: number },
+    items: TransferItemCreateInput[],
+    tenant_id: number
+  ): Promise<TransferWithDetails | undefined> {
+    return await this.database.transaction(async (tx) => {
+      // First, validate stock availability for all items before creating anything
+      for (const item of items) {
+        await this.validateStockForTransferInTransaction(
+          tx, 
+          item.sku, 
+          item.quantity || 1, 
+          transferData.from_warehouse_id, 
+          tenant_id
+        );
+      }
+
+      // Create the transfer
+      const [transferResult] = await tx.insert(transfers).values(transferData);
+      if (!transferResult.insertId) {
+        throw new Error('Failed to create transfer');
+      }
+
+      const transfer_id = Number(transferResult.insertId);
+
+      // Ensure stock records exist in receiver warehouse for FK constraints
+      for (const item of items) {
+        await this.ensureStockExistsForTransferInTransaction(
+          tx, 
+          item.sku, 
+          transferData.to_warehouse_id, 
+          tenant_id
+        );
+      }
+
+      // Create transfer items
+      const itemsToInsert = items.map(item => ({
+        ...item,
+        transfer_id,
+        tenant_id,
+      }));
+
+      await tx.insert(transfer_items).values(itemsToInsert);
+
+      // Return the full transfer with details
+      return this.findTransferWithDetails(transfer_id, tenant_id);
+    });
+  }
+
   async findTransferById(id: number, tenant_id?: number): Promise<TransferRecord | undefined> {
     const conditions = [eq(transfers.id, id)];
     if (typeof tenant_id === 'number') {
@@ -414,6 +463,71 @@ export class TransfersRepository {
 
     if (stockRecord.quantity < quantity) {
       throw new Error(`Insufficient quantity for SKU "${sku}" in sender warehouse "${stockRecord.warehouse_name}". Available: ${stockRecord.quantity}, Required: ${quantity}`);
+    }
+  }
+
+  /**
+   * Transaction-aware version of validateStockForTransfer
+   */
+  private async validateStockForTransferInTransaction(tx: any, sku: string, quantity: number, from_warehouse_id: number, tenant_id: number): Promise<void> {
+    const [stockRecord] = await tx
+      .select({ 
+        id: stock.id,
+        quantity: stock.quantity,
+        warehouse_name: warehouses.name
+      })
+      .from(stock)
+      .leftJoin(warehouses, eq(stock.warehouse_id, warehouses.id))
+      .where(and(
+        eq(stock.sku, sku),
+        eq(stock.warehouse_id, from_warehouse_id),
+        eq(stock.tenant_id, tenant_id)
+      ))
+      .limit(1);
+
+    if (!stockRecord) {
+      throw new Error(`SKU "${sku}" does not exist in the sender warehouse`);
+    }
+
+    if (stockRecord.quantity < quantity) {
+      throw new Error(`Insufficient quantity for SKU "${sku}" in sender warehouse "${stockRecord.warehouse_name}". Available: ${stockRecord.quantity}, Required: ${quantity}`);
+    }
+  }
+
+  /**
+   * Transaction-aware version of ensureStockExistsForTransfer
+   */
+  private async ensureStockExistsForTransferInTransaction(tx: any, sku: string, warehouse_id: number, tenant_id: number): Promise<void> {
+    // Check if stock record exists for this SKU in the specified warehouse
+    const [existing] = await tx
+      .select({ id: stock.id })
+      .from(stock)
+      .where(and(
+        eq(stock.sku, sku), 
+        eq(stock.warehouse_id, warehouse_id),
+        eq(stock.tenant_id, tenant_id)
+      ))
+      .limit(1);
+    
+    if (existing) return;
+
+    // Create stock record in the specified warehouse for FK constraint
+    try {
+      await tx.insert(stock).values({
+        sku,
+        warehouse_id,
+        quantity: 0,
+        tenant_id,
+        is_part: false,
+      });
+    } catch (error: any) {
+      // Handle unique constraint - stock might exist but in different warehouse
+      if (error.code === 'ER_DUP_ENTRY') {
+        // Just ignore - another process might have created it
+        return;
+      } else {
+        throw error;
+      }
     }
   }
 

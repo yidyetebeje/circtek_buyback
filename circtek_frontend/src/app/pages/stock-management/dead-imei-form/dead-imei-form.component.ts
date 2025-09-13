@@ -22,6 +22,7 @@ export class DeadIMEIFormComponent {
 
   // State
   protected readonly loading = signal(false);
+  protected readonly searching = signal(false);
   protected readonly error = signal<string>('');
   protected readonly deviceFound = signal<any>(null);
 
@@ -35,15 +36,38 @@ export class DeadIMEIFormComponent {
     // No initialization needed for simplified form
   }
 
+
   protected onScan(result: ScanResult) {
     if (result.isValid) {
       this.lookupDevice(result.value);
     }
   }
 
+  protected onInputChange(value: string) {
+    // Clear device and error when input changes
+    if (this.deviceFound()) {
+      this.deviceFound.set(null);
+    }
+    if (this.error()) {
+      this.error.set('');
+    }
+  }
+
+  protected onSearchClick(value: string) {
+    if (value.trim()) {
+      this.lookupDevice(value.trim());
+    } else {
+      this.error.set('Please enter an IMEI or Serial number');
+    }
+  }
+
   private lookupDevice(identifier: string) {
+    this.searching.set(true);
+    this.error.set('');
+    
     this.api.findDeviceByImeiOrSerial(identifier).subscribe({
       next: (res) => {
+        this.searching.set(false);
         if (res.data) {
           this.deviceFound.set(res.data);
           this.error.set('');
@@ -53,6 +77,7 @@ export class DeadIMEIFormComponent {
         }
       },
       error: (err) => {
+        this.searching.set(false);
         this.deviceFound.set(null);
         this.error.set('Error looking up device');
         console.error('Device lookup error:', err);
@@ -60,10 +85,14 @@ export class DeadIMEIFormComponent {
     });
   }
 
+  protected canSubmit(): boolean {
+    return !!this.deviceFound() && !this.loading() && !this.searching();
+  }
+
   protected onSubmit() {
     const device = this.deviceFound();
     if (!device) {
-      this.error.set('Please enter a valid device identifier');
+      this.error.set('Please search for and select a device first');
       return;
     }
 

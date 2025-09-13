@@ -7,7 +7,23 @@ export class RepairReasonsController {
 
   async create(payload: RepairReasonCreateInput, tenant_id: number): Promise<response<RepairReasonRecord | null>> {
     try {
-      const created = await this.repo.create({ ...payload, tenant_id })
+      // Sanitize and validate input data
+      const sanitizedPayload: RepairReasonCreateInput = {
+        name: payload.name?.toString().trim(),
+        description: payload.description?.toString().trim() || undefined,
+        status: payload.status
+      };
+      
+      // Additional validation for excessive spacing
+      if (sanitizedPayload.name && /\s{3,}/.test(sanitizedPayload.name)) {
+        return { data: null, message: 'Name cannot contain more than two consecutive spaces', status: 400 };
+      }
+      
+      if (sanitizedPayload.description && /\s{3,}/.test(sanitizedPayload.description)) {
+        return { data: null, message: 'Description cannot contain more than two consecutive spaces', status: 400 };
+      }
+      
+      const created = await this.repo.create({ ...sanitizedPayload, tenant_id })
       if (!created) return { data: null, message: 'Failed to create repair reason', status: 500 }
       return { data: created, message: 'Repair reason created successfully', status: 201 }
     } catch (error) {
@@ -39,7 +55,27 @@ export class RepairReasonsController {
 
   async update(id: number, payload: RepairReasonUpdateInput, tenant_id?: number): Promise<response<RepairReasonRecord | null>> {
     try {
-      const updated = await this.repo.update(id, payload, tenant_id)
+      // Sanitize and validate input data
+      const sanitizedPayload: RepairReasonUpdateInput = {};
+      if (payload.name !== undefined) {
+        sanitizedPayload.name = payload.name?.toString().trim();
+        // Check for excessive spacing
+        if (sanitizedPayload.name && /\s{3,}/.test(sanitizedPayload.name)) {
+          return { data: null, message: 'Name cannot contain more than two consecutive spaces', status: 400 };
+        }
+      }
+      if (payload.description !== undefined) {
+        sanitizedPayload.description = payload.description?.toString().trim() || undefined;
+        // Check for excessive spacing
+        if (sanitizedPayload.description && /\s{3,}/.test(sanitizedPayload.description)) {
+          return { data: null, message: 'Description cannot contain more than two consecutive spaces', status: 400 };
+        }
+      }
+      if (payload.status !== undefined) {
+        sanitizedPayload.status = payload.status;
+      }
+      
+      const updated = await this.repo.update(id, sanitizedPayload, tenant_id)
       if (!updated) return { data: null, message: 'Repair reason not found or failed to update', status: 404 }
       return { data: updated, message: 'Repair reason updated successfully', status: 200 }
     } catch (error) {

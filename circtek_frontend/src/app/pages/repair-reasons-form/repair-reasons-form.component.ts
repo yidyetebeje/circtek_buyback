@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../shared/components/generic-form-page/generic-form-page.component';
@@ -36,6 +36,64 @@ export class RepairReasonsFormComponent {
   private readonly toast = inject(ToastService);
   private readonly toastr = inject(ToastrService);
 
+  // Custom validators
+  private lettersOnlyValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value) return null;
+    
+    const value = control.value.toString();
+    const trimmedValue = value.trim();
+    if (!trimmedValue) return null; // Allow empty values (for optional fields)
+    
+    // Allow letters (including accented characters), spaces, apostrophes, and hyphens
+    const lettersOnlyPattern = /^[a-zA-ZÀ-ÿ\s'-]+$/;
+    
+    if (!lettersOnlyPattern.test(value)) {
+      return { lettersOnly: { message: 'Only letters, spaces, apostrophes, and hyphens are allowed' } };
+    }
+    
+    // Check for more than two consecutive spaces
+    if (/\s{3,}/.test(value)) {
+      return { excessiveWhitespace: { message: 'No more than two consecutive spaces allowed' } };
+    }
+    
+    return null;
+  }
+
+  // Validator specifically for required fields that must contain only letters
+  private requiredLettersOnlyValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value) return null;
+    
+    const value = control.value.toString();
+    const trimmedValue = value.trim();
+    if (!trimmedValue) return { required: true };
+    
+    // Allow letters (including accented characters), spaces, apostrophes, and hyphens
+    const lettersOnlyPattern = /^[a-zA-ZÀ-ÿ\s'-]+$/;
+    
+    if (!lettersOnlyPattern.test(value)) {
+      return { lettersOnly: { message: 'Only letters, spaces, apostrophes, and hyphens are allowed' } };
+    }
+    
+    // Check for more than two consecutive spaces
+    if (/\s{3,}/.test(value)) {
+      return { excessiveWhitespace: { message: 'No more than two consecutive spaces allowed' } };
+    }
+    
+    return null;
+  }
+
+  private trimWhitespaceValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value) return null;
+    
+    const value = control.value.toString();
+    const trimmedValue = value.trim();
+    
+    // Only update on blur or when user stops typing to avoid interfering with typing
+    // This will be handled by the form submission instead
+    
+    return null;
+  }
+
   // Form state
   form: FormGroup;
   loading = signal(false);
@@ -58,16 +116,16 @@ export class RepairReasonsFormComponent {
       label: 'Name',
       type: 'text',
       required: true,
-      placeholder: 'Enter repair reason name',
-      description: 'A descriptive name for the repair reason'
+      placeholder: 'Enter repair reason name (letters and spaces)',
+      description: 'A descriptive name for the repair reason (2-100 characters, letters and spaces allowed)'
     },
     {
       key: 'description',
       label: 'Description',
       type: 'textarea',
       required: false,
-      placeholder: 'Enter detailed description (optional)',
-      description: 'Additional details about this repair reason'
+      placeholder: 'Enter detailed description (optional, letters and spaces)',
+      description: 'Additional details about this repair reason (max 500 characters, letters and spaces allowed)'
     },
     {
       key: 'status',
@@ -92,8 +150,18 @@ export class RepairReasonsFormComponent {
 
   constructor() {
     this.form = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(255)]],
-      description: [''],
+      name: ['', [
+        Validators.required, 
+        Validators.minLength(2), 
+        Validators.maxLength(100), // Limit name to 100 characters
+        this.requiredLettersOnlyValidator.bind(this),
+        this.trimWhitespaceValidator.bind(this)
+      ]],
+      description: ['', [
+        Validators.maxLength(500), // Limit description to 500 characters
+        this.lettersOnlyValidator.bind(this), // Allow empty for optional field
+        this.trimWhitespaceValidator.bind(this)
+      ]],
       status: [true, [Validators.required]]
     });
 
@@ -140,7 +208,12 @@ export class RepairReasonsFormComponent {
     this.submitting.set(true);
     this.error.set(null);
 
-    const formData = this.form.value;
+    // Ensure values are properly trimmed before submission
+    const formData = {
+      name: this.form.value.name?.toString().trim() || '',
+      description: this.form.value.description?.toString().trim() || '',
+      status: this.form.value.status
+    };
     const request = this.isEditMode() 
       ? this.updateRepairReason(formData)
       : this.createRepairReason(formData);

@@ -71,6 +71,8 @@ export class WiFiProfileFormComponent {
         type: 'password',
         placeholder: 'Enter WiFi password',
         required: true,
+        autocomplete: 'new-password',
+        preventPasswordManager: true,
         validation: { minLength: 8, maxLength: 63 }
       }
     ];

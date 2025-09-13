@@ -39,10 +39,34 @@ export class TransferItemModalComponent {
   deviceLookupLoading = signal<boolean>(false);
   deviceLookupError = signal<string>('');
   foundDevice = signal<any | null>(null);
+  formUpdateTrigger = signal<number>(0); // Trigger to force computed updates
 
   // Computed
   title = computed(() => this.editingItem() ? 'Edit Item' : 'Add Item');
   submitLabel = computed(() => this.editingItem() ? 'Update Item' : 'Add Item');
+  
+  // Check if form is ready for submission
+  isFormReadyForSubmit = computed(() => {
+    // Include formUpdateTrigger to make this reactive to form changes
+    const trigger = this.formUpdateTrigger();
+    const form = this.form();
+    
+    if (!form || this.deviceLookupLoading()) return false;
+    
+    const isPart = form.get('is_part')?.value;
+    const deviceId = form.get('device_id')?.value;
+    const sku = form.get('sku')?.value?.trim();
+    const quantity = Number(form.get('quantity')?.value);
+    
+    if (isPart) {
+      // For parts, need valid SKU and valid quantity
+      return sku && sku.length > 0 && quantity && quantity > 0;
+    } else {
+      // For devices, need valid device_id from scanner and quantity 1
+      return deviceId && quantity === 1;
+    }
+  });
+  
   actions = computed<ModalAction[]>(() => [
     {
       label: 'Cancel',
@@ -52,7 +76,7 @@ export class TransferItemModalComponent {
     {
       label: this.submitLabel(),
       variant: 'accent',
-      disabled: !this.formValid() || this.deviceLookupLoading(),
+      disabled: !this.isFormReadyForSubmit(),
       action: 'submit'
     }
   ]);
@@ -71,7 +95,10 @@ export class TransferItemModalComponent {
       if (isOpen) {
         this.form.set(this.createForm());
         // Set initial form validity after form is created
-        setTimeout(() => this.updateFormValiditySignal(), 0);
+        setTimeout(() => {
+          this.updateFormValiditySignal();
+          this.formUpdateTrigger.set(this.formUpdateTrigger() + 1);
+        }, 0);
       }
     });
   }
@@ -87,9 +114,11 @@ export class TransferItemModalComponent {
 
     this.updateValidators(form, form.get('is_part')?.value ?? false, false);
     
-    // Subscribe to form value changes to update validity signal
+    // Subscribe to form value changes to update validity signal and trigger computed updates
     form.valueChanges.subscribe(() => {
       this.updateFormValiditySignal();
+      // Trigger computed property update by incrementing the trigger
+      this.formUpdateTrigger.set(this.formUpdateTrigger() + 1);
     });
     
     return form;
@@ -113,8 +142,13 @@ export class TransferItemModalComponent {
 
     if (isPart) {
       // For parts, SKU and quantity are required
-      skuControl?.setValidators([Validators.required]);
-      quantityControl?.setValidators([Validators.required, Validators.min(1)]);
+      skuControl?.setValidators([Validators.required, Validators.pattern(/^[\w\-\s]+$/)]);
+      quantityControl?.setValidators([
+        Validators.required, 
+        Validators.min(1), 
+        Validators.max(999999), 
+        Validators.pattern(/^[0-9]+$/)
+      ]);
     } else {
       // For devices, device_id is required (and populated by scanner)
       deviceIdControl?.setValidators([Validators.required]);
@@ -139,11 +173,38 @@ export class TransferItemModalComponent {
       return;
     }
     
+    this.lookupDevice(result.value);
+  }
+  
+  onDeviceInputChange(value: string): void {
+    // Clear previous results when input changes
+    if (this.foundDevice()) {
+      this.foundDevice.set(null);
+    }
+    if (this.deviceLookupError()) {
+      this.deviceLookupError.set('');
+    }
+    // Clear device_id when input changes
+    this.form().patchValue({ device_id: '' });
+    this.updateFormValiditySignal();
+    this.formUpdateTrigger.set(this.formUpdateTrigger() + 1);
+    this.cdr.markForCheck();
+  }
+  
+  onDeviceSearchClick(value: string): void {
+    if (value.trim()) {
+      this.lookupDevice(value.trim());
+    } else {
+      this.deviceLookupError.set('Please enter an IMEI or Serial number');
+    }
+  }
+  
+  private lookupDevice(identifier: string): void {
     this.deviceLookupLoading.set(true);
     this.deviceLookupError.set('');
     this.foundDevice.set(null);
     
-    this.api.findDeviceByImeiOrSerial(result.value).subscribe({
+    this.api.findDeviceByImeiOrSerial(identifier).subscribe({
       next: (response) => {
         this.deviceLookupLoading.set(false);
         if (response.data) {
@@ -155,15 +216,29 @@ export class TransferItemModalComponent {
             quantity: 1 // Devices are always quantity 1
           });
           this.deviceLookupError.set('');
-          // Update form validity after patching values
-          this.updateFormValiditySignal();
+          // Manually trigger form validation update after patching values
+          setTimeout(() => {
+            this.updateFormValiditySignal();
+            this.formUpdateTrigger.set(this.formUpdateTrigger() + 1);
+            this.cdr.markForCheck();
+          }, 0);
         } else {
-          this.deviceLookupError.set('Device not found with this IMEI/Serial');
+          this.deviceLookupError.set('Device not found with this IMEI/Serial number');
+          // Clear device_id when device not found
+          this.form().patchValue({ device_id: '' });
+          this.updateFormValiditySignal();
+          this.formUpdateTrigger.set(this.formUpdateTrigger() + 1);
+          this.cdr.markForCheck();
         }
       },
       error: (error) => {
         this.deviceLookupLoading.set(false);
         this.deviceLookupError.set('Failed to lookup device. Please try again.');
+        // Clear device_id on error
+        this.form().patchValue({ device_id: '' });
+        this.updateFormValiditySignal();
+        this.formUpdateTrigger.set(this.formUpdateTrigger() + 1);
+        this.cdr.markForCheck();
         console.error('Device lookup error:', error);
       }
     });
@@ -177,6 +252,7 @@ export class TransferItemModalComponent {
     // Reset fields when switching types
     this.foundDevice.set(null);
     this.deviceLookupError.set('');
+    this.deviceLookupLoading.set(false);
     
     // Always reset SKU and device_id, and set quantity to 1
     form.patchValue({
@@ -187,6 +263,9 @@ export class TransferItemModalComponent {
 
     // Update form validity after patching values
     this.updateFormValiditySignal();
+    
+    // Trigger computed property update
+    this.formUpdateTrigger.set(this.formUpdateTrigger() + 1);
     
     // Ensure template updates under OnPush
     this.cdr.markForCheck();
@@ -232,6 +311,11 @@ export class TransferItemModalComponent {
     if (field && field.invalid && field.touched) {
       if (field.errors?.['required']) return `${fieldName} is required`;
       if (field.errors?.['min']) return `${fieldName} must be greater than ${field.errors['min'].min}`;
+      if (field.errors?.['max']) return `${fieldName} must be less than ${field.errors['max'].max}`;
+      if (field.errors?.['pattern']) {
+        if (fieldName === 'quantity') return 'Quantity must contain only numbers';
+        if (fieldName === 'sku') return 'SKU contains invalid characters';
+      }
     }
     return null;
   }

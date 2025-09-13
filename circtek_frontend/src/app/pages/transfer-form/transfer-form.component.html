@@ -3,7 +3,7 @@
   [subtitle]="subtitle()"
   [loading]="loading()"
   [submitting]="submitting()"
-  [error]="error()"
+  [error]="displayError()"
   [form]="form()"
   [fields]="fields()"
   [actions]="actions()"
@@ -40,7 +40,7 @@
         <table class="w-full table">
           <thead>
             <tr>
-              <th class="whitespace-nowrap px-4 py-3">SKU</th>
+              <th class="px-4 py-3 max-w-[200px]">SKU</th>
               <th class="whitespace-nowrap px-4 py-3">Device ID</th>
               <th class="whitespace-nowrap px-4 py-3">Quantity</th>
               <th class="whitespace-nowrap px-4 py-3">Type</th>
@@ -50,9 +50,9 @@
           <tbody>
             @for (item of items(); track item.id) {
               <tr>
-                <td class="whitespace-nowrap px-4 py-3 font-medium">{{ item.sku }}</td>
-                <td class="whitespace-nowrap px-4 py-3">{{ item.device_id }}</td>
-                <td class="whitespace-nowrap px-4 py-3">{{ item.quantity }}</td>
+                <td class="px-4 py-3 font-medium max-w-[200px] truncate" title="{{ item.sku }}">{{ item.sku || 'N/A' }}</td>
+                <td class="whitespace-nowrap px-4 py-3">{{ item.is_part ? 'N/A' : (item.device_id || '0') }}</td>
+                <td class="whitespace-nowrap px-4 py-3">{{ item.quantity || 0 }}</td>
                 <td class="whitespace-nowrap px-4 py-3">
                   @if (item.is_part) {
                     <span class="badge badge-primary badge-sm">Part</span>
@@ -64,7 +64,7 @@
                   <div class="flex items-center justify-end gap-2">
                     <button
                       type="button"
-                      class="btn btn-ghost btn-xs"
+                      class="btn btn-primary btn-xs"
                       title="Edit item"
                       (click)="openEditItemModal(item)"
                       [disabled]="loading() || submitting()"

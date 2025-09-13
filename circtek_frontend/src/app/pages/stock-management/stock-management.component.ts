@@ -132,8 +132,8 @@ export class StockManagementComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'PO No.', accessorKey: 'purchase_order_no' as any },
-          { header: 'Supplier', accessorKey: 'supplier_name' as any },
+          { header: 'PO No.', accessorKey: 'purchase_order_no' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Supplier', accessorKey: 'supplier_name' as any, meta: { truncateText: true, truncateMaxWidth: '180px' } },
           { header: 'Expected', id: 'expected_delivery_date', accessorFn: (r: any) => {
             if (!r.expected_delivery_date) return '-';
             const date = new Date(r.expected_delivery_date);
@@ -170,7 +170,7 @@ export class StockManagementComponent {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
               actions: [
-                { key: 'complete', label: 'Complete', class: 'text-secondary' },
+                { key: 'edit', label: 'Edit', class: 'text-primary' },
               ],
               cellClass: () => 'text-right'
             }
@@ -183,11 +183,11 @@ export class StockManagementComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'SKU', accessorKey: 'sku' as any },
-          { header: 'Make', accessorKey: 'make' as any },
-          { header: 'Model No.', accessorKey: 'model_no' as any },
-          { header: 'Model Name', accessorKey: 'model_name' as any },
-          { header: 'Device Type', accessorKey: 'device_type' as any },
+          { header: 'SKU', accessorKey: 'sku' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
+          { header: 'Make', accessorKey: 'make' as any, meta: { truncateText: true, truncateMaxWidth: '100px' } },
+          { header: 'Model No.', accessorKey: 'model_no' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
+          { header: 'Model Name', accessorKey: 'model_name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Device Type', accessorKey: 'device_type' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'Storage', accessorKey: 'storage' as any },
           { header: 'Memory', accessorKey: 'memory' as any },
           { header: 'Color', accessorKey: 'color' as any },
@@ -515,7 +515,7 @@ export class StockManagementComponent {
       return;
     }
 
-    if (tab === 'transfers' && event.action === 'complete') {
+    if (tab === 'transfers' && event.action === 'edit') {
       this.router.navigate(['/stock-management/transfers', row.id, 'complete']);
       return;
     }
