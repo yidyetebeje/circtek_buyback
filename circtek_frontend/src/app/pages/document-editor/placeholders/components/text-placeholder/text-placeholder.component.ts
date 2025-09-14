@@ -357,6 +357,13 @@ export class TextPlaceholderComponent extends BasePlaceholderComponent implement
   }
 
   protected override showPlaceholderInfoDialog(): void {
-    alert(`Placeholder Info:\nID: ${this.placeholderId}\nType: ${this.placeholderGroup.getAttr('placeholderType')}\nField: ${this.placeholderGroup.getAttr('placeholderField')}\nSample: ${this.placeholderService.getPlaceholderSampleValue(this.placeholderId)}`);
+    // Instead of showing an alert, trigger selection and emit the event
+    this.placeholderSelected.emit(this.placeholderGroup as any);
+    if (this.transformer) {
+      this.transformer.nodes([this.placeholderGroup]);
+      this.transformer.getLayer()?.batchDraw();
+    }
+    // Log for debugging purposes
+    console.log(`Text placeholder selected for editing - ID: ${this.placeholderId}`);
   }
 }

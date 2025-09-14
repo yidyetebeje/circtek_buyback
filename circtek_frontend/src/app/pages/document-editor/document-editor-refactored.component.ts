@@ -1145,6 +1145,211 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     this.cdRef.detectChanges();
   }
 
+  onSpacingInputChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = Number(input.value);
+    
+    // Only apply spacing changes if the value is valid and within range
+    if (!isNaN(value) && value >= 0 && value <= 500) {
+      this.listLayoutService.setListSeparator(value);
+    }
+  }
+
+  onSpacingBlur(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let value = Number(input.value);
+    
+    // Enforce limits when user finishes typing or leaves the field
+    if (isNaN(value) || input.value.trim() === '') {
+      // If invalid or empty, reset to minimum
+      value = 0;
+    } else if (value < 0) {
+      value = 0;
+    } else if (value > 500) {
+      value = 500;
+    }
+    
+    // Update both the input and the list layout service
+    input.value = value.toString();
+    this.listLayoutService.setListSeparator(value);
+    
+    // Trigger change detection to update the ngModel
+    this.cdRef.detectChanges();
+  }
+
+  onSpacingKeydown(event: KeyboardEvent): void {
+    const input = event.target as HTMLInputElement;
+    
+    // Prevent minus key and negative signs from being entered
+    if (event.key === '-' || event.key === 'Minus') {
+      event.preventDefault();
+      return;
+    }
+    
+    // Allow backspace, delete, tab, escape, enter, home, end, left, right arrow keys
+    if ([
+      'Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'Home', 'End', 
+      'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'
+    ].includes(event.key)) {
+      return;
+    }
+    
+    // Allow Ctrl/Cmd + A, C, V, X, Z
+    if ((event.ctrlKey || event.metaKey) && ['a', 'c', 'v', 'x', 'z'].includes(event.key.toLowerCase())) {
+      return;
+    }
+    
+    // Only allow digits and decimal point
+    if (!/[0-9.]/.test(event.key)) {
+      event.preventDefault();
+    }
+  }
+
+  onSpacingPaste(event: ClipboardEvent): void {
+    // Get the pasted data
+    const pastedData = event.clipboardData?.getData('text') || '';
+    
+    // Check if the pasted data contains a negative number
+    const numValue = Number(pastedData.trim());
+    if (!isNaN(numValue) && numValue < 0) {
+      // Prevent the paste operation
+      event.preventDefault();
+      
+      // Optionally set a corrected value
+      const input = event.target as HTMLInputElement;
+      setTimeout(() => {
+        input.value = '0';
+        this.listLayoutService.setListSeparator(0);
+        this.cdRef.detectChanges();
+      }, 0);
+    }
+  }
+
+  // Width validation methods
+  onWidthInputChange(value: any): void {
+    const numValue = Number(value);
+    
+    // Only apply width changes if the value is valid and within range
+    if (!isNaN(numValue) && numValue >= 10 && numValue <= 1000) {
+      this.canvasWidthMm = numValue;
+      this.onMmInputChange();
+    }
+  }
+
+  onWidthBlur(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let value = Number(input.value);
+    
+    // Enforce limits when user finishes typing or leaves the field
+    if (isNaN(value) || input.value.trim() === '') {
+      // If invalid or empty, reset to minimum
+      value = 10;
+    } else if (value < 10) {
+      value = 10;
+    } else if (value > 1000) {
+      value = 1000;
+    }
+    
+    // Update both the input and the canvas dimensions
+    input.value = value.toString();
+    this.canvasWidthMm = value;
+    this.onMmInputChange();
+    
+    // Trigger change detection to update the ngModel
+    this.cdRef.detectChanges();
+  }
+
+  // Height validation methods
+  onHeightInputChange(value: any): void {
+    const numValue = Number(value);
+    
+    // Only apply height changes if the value is valid and within range
+    if (!isNaN(numValue) && numValue >= 10 && numValue <= 1000) {
+      this.canvasHeightMm = numValue;
+      this.onMmInputChange();
+    }
+  }
+
+  onHeightBlur(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let value = Number(input.value);
+    
+    // Enforce limits when user finishes typing or leaves the field
+    if (isNaN(value) || input.value.trim() === '') {
+      // If invalid or empty, reset to minimum
+      value = 10;
+    } else if (value < 10) {
+      value = 10;
+    } else if (value > 1000) {
+      value = 1000;
+    }
+    
+    // Update both the input and the canvas dimensions
+    input.value = value.toString();
+    this.canvasHeightMm = value;
+    this.onMmInputChange();
+    
+    // Trigger change detection to update the ngModel
+    this.cdRef.detectChanges();
+  }
+
+  // Shared keydown handler for both width and height
+  onDimensionKeydown(event: KeyboardEvent): void {
+    const input = event.target as HTMLInputElement;
+    
+    // Prevent minus key and negative signs from being entered
+    if (event.key === '-' || event.key === 'Minus') {
+      event.preventDefault();
+      return;
+    }
+    
+    // Allow backspace, delete, tab, escape, enter, home, end, left, right arrow keys
+    if ([
+      'Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'Home', 'End', 
+      'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'
+    ].includes(event.key)) {
+      return;
+    }
+    
+    // Allow Ctrl/Cmd + A, C, V, X, Z
+    if ((event.ctrlKey || event.metaKey) && ['a', 'c', 'v', 'x', 'z'].includes(event.key.toLowerCase())) {
+      return;
+    }
+    
+    // Only allow digits and decimal point
+    if (!/[0-9.]/.test(event.key)) {
+      event.preventDefault();
+    }
+  }
+
+  // Shared paste handler for both width and height
+  onDimensionPaste(event: ClipboardEvent, dimension: 'width' | 'height'): void {
+    // Get the pasted data
+    const pastedData = event.clipboardData?.getData('text') || '';
+    
+    // Check if the pasted data contains an invalid number
+    const numValue = Number(pastedData.trim());
+    if (!isNaN(numValue) && (numValue < 10 || numValue > 1000)) {
+      // Prevent the paste operation
+      event.preventDefault();
+      
+      // Set a corrected value
+      const input = event.target as HTMLInputElement;
+      const correctedValue = numValue < 10 ? 10 : (numValue > 1000 ? 1000 : numValue);
+      
+      setTimeout(() => {
+        input.value = correctedValue.toString();
+        if (dimension === 'width') {
+          this.canvasWidthMm = correctedValue;
+        } else {
+          this.canvasHeightMm = correctedValue;
+        }
+        this.onMmInputChange();
+        this.cdRef.detectChanges();
+      }, 0);
+    }
+  }
+
   // Canvas utility methods
   clearCanvas(clearRegistry = true): void {
     this.canvasService.clearCanvas(
@@ -1507,7 +1712,8 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
             );
             this.setupPlaceholderTooltip(placeholderImage, placeholderId);
             placeholderImage.on("dblclick dbltap", (e) => {
-              this.showPlaceholderInfoDialog(placeholderImage);
+              // On double-click, select the placeholder for editing
+              this.selectShape(placeholderImage);
               e.cancelBubble = true;
               if (e.evt) e.evt.stopPropagation();
             });
@@ -1612,11 +1818,9 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   showPlaceholderInfoDialog(
     placeholderNode: Konva.Text | Konva.Group | Konva.Image,
   ): void {
-    const placeholderId = this.getPlaceholderId(placeholderNode);
-    if (!placeholderId) return;
-
-    // Create and show dialog (implementation similar to original)
-    // This would be the same dialog creation logic as in the original component
+    // Instead of showing a dialog, select the placeholder for editing
+    this.selectShape(placeholderNode);
+    console.log(`Placeholder selected for editing - ID: ${this.getPlaceholderId(placeholderNode)}`);
   }
 
   // Placeholder helper methods

@@ -4,7 +4,7 @@
   [form]="userForm()"
   [fields]="fields()"
   [actions]="actions()"
-  [loading]="loading()"
+  [loading]="pageLoading()"
   [submitting]="submitting()"
   [error]="errorMessage()"
   [showBackButton]="true"
@@ -13,6 +13,69 @@
   (formSubmit)="onFormSubmit($event)"
   (actionClick)="onActionClick($event)"
 >
+  <!-- Loading and error states for data loading -->
+  @if (tenantsLoading() && isSuperAdmin()) {
+    <div class="alert alert-info mb-4">
+      <div class="flex items-center gap-2">
+        <span class="loading loading-spinner loading-sm"></span>
+        <span>Loading tenants...</span>
+      </div>
+    </div>
+  }
+  
+  @if (tenantsError()) {
+    <div class="alert alert-error mb-4">
+      <span>{{ tenantsError() }}</span>
+      <button 
+        type="button" 
+        class="btn btn-sm btn-outline btn-error ml-2"
+        (click)="loadTenantOptions()"
+      >
+        Retry
+      </button>
+    </div>
+  }
+  
+  @if (warehousesLoading()) {
+    <div class="alert alert-info mb-4">
+      <div class="flex items-center gap-2">
+        <span class="loading loading-spinner loading-sm"></span>
+        <span>Loading warehouses...</span>
+      </div>
+    </div>
+  }
+  
+  @if (warehousesError()) {
+    <div class="alert alert-error mb-4">
+      <span>{{ warehousesError() }}</span>
+      <button 
+        type="button" 
+        class="btn btn-sm btn-outline btn-error ml-2"
+        (click)="loadWarehousesForTenant(isSuperAdmin() ? selectedTenantId() : null)"
+      >
+        Retry
+      </button>
+    </div>
+  }
+  
+  @if (isSuperAdmin() && !selectedTenantId()) {
+    <div class="alert alert-info mb-4">
+      <span>👆 Please select a tenant first to see available warehouses for that tenant.</span>
+    </div>
+  }
+  
+  @if (showNoWarehousesMessage()) {
+    <div class="alert alert-warning mb-4">
+      <span>
+        @if (isSuperAdmin()) {
+          No active warehouses found for the selected tenant. Please ensure the tenant has at least one active warehouse.
+        } @else {
+          No active warehouses found for your tenant. Please contact your administrator.
+        }
+      </span>
+    </div>
+  }
+  
   @if (successMessage()) {
     <div class="alert alert-success">
       <span>{{ successMessage() }}</span>

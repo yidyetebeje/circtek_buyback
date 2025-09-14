@@ -174,8 +174,15 @@ export class BasePlaceholderComponent implements OnInit {
     console.log(`Transformer transform ended for placeholder: ${this.placeholderId}`);
   }
 
-  // Common method to show info dialog (could be abstract or implemented here)
+  // Handle double-click - select the element for editing instead of showing alert
   protected showPlaceholderInfoDialog(): void {
-    alert(`Placeholder Info:\nID: ${this.placeholderId}\nType: ${this.placeholderImage.getAttr('placeholderType')}\nField: ${this.placeholderImage.getAttr('placeholderField')}\nSample: ${this.placeholderService.getPlaceholderSampleValue(this.placeholderId)}`);
+    // Instead of showing an alert, trigger selection and emit the event
+    this.placeholderSelected.emit(this.placeholderImage);
+    if (this.transformer) {
+      this.transformer.nodes([this.placeholderImage]);
+      this.transformer.getLayer()?.batchDraw();
+    }
+    // Log for debugging purposes
+    console.log(`Placeholder selected for editing - ID: ${this.placeholderId}`);
   }
 } 

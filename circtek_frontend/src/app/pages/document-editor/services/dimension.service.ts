@@ -111,9 +111,9 @@ export class DimensionService {
   setCustomDimensions(widthMm: number, heightMm: number): void {
     const currentDimensions = this.getCurrentDimensions();
     
-    // Ensure inputs are treated as valid numbers
-    const newWidthMm = Math.max(10, Number(widthMm) || 10);
-    const newHeightMm = Math.max(10, Number(heightMm) || 10);
+    // Ensure inputs are treated as valid numbers with proper bounds (10-1000mm)
+    const newWidthMm = Math.max(10, Math.min(1000, Number(widthMm) || 10));
+    const newHeightMm = Math.max(10, Math.min(1000, Number(heightMm) || 10));
 
     // Convert mm back to inches to update the source of truth
     const newWidthInches = this.mmToInches(newWidthMm);

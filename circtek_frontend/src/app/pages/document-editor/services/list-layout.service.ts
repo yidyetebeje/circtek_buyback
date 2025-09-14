@@ -61,9 +61,11 @@ export class ListLayoutService {
 
   setListSeparator(separator: number): void {
     const currentState = this.currentState;
+    // Ensure separator is a valid number and not negative
+    const validSeparator = isNaN(separator) ? 0 : Math.max(0, Math.min(500, separator));
     this.updateState({
       ...currentState,
-      listSeparator: Math.max(0, separator),
+      listSeparator: validSeparator,
     });
   }
 

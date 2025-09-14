@@ -37,10 +37,38 @@ export class UserFormComponent {
   pendingFormData = signal<any>(null);
   isEditMode = computed(() => this.userId() !== null);
   
+  // Loading states for different components
+  tenantsLoading = signal(false);
+  warehousesLoading = signal(false);
+  
+  // Error states for different components
+  tenantsError = signal<string | null>(null);
+  warehousesError = signal<string | null>(null);
+  
+  // Computed loading state - page loading until tenants are loaded (for super admin)
+  pageLoading = computed(() => {
+    if (this.isSuperAdmin()) {
+      return this.loading() || this.tenantsLoading();
+    }
+    return this.loading();
+  });
+  
+  // Show message when tenant is selected but no warehouses are available
+  showNoWarehousesMessage = computed(() => {
+    const tenantSelected = this.isSuperAdmin() ? !!this.selectedTenantId() : true;
+    return tenantSelected && 
+           !this.warehousesLoading() && 
+           !this.warehousesError() && 
+           this.warehouseOptions().length === 0;
+  });
+  
   // Options
   roleOptions = signal<Array<{ label: string; value: number }>>([]);
   tenantOptions = signal<Array<{ label: string; value: number }>>([]);
   warehouseOptions = signal<Array<{ label: string; value: number }>>([]);
+  
+  // Track selected tenant for reactivity
+  selectedTenantId = signal<number | null>(null);
 
   // Guards
   isSuperAdmin = computed(() => this.auth.currentUser()?.role_id === 1);
@@ -114,14 +142,20 @@ export class UserFormComponent {
       });
     }
 
-    // Always include Warehouse field (tenant-scoped for non-super_admin)
-    fields.push({
-      key: 'warehouse_id',
-      label: 'Warehouse',
-      type: 'select',
-      required: true,
-      options: this.warehouseOptions()
-    });
+    // Include Warehouse field (tenant-scoped for non-super_admin, conditional for super_admin)
+    const shouldShowWarehouse = this.isSuperAdmin() 
+      ? !!this.selectedTenantId() // For super admin, only show if tenant is selected
+      : true; // For non-super admin, always show
+      
+    if (shouldShowWarehouse) {
+      fields.push({
+        key: 'warehouse_id',
+        label: 'Warehouse',
+        type: 'select',
+        required: true,
+        options: this.warehouseOptions()
+      });
+    }
 
     fields.push({
       key: 'status',
@@ -154,9 +188,25 @@ export class UserFormComponent {
       this.loadTenantOptions();
       // React to tenant changes to reload warehouses
       this.userForm().get('tenant_id')?.valueChanges.subscribe((tenantId) => {
+        // Update selected tenant signal for reactivity
+        this.selectedTenantId.set(tenantId || null);
+        
+        // Clear any warehouse errors when tenant changes
+        this.warehousesError.set(null);
         // Reset selected warehouse when tenant changes
         this.userForm().patchValue({ warehouse_id: null }, { emitEvent: false });
-        this.loadWarehousesForTenant(tenantId);
+        
+        // Update warehouse field validation based on tenant selection
+        this.updateWarehouseFieldValidation();
+        
+        // Only load warehouses if a tenant is selected
+        if (tenantId) {
+          this.loadWarehousesForTenant(tenantId);
+        } else {
+          // Clear warehouses if no tenant is selected
+          this.warehouseOptions.set([]);
+          this.warehousesLoading.set(false);
+        }
       });
     } else {
       // Non super_admin: load warehouses for current tenant
@@ -234,7 +284,7 @@ export class UserFormComponent {
       ]],
       email: ['', [Validators.required, Validators.email]],
       role_id: [null, [Validators.required]],
-      warehouse_id: [null, [Validators.required]],
+      warehouse_id: [null], // Will be set as required conditionally
       status: [true]
     };
 
@@ -246,7 +296,14 @@ export class UserFormComponent {
       formConfig.tenant_id = [null, [Validators.required]];
     }
 
-    return this.fb.group(formConfig);
+    const form = this.fb.group(formConfig);
+    
+    // Set warehouse field validation based on current state
+    setTimeout(() => {
+      this.updateWarehouseFieldValidation();
+    }, 0);
+    
+    return form;
   }
 
   private loadRoleOptions() {
@@ -275,7 +332,10 @@ export class UserFormComponent {
     });
   }
 
-  private loadTenantOptions() {
+  loadTenantOptions() {
+    this.tenantsLoading.set(true);
+    this.tenantsError.set(null);
+    
     // Only load active tenants
     this.api.getTenants(new HttpParams().set('limit', '1000').set('status', 'true')).subscribe({
       next: (res) => {
@@ -286,28 +346,63 @@ export class UserFormComponent {
             value: tenant.id
           }));
         this.tenantOptions.set(options);
+        this.tenantsLoading.set(false);
       },
       error: (error) => {
         console.error('Failed to load tenants:', error);
+        const errorMsg = error?.error?.message || error?.message || 'Failed to load tenants. Please try again.';
+        this.tenantsError.set(errorMsg);
+        this.tenantsLoading.set(false);
       }
     });
   }
 
-  private loadWarehousesForTenant(tenantId?: number | null) {
+  private updateWarehouseFieldValidation() {
+    const warehouseControl = this.userForm().get('warehouse_id');
+    if (!warehouseControl) return;
+    
+    const shouldRequireWarehouse = this.isSuperAdmin() 
+      ? !!this.selectedTenantId() 
+      : true;
+    
+    if (shouldRequireWarehouse) {
+      warehouseControl.setValidators([Validators.required]);
+    } else {
+      warehouseControl.clearValidators();
+      warehouseControl.setValue(null); // Clear value when not required
+    }
+    warehouseControl.updateValueAndValidity();
+  }
+
+  loadWarehousesForTenant(tenantId?: number | null) {
+    this.warehousesLoading.set(true);
+    this.warehousesError.set(null);
+    
+    // Update warehouse field validation
+    this.updateWarehouseFieldValidation();
+    
+    // Clear existing warehouses when loading
+    this.warehouseOptions.set([]);
+    
     let params = new HttpParams().set('limit', '1000').set('status', 'true');
     if (this.isSuperAdmin() && tenantId) {
       params = params.set('tenant_id', String(tenantId));
     }
+    
     this.api.getWarehouses(params).subscribe({
       next: (res) => {
         const options = (res.data ?? [])
           .filter(warehouse => warehouse.status) // Additional client-side filter
           .map(w => ({ label: w.name, value: w.id }));
         this.warehouseOptions.set(options);
+        this.warehousesLoading.set(false);
       },
       error: (error) => {
         console.error('Failed to load warehouses:', error);
+        const errorMsg = error?.error?.message || error?.message || 'Failed to load warehouses. Please try again.';
+        this.warehousesError.set(errorMsg);
         this.warehouseOptions.set([]);
+        this.warehousesLoading.set(false);
       }
     });
   }
@@ -329,13 +424,23 @@ export class UserFormComponent {
 
         if (this.isSuperAdmin()) {
           formValue.tenant_id = user?.tenant_id ?? null;
+          // Update selected tenant signal
+          this.selectedTenantId.set(formValue.tenant_id);
           // Ensure warehouse options are loaded for the user's tenant before patching
-          this.loadWarehousesForTenant(formValue.tenant_id);
+          if (formValue.tenant_id) {
+            this.loadWarehousesForTenant(formValue.tenant_id);
+          }
         }
 
         // Recreate form with loaded data
         this.userForm.set(this.createForm());
         this.userForm().patchValue(formValue);
+        
+        // Update warehouse field validation after patching data
+        setTimeout(() => {
+          this.updateWarehouseFieldValidation();
+        }, 0);
+        
         this.loading.set(false);
       },
       error: (error) => {

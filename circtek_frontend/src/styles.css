@@ -316,6 +316,49 @@ body { margin: 0; font-family: "Poppins", sans-serif; }
   opacity: 1 !important;
 }
 
+/* Improve disabled button visibility */
+.btn:disabled,
+.btn.btn-disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  border-color: oklch(var(--b3)) !important;
+  background-color: oklch(var(--b2)) !important;
+  color: oklch(var(--bc) / 0.5) !important;
+}
+
+/* Enhanced button focus states for accessibility */
+.btn:focus-visible {
+  outline: 2px solid oklch(var(--p));
+  outline-offset: 2px;
+}
+
+/* Ensure button text contrast */
+.btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fix primary button text color */
+.btn-primary {
+  color: #ffffff !important;
+}
+
+.btn-primary:hover {
+  color: #ffffff !important;
+}
+
+/* Improve outline button visibility */
+.btn-outline {
+  border-width: 2px !important;
+  background-color: transparent !important;
+}
+
+.btn-outline:hover {
+  color: oklch(var(--pc)) !important;
+}
+
 /* Fix placeholder text visibility for all form inputs */
 .input::placeholder,
 .textarea::placeholder,

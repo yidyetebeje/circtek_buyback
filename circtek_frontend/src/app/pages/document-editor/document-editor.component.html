@@ -109,7 +109,10 @@
                   max="1000"
                   class="input input-bordered input-sm w-16 max-w-16"
                   [ngModel]="canvasWidthMm"
-                  (ngModelChange)="canvasWidthMm = $event; onMmInputChange()"
+                  (ngModelChange)="onWidthInputChange($event)"
+                  (blur)="onWidthBlur($event)"
+                  (keydown)="onDimensionKeydown($event)"
+                  (paste)="onDimensionPaste($event, 'width')"
                   (wheel)="$event.preventDefault()"
                   placeholder="mm"
                 />
@@ -121,7 +124,10 @@
                   max="1000"
                   class="input input-bordered input-sm w-16 max-w-16"
                   [ngModel]="canvasHeightMm"
-                  (ngModelChange)="canvasHeightMm = $event; onMmInputChange()"
+                  (ngModelChange)="onHeightInputChange($event)"
+                  (blur)="onHeightBlur($event)"
+                  (keydown)="onDimensionKeydown($event)"
+                  (paste)="onDimensionPaste($event, 'height')"
                   (wheel)="$event.preventDefault()"
                   placeholder="mm"
                 />
@@ -312,7 +318,7 @@
                       <option value="horizontal">Horizontal</option>
                     </select>
                     <label class="mr-2 mb-0 text-sm">Spacing (px):</label>
-                    <input type="number" class="input input-bordered input-sm w-24 mr-2" [(ngModel)]="listSeparator" min="0" max="500" />
+                    <input type="number" class="input input-bordered input-sm w-24 mr-2" [(ngModel)]="listSeparator" min="0" max="500" (input)="onSpacingInputChange($event)" (blur)="onSpacingBlur($event)" (keydown)="onSpacingKeydown($event)" (paste)="onSpacingPaste($event)" />
                     <button class="btn btn-sm btn-primary text-white mr-2" (click)="applyListLayout()">Apply</button>
                     <button class="btn btn-sm" (click)="undoListLayout()">Undo</button>
                     <button class="btn btn-sm btn-outline" (click)="cancelListLayout()">Close</button>
