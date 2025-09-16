@@ -1,5 +1,5 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { Observable, BehaviorSubject, shareReplay, tap, map } from 'rxjs';
+import { Observable, BehaviorSubject, shareReplay, tap, map, firstValueFrom, timer, switchMap, take, takeWhile, retry, timeout, catchError, of } from 'rxjs';
 import { Diagnostic } from '../models/diagnostic';
 import { User } from '../models/user';
 import { ApiService } from './api.service';
@@ -70,17 +70,26 @@ export class DiagnosticDataService {
 
   readonly warehouseOptions = computed(() => {
     const cached = this.warehouseOptionsCache();
-    return this.isValidCache(cached) ? cached.data : [];
+    const isValid = this.isValidCache(cached);
+    const data = isValid ? cached.data : [];
+    console.log('warehouseOptions computed - cached:', cached, 'isValid:', isValid, 'data:', data);
+    return data;
   });
 
   readonly testerOptions = computed(() => {
     const cached = this.testerOptionsCache();
-    return this.isValidCache(cached) ? cached.data : [];
+    const isValid = this.isValidCache(cached);
+    const data = isValid ? cached.data : [];
+    console.log('testerOptions computed - cached:', cached, 'isValid:', isValid, 'data:', data);
+    return data;
   });
 
   readonly tenantOptions = computed(() => {
     const cached = this.tenantOptionsCache();
-    return this.isValidCache(cached) ? cached.data : [];
+    const isValid = this.isValidCache(cached);
+    const data = isValid ? cached.data : [];
+    console.log('tenantOptions computed - cached:', cached, 'isValid:', isValid, 'data:', data);
+    return data;
   });
 
   readonly diagnosticsData = computed(() => this.currentDiagnosticsData());
@@ -123,21 +132,31 @@ export class DiagnosticDataService {
 
   // Load and cache user info
   loadUserInfo(): Observable<UserInfo> {
+    console.log('loadUserInfo called - checking cache...');
+    
     if (this.isValidCache(this.userInfoCache())) {
+      console.log('Using cached user info:', this.userInfoCache()!.data);
       return new BehaviorSubject(this.userInfoCache()!.data).asObservable();
     }
 
     this.loadingStates.userInfo.set(true);
 
     const currentUser = this.auth.currentUser();
+    console.log('Current user from auth service:', currentUser);
+    
     if (!currentUser) {
+      console.error('No authenticated user found in auth service');
       this.loadingStates.userInfo.set(false);
       throw new Error('No authenticated user found');
     }
 
     // Get full user details
+    console.log('Fetching full user details for user ID:', currentUser.id);
+    
     return this.apiService.getUser(currentUser.id).pipe(
       tap((user) => {
+        console.log('Full user details received:', user);
+        
         const userInfo: UserInfo = {
           id: user.id,
           user_name: user.user_name,
@@ -145,10 +164,13 @@ export class DiagnosticDataService {
           tenant_name: user.tenant_name || undefined,
           role_id: user.role_id
         };
+        
+        console.log('Caching user info:', userInfo);
         this.userInfoCache.set(this.createCachedData(userInfo, this.USER_CACHE_DURATION));
         
         // Load tenant info if user has tenant_id and is not super admin
         if (user.tenant_id && user.role_id !== 1) {
+          console.log('Loading tenant info for tenant ID:', user.tenant_id);
           this.loadTenantInfo(user.tenant_id);
         }
         
@@ -193,8 +215,11 @@ export class DiagnosticDataService {
 
   // Load and cache warehouse options
   loadWarehouseOptions(tenantId?: number): Observable<Array<{ label: string; value: string }>> {
+    console.log('loadWarehouseOptions called with tenantId:', tenantId);
+    
     const cached = this.warehouseOptionsCache();
     if (this.isValidCache(cached)) {
+      console.log('Using cached warehouse options:', cached.data);
       return new BehaviorSubject(cached.data).asObservable();
     }
 
@@ -204,22 +229,37 @@ export class DiagnosticDataService {
     if (tenantId) {
       params = params.set('tenant_id', String(tenantId));
     }
+    
+    console.log('Loading warehouse options with params:', params.toString());
 
-    return this.apiService.getWarehouses(params).pipe(
+      return this.apiService.getWarehouses(params).pipe(
       tap((res) => {
+        console.log('Warehouse API response:', res);
         const options = (res.data ?? []).map(w => ({ label: w.name, value: String(w.id) }));
+        console.log('Processed warehouse options:', options);
         this.warehouseOptionsCache.set(this.createCachedData(options, this.OPTIONS_CACHE_DURATION));
         this.loadingStates.warehouseOptions.set(false);
       }),
       map((res) => (res.data ?? []).map(w => ({ label: w.name, value: String(w.id) }))),
+      tap((options) => console.log('Final warehouse options:', options)),
+      catchError((error) => {
+        console.error('Error loading warehouse options:', error);
+        this.loadingStates.warehouseOptions.set(false);
+        // Return empty array on error
+        this.warehouseOptionsCache.set(this.createCachedData([], this.OPTIONS_CACHE_DURATION));
+        return of([]);
+      }),
       shareReplay(1)
     );
   }
 
   // Load and cache tester options
   loadTesterOptions(tenantId?: number): Observable<Array<{ label: string; value: string }>> {
+    console.log('loadTesterOptions called with tenantId:', tenantId);
+    
     const cached = this.testerOptionsCache();
     if (this.isValidCache(cached)) {
+      console.log('Using cached tester options:', cached.data);
       return new BehaviorSubject(cached.data).asObservable();
     }
 
@@ -229,14 +269,26 @@ export class DiagnosticDataService {
     if (tenantId) {
       params = params.set('tenant_id', String(tenantId));
     }
+    
+    console.log('Loading tester options with params:', params.toString());
 
-    return this.apiService.getUsers(params).pipe(
+      return this.apiService.getUsers(params).pipe(
       tap((res) => {
+        console.log('Tester API response:', res);
         const options = (res.data ?? []).map(u => ({ label: u.user_name, value: String(u.id) }));
+        console.log('Processed tester options:', options);
         this.testerOptionsCache.set(this.createCachedData(options, this.OPTIONS_CACHE_DURATION));
         this.loadingStates.testerOptions.set(false);
       }),
       map((res) => (res.data ?? []).map(u => ({ label: u.user_name, value: String(u.id) }))),
+      tap((options) => console.log('Final tester options:', options)),
+      catchError((error) => {
+        console.error('Error loading tester options:', error);
+        this.loadingStates.testerOptions.set(false);
+        // Return empty array on error
+        this.testerOptionsCache.set(this.createCachedData([], this.OPTIONS_CACHE_DURATION));
+        return of([]);
+      }),
       shareReplay(1)
     );
   }
@@ -251,13 +303,25 @@ export class DiagnosticDataService {
     this.loadingStates.tenantOptions.set(true);
 
     const params = new HttpParams().set('limit', '1000');
+    console.log('Loading tenant options with params:', params.toString());
+    
     return this.apiService.getTenants(params).pipe(
       tap((res) => {
+        console.log('Tenant API response:', res);
         const options = (res.data ?? []).map(t => ({ label: t.name, value: String(t.id) }));
+        console.log('Processed tenant options:', options);
         this.tenantOptionsCache.set(this.createCachedData(options, this.OPTIONS_CACHE_DURATION));
         this.loadingStates.tenantOptions.set(false);
       }),
       map((res) => (res.data ?? []).map(t => ({ label: t.name, value: String(t.id) }))),
+      tap((options) => console.log('Final tenant options:', options)),
+      catchError((error) => {
+        console.error('Error loading tenant options:', error);
+        this.loadingStates.tenantOptions.set(false);
+        // Return empty array on error
+        this.tenantOptionsCache.set(this.createCachedData([], this.OPTIONS_CACHE_DURATION));
+        return of([]);
+      }),
       shareReplay(1)
     );
   }
@@ -275,6 +339,7 @@ export class DiagnosticDataService {
 
   // Clear specific cache
   clearCache(type: 'userInfo' | 'tenantInfo' | 'warehouseOptions' | 'testerOptions' | 'tenantOptions' | 'all') {
+    console.log('Clearing cache for:', type);
     switch (type) {
       case 'userInfo':
         this.userInfoCache.set(null);
@@ -301,6 +366,46 @@ export class DiagnosticDataService {
     }
   }
 
+  // Force refresh options (clears cache and reloads)
+  forceRefreshOptions(tenantId?: number): Promise<void> {
+    console.log('Force refreshing options for tenantId:', tenantId);
+    
+    // Clear caches
+    this.clearCache('warehouseOptions');
+    this.clearCache('testerOptions');
+    this.clearCache('tenantOptions');
+    
+    // Reload based on user role
+    const userInfo = this.userInfo();
+    if (!userInfo) {
+      console.error('No user info available for force refresh');
+      return Promise.reject('No user info available');
+    }
+    
+    const loadPromises: Promise<any>[] = [];
+    
+    if (userInfo.role_id === 1) {
+      // Super admin - load all options
+      loadPromises.push(firstValueFrom(this.loadTenantOptions()));
+      loadPromises.push(firstValueFrom(this.loadWarehouseOptions()));
+      loadPromises.push(firstValueFrom(this.loadTesterOptions()));
+    } else {
+      // Regular user - load tenant-specific options
+      const targetTenantId = tenantId || userInfo.tenant_id;
+      if (targetTenantId) {
+        loadPromises.push(firstValueFrom(this.loadWarehouseOptions(targetTenantId)));
+        loadPromises.push(firstValueFrom(this.loadTesterOptions(targetTenantId)));
+      }
+    }
+    
+    return Promise.all(loadPromises).then(() => {
+      console.log('Force refresh completed successfully');
+    }).catch(error => {
+      console.error('Force refresh failed:', error);
+      throw error;
+    });
+  }
+
   // Clear expired caches
   clearExpiredCaches() {
     const now = Date.now();
@@ -322,43 +427,111 @@ export class DiagnosticDataService {
     }
   }
 
+  // Wait for auth service to have current user (with timeout)
+  private waitForCurrentUser(): Observable<any> {
+    return timer(0, 100).pipe(
+      switchMap(() => {
+        const currentUser = this.auth.currentUser();
+        console.log('Waiting for current user - attempt:', currentUser);
+        
+        if (currentUser) {
+          return [currentUser]; // Return the user in an array to emit it
+        }
+        throw new Error('User not available yet');
+      }),
+      retry({ count: 30, delay: 100 }), // Retry 30 times with 100ms delay (3 seconds total)
+      timeout(5000), // 5 second total timeout
+      take(1) // Take the first successful result
+    );
+  }
+
   // Initialize all required data for the diagnostics page
-  initializePageData(): Promise<void> {
-    return new Promise(async (resolve, reject) => {
+  async initializePageData(): Promise<void> {
+    try {
+      console.log('Initializing page data...');
+      
+      // Wait for auth service to have current user first
       try {
-        // Load user info first
-        if (!this.isValidCache(this.userInfoCache())) {
-          await this.loadUserInfo().toPromise();
-        }
-
-        const userInfo = this.userInfo();
-        if (!userInfo) {
-          reject(new Error('Failed to load user information'));
-          return;
-        }
-
-        // Load options based on user role
-        const loadPromises: Promise<any>[] = [];
-
-        if (userInfo.role_id === 1) {
-          // Super admin - load all options
-          loadPromises.push(this.loadTenantOptions().toPromise());
-          loadPromises.push(this.loadWarehouseOptions().toPromise());
-          loadPromises.push(this.loadTesterOptions().toPromise());
-        } else {
-          // Regular user - load tenant-specific options
-          const tenantId = userInfo.tenant_id;
-          if (tenantId) {
-            loadPromises.push(this.loadWarehouseOptions(tenantId).toPromise());
-            loadPromises.push(this.loadTesterOptions(tenantId).toPromise());
-          }
-        }
-
-        await Promise.all(loadPromises);
-        resolve();
+        await firstValueFrom(this.waitForCurrentUser());
+        console.log('Current user is now available');
       } catch (error) {
-        reject(error);
+        console.error('Timeout waiting for current user:', error);
+        // Continue anyway, loadUserInfo will handle the error
       }
-    });
+      
+      // Load user info first
+      if (!this.isValidCache(this.userInfoCache())) {
+        console.log('Loading user info...');
+        await firstValueFrom(this.loadUserInfo());
+      }
+
+      const userInfo = this.userInfo();
+      console.log('User info after loading:', userInfo);
+      
+      if (!userInfo) {
+        throw new Error('Failed to load user information');
+      }
+
+      // Load options based on user role
+      const loadPromises: Promise<any>[] = [];
+
+      if (userInfo.role_id === 1) {
+        console.log('Loading options for super admin...');
+        // Super admin - load all options
+        loadPromises.push(
+          firstValueFrom(this.loadTenantOptions()).catch(err => {
+            console.error('Failed to load tenant options:', err);
+            return [];
+          })
+        );
+        loadPromises.push(
+          firstValueFrom(this.loadWarehouseOptions()).catch(err => {
+            console.error('Failed to load warehouse options:', err);
+            return [];
+          })
+        );
+        loadPromises.push(
+          firstValueFrom(this.loadTesterOptions()).catch(err => {
+            console.error('Failed to load tester options:', err);
+            return [];
+          })
+        );
+      } else {
+        console.log('Loading options for regular user with tenant:', userInfo.tenant_id);
+        // Regular user - load tenant-specific options
+        const tenantId = userInfo.tenant_id;
+        if (tenantId) {
+          loadPromises.push(
+            firstValueFrom(this.loadWarehouseOptions(tenantId)).catch(err => {
+              console.error('Failed to load warehouse options for tenant', tenantId, ':', err);
+              return [];
+            })
+          );
+          loadPromises.push(
+            firstValueFrom(this.loadTesterOptions(tenantId)).catch(err => {
+              console.error('Failed to load tester options for tenant', tenantId, ':', err);
+              return [];
+            })
+          );
+        }
+      }
+
+      console.log('Waiting for', loadPromises.length, 'option loading promises...');
+      const results = await Promise.allSettled(loadPromises);
+      
+      // Log results for debugging
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          console.log(`Promise ${index} fulfilled with:`, result.value);
+        } else {
+          console.error(`Promise ${index} rejected:`, result.reason);
+        }
+      });
+      
+      console.log('All option loading attempts completed');
+    } catch (error) {
+      console.error('Error initializing page data:', error);
+      throw error;
+    }
   }
 }

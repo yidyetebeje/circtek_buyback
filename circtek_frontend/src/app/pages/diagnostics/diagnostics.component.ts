@@ -8,7 +8,6 @@ import { ColumnDef } from '@tanstack/angular-table';
 import { HttpParams } from '@angular/common/http';
 import type { Facet } from '../../shared/components/generic-page/generic-page.component';
 import { AuthService } from '../../core/services/auth.service';
-import { DiagnosticDataService } from '../../core/services/diagnostic-data.service';
 import { DateCellComponent } from './date-cell.component';
 import { ResultCellComponent } from './result-cell.component';
 import { OrderCellComponent } from './order-cell.component';
@@ -27,7 +26,6 @@ export class DiagnosticsComponent {
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly diagnosticDataService = inject(DiagnosticDataService);
 
   loading = signal<boolean>(false);
   data = signal<Diagnostic[]>([]);
@@ -44,25 +42,21 @@ export class DiagnosticsComponent {
   selectedTesterId = signal<number | null>(null);
   selectedTenantId = signal<number | null>(null);
 
-  // Use cached options from service
-  warehouseOptions = computed(() => this.diagnosticDataService.warehouseOptions());
-  testerOptions = computed(() => this.diagnosticDataService.testerOptions());
-  tenantOptions = computed(() => this.diagnosticDataService.tenantOptions());
+  // Facet options
+  warehouseOptions = signal<Array<{ label: string; value: string }>>([]);
+  testerOptions = signal<Array<{ label: string; value: string }>>([]);
+  tenantOptions = signal<Array<{ label: string; value: string }>>([]);
 
   // Hydration flag to prevent double fetch
   private readonly initialized = signal(false);
   // Request sequencing to avoid race conditions (stale responses)
   private requestSeq = 0;
 
-  // Role checks from cached service
-  isSuperAdmin = computed(() => this.diagnosticDataService.isSuperAdmin());
-  userInfo = computed(() => this.diagnosticDataService.userInfo());
+  // Role checks
+  isSuperAdmin = computed(() => this.auth.currentUser()?.role_id === 1);
 
   // Export functionality
   isExporting = signal<boolean>(false);
-  
-  // Initialization state
-  isInitializing = signal<boolean>(true);
   
   // Primary action for export
   primaryAction = computed(() => ({
@@ -85,7 +79,7 @@ export class DiagnosticsComponent {
   columns = computed<ColumnDef<Diagnostic>[]>(() => [
     // 1) Order number starting at 1 across pages
     {
-      header: 'S.No',
+      header: '#',
       id: 'order',
       enableSorting: false as any,
       meta: {
@@ -146,57 +140,36 @@ export class DiagnosticsComponent {
   ]);
 
   constructor() {
-    this.initializeComponent();
-  }
+    // 1) Hydrate initial state from URL (snapshot) before effects run
+    const qp = this.route.snapshot.queryParamMap;
+    const num = (k: string, d: number) => {
+      const v = qp.get(k);
+      const n = Number(v);
+      return Number.isFinite(n) ? n : d;
+    };
+    const str = (k: string, d: string = '') => qp.get(k) ?? d;
+    const optStr = (k: string) => {
+      const v = qp.get(k);
+      return v == null ? '' : v;
+    };
+    const optNum = (k: string) => {
+      const v = qp.get(k);
+      if (v == null) return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
 
-  private async initializeComponent() {
-    try {
-      // 1) Initialize cached data first
-      await this.diagnosticDataService.initializePageData();
-      
-      // 2) Hydrate initial state from URL (snapshot) after cache is ready
-      const qp = this.route.snapshot.queryParamMap;
-      const num = (k: string, d: number) => {
-        const v = qp.get(k);
-        const n = Number(v);
-        return Number.isFinite(n) ? n : d;
-      };
-      const str = (k: string, d: string = '') => qp.get(k) ?? d;
-      const optStr = (k: string) => {
-        const v = qp.get(k);
-        return v == null ? '' : v;
-      };
-      const optNum = (k: string) => {
-        const v = qp.get(k);
-        if (v == null) return null;
-        const n = Number(v);
-        return Number.isFinite(n) ? n : null;
-      };
 
-      this.identifier.set(str('identifier', ''));
-      const sb = qp.get('sort_by');
-      const sd = qp.get('sort_dir') as 'asc' | 'desc' | null;
-      this.sortBy.set(sb ?? null);
-      this.sortDir.set(sd ?? null);
-      this.deviceType.set(optStr('device_type'));
-      this.selectedWarehouseId.set(optNum('warehouse_id'));
-      this.selectedTesterId.set(optNum('tester_id'));
-      this.selectedTenantId.set(optNum('tenant_id'));
-      
-      this.isInitializing.set(false);
-      this.initialized.set(true);
-    } catch (error) {
-      console.error('Failed to initialize diagnostics component:', error);
-      this.isInitializing.set(false);
-      // Still allow the component to function with basic initialization
-      this.initialized.set(true);
-    }
-    
-    // Setup effects after initialization
-    this.setupEffects();
-  }
-
-  private setupEffects() {
+    this.identifier.set(str('identifier', ''));
+    const sb = qp.get('sort_by');
+    const sd = qp.get('sort_dir') as 'asc' | 'desc' | null;
+    this.sortBy.set(sb ?? null);
+    this.sortDir.set(sd ?? null);
+    this.deviceType.set(optStr('device_type'));
+    this.selectedWarehouseId.set(optNum('warehouse_id'));
+    this.selectedTesterId.set(optNum('tester_id'));
+    this.selectedTenantId.set(optNum('tenant_id'));
+    this.initialized.set(true);
 
     // Recompute facets when options or role change
     effect(() => {
@@ -212,7 +185,7 @@ export class DiagnosticsComponent {
 
     // 2) Fetch data when state changes
     effect(() => {
-      if (!this.initialized() || this.isInitializing()) return; // avoid initial double fetch during hydration
+      if (!this.initialized()) return; // avoid initial double fetch during hydration
       // create reactive dependencies
       this.pageIndex();
       this.pageSize();
@@ -253,19 +226,42 @@ export class DiagnosticsComponent {
       this.router.navigate([], { queryParams: query, replaceUrl: true });
     });
 
-    // Refresh cached data when super admin changes selected tenant
+    // Load warehouses whenever selected tenant changes (for super_admin) or at init
     effect(() => {
+      const paramsBase = new HttpParams().set('limit', '1000');
       const isSa = this.isSuperAdmin();
       const tid = this.selectedTenantId();
-      
-      // Only refresh options if super admin changes tenant selection
-      if (isSa && tid != null) {
-        // Clear existing cache and reload with new tenant filter
-        this.diagnosticDataService.clearCache('warehouseOptions');
-        this.diagnosticDataService.clearCache('testerOptions');
-        this.diagnosticDataService.loadWarehouseOptions(tid).subscribe();
-        this.diagnosticDataService.loadTesterOptions(tid).subscribe();
+      let params = paramsBase;
+      if (isSa && tid != null) params = params.set('tenant_id', String(tid));
+      this.apiService.getWarehouses(params).subscribe(res => {
+        const opts = (res.data ?? []).map(w => ({ label: w.name, value: String(w.id) }));
+        this.warehouseOptions.set(opts);
+      });
+    });
+
+    // Load testers whenever selected tenant changes (for super_admin) or at init
+    effect(() => {
+      let params = new HttpParams().set('limit', '1000').set('role_id', '3');
+      const isSa = this.isSuperAdmin();
+      const tid = this.selectedTenantId();
+      if (isSa && tid != null) params = params.set('tenant_id', String(tid));
+      this.apiService.getUsers(params).subscribe(res => {
+        const opts = (res.data ?? []).map(u => ({ label: u.user_name, value: String(u.id) }));
+        this.testerOptions.set(opts);
+      });
+    });
+
+    // Load tenants options for super_admin
+    effect(() => {
+      if (!this.isSuperAdmin()) {
+        this.tenantOptions.set([]);
+        return;
       }
+      const params = new HttpParams().set('limit', '1000');
+      this.apiService.getTenants(params).subscribe(res => {
+        const opts = (res.data ?? []).map(t => ({ label: t.name, value: String(t.id) }));
+        this.tenantOptions.set(opts);
+      });
     });
   }
 
@@ -297,20 +293,8 @@ export class DiagnosticsComponent {
     this.apiService.getDiagnostics(params).subscribe({
       next: (res) => {
         if (seq !== this.requestSeq) return; // stale response, ignore
-        
-        const diagnostics = res.data || [];
-        const metadata = {
-          total: res.meta?.total ?? 0,
-          page: this.pageIndex() + 1,
-          limit: this.pageSize()
-        };
-        
-        // Store in shared service for other components to use
-        this.diagnosticDataService.setDiagnosticsData(diagnostics, metadata);
-        
-        // Update local state
-        this.data.set(diagnostics);
-        this.total.set(metadata.total);
+        this.data.set(res.data);
+        this.total.set(res.meta?.total ?? 0);
         this.loading.set(false);
       },
       error: () => {
