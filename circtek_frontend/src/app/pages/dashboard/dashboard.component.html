@@ -153,58 +153,183 @@
 
     <!-- Charts Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-      <!-- Device Types Chart -->
+      <!-- Unified Test Activity Card - First Column -->
       <div class="bg-base-100 rounded-xl p-6 border border-base-300">
-        <h3 class="text-lg font-semibold text-base-content mb-4">Device Types Distribution</h3>
-        <div class="h-64">
-          <canvas #deviceTypeChart></canvas>
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold text-base-content">
+            @if (showingSearchResults()) {
+              Search Results
+            } @else {
+              Recent Test Activity  
+            }
+          </h3>
+          @if (isDownloading()) {
+            <div class="flex items-center gap-2 text-sm text-base-content/70">
+              <span class="loading loading-spinner loading-sm"></span>
+              <span>Generating PDF...</span>
+            </div>
+          }
         </div>
-      </div>
+        
+        <!-- Search Input -->
+        <div class="flex gap-2 mb-4">
+          <input 
+            type="text" 
+            placeholder="Search by IMEI, Serial Number, or LPN" 
+            class="input input-bordered flex-1"
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="performSearch()"
+            (input)="performSearchDebounced()"
+            maxlength="50"
+          />
+          <button 
+            class="btn btn-primary"
+            (click)="performSearch()"
+            [disabled]="isSearching()"
+          >
+            @if (isSearching()) {
+              <span class="loading loading-spinner loading-sm"></span>
+            } @else {
+              Search
+            }
+          </button>
+          @if (showingSearchResults()) {
+            <button class="btn btn-ghost" (click)="clearSearch()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
+                <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
+              </svg>
+            </button>
+          }
+        </div>
 
-      <!-- Recent Activity Table -->
-      @if (recentActivity().length > 0) {
-        <div class="card-container rounded-2xl border border-base-300/50">
-          <div class="p-6">
-            <h3 class="text-lg font-semibold text-base-content mb-4">Recent Test Activity</h3>
-            <div class="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
-              <table class="w-full table">
-                <thead>
-                  <tr>
-                    <th class="whitespace-nowrap px-4 py-3">Report</th>
-                    <th class="whitespace-nowrap px-4 py-3">Tested</th>
-                    <th class="whitespace-nowrap px-4 py-3">IMEI</th>
-                    <th class="whitespace-nowrap px-4 py-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (activity of recentActivity().slice(0, 5); track activity.id) {
-                    <tr>
-                      <td class="whitespace-nowrap px-4 py-3">
-                        <span class="badge badge-sm" [ngClass]="getReportBadgeClass(activity.report)">
-                          {{ activity.report }}
-                        </span>
-                      </td>
-                      <td class="whitespace-nowrap px-4 py-3 text-sm">{{ activity.tested }}</td>
-                      <td class="whitespace-nowrap px-4 py-3 text-sm">{{ activity.imei }}</td>
-                      <td class="whitespace-nowrap px-4 py-3">
+        <!-- Loading State -->
+        @if (isSearching()) {
+          <div class="flex items-center justify-center py-8">
+            <span class="loading loading-spinner loading-lg"></span>
+            <span class="ml-2 text-base-content/70">
+              @if (showingSearchResults()) {
+                Searching...
+              } @else {
+                Loading recent tests...
+              }
+            </span>
+          </div>
+        }
+
+        <!-- Error State -->
+        @if (searchError()) {
+          <div class="alert alert-error mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{{ searchError() }}</span>
+          </div>
+        }
+
+        <!-- Results Table -->
+        @if (!isSearching() && testResults().length > 0) {
+          <div class="overflow-x-auto max-h-96 overflow-y-auto">
+            <table class="table table-zebra">
+              <thead>
+                <tr>
+                  <th class="sticky top-0 bg-base-200">Status</th>
+                  <th class="sticky top-0 bg-base-200">IMEI</th>
+                  <th class="sticky top-0 bg-base-200">Serial</th>
+                  <th class="sticky top-0 bg-base-200">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (result of testResults(); track result.id) {
+                  <tr class="hover:bg-base-200/50">
+                    <td>
+                      <span [class]="getStatusBadgeClass(result)">{{ getResultStatus(result) }}</span>
+                    </td>
+                    <td class="text-sm font-mono">{{ result.imei || result.device_imei || '-' }}</td>
+                    <td class="text-sm font-mono">{{ result.serial_number || result.device_serial || '-' }}</td>
+                    <td>
+                      <div class="flex gap-1">
+                        <!-- View Report Button -->
                         <button 
-                          class="btn btn-ghost btn-xs"
-                          (click)="navigateToReport(activity.id)"
+                          class="btn btn-ghost btn-xs tooltip" 
+                          data-tip="View Report"
+                          (click)="viewReport(result)"
                           title="View Report"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
                             <path fill-rule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v9A1.5 1.5 0 0 0 4.5 14h7a1.5 1.5 0 0 0 1.5-1.5V7.414a1.5 1.5 0 0 0-.44-1.06L9.647 3.439A1.5 1.5 0 0 0 8.586 3H4.5ZM9 5a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 0 1H9.5A.5.5 0 0 1 9 5Zm0 2a.5.5 0 0 1 .5-.5h1.5a.5.5 0 0 1 0 1H9.5A.5.5 0 0 1 9 7Zm-4.5.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5Zm0 2a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5Z" clip-rule="evenodd" />
                           </svg>
                         </button>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+                        <!-- Download PDF Button -->
+                        <button 
+                          class="btn btn-ghost btn-xs tooltip" 
+                          data-tip="Download PDF"
+                          (click)="downloadReport(result)"
+                          [disabled]="isDownloading()"
+                          title="Download PDF Report"
+                        >
+                          @if (isDownloading()) {
+                            <span class="loading loading-spinner loading-xs"></span>
+                          } @else {
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">
+                              <path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" />
+                              <path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.25 2.25 0 0 0 4.25 13.5h7.5A2.25 2.25 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5a.75.75 0 0 1-.75.75h-7.5a.75.75 0 0 1-.75-.75v-1.5Z" />
+                            </svg>
+                          }
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-4 text-sm text-base-content/70">
+            @if (showingSearchResults()) {
+              Found {{ testResults().length }} search result(s). Showing first 15 matches.
+            } @else {
+              Showing {{ testResults().length }} most recent diagnostic tests.
+            }
+          </div>
+        }
+
+        <!-- Empty State after search -->
+        @if (!isSearching() && testResults().length === 0 && searchError() && showingSearchResults()) {
+          <div class="text-center py-8">
+            <div class="text-4xl mb-2">🔍</div>
+            <p class="text-base-content/70">No diagnostic reports found for "{{ searchTerm() }}"</p>
+            <p class="text-sm text-base-content/50 mt-1">Try searching with a different IMEI, Serial Number, or LPN</p>
+          </div>
+        }
+
+        <!-- Initial/No Recent Tests State -->
+        @if (!isSearching() && testResults().length === 0 && !searchError() && !showingSearchResults()) {
+          <div class="text-center py-8">
+            <div class="text-4xl mb-2">📱</div>
+            <p class="text-base-content/70">No recent diagnostic tests found</p>
+            <p class="text-sm text-base-content/50 mt-1">Tests will appear here once diagnostics are performed</p>
+          </div>
+        }
+
+        <!-- Search Instructions -->
+        @if (!isSearching() && testResults().length === 0 && !searchError() && !showingSearchResults()) {
+          <div class="mt-4">
+            <div class="flex justify-center gap-4 text-xs text-base-content/40">
+              <span>• Search supports partial matches</span>
+              <span>• Results appear as you type</span>
+              <span>• PDF downloads directly to your device</span>
             </div>
           </div>
+        }
+      </div>
+
+      <!-- Device Types Chart - Second Column -->
+      <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+        <h3 class="text-lg font-semibold text-base-content mb-4">Device Types Distribution</h3>
+        <div class="h-96 flex items-center justify-center">
+          <canvas #deviceTypeChart class="max-w-full max-h-full"></canvas>
         </div>
-      }
+      </div>
+
     </div>
 
     <!-- Warehouse Performance Chart -->

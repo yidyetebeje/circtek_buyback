@@ -28,7 +28,7 @@
   white-space: nowrap;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 100;
 }
 
 .custom-table thead th:first-child {
@@ -429,11 +429,36 @@
   font-weight: 500;
   transition: all 0.2s ease;
   border: 1px solid transparent;
+  z-index: 1;
+  position: relative;
 }
 
 .table-action-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 4px oklch(var(--b3) / 0.2);
+}
+
+/* Ensure all buttons in table cells have lower z-index than header */
+.custom-table tbody td .btn,
+.custom-table tbody td button,
+table tbody td .btn,
+table tbody td button {
+  z-index: 1;
+  position: relative;
+}
+
+/* Table cell content should not overlap header */
+.custom-table tbody td,
+table tbody td {
+  z-index: 1;
+  position: relative;
+}
+
+/* Header should always be on top */
+.custom-table thead,
+table thead {
+  z-index: 100;
+  position: relative;
 }
 
 /* Empty state styling */
@@ -455,6 +480,32 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
+}
+
+/* Smooth scrolling performance optimizations */
+.overflow-x-auto {
+  /* Enable hardware acceleration for smooth scrolling */
+  transform: translate3d(0, 0, 0);
+  will-change: scroll-position;
+  scroll-behavior: smooth;
+}
+
+/* Table container optimizations */
+.table-container {
+  /* Enable hardware acceleration */
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+/* Optimize table row transitions */
+.custom-table tbody tr {
+  /* Use transform instead of position changes for better performance */
+  will-change: transform;
+}
+
+.custom-table tbody tr:hover {
+  /* Use transform3d for hardware acceleration */
+  transform: translate3d(0, -1px, 0);
 }
 
 /* Card Container */

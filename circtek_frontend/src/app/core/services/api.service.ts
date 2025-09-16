@@ -87,6 +87,19 @@ export class ApiService {
     return this.get<ApiResponse<any>>(`/diagnostics/public/tests/${id}`);
   }
 
+  // Download diagnostic report as PDF
+  downloadDiagnosticPdf(id: number): Observable<Blob> {
+    return this.http
+      .get(`${this.apiUrl}/diagnostics/tests/${id}/pdf`, {
+        withCredentials: true,
+        responseType: 'blob',
+        headers: {
+          'Accept': 'application/pdf'
+        }
+      })
+      .pipe(catchError(this.handleError));
+  }
+
   // Warehouses list (tenant-scoped by backend unless super_admin)
   getWarehouses(params: HttpParams = new HttpParams()): Observable<WarehouseListResponse> {
     return this.get<WarehouseListResponse>('/warehouses', params);

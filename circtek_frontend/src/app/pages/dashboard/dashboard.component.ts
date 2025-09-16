@@ -1,17 +1,21 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, signal, inject, ChangeDetectionStrategy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpParams } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Chart, ChartConfiguration, ChartType, registerables } from 'chart.js/auto';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DashboardOverviewStats, WarehouseStats, RecentActivity, MonthlyTrend } from '../../core/models/dashboard';
+import { Diagnostic } from '../../core/models/diagnostic';
+import html2canvas from 'html2canvas-pro';
+import { jsPDF } from 'jspdf';
 
 Chart.register(...registerables);
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,6 +39,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   
   protected maxDate!: string;
   protected minDate!: string;
+
+  // Unified Test Activity functionality (combines Quick Search + Recent Activity)
+  protected readonly searchTerm = signal<string>('');
+  protected readonly isSearching = signal<boolean>(false);
+  protected readonly searchError = signal<string>('');
+  protected readonly testResults = signal<Diagnostic[]>([]);
+  protected readonly hasSearched = signal<boolean>(false);
+  protected readonly showingSearchResults = computed(() => this.hasSearched() && this.searchTerm().trim().length > 0);
+  protected readonly isDownloading = signal<boolean>(false);
+  private searchTimeout: any = null;
 
   // Chart configurations
   protected deviceTypeChart: ChartConfiguration | null = null;
@@ -68,6 +82,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     const twoYearsAgo = new Date();
     twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
     this.minDate = twoYearsAgo.toISOString().split('T')[0];
+    // Load recent test activity by default
+    this.loadRecentTests();
   }
 
   ngAfterViewInit() {
@@ -94,6 +110,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnDestroy() {
     this.destroyCharts();
+    // Clean up search timeout
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
+    }
   }
 
   private loadDashboardData() {
@@ -186,20 +207,57 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         datasets: [{
           data: testDeviceTypes.map(d => d.test_count),
           backgroundColor: [
-            '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'
-          ]
+            '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899',
+            '#06B6D4', '#84CC16', '#F97316', '#A855F7', '#E11D48', '#059669'
+          ],
+          borderWidth: 2,
+          borderColor: '#ffffff',
+          hoverOffset: 8
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        aspectRatio: 1,
+        layout: {
+          padding: {
+            top: 10,
+            bottom: 10,
+            left: 10,
+            right: 10
+          }
+        },
         plugins: {
           legend: {
-            position: 'bottom' as const
+            position: 'bottom' as const,
+            labels: {
+              padding: 20,
+              font: {
+                size: 12
+              },
+              usePointStyle: true,
+              pointStyle: 'circle'
+            }
           },
           title: {
-            display: true,
-            text: 'Test Device Type Distribution'
+            display: false  // Remove title to give more space to the chart
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.parsed as number;
+                const data = context.dataset.data as number[];
+                const total = data.reduce((a, b) => (a || 0) + (b || 0), 0);
+                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+                return `${label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
+        },
+        elements: {
+          arc: {
+            borderWidth: 2
           }
         }
       }
@@ -463,5 +521,326 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private getFirstDayOfMonth(): string {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  }
+
+  // Unified Test Search and Recent Activity Methods
+  private loadRecentTests(): void {
+    if (this.showingSearchResults()) return; // Don't load recent tests if showing search results
+    
+    this.isSearching.set(true);
+    this.searchError.set('');
+
+    const params = new HttpParams()
+      .set('page', '1')
+      .set('limit', '15')
+      .set('sort_by', 'created_at')
+      .set('sort_dir', 'desc');
+
+    this.apiService.getDiagnostics(params).subscribe({
+      next: (response) => {
+        this.isSearching.set(false);
+        if (response.data && response.data.length > 0) {
+          this.testResults.set(response.data);
+        } else {
+          this.testResults.set([]);
+        }
+      },
+      error: (error) => {
+        this.isSearching.set(false);
+        console.error('Error loading recent tests:', error);
+        this.searchError.set('Failed to load recent test activity.');
+      }
+    });
+  }
+
+  protected performSearch(): void {
+    const term = this.searchTerm().trim();
+    if (!term) {
+      // If no search term, show recent tests
+      this.hasSearched.set(false);
+      this.loadRecentTests();
+      return;
+    }
+
+    // Clear any existing timeout
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+
+    this.isSearching.set(true);
+    this.searchError.set('');
+    this.testResults.set([]);
+    this.hasSearched.set(true);
+
+    const params = new HttpParams()
+      .set('page', '1')
+      .set('limit', '15')
+      .set('identifier', term);
+
+    this.apiService.getDiagnostics(params).subscribe({
+      next: (response) => {
+        this.isSearching.set(false);
+        if (response.data && response.data.length > 0) {
+          this.testResults.set(response.data);
+        } else {
+          this.searchError.set(`No diagnostic reports found for "${term}"`);
+        }
+      },
+      error: (error) => {
+        this.isSearching.set(false);
+        console.error('Search error:', error);
+        if (error.status === 404) {
+          this.searchError.set(`No diagnostic reports found for "${term}"`);
+        } else if (error.status === 403) {
+          this.searchError.set('You do not have permission to search diagnostic reports.');
+        } else {
+          this.searchError.set('An error occurred while searching. Please try again.');
+        }
+      }
+    });
+  }
+
+  protected performSearchDebounced(): void {
+    // Clear any existing timeout
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+
+    // Set a new timeout
+    this.searchTimeout = setTimeout(() => {
+      this.performSearch();
+    }, 300);
+  }
+
+  protected async downloadReport(row: Diagnostic): Promise<void> {
+    this.isDownloading.set(true);
+    
+    try {
+      // Create a temporary iframe to load the report page
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'absolute';
+      iframe.style.left = '-9999px';
+      iframe.style.top = '-9999px';
+      iframe.style.width = '800px';
+      iframe.style.height = '600px';
+      iframe.style.border = 'none';
+      
+      const reportUrl = `${window.location.origin}/diagnostics/report/${row.id}`;
+      iframe.src = reportUrl;
+      
+      document.body.appendChild(iframe);
+      
+      // Wait for iframe to load
+      await new Promise<void>((resolve, reject) => {
+        iframe.onload = () => {
+          // Additional wait to ensure all content is loaded
+          setTimeout(() => resolve(), 2000);
+        };
+        iframe.onerror = () => reject(new Error('Failed to load report'));
+        
+        // Timeout after 10 seconds
+        setTimeout(() => reject(new Error('Report loading timed out')), 10000);
+      });
+      
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!iframeDoc) {
+        throw new Error('Unable to access report content');
+      }
+      
+      const reportElement = iframeDoc.querySelector('.report-document') as HTMLElement;
+      if (!reportElement) {
+        throw new Error('Report content not found');
+      }
+      
+      // Apply PDF optimization styles
+      const containerElement = iframeDoc.querySelector('.report-page-container') as HTMLElement;
+      if (containerElement) {
+        containerElement.classList.add('pdf-optimized');
+      }
+      
+      // Capture using html2canvas-pro
+      const canvas = await html2canvas(reportElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: 800,
+        height: reportElement.scrollHeight,
+        removeContainer: true,
+        onclone: (clonedDoc) => {
+          const clonedContainer = clonedDoc.querySelector('.report-page-container') as HTMLElement;
+          const clonedElement = clonedDoc.querySelector('.report-document') as HTMLElement;
+          if (clonedContainer && clonedElement) {
+            clonedContainer.classList.add('pdf-optimized');
+            // Remove non-printable elements
+            const noPrintElements = clonedElement.querySelectorAll('.no-print');
+            noPrintElements.forEach(el => el.remove());
+            // Ensure images are properly styled
+            const images = clonedElement.querySelectorAll('img');
+            images.forEach(img => {
+              img.style.maxWidth = '100%';
+              img.style.height = 'auto';
+            });
+          }
+        }
+      });
+      
+      // Create PDF
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      let position = 0;
+      
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      // Generate filename
+      const fileName = `diagnostic_report_${row.id}_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+      
+      // Cleanup
+      document.body.removeChild(iframe);
+      
+      console.log('PDF generated successfully from dashboard:', fileName);
+      
+    } catch (error) {
+      console.error('Error generating PDF from dashboard:', error);
+      // Fallback to opening report page
+      window.open(`${window.location.origin}/diagnostics/report/${row.id}`, '_blank');
+    } finally {
+      this.isDownloading.set(false);
+    }
+  }
+
+
+
+
+
+  protected getResultStatus(row: Diagnostic): string {
+    if (row.failed_components && row.failed_components.trim()) {
+      return 'Failed';
+    } else if (row.pending_components && row.pending_components.trim()) {
+      return 'Pending';
+    } else {
+      return 'Passed';
+    }
+  }
+
+  protected getStatusBadgeClass(row: Diagnostic): string {
+    const status = this.getResultStatus(row);
+    switch (status) {
+      case 'Failed': return 'badge badge-error badge-sm';
+      case 'Pending': return 'badge badge-warning badge-sm';
+      case 'Passed': return 'badge badge-success badge-sm';
+      default: return 'badge badge-neutral badge-sm';
+    }
+  }
+
+  protected clearSearch(): void {
+    this.searchTerm.set('');
+    this.searchError.set('');
+    this.hasSearched.set(false);
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
+    }
+    // Load recent tests when clearing search
+    this.loadRecentTests();
+  }
+
+  protected viewReport(row: Diagnostic): void {
+    this.router.navigate(['/diagnostics/report', row.id]);
+  }
+
+  protected async downloadDashboard(): Promise<void> {
+    this.isDownloading.set(true);
+    
+    try {
+      console.log('Starting dashboard PDF generation...');
+      
+      // Find the main dashboard content area
+      const dashboardElement = document.querySelector('.min-h-screen.bg-base-200') as HTMLElement;
+      if (!dashboardElement) {
+        throw new Error('Dashboard content not found');
+      }
+      
+      // Temporarily hide any loading spinners and buttons that shouldn't be in PDF
+      const elementsToHide = dashboardElement.querySelectorAll('.loading, .btn:not(.disabled)');
+      const originalStyles: { element: HTMLElement; display: string }[] = [];
+      
+      elementsToHide.forEach(element => {
+        const el = element as HTMLElement;
+        originalStyles.push({ element: el, display: el.style.display });
+        el.style.display = 'none';
+      });
+      
+      // Capture using html2canvas-pro
+      const canvas = await html2canvas(dashboardElement, {
+        scale: 1.5,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#f3f4f6', // Base-200 background color
+        width: Math.min(1200, dashboardElement.scrollWidth),
+        height: dashboardElement.scrollHeight,
+        removeContainer: true,
+        onclone: (clonedDoc) => {
+          const clonedDashboard = clonedDoc.querySelector('.min-h-screen.bg-base-200') as HTMLElement;
+          if (clonedDashboard) {
+            // Remove any remaining interactive elements
+            const interactiveElements = clonedDashboard.querySelectorAll('button, input, .loading');
+            interactiveElements.forEach(el => el.remove());
+          }
+        }
+      });
+      
+      console.log('Dashboard canvas captured:', canvas.width, 'x', canvas.height);
+      
+      // Create PDF - use landscape for dashboard
+      const pdf = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape
+      const imgWidth = 297; // A4 landscape width in mm
+      const pageHeight = 210; // A4 landscape height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      // Generate filename
+      const fileName = `dashboard_export_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+      
+      // Restore original styles
+      originalStyles.forEach(({ element, display }) => {
+        element.style.display = display;
+      });
+      
+      console.log('Dashboard PDF generated successfully:', fileName);
+      
+    } catch (error) {
+      console.error('Error generating dashboard PDF:', error);
+      // You could show a toast notification here
+    } finally {
+      this.isDownloading.set(false);
+    }
   }
 }
