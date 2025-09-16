@@ -6,10 +6,11 @@ import { Router } from '@angular/router';
 import { Chart, ChartConfiguration, ChartType, registerables } from 'chart.js/auto';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { PdfGeneratorService } from '../../core/services/pdf-generator.service';
+import { DiagnosticDataService } from '../../core/services/diagnostic-data.service';
 import { DashboardOverviewStats, WarehouseStats, RecentActivity, MonthlyTrend } from '../../core/models/dashboard';
 import { Diagnostic } from '../../core/models/diagnostic';
-import html2canvas from 'html2canvas-pro';
-import { jsPDF } from 'jspdf';
+import { firstValueFrom } from 'rxjs';
 
 Chart.register(...registerables);
 
@@ -24,6 +25,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly apiService = inject(ApiService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly pdfGeneratorService = inject(PdfGeneratorService);
+  private readonly diagnosticDataService = inject(DiagnosticDataService);
 
   // Signals for reactive state
   protected readonly isLoading = signal(true);
@@ -122,9 +125,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     
     // Load all dashboard data except monthly trends initially
     Promise.all([
-      this.apiService.getDashboardOverview().toPromise(),
-      this.apiService.getDashboardWarehouseStats().toPromise(),
-      this.apiService.getDashboardRecentActivity().toPromise()
+      firstValueFrom(this.apiService.getDashboardOverview()),
+      firstValueFrom(this.apiService.getDashboardWarehouseStats()),
+      firstValueFrom(this.apiService.getDashboardRecentActivity())
     ]).then(([overview, warehouses, activity]) => {
       console.log('Dashboard data loaded:', { overview: overview?.data, warehouses: warehouses?.data, activity: activity?.data });
       this.overviewData.set(overview!.data);
@@ -157,7 +160,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       params = params.append('from', fromDate);
       params = params.append('to', toDate);
 
-      this.apiService.getDashboardMonthlyTrends(params).toPromise().then(trends => {
+      firstValueFrom(this.apiService.getDashboardMonthlyTrends(params)).then(trends => {
         this.monthlyTrends.set(trends!.data);
         // Defer chart setup to ensure canvas is rendered
         requestAnimationFrame(() => {
@@ -616,107 +619,65 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isDownloading.set(true);
     
     try {
-      // Create a temporary iframe to load the report page
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'absolute';
-      iframe.style.left = '-9999px';
-      iframe.style.top = '-9999px';
-      iframe.style.width = '800px';
-      iframe.style.height = '600px';
-      iframe.style.border = 'none';
+      // Try to get diagnostic from cached service data first (if available)
+      let diagnostic = this.diagnosticDataService.getDiagnosticById(row.id);
       
-      const reportUrl = `${window.location.origin}/diagnostics/report/${row.id}`;
-      iframe.src = reportUrl;
-      
-      document.body.appendChild(iframe);
-      
-      // Wait for iframe to load
-      await new Promise<void>((resolve, reject) => {
-        iframe.onload = () => {
-          // Additional wait to ensure all content is loaded
-          setTimeout(() => resolve(), 2000);
-        };
-        iframe.onerror = () => reject(new Error('Failed to load report'));
+      if (diagnostic) {
+        // Use cached data for fast PDF generation - no API calls needed!
+        console.log('Using cached diagnostic data for PDF generation');
+        const blob = await this.pdfGeneratorService.generateDiagnosticPdf(diagnostic);
         
-        // Timeout after 10 seconds
-        setTimeout(() => reject(new Error('Report loading timed out')), 10000);
-      });
-      
-      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (!iframeDoc) {
-        throw new Error('Unable to access report content');
-      }
-      
-      const reportElement = iframeDoc.querySelector('.report-document') as HTMLElement;
-      if (!reportElement) {
-        throw new Error('Report content not found');
-      }
-      
-      // Apply PDF optimization styles
-      const containerElement = iframeDoc.querySelector('.report-page-container') as HTMLElement;
-      if (containerElement) {
-        containerElement.classList.add('pdf-optimized');
-      }
-      
-      // Capture using html2canvas-pro
-      const canvas = await html2canvas(reportElement, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 800,
-        height: reportElement.scrollHeight,
-        removeContainer: true,
-        onclone: (clonedDoc) => {
-          const clonedContainer = clonedDoc.querySelector('.report-page-container') as HTMLElement;
-          const clonedElement = clonedDoc.querySelector('.report-document') as HTMLElement;
-          if (clonedContainer && clonedElement) {
-            clonedContainer.classList.add('pdf-optimized');
-            // Remove non-printable elements
-            const noPrintElements = clonedElement.querySelectorAll('.no-print');
-            noPrintElements.forEach(el => el.remove());
-            // Ensure images are properly styled
-            const images = clonedElement.querySelectorAll('img');
-            images.forEach(img => {
-              img.style.maxWidth = '100%';
-              img.style.height = 'auto';
-            });
-          }
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = this.pdfGeneratorService.generateFilename(diagnostic);
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Cleanup blob URL
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+        
+        console.log('PDF generated successfully from dashboard using cached data');
+      } else {
+        // Fallback: Use API service to get the diagnostic data first
+        console.log('Diagnostic not in cache, fetching from API for PDF generation');
+        
+        // Get the full diagnostic data
+        const diagnosticResponse = await firstValueFrom(this.apiService.getPublicDiagnostic(row.id));
+        
+        if (diagnosticResponse && diagnosticResponse.data) {
+          const fullDiagnostic = diagnosticResponse.data;
+          
+          // Generate PDF using the fetched data
+          const blob = await this.pdfGeneratorService.generateDiagnosticPdf(fullDiagnostic);
+          
+          // Create download link
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = this.pdfGeneratorService.generateFilename(fullDiagnostic);
+          
+          // Trigger download
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Cleanup blob URL
+          setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+          
+          console.log('PDF generated successfully from dashboard using API data');
+        } else {
+          throw new Error('Failed to fetch diagnostic data');
         }
-      });
-      
-      // Create PDF
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 295; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
-      
-      const imgData = canvas.toDataURL('image/png');
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
       }
-      
-      // Generate filename
-      const fileName = `diagnostic_report_${row.id}_${new Date().toISOString().split('T')[0]}.pdf`;
-      pdf.save(fileName);
-      
-      // Cleanup
-      document.body.removeChild(iframe);
-      
-      console.log('PDF generated successfully from dashboard:', fileName);
       
     } catch (error) {
       console.error('Error generating PDF from dashboard:', error);
-      // Fallback to opening report page
+      // Fallback to opening report page in new tab
       window.open(`${window.location.origin}/diagnostics/report/${row.id}`, '_blank');
     } finally {
       this.isDownloading.set(false);
@@ -763,84 +724,46 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.router.navigate(['/diagnostics/report', row.id]);
   }
 
-  protected async downloadDashboard(): Promise<void> {
-    this.isDownloading.set(true);
-    
+  protected downloadDashboard(): void {
+    // Use browser's native print functionality for dashboard export
+    // This avoids document.write() issues and provides better compatibility
     try {
-      console.log('Starting dashboard PDF generation...');
-      
-      // Find the main dashboard content area
-      const dashboardElement = document.querySelector('.min-h-screen.bg-base-200') as HTMLElement;
-      if (!dashboardElement) {
-        throw new Error('Dashboard content not found');
-      }
-      
-      // Temporarily hide any loading spinners and buttons that shouldn't be in PDF
-      const elementsToHide = dashboardElement.querySelectorAll('.loading, .btn:not(.disabled)');
-      const originalStyles: { element: HTMLElement; display: string }[] = [];
-      
-      elementsToHide.forEach(element => {
-        const el = element as HTMLElement;
-        originalStyles.push({ element: el, display: el.style.display });
-        el.style.display = 'none';
-      });
-      
-      // Capture using html2canvas-pro
-      const canvas = await html2canvas(dashboardElement, {
-        scale: 1.5,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#f3f4f6', // Base-200 background color
-        width: Math.min(1200, dashboardElement.scrollWidth),
-        height: dashboardElement.scrollHeight,
-        removeContainer: true,
-        onclone: (clonedDoc) => {
-          const clonedDashboard = clonedDoc.querySelector('.min-h-screen.bg-base-200') as HTMLElement;
-          if (clonedDashboard) {
-            // Remove any remaining interactive elements
-            const interactiveElements = clonedDashboard.querySelectorAll('button, input, .loading');
-            interactiveElements.forEach(el => el.remove());
-          }
+      // Temporarily add print-specific styles
+      const printStyles = document.createElement('style');
+      printStyles.textContent = `
+        @media print {
+          body * { visibility: hidden; }
+          .dashboard-print-area, .dashboard-print-area * { visibility: visible; }
+          .dashboard-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+          .btn, .loading, .no-print { display: none !important; }
+          .card { break-inside: avoid; }
+          .chart-container { height: 300px !important; }
         }
-      });
+      `;
+      document.head.appendChild(printStyles);
       
-      console.log('Dashboard canvas captured:', canvas.width, 'x', canvas.height);
-      
-      // Create PDF - use landscape for dashboard
-      const pdf = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape
-      const imgWidth = 297; // A4 landscape width in mm
-      const pageHeight = 210; // A4 landscape height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-      
-      const imgData = canvas.toDataURL('image/png');
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+      // Add print class to main content area
+      const dashboardElement = document.querySelector('.min-h-screen.bg-base-200');
+      if (dashboardElement) {
+        dashboardElement.classList.add('dashboard-print-area');
       }
       
-      // Generate filename
-      const fileName = `dashboard_export_${new Date().toISOString().split('T')[0]}.pdf`;
-      pdf.save(fileName);
+      // Trigger print dialog
+      window.print();
       
-      // Restore original styles
-      originalStyles.forEach(({ element, display }) => {
-        element.style.display = display;
-      });
+      // Cleanup after print dialog closes
+      setTimeout(() => {
+        document.head.removeChild(printStyles);
+        if (dashboardElement) {
+          dashboardElement.classList.remove('dashboard-print-area');
+        }
+      }, 100);
       
-      console.log('Dashboard PDF generated successfully:', fileName);
-      
+      console.log('Dashboard print dialog opened');
     } catch (error) {
-      console.error('Error generating dashboard PDF:', error);
-      // You could show a toast notification here
-    } finally {
-      this.isDownloading.set(false);
+      console.error('Error opening dashboard print dialog:', error);
+      // Fallback: show message to user
+      alert('Please use your browser\'s print function (Ctrl+P or Cmd+P) to export the dashboard.');
     }
   }
 }
