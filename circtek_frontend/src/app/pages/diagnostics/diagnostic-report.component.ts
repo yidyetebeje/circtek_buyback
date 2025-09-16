@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { Diagnostic } from '../../core/models/diagnostic';
 import { LogosService } from '../../services/logos.service';
+import { DiagnosticPdfService } from '../../shared/services/diagnostic-pdf.service';
 import qrcode from 'qrcode';
 import { LucideAngularModule, Download, Printer } from 'lucide-angular';
 import html2canvas from 'html2canvas-pro';
@@ -20,6 +21,7 @@ export class DiagnosticReportComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(ApiService);
   private readonly logosService = inject(LogosService);
+  private readonly diagnosticPdfService = inject(DiagnosticPdfService);
 
   loading = signal<boolean>(true);
   report = signal<Diagnostic | null>(null);

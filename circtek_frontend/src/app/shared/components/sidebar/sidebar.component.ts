@@ -2,13 +2,12 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import {
+  LayoutDashboard,
   Stethoscope,
   History,
   Users,
   Package,
-  Wrench,
-  Workflow,
-  Tag
+  Wrench
 } from 'lucide-angular';
 
 @Component({
@@ -22,13 +21,12 @@ export class SidebarComponent {
   protected readonly isOpen = signal(false);
 
   // Icons
+  readonly LayoutDashboard = LayoutDashboard;
   readonly Stethoscope = Stethoscope;
   readonly History = History;
   readonly Users = Users;
   readonly Package = Package;
   readonly Wrench = Wrench;
-  readonly Workflow = Workflow;
-  readonly Tag = Tag;
 
   toggleSidebar() {
     this.isOpen.update(open => !open);

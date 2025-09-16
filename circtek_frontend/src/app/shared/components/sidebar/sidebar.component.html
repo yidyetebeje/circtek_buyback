@@ -10,6 +10,12 @@
     <nav class="mobile-nav">
       <ul class="mobile-nav-links">
         <li>
+          <a routerLink="/dashboard" (click)="closeSidebar()" class="sidebar-nav-link">
+            <lucide-icon [img]="LayoutDashboard" size="20"></lucide-icon>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li>
           <a routerLink="/diagnostics" (click)="closeSidebar()" class="sidebar-nav-link">
             <lucide-icon [img]="Stethoscope" size="20"></lucide-icon>
             <span>Diagnostics</span>
@@ -37,18 +43,6 @@
           <a routerLink="/repair" (click)="closeSidebar()" class="sidebar-nav-link">
             <lucide-icon [img]="Wrench" size="20"></lucide-icon>
             <span>Repair</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/workflow-editor" (click)="closeSidebar()" class="sidebar-nav-link">
-            <lucide-icon [img]="Workflow" size="20"></lucide-icon>
-            <span>Workflow Editor</span>
-          </a>
-        </li>
-        <li>
-          <a routerLink="/labels" (click)="closeSidebar()" class="sidebar-nav-link">
-            <lucide-icon [img]="Tag" size="20"></lucide-icon>
-            <span>Labels</span>
           </a>
         </li>
       </ul>

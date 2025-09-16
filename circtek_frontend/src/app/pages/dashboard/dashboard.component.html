@@ -163,7 +163,7 @@
               Recent Test Activity  
             }
           </h3>
-          @if (isDownloading()) {
+          @if (isAnyDownloading()) {
             <div class="flex items-center gap-2 text-sm text-base-content/70">
               <span class="loading loading-spinner loading-sm"></span>
               <span>Generating PDF...</span>
@@ -264,10 +264,10 @@
                           class="btn btn-ghost btn-xs tooltip" 
                           data-tip="Download PDF"
                           (click)="downloadReport(result)"
-                          [disabled]="isDownloading()"
+                          [disabled]="isDownloadingForId(result.id)"
                           title="Download PDF Report"
                         >
-                          @if (isDownloading()) {
+                          @if (isDownloadingForId(result.id)) {
                             <span class="loading loading-spinner loading-xs"></span>
                           } @else {
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-4">

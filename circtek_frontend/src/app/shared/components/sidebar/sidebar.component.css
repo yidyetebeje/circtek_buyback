@@ -46,13 +46,15 @@
 .sidebar-nav-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
+  gap: 0.6rem;
+  padding: 0.8rem 1.2rem;
   color: var(--color-base-content);
   text-decoration: none;
   font-weight: 500;
   border-bottom: 1px solid var(--color-base-300);
   transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .sidebar-nav-link:hover {
@@ -61,21 +63,16 @@
 
 .sidebar-nav-link lucide-icon {
   flex-shrink: 0;
+  width: 20px;
+  height: 20px;
 }
 
-.mobile-nav-links a {
-  display: block;
-  padding: 1rem 1.5rem;
-  color: var(--color-base-content);
-  text-decoration: none;
-  font-weight: 500;
-  border-bottom: 1px solid var(--color-base-300);
-  transition: all 0.2s ease;
+.sidebar-nav-link span {
+  flex: 1;
+  white-space: nowrap;
 }
 
-.mobile-nav-links a:hover {
-  background-color: var(--color-base-200);
-}
+/* Remove conflicting styles - now using .sidebar-nav-link for mobile */
 
 /* Mobile styles */
 @media (max-width: 768px) {
@@ -91,6 +88,8 @@
 
   .sidebar-content {
     padding: 1rem;
+    align-items: stretch;
+    width: 100%;
   }
 
   .sidebar-logo {
@@ -101,6 +100,14 @@
   .mobile-nav {
     display: block;
     margin-top: 2rem;
+    width: 100%;
+  }
+
+  .mobile-nav-links {
+    width: 100%;
+  }
+
+  .mobile-nav-links li {
     width: 100%;
   }
 

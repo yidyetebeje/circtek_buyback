@@ -8,6 +8,12 @@
 
   <ul class="nav-links">
     <li>
+      <a routerLink="/dashboard" class="nav-link">
+        <lucide-icon [img]="LayoutDashboard" size="18"></lucide-icon>
+        <span>Dashboard</span>
+      </a>
+    </li>
+    <li>
       <a routerLink="/diagnostics" class="nav-link">
         <lucide-icon [img]="Stethoscope" size="18"></lucide-icon>
         <span>Diagnostics</span>
@@ -35,18 +41,6 @@
       <a routerLink="/repair" class="nav-link">
         <lucide-icon [img]="Wrench" size="18"></lucide-icon>
         <span>Repair</span>
-      </a>
-    </li>
-    <li>
-      <a routerLink="/workflow-editor" class="nav-link">
-        <lucide-icon [img]="Workflow" size="18"></lucide-icon>
-        <span>Workflow Editor</span>
-      </a>
-    </li>
-    <li>
-      <a routerLink="/labels" class="nav-link">
-        <lucide-icon [img]="Tag" size="18"></lucide-icon>
-        <span>Labels</span>
       </a>
     </li>
   </ul>

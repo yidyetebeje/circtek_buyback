@@ -5,13 +5,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { LucideAngularModule } from 'lucide-angular';
 import {
+  LayoutDashboard,
   Stethoscope,
   History,
   Users,
   Package,
-  Wrench,
-  Workflow,
-  Tag
+  Wrench
 } from 'lucide-angular';
 
 @Component({
@@ -31,13 +30,12 @@ export class NavbarComponent {
   );
 
   // Icons
+  readonly LayoutDashboard = LayoutDashboard;
   readonly Stethoscope = Stethoscope;
   readonly History = History;
   readonly Users = Users;
   readonly Package = Package;
   readonly Wrench = Wrench;
-  readonly Workflow = Workflow;
-  readonly Tag = Tag;
 
   // Mobile menu toggle
   sidebarToggle = output<void>();

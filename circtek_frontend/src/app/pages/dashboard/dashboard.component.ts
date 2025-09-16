@@ -6,11 +6,11 @@ import { Router } from '@angular/router';
 import { Chart, ChartConfiguration, ChartType, registerables } from 'chart.js/auto';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
-import { PdfGeneratorService } from '../../core/services/pdf-generator.service';
+import { DiagnosticPdfService } from '../../shared/services/diagnostic-pdf.service';
 import { DiagnosticDataService } from '../../core/services/diagnostic-data.service';
+import { firstValueFrom } from 'rxjs';
 import { DashboardOverviewStats, WarehouseStats, RecentActivity, MonthlyTrend } from '../../core/models/dashboard';
 import { Diagnostic } from '../../core/models/diagnostic';
-import { firstValueFrom } from 'rxjs';
 
 Chart.register(...registerables);
 
@@ -25,7 +25,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly apiService = inject(ApiService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly pdfGeneratorService = inject(PdfGeneratorService);
+  private readonly diagnosticPdfService = inject(DiagnosticPdfService);
   private readonly diagnosticDataService = inject(DiagnosticDataService);
 
   // Signals for reactive state
@@ -50,8 +50,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   protected readonly testResults = signal<Diagnostic[]>([]);
   protected readonly hasSearched = signal<boolean>(false);
   protected readonly showingSearchResults = computed(() => this.hasSearched() && this.searchTerm().trim().length > 0);
-  protected readonly isDownloading = signal<boolean>(false);
+  protected readonly isDownloadingMap = signal<{[id: number]: boolean}>({});
+  protected readonly isAnyDownloading = computed(() => Object.values(this.isDownloadingMap()).some(isDownloading => isDownloading));
   private searchTimeout: any = null;
+  
 
   // Chart configurations
   protected deviceTypeChart: ChartConfiguration | null = null;
@@ -615,72 +617,56 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     }, 300);
   }
 
+  protected isDownloadingForId(id: number): boolean {
+    return this.isDownloadingMap()[id] || false;
+  }
+
   protected async downloadReport(row: Diagnostic): Promise<void> {
-    this.isDownloading.set(true);
+    const id = row.id;
+    // Set loading state only for this diagnostic ID
+    this.isDownloadingMap.update(map => ({ ...map, [id]: true }));
     
     try {
-      // Try to get diagnostic from cached service data first (if available)
-      let diagnostic = this.diagnosticDataService.getDiagnosticById(row.id);
+      console.log('Starting high-quality PDF generation for diagnostic:', row.id);
       
-      if (diagnostic) {
-        // Use cached data for fast PDF generation - no API calls needed!
-        console.log('Using cached diagnostic data for PDF generation');
-        const blob = await this.pdfGeneratorService.generateDiagnosticPdf(diagnostic);
-        
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = this.pdfGeneratorService.generateFilename(diagnostic);
-        
-        // Trigger download
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Cleanup blob URL
-        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-        
-        console.log('PDF generated successfully from dashboard using cached data');
-      } else {
-        // Fallback: Use API service to get the diagnostic data first
-        console.log('Diagnostic not in cache, fetching from API for PDF generation');
-        
-        // Get the full diagnostic data
-        const diagnosticResponse = await firstValueFrom(this.apiService.getPublicDiagnostic(row.id));
-        
-        if (diagnosticResponse && diagnosticResponse.data) {
-          const fullDiagnostic = diagnosticResponse.data;
-          
-          // Generate PDF using the fetched data
-          const blob = await this.pdfGeneratorService.generateDiagnosticPdf(fullDiagnostic);
-          
-          // Create download link
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = this.pdfGeneratorService.generateFilename(fullDiagnostic);
-          
-          // Trigger download
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          
-          // Cleanup blob URL
-          setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-          
-          console.log('PDF generated successfully from dashboard using API data');
-        } else {
-          throw new Error('Failed to fetch diagnostic data');
-        }
-      }
+      // Use the shared diagnostic PDF service that renders the exact report component layout
+      const blob = await this.diagnosticPdfService.generatePdf(row.id);
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename using the diagnostic data
+      const diagnosticResponse = await firstValueFrom(this.apiService.getPublicDiagnostic(row.id));
+      const filename = diagnosticResponse?.data ? 
+        this.diagnosticPdfService.generateFilename(diagnosticResponse.data) : 
+        `diagnostic_report_${row.id}_${new Date().toISOString().split('T')[0]}.pdf`;
+      
+      link.download = filename;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Cleanup blob URL
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      
+      console.log('High-quality PDF generated successfully from dashboard using shared service');
       
     } catch (error) {
       console.error('Error generating PDF from dashboard:', error);
       // Fallback to opening report page in new tab
+      console.log('Falling back to opening report page in new tab');
       window.open(`${window.location.origin}/diagnostics/report/${row.id}`, '_blank');
     } finally {
-      this.isDownloading.set(false);
+      // Reset loading state for this diagnostic ID
+      this.isDownloadingMap.update(map => {
+        const newMap = {...map};
+        delete newMap[id];
+        return newMap;
+      });
     }
   }
 
