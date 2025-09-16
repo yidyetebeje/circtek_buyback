@@ -9,12 +9,48 @@
     <!-- Mobile navigation menu -->
     <nav class="mobile-nav">
       <ul class="mobile-nav-links">
-        <li><a routerLink="/diagnostics" (click)="closeSidebar()">Diagnostics</a></li>
-        <li><a routerLink="/device-history" (click)="closeSidebar()">Device History</a></li>
-        <li><a routerLink="/management" (click)="closeSidebar()">Management</a></li>
-        <li><a routerLink="/stock-management" (click)="closeSidebar()">Stock Management</a></li>
-        <li><a routerLink="/workflow-editor" (click)="closeSidebar()">Workflow Editor</a></li>
-        <li><a routerLink="/labels" (click)="closeSidebar()">Labels</a></li>
+        <li>
+          <a routerLink="/diagnostics" (click)="closeSidebar()" class="sidebar-nav-link">
+            <lucide-icon [img]="Stethoscope" size="20"></lucide-icon>
+            <span>Diagnostics</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/device-history" (click)="closeSidebar()" class="sidebar-nav-link">
+            <lucide-icon [img]="History" size="20"></lucide-icon>
+            <span>Device History</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/management" (click)="closeSidebar()" class="sidebar-nav-link">
+            <lucide-icon [img]="Users" size="20"></lucide-icon>
+            <span>Management</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/stock-management" (click)="closeSidebar()" class="sidebar-nav-link">
+            <lucide-icon [img]="Package" size="20"></lucide-icon>
+            <span>Stock Management</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/repair" (click)="closeSidebar()" class="sidebar-nav-link">
+            <lucide-icon [img]="Wrench" size="20"></lucide-icon>
+            <span>Repair</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/workflow-editor" (click)="closeSidebar()" class="sidebar-nav-link">
+            <lucide-icon [img]="Workflow" size="20"></lucide-icon>
+            <span>Workflow Editor</span>
+          </a>
+        </li>
+        <li>
+          <a routerLink="/labels" (click)="closeSidebar()" class="sidebar-nav-link">
+            <lucide-icon [img]="Tag" size="20"></lucide-icon>
+            <span>Labels</span>
+          </a>
+        </li>
       </ul>
     </nav>
   </div>

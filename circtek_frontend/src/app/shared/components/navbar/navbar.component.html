@@ -7,13 +7,48 @@
   </button>
 
   <ul class="nav-links">
-    <li><a routerLink="/diagnostics">Diagnostics</a></li>
-    <li><a routerLink="/device-history">Device History</a></li>
-    <li><a routerLink="/management">Management</a></li>
-    <li><a routerLink="/stock-management">Stock Management</a></li>
-    <li><a routerLink="/repair">Repair</a></li>
-    <li><a routerLink="/workflow-editor">Workflow Editor</a></li>
-    <li><a routerLink="/labels">Labels</a></li>
+    <li>
+      <a routerLink="/diagnostics" class="nav-link">
+        <lucide-icon [img]="Stethoscope" size="18"></lucide-icon>
+        <span>Diagnostics</span>
+      </a>
+    </li>
+    <li>
+      <a routerLink="/device-history" class="nav-link">
+        <lucide-icon [img]="History" size="18"></lucide-icon>
+        <span>Device History</span>
+      </a>
+    </li>
+    <li>
+      <a routerLink="/management" class="nav-link">
+        <lucide-icon [img]="Users" size="18"></lucide-icon>
+        <span>Management</span>
+      </a>
+    </li>
+    <li>
+      <a routerLink="/stock-management" class="nav-link">
+        <lucide-icon [img]="Package" size="18"></lucide-icon>
+        <span>Stock Management</span>
+      </a>
+    </li>
+    <li>
+      <a routerLink="/repair" class="nav-link">
+        <lucide-icon [img]="Wrench" size="18"></lucide-icon>
+        <span>Repair</span>
+      </a>
+    </li>
+    <li>
+      <a routerLink="/workflow-editor" class="nav-link">
+        <lucide-icon [img]="Workflow" size="18"></lucide-icon>
+        <span>Workflow Editor</span>
+      </a>
+    </li>
+    <li>
+      <a routerLink="/labels" class="nav-link">
+        <lucide-icon [img]="Tag" size="18"></lucide-icon>
+        <span>Labels</span>
+      </a>
+    </li>
   </ul>
   
   <div class="navbar-actions">

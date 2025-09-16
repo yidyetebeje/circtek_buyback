@@ -3,10 +3,20 @@ import { RouterModule } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { LucideAngularModule } from 'lucide-angular';
+import {
+  Stethoscope,
+  History,
+  Users,
+  Package,
+  Wrench,
+  Workflow,
+  Tag
+} from 'lucide-angular';
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterModule, MatTooltipModule],
+  imports: [RouterModule, MatTooltipModule, LucideAngularModule],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -19,6 +29,15 @@ export class NavbarComponent {
   protected readonly themeTooltip = computed(() =>
     this.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'
   );
+
+  // Icons
+  readonly Stethoscope = Stethoscope;
+  readonly History = History;
+  readonly Users = Users;
+  readonly Package = Package;
+  readonly Wrench = Wrench;
+  readonly Workflow = Workflow;
+  readonly Tag = Tag;
 
   // Mobile menu toggle
   sidebarToggle = output<void>();
