@@ -158,7 +158,7 @@
                 </div>
 
                 <!-- Shapes -->
-                <h6 class="uppercase text-base-content/70 mb-2 mt-4 text-xs font-bold">Shapes</h6>
+                <h6 class="text-base-content/70 mb-2 mt-4 text-sm font-semibold">Shapes</h6>
                 <div class="element-item mb-2 p-2 flex items-center justify-center rounded bg-base-200 hover:bg-base-300 transition-all cursor-grab min-h-10"
                   draggable="true" (dragstart)="onDragStart($event, 'filled-rectangle')">
                   <div style="font-weight: bold; font-size: 0.9rem">Filled Rectangle</div>
@@ -174,13 +174,13 @@
 
                 <!-- Placeholders Section -->
                 <div class="mt-4">
-                  <h6 class="uppercase text-base-content/70 mb-3 text-xs font-bold">Placeholders</h6>
+                  <h6 class="text-base-content/70 mb-2 mt-4 text-sm font-semibold">Placeholders</h6>
                   <div class="mb-3">
                     <input type="text" placeholder="Search placeholders..." class="input input-bordered input-sm w-full" [(ngModel)]="placeholderSearchTerm" (ngModelChange)="updateFilteredPlaceholders()" />
                   </div>
                   <div *ngIf="filteredCategorizedPlaceholders.length > 0; else noPlaceholdersFound">
                     <div *ngFor="let group of filteredCategorizedPlaceholders" class="mb-3">
-                      <h6 class="text-base-content/70 font-semibold mb-2 text-sm">{{ group.category }}</h6>
+                      <h6 class="text-base-content/70 mb-2 mt-4 text-sm font-semibold">{{ group.category }}</h6>
                       <div *ngFor="let placeholder of group.items" class="element-item bg-base-100 shadow mb-1 text-center p-1 rounded cursor-grab min-h-8 text-sm"
                         draggable="true" (dragstart)="onDragStart($event, 'placeholder', placeholder.id)">
                         <div class="placeholder-item flex items-center justify-center h-full">
