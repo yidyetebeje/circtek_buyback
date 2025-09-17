@@ -14,6 +14,7 @@ export const users = mysqlTable('users', {
   wifi_profile_id: bigint('wifi_profile_id', { mode: 'number', unsigned: true }).references(() => wifi_profile.id),
   workflow_id: bigint('workflow_id', { mode: 'number', unsigned: true }).references(() => workflows.id),
   label_template_id: bigint('label_template_id', { mode: 'number', unsigned: true }).references(() => label_templates.id),
+  ota_update_id: bigint('ota_update_id', { mode: 'number', unsigned: true }).references(() => ota_update.id),
   role_id: bigint('role_id', { mode: 'number', unsigned: true }).references(() => roles.id),
   tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
   warehouse_id: bigint('warehouse_id', { mode: 'number', unsigned: true }).references(() => warehouses.id),
@@ -354,7 +355,18 @@ export const label_templates = mysqlTable('label_templates', {
   created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
-
+// target_Os window,macos
+export const ota_update = mysqlTable('ota_update', {
+  id: serial('id').primaryKey(),
+  version: varchar('version', { length: 255 }).notNull(),
+  url: text('url').notNull(),
+  target_os: mysqlEnum('target_os', ['window', 'macos']).notNull(),
+  target_architecture: mysqlEnum('target_architecture', ['x86', 'arm']).notNull(),
+  release_channel: mysqlEnum('release_channel', ['stable', 'beta', 'dev']).notNull(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
 
 
 // buybacks tables

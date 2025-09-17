@@ -168,7 +168,7 @@ async function seed_test_results() {
             passed_components: 'screen, camera',
             failed_components: 'battery, accelerometer',
             serial_number: faker.string.alphanumeric(12).toUpperCase(),
-            imei: faker.phone.imei(),
+            imei: faker.string.numeric(15),
             device_type: 'iPhone',
         
         });
@@ -277,7 +277,16 @@ async function seed_shop() {
     console.log('Detailed shops seeded successfully');
 }
 async function seed() {
-    await seed_shop();
+    await cleanup();
+    await seed_tenants();
+    await seed_roles();
+    await seed_users();
+    await seed_shops();
+    await seed_warehouses();
+    await seed_devices();
+    await seed_test_results();
+    await seed_shop(); // Detailed shop seeding
+
     console.log('🎉 All seeding completed successfully!');
 }
 
