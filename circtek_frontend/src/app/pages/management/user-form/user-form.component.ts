@@ -516,7 +516,13 @@ export class UserFormComponent {
         },
         error: (error) => {
           console.error('Failed to update user:', error);
-          const msg = error?.error?.message || error?.message || 'Failed to update user';
+          let msg = error?.error?.message || error?.message || 'Failed to update user';
+          
+          // Check for 409 status code (username already taken)
+          if (error?.status === 409 || error?.error?.status === 409) {
+            msg = 'Username already taken. Please choose a different username.';
+          }
+          
           this.errorMessage.set(msg);
           this.submitting.set(false);
         }
@@ -533,7 +539,13 @@ export class UserFormComponent {
         },
         error: (error) => {
           console.error('Failed to create user:', error);
-          const msg = error?.error?.message || error?.message || 'Failed to create user';
+          let msg = error?.error?.message || error?.message || 'Failed to create user';
+          
+          // Check for 409 status code (username already taken)
+          if (error?.status === 409 || error?.error?.status === 409) {
+            msg = 'Username already taken. Please choose a different username.';
+          }
+          
           this.errorMessage.set(msg);
           this.submitting.set(false);
         }
