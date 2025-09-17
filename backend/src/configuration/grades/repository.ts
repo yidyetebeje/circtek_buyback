@@ -7,8 +7,6 @@ const gradeSelection = {
     id: grades.id,
     name: grades.name,
     color: grades.color,
-    description: grades.description,
-    status: grades.status,
     tenant_id: grades.tenant_id,
     created_at: grades.created_at,
 }

@@ -248,8 +248,6 @@ export const grades = mysqlTable('grades', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   color: varchar('color', { length: 255 }).notNull(),
-  description: text('description'),
-  status: boolean('status').default(true),
   tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
   created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
