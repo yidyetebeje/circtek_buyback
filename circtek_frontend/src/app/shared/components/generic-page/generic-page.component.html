@@ -68,7 +68,7 @@
                       />
                     } @else {
                       <select 
-                        class="select select-sm select-bordered bg-base-50 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        class="select select-sm select-accent"
                         [ngModel]="facetValue(f.key)" 
                         (ngModelChange)="updateFacet(f.key, $event)"
                       >
@@ -253,7 +253,7 @@
               <div class="flex items-center gap-2">
                 <span class="text-sm text-base-content/80 whitespace-nowrap">Rows per page</span>
                 <select 
-                  class="select select-bordered select-sm bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
+                  class="select select-accent select-sm " 
                   [ngModel]="pageSize()"
                   (ngModelChange)="updatePageSize($event)"
                 >

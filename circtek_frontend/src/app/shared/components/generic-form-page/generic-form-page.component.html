@@ -62,7 +62,7 @@
                   @case ('select') {
                     <select 
                       [formControlName]="field.key"
-                      class="select select-bordered w-full"
+                      class="select select-accent w-full"
                       [class.select-error]="isFieldInvalid(field)"
                       [disabled]="field.disabled || loading() || submitting()"
                     >

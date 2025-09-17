@@ -17,7 +17,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
       <div class="md:col-span-1">
         <label class="label"><span class="label-text">Warehouse</span><span class="text-error ml-1">*</span></label>
-        <select class="select select-bordered w-full" formControlName="warehouse_id">
+        <select class="select select-accent w-full" formControlName="warehouse_id">
           <option [ngValue]="null">Select Warehouse</option>
           @for (w of warehouses(); track w.id) { <option [ngValue]="w.id">{{ w.name }}</option> }
         </select>
@@ -90,7 +90,7 @@
                 />
               </div>
               <div class="col-span-3 pr-3">
-                <select class="select select-bordered select-sm w-full" formControlName="reason_id">
+                <select class="select select-accent select-sm w-full" formControlName="reason_id">
                   <option [ngValue]="null">Select Reason</option>
                   @for (reason of repairReasonOptions(); track reason.value) {
                     <option [ngValue]="reason.value">{{ reason.label }}</option>

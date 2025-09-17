@@ -71,7 +71,7 @@
       <div class="form-control">
         <label class="label mb-1"><span class="label-text">WiFi Profile</span></label>
         <select 
-          class="select select-bordered" 
+          class="select select-accent" 
           (change)="onAssignProfileSelect($event)"
           [disabled]="loading()"
           [title]="'Select a WiFi profile to assign'"
@@ -90,7 +90,7 @@
     <div class="form-control">
       <label class="label mb-1 pr-4"><span class="label-text">Tester</span></label>
       <select 
-        class="select select-bordered" 
+        class="select select-accent" 
         (change)="onAssignTesterSelect($event)" 
         [value]="selectedAssignTesterId() ?? ''"
         [disabled]="loading()"

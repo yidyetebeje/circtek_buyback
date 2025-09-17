@@ -38,7 +38,7 @@
         </label>
         <select 
           formControlName="purchase_id"
-          class="select select-bordered w-full"
+          class="select select-accent w-full"
           [class.select-error]="form.get('purchase_id')?.invalid && form.get('purchase_id')?.touched"
           [disabled]="loading() || loadingSpecificPurchase() || submitting()"
         >
@@ -81,7 +81,7 @@
           <span class="label-text font-medium">SKUs<span class="text-error">*</span></span>
         </label>
         <select 
-          class="select select-bordered w-full"
+          class="select select-accent w-full"
           [disabled]="loading() || loadingSpecificPurchase() || submitting()"
           (change)="onSkuSelected(($any($event.target)).value || ''); ($any($event.target)).value = ''"
         >
