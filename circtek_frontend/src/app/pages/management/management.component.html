@@ -64,6 +64,17 @@
           </div>
         </div>
       }
+      @if (activeTab() === 'ota-updates' && selectedOtaUpdate(); as ota) {
+        <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+          <span class="font-medium text-base-content/90 flex-shrink-0">OTA Update:</span>
+          <div class="min-w-0 flex-1">
+            <app-truncated-text 
+              [text]="ota.version + ' (' + ota.target_os + ' ' + ota.target_architecture + ')'"
+              [maxWidth]="'280px'"
+            ></app-truncated-text>
+          </div>
+        </div>
+      }
     </div>
     
     <!-- WiFi Profile dropdown only for wifi tab when no profile is selected -->
@@ -151,6 +162,17 @@
         <div class="min-w-0 flex-1">
           <app-truncated-text 
             [text]="w.name"
+            [maxWidth]="'300px'"
+          ></app-truncated-text>
+        </div>
+      </div>
+    }
+    @if (activeTab() === 'ota-updates' && selectedOtaUpdate(); as ota) {
+      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+        <span class="font-medium text-base-content/90 flex-shrink-0">OTA Update:</span>
+        <div class="min-w-0 flex-1">
+          <app-truncated-text 
+            [text]="ota.version + ' (' + ota.target_os + ' ' + ota.target_architecture + ')'"
             [maxWidth]="'300px'"
           ></app-truncated-text>
         </div>
@@ -270,6 +292,100 @@
       </div>
       <div class="label">
         <span class="label-text-alt text-base-content/60">Choose a color to represent this grade</span>
+      </div>
+    </div>
+  </div>
+</app-generic-modal>
+
+<!-- OTA Update Modal -->
+<app-generic-modal
+  [isOpen]="isOtaUpdateModalOpen()"
+  [title]="selectedOtaUpdate() ? 'Edit OTA Update' : 'Add OTA Update'"
+  [actions]="otaUpdateModalActions()"
+  size="lg"
+  (close)="closeOtaUpdateModal()"
+  (actionClick)="onOtaUpdateModalAction($event)"
+>
+  <div class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="form-control">
+        <label class="label mb-1">
+          <span class="label-text">Version <span class="text-error">*</span></span>
+        </label>
+        <input 
+          type="text" 
+          class="input input-accent" 
+          placeholder="e.g., 1.0.0"
+          [value]="otaUpdateForm().version"
+          (input)="onOtaUpdateVersionChange($event)"
+          [disabled]="loading()"
+          maxlength="50"
+        />
+      </div>
+      
+      <div class="form-control">
+        <label class="label mb-1">
+          <span class="label-text">Target OS <span class="text-error">*</span></span>
+        </label>
+        <select 
+          class="select select-accent" 
+          [value]="otaUpdateForm().target_os"
+          (change)="onOtaUpdateTargetOsChange($event)"
+          [disabled]="loading()"
+        >
+          <option value="window">Windows</option>
+          <option value="macos">macOS</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="form-control">
+        <label class="label mb-1">
+          <span class="label-text">Architecture <span class="text-error">*</span></span>
+        </label>
+        <select 
+          class="select select-accent" 
+          [value]="otaUpdateForm().target_architecture"
+          (change)="onOtaUpdateArchitectureChange($event)"
+          [disabled]="loading()"
+        >
+          <option value="x86">x86</option>
+          <option value="arm">ARM</option>
+        </select>
+      </div>
+      
+      <div class="form-control">
+        <label class="label mb-1">
+          <span class="label-text">Release Channel <span class="text-error">*</span></span>
+        </label>
+        <select 
+          class="select select-accent" 
+          [value]="otaUpdateForm().release_channel"
+          (change)="onOtaUpdateChannelChange($event)"
+          [disabled]="loading()"
+        >
+          <option value="stable">Stable</option>
+          <option value="beta">Beta</option>
+          <option value="dev">Development</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="form-control">
+      <label class="label mb-1">
+        <span class="label-text">Download URL <span class="text-error">*</span></span>
+      </label>
+      <input 
+        type="url" 
+        class="input input-accent" 
+        placeholder="https://example.com/update.zip"
+        [value]="otaUpdateForm().url"
+        (input)="onOtaUpdateUrlChange($event)"
+        [disabled]="loading()"
+      />
+      <div class="label">
+        <span class="label-text-alt text-base-content/60">Enter the full URL where the update file can be downloaded</span>
       </div>
     </div>
   </div>

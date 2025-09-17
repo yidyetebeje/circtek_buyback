@@ -17,11 +17,12 @@ import { RepairReasonRecord } from '../../core/models/repair-reason';
 import { LabelTemplateRecord } from '../../core/models/label-template';
 import { WorkflowRecord } from '../../core/models/workflow';
 import { Grade } from '../../core/models/grade';
+import { OtaUpdate } from '../../core/models/ota-update';
 import { ToastrService } from 'ngx-toastr';
 import { ToastService } from '../../core/services/toast.service';
 
 // Union to drive the generic table
-export type MgmtRow = User | Warehouse | WiFiProfile | Tenant | RepairReasonRecord | LabelTemplateRecord | WorkflowRecord | Grade;
+export type MgmtRow = User | Warehouse | WiFiProfile | Tenant | RepairReasonRecord | LabelTemplateRecord | WorkflowRecord | Grade | OtaUpdate;
 
 @Component({
   selector: 'app-management',
@@ -45,7 +46,7 @@ export class ManagementComponent {
   total = signal(0);
 
   // Tab & pagination
-  activeTab = signal<'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades'>('users');
+  activeTab = signal<'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates'>('users');
   pageIndex = signal(0);
   pageSize = signal(10);
 
@@ -88,6 +89,7 @@ export class ManagementComponent {
       { key: 'labels', label: 'Label Templates' },
       { key: 'workflows', label: 'Workflows' },
       { key: 'grades', label: 'Grades' },
+      { key: 'ota-updates', label: 'OTA Updates' },
     ];
     // Show Tenants first, only for super_admin
     return this.isSuperAdmin() ? [{ key: 'tenants', label: 'Tenants' }, ...base] : base;
@@ -108,7 +110,9 @@ export class ManagementComponent {
               ? 'Add Workflow'
               : t === 'grades'
                 ? 'Add Grade'
-                : 'Add WiFi Profile';
+                : t === 'ota-updates'
+                  ? 'Add OTA Update'
+                  : 'Add WiFi Profile';
     return { label } as { label: string };
   });
 
@@ -134,7 +138,7 @@ export class ManagementComponent {
 
   // Delete confirmation modal state
   isDeleteModalOpen = signal(false);
-  deleteContext = signal<{ tab: 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades'; row: MgmtRow } | null>(null);
+  deleteContext = signal<{ tab: 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates'; row: MgmtRow } | null>(null);
   
   deleteModalActions = computed<ModalAction[]>(() => [
     {
@@ -149,7 +153,7 @@ export class ManagementComponent {
     }
   ]);
 
-  openDeleteModal(tab: 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades', row: MgmtRow) {
+  openDeleteModal(tab: 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates', row: MgmtRow) {
     this.deleteContext.set({ tab, row });
     this.isDeleteModalOpen.set(true);
   }
@@ -188,6 +192,8 @@ export class ManagementComponent {
       deleteObservable = this.api.deleteWorkflow((ctx.row as any).id);
     } else if (ctx.tab === 'grades') {
       deleteObservable = this.api.deleteGrade((ctx.row as any).id);
+    } else if (ctx.tab === 'ota-updates') {
+      deleteObservable = this.api.deleteOtaUpdate((ctx.row as any).id);
     }
 
     if (deleteObservable) {
@@ -203,7 +209,8 @@ export class ManagementComponent {
                              ctx.tab === 'wifi' ? 'WiFi Profile' :
                              ctx.tab === 'labels' ? 'Label Template' :
                              ctx.tab === 'workflows' ? 'Workflow' :
-                             'Grade';
+                             ctx.tab === 'grades' ? 'Grade' :
+                             'OTA Update';
           this.toast.deleteSuccess(entityName);
         },
         error: (error: any) => {
@@ -217,7 +224,8 @@ export class ManagementComponent {
                              ctx.tab === 'wifi' ? 'WiFi Profile' :
                              ctx.tab === 'labels' ? 'Label Template' :
                              ctx.tab === 'workflows' ? 'Workflow' :
-                             'Grade';
+                             ctx.tab === 'grades' ? 'Grade' :
+                             'OTA Update';
           this.toast.deleteError(entityName);
         }
       });
@@ -408,6 +416,39 @@ export class ManagementComponent {
             }
           } as any,
         ];
+      case 'ota-updates':
+        return [
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
+          { header: 'Version', accessorKey: 'version' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
+          { header: 'Target OS', id: 'target_os_display' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const osMap = { 'window': 'Windows', 'macos': 'macOS' };
+            return (osMap as any)[r.target_os] || r.target_os;
+          } },
+          { header: 'Architecture', accessorKey: 'target_architecture' as any },
+          { header: 'Channel', id: 'channel_display' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const channelMap = { 'stable': 'Stable', 'beta': 'Beta', 'dev': 'Development' };
+            return (channelMap as any)[r.release_channel] || r.release_channel;
+          } },
+          { header: 'URL', accessorKey: 'url' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
+          {
+            header: 'Actions',
+            id: 'actions' as any,
+            enableSorting: false as any,
+            meta: {
+              actions: [
+                { key: 'edit', label: 'Edit', class: 'text-primary' },
+                { key: 'assign', label: 'Assign tester', class: 'text-secondary' },
+                { key: 'view-assigned', label: 'View assigned testers' },
+                { key: 'delete', label: 'Delete', class: 'text-error' },
+              ],
+              cellClass: () => 'text-right'
+            }
+          } as any,
+        ];
       default:
         return [] as any;
     }
@@ -430,6 +471,8 @@ export class ManagementComponent {
         return 'Search workflows';
       case 'grades':
         return 'Search grades';
+      case 'ota-updates':
+        return 'Search OTA updates';
       default:
         return '';
     }
@@ -448,7 +491,7 @@ export class ManagementComponent {
 
     const tab = str('tab', 'users');
     if (tab === 'tenants' && this.isSuperAdmin()) this.activeTab.set('tenants');
-    else if (tab === 'warehouses' || tab === 'wifi' || tab === 'users' || tab === 'labels' || tab === 'workflows' || tab === 'grades') this.activeTab.set(tab as any);
+    else if (tab === 'warehouses' || tab === 'wifi' || tab === 'users' || tab === 'labels' || tab === 'workflows' || tab === 'grades' || tab === 'ota-updates') this.activeTab.set(tab as any);
     else this.activeTab.set('users');
 
     // Initialize pagination with service fallback
@@ -694,6 +737,25 @@ export class ManagementComponent {
       });
       return;
     }
+    if (tab === 'ota-updates') {
+      let params = new HttpParams()
+        .set('page', String(this.pageIndex() + 1))
+        .set('limit', String(this.pageSize()));
+      const s = this.search().trim(); if (s) params = params.set('search', s);
+      const sort = this.sortField(); if (sort) params = params.set('sort', sort);
+      const order = this.sortOrder(); if (sort) params = params.set('order', order);
+      this.api.getOtaUpdates(params).subscribe({
+        next: (res) => { 
+          if (seq !== this.requestSeq) return; 
+          const otaUpdates = res.data ?? [];
+          this.data.set(otaUpdates); 
+          this.total.set(res.meta?.total ?? otaUpdates.length); 
+          this.loading.set(false); 
+        },
+        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
+      });
+      return;
+    }
   }
 
   // Handlers from GenericPage
@@ -740,7 +802,7 @@ export class ManagementComponent {
   }
 
   onTabChange(key: string | null) {
-    const k = (key ?? 'users') as 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades';
+    const k = (key ?? 'users') as 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates';
     if (k !== this.activeTab()) {
       this.activeTab.set(k);
       // reset some filters per tab
@@ -769,6 +831,8 @@ export class ManagementComponent {
       this.router.navigate(['/workflow-editor']);
     } else if (t === 'grades') {
       this.openGradeModal();
+    } else if (t === 'ota-updates') {
+      this.openOtaUpdateModal();
     }
   }
 
@@ -794,6 +858,8 @@ export class ManagementComponent {
         this.router.navigate(['/workflow-editor', row.id]);
       } else if (tab === 'grades') {
         this.openGradeModal(row as Grade);
+      } else if (tab === 'ota-updates') {
+        this.openOtaUpdateModal(row as OtaUpdate);
       }
       return;
     }
@@ -804,15 +870,15 @@ export class ManagementComponent {
       return;
     }
 
-    // WiFi-specific actions
-    if (tab === 'wifi' || tab === 'labels' || tab === 'workflows') {
-      const wifiRow = row as WiFiProfile;
+  // Assignment actions for wifi, labels, workflows, and ota-updates
+    if (tab === 'wifi' || tab === 'labels' || tab === 'workflows' || tab === 'ota-updates') {
+      const assignableRow = row as WiFiProfile | LabelTemplateRecord | WorkflowRecord | OtaUpdate;
       if (event.action === 'assign') {
-        this.openAssignModal(wifiRow as any);
+        this.openAssignModal(assignableRow as any);
         return;
       }
       if (event.action === 'view-assigned') {
-        this.openAssignedModal(wifiRow as any);
+        this.openAssignedModal(assignableRow as any);
         return;
       }
     }
@@ -878,13 +944,15 @@ export class ManagementComponent {
 
 
 
-  openAssignModal(row: WiFiProfile | LabelTemplateRecord | WorkflowRecord) {
+  openAssignModal(row: WiFiProfile | LabelTemplateRecord | WorkflowRecord | OtaUpdate) {
     if ((this.activeTab() as any) === 'wifi') {
       this.selectedWifiProfile.set(row as WiFiProfile);
     } else if ((this.activeTab() as any) === 'labels') {
       this.selectedLabelTemplate.set(row as LabelTemplateRecord);
     } else if ((this.activeTab() as any) === 'workflows') {
       this.selectedWorkflow.set(row as WorkflowRecord);
+    } else if ((this.activeTab() as any) === 'ota-updates') {
+      this.selectedOtaUpdate.set(row as OtaUpdate);
     }
     this.selectedAssignTesterId.set(null);
     this.selectedAssignProfileId.set(null);
@@ -992,6 +1060,28 @@ export class ManagementComponent {
           this.toast.assignmentError('Workflow');
         }
       });
+      return;
+    }
+    
+    if (this.activeTab() === 'ota-updates') {
+      const rec = this.selectedOtaUpdate();
+      if (!rec) { 
+        this.loading.set(false); 
+        this.toast.validationError('Please select an OTA update before assigning');
+        return; 
+      }
+      this.api.assignOtaUpdate(rec.id, testerId).subscribe({ 
+        next: () => { 
+          this.loading.set(false); 
+          this.closeAssignModal(); 
+          this.toast.assignmentSuccess('OTA Update');
+        }, 
+        error: (error) => { 
+          this.loading.set(false); 
+          console.error('Failed to assign OTA update:', error);
+          this.toast.assignmentError('OTA update');
+        }
+      });
     }
   }
 
@@ -1022,7 +1112,7 @@ export class ManagementComponent {
     }
   ]);
 
-  openAssignedModal(row: WiFiProfile | LabelTemplateRecord | WorkflowRecord) {
+  openAssignedModal(row: WiFiProfile | LabelTemplateRecord | WorkflowRecord | OtaUpdate) {
     this.isAssignedModalOpen.set(true);
     this.assignedTestersLoading.set(true);
     this.assignedTesters.set([]); // Clear previous data
@@ -1065,6 +1155,22 @@ export class ManagementComponent {
     if (this.activeTab() === 'workflows') {
       this.selectedWorkflow.set(row as WorkflowRecord);
       this.api.getWorkflowTesters((row as WorkflowRecord).id, params).subscribe({ 
+        next: (res) => { 
+          this.assignedTesters.set(res.data ?? []); 
+          this.assignedTestersLoading.set(false);
+        }, 
+        error: (error) => { 
+          console.error('Failed to load assigned testers:', error);
+          this.assignedTesters.set([]); 
+          this.assignedTestersLoading.set(false);
+          this.toast.loadingError('assigned testers');
+        }, 
+      });
+      return;
+    }
+    if (this.activeTab() === 'ota-updates') {
+      this.selectedOtaUpdate.set(row as OtaUpdate);
+      this.api.getOtaUpdateTesters((row as OtaUpdate).id, params).subscribe({ 
         next: (res) => { 
           this.assignedTesters.set(res.data ?? []); 
           this.assignedTestersLoading.set(false);
@@ -1162,6 +1268,33 @@ export class ManagementComponent {
           this.toast.unassignmentError('tester from workflow');
         },
       });
+      return;
+    }
+    if (this.activeTab() === 'ota-updates' && this.selectedOtaUpdate()) {
+      const rec = this.selectedOtaUpdate()!;
+      this.api.unassignOtaUpdate(rec.id, userId).subscribe({
+        next: () => {
+          this.assignedTestersLoading.set(true);
+          this.api.getOtaUpdateTesters(rec.id, params).subscribe({ 
+            next: (res) => { 
+              this.assignedTesters.set(res.data ?? []); 
+              this.loading.set(false); 
+              this.assignedTestersLoading.set(false);
+              this.toast.unassignmentSuccess('Tester from OTA Update');
+            }, 
+            error: () => { 
+              this.loading.set(false); 
+              this.assignedTestersLoading.set(false);
+              this.toast.loadingError('tester list');
+            }, 
+          });
+        },
+        error: (error) => { 
+          this.loading.set(false); 
+          console.error('Failed to unassign OTA update:', error);
+          this.toast.unassignmentError('tester from OTA update');
+        },
+      });
     }
   }
 
@@ -1257,5 +1390,132 @@ export class ManagementComponent {
   onGradeColorChange(event: Event) {
     const target = event.target as HTMLInputElement;
     this.gradeForm.update(form => ({ ...form, color: target.value }));
+  }
+
+  // OTA Update modal state
+  isOtaUpdateModalOpen = signal(false);
+  selectedOtaUpdate = signal<OtaUpdate | null>(null);
+  otaUpdateForm = signal({
+    version: '',
+    url: '',
+    target_os: 'window' as 'window' | 'macos',
+    target_architecture: 'x86' as 'x86' | 'arm',
+    release_channel: 'stable' as 'stable' | 'beta' | 'dev'
+  });
+  
+  otaUpdateModalActions = computed<ModalAction[]>(() => [
+    {
+      label: 'Cancel',
+      variant: 'ghost',
+      action: 'cancel'
+    },
+    {
+      label: this.selectedOtaUpdate() ? 'Update' : 'Create',
+      variant: 'primary',
+      disabled: !this.otaUpdateForm().version.trim() || !this.otaUpdateForm().url.trim(),
+      action: 'save'
+    }
+  ]);
+
+  openOtaUpdateModal(otaUpdate?: OtaUpdate) {
+    if (otaUpdate) {
+      this.selectedOtaUpdate.set(otaUpdate);
+      this.otaUpdateForm.set({
+        version: otaUpdate.version,
+        url: otaUpdate.url,
+        target_os: otaUpdate.target_os,
+        target_architecture: otaUpdate.target_architecture,
+        release_channel: otaUpdate.release_channel
+      });
+    } else {
+      this.selectedOtaUpdate.set(null);
+      this.otaUpdateForm.set({
+        version: '',
+        url: '',
+        target_os: 'window',
+        target_architecture: 'x86',
+        release_channel: 'stable'
+      });
+    }
+    this.isOtaUpdateModalOpen.set(true);
+  }
+
+  closeOtaUpdateModal() {
+    this.isOtaUpdateModalOpen.set(false);
+    this.selectedOtaUpdate.set(null);
+    this.otaUpdateForm.set({
+      version: '',
+      url: '',
+      target_os: 'window',
+      target_architecture: 'x86',
+      release_channel: 'stable'
+    });
+  }
+
+  onOtaUpdateModalAction(action: string): void {
+    if (action === 'save') {
+      this.saveOtaUpdate();
+    } else if (action === 'cancel') {
+      this.closeOtaUpdateModal();
+    }
+  }
+
+  saveOtaUpdate() {
+    const form = this.otaUpdateForm();
+    if (!form.version.trim() || !form.url.trim()) return;
+
+    this.loading.set(true);
+    const payload = {
+      version: form.version.trim(),
+      url: form.url.trim(),
+      target_os: form.target_os,
+      target_architecture: form.target_architecture,
+      release_channel: form.release_channel
+    };
+
+    const saveObservable = this.selectedOtaUpdate()
+      ? this.api.updateOtaUpdate(this.selectedOtaUpdate()!.id, payload)
+      : this.api.createOtaUpdate(payload);
+
+    saveObservable.subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.closeOtaUpdateModal();
+        this.fetchData(); // Refresh the data
+        const action = this.selectedOtaUpdate() ? 'updated' : 'created';
+        this.toast.saveSuccess('OTA Update', action);
+      },
+      error: (error: any) => {
+        console.error('Failed to save OTA update:', error);
+        this.loading.set(false);
+        const action = this.selectedOtaUpdate() ? 'update' : 'create';
+        this.toast.saveError('OTA Update', action);
+      }
+    });
+  }
+
+  onOtaUpdateVersionChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.otaUpdateForm.update(form => ({ ...form, version: target.value }));
+  }
+
+  onOtaUpdateUrlChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.otaUpdateForm.update(form => ({ ...form, url: target.value }));
+  }
+
+  onOtaUpdateTargetOsChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    this.otaUpdateForm.update(form => ({ ...form, target_os: target.value as 'window' | 'macos' }));
+  }
+
+  onOtaUpdateArchitectureChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    this.otaUpdateForm.update(form => ({ ...form, target_architecture: target.value as 'x86' | 'arm' }));
+  }
+
+  onOtaUpdateChannelChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    this.otaUpdateForm.update(form => ({ ...form, release_channel: target.value as 'stable' | 'beta' | 'dev' }));
   }
 }

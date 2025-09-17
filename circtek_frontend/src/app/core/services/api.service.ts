@@ -21,6 +21,7 @@ import { WorkflowRecord, WorkflowCreateInput, WorkflowUpdateInput, WorkflowListR
 import { DashboardOverviewStats, WarehouseStats, RecentActivity, MonthlyTrend } from '../models/dashboard';
 import { DeadIMEIRecord, DeadIMEICreateInput, DeadIMEIQueryInput, DeadIMEIResult } from '../models/dead-imei';
 import { Grade, GradeCreateRequest, GradeUpdateRequest } from '../models/grade';
+import { OtaUpdate, OtaUpdateCreateRequest, OtaUpdateUpdateRequest, OtaUpdateListResponse } from '../models/ota-update';
 
 @Injectable({
   providedIn: 'root',
@@ -305,6 +306,39 @@ export class ApiService {
 
   deleteGrade(id: number): Observable<ApiResponse<{ id: number } | null>> {
     return this.delete<ApiResponse<{ id: number } | null>>(`/configuration/grades/${id}`);
+  }
+
+  // ===== OTA Updates =====
+  getOtaUpdates(params: HttpParams = new HttpParams()): Observable<OtaUpdateListResponse> {
+    return this.get<OtaUpdateListResponse>('/configuration/ota-updates', params);
+  }
+
+  getOtaUpdate(id: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<OtaUpdate | null>> {
+    return this.get<ApiResponse<OtaUpdate | null>>(`/configuration/ota-updates/${id}`, params);
+  }
+
+  createOtaUpdate(payload: OtaUpdateCreateRequest): Observable<ApiResponse<OtaUpdate | null>> {
+    return this.post<ApiResponse<OtaUpdate | null>>('/configuration/ota-updates', payload);
+  }
+
+  updateOtaUpdate(id: number, payload: OtaUpdateUpdateRequest): Observable<ApiResponse<OtaUpdate | null>> {
+    return this.patch<ApiResponse<OtaUpdate | null>>(`/configuration/ota-updates/${id}`, payload);
+  }
+
+  deleteOtaUpdate(id: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/configuration/ota-updates/${id}`);
+  }
+
+  assignOtaUpdate(otaUpdateId: number, userId: number): Observable<ApiResponse<{ user_id: number; ota_update_id: number } | null>> {
+    return this.post<ApiResponse<{ user_id: number; ota_update_id: number } | null>>(`/configuration/ota-updates/${otaUpdateId}/assign/${userId}`);
+  }
+
+  unassignOtaUpdate(otaUpdateId: number, userId: number): Observable<ApiResponse<{ user_id: number; ota_update_id: null } | null>> {
+    return this.post<ApiResponse<{ user_id: number; ota_update_id: null } | null>>(`/configuration/ota-updates/${otaUpdateId}/unassign/${userId}`);
+  }
+
+  getOtaUpdateTesters(otaUpdateId: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<User[]>> {
+    return this.get<ApiResponse<User[]>>(`/configuration/ota-updates/${otaUpdateId}/testers`, params);
   }
 
   // ===== Stock =====
