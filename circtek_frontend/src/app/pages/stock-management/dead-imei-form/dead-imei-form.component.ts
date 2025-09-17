@@ -79,7 +79,7 @@ export class DeadIMEIFormComponent {
       error: (err) => {
         this.searching.set(false);
         this.deviceFound.set(null);
-        this.error.set('Error looking up device');
+        this.error.set('something went wrong please retry again');
         console.error('Device lookup error:', err);
       }
     });
