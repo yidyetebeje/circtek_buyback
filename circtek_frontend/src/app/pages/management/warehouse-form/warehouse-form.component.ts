@@ -258,8 +258,16 @@ export class WarehouseFormComponent {
 
   onActionClick(event: { action: string; data?: any }) {
     if (event.action === 'Cancel') {
-      this.router.navigate(['/management'], { queryParams: { tab: 'warehouses' } });
+      this.navigateBack();
     }
+  }
+
+  onBackClick(): void {
+    this.navigateBack();
+  }
+
+  private navigateBack(): void {
+    this.router.navigate(['/management'], { queryParams: { tab: 'warehouses' } });
   }
   
   private markAllFieldsAsTouched() {

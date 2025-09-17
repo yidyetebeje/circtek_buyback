@@ -24,6 +24,7 @@ import { ToastrService } from 'ngx-toastr';
       [submitLabel]="submitLabel()"
       (formSubmit)="onSubmit()"
       (actionClick)="onActionClick($event)"
+      (backClick)="onBackClick()"
     />
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -252,9 +253,17 @@ export class RepairReasonsFormComponent {
 
   onActionClick(event: { action: string; data?: any }): void {
     if (event.action === 'Cancel') {
-      this.router.navigate(['/repair'], { 
-        queryParams: { tab: 'repair-reasons' } 
-      });
+      this.navigateBack();
     }
+  }
+
+  onBackClick(): void {
+    this.navigateBack();
+  }
+
+  private navigateBack(): void {
+    this.router.navigate(['/repair'], { 
+      queryParams: { tab: 'repair-reasons' } 
+    });
   }
 }

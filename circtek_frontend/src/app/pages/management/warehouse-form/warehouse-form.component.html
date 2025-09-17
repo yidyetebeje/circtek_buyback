@@ -12,6 +12,7 @@
   backUrl="/management"
   (formSubmit)="onFormSubmit($event)"
   (actionClick)="onActionClick($event)"
+  (backClick)="onBackClick()"
 >
   @if (successMessage()) {
     <div class="alert alert-success">

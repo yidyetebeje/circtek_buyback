@@ -127,6 +127,14 @@ export class DeadIMEIFormComponent {
   }
 
   protected onCancel() {
+    this.navigateBack();
+  }
+
+  protected onBackClick(): void {
+    this.navigateBack();
+  }
+
+  private navigateBack(): void {
     this.router.navigate(['/repair'], { 
       queryParams: { tab: 'dead-imei' } 
     });

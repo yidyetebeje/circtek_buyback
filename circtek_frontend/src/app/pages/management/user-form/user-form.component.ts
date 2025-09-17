@@ -543,7 +543,15 @@ export class UserFormComponent {
 
   onActionClick(event: { action: string; data?: any }) {
     if (event.action === 'Cancel') {
-      this.router.navigate(['/management'], { queryParams: { tab: 'users' } });
+      this.navigateBack();
     }
+  }
+
+  onBackClick(): void {
+    this.navigateBack();
+  }
+
+  private navigateBack(): void {
+    this.router.navigate(['/management'], { queryParams: { tab: 'users' } });
   }
 }

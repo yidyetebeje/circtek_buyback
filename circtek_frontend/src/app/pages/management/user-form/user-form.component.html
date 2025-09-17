@@ -12,6 +12,7 @@
   backUrl="/management"
   (formSubmit)="onFormSubmit($event)"
   (actionClick)="onActionClick($event)"
+  (backClick)="onBackClick()"
 >
   <!-- Loading and error states for data loading -->
   @if (tenantsLoading() && isSuperAdmin()) {

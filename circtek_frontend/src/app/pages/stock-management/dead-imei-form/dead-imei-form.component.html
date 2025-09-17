@@ -8,7 +8,8 @@
   submitLabel="Save Dead IMEI Record"
   [submitDisabled]="!canSubmit()"
   (submit)="onSubmit()"
-  (cancel)="onCancel()">
+  (cancel)="onCancel()"
+  (backClick)="onBackClick()">
   
   <!-- Custom content for device scanner and device info -->
   <div class="space-y-6">

@@ -306,6 +306,14 @@ export class RepairFormComponent implements OnInit {
   }
 
   onCancel() {
+    this.navigateBack();
+  }
+
+  onBackClick(): void {
+    this.navigateBack();
+  }
+
+  private navigateBack(): void {
     this.router.navigate(['/repair'], { queryParams: { tab: 'repairs' } });
   }
 

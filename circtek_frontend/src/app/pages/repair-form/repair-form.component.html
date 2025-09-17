@@ -9,6 +9,7 @@
   [error]="error()"
   [submitLabel]="submitLabel"
   (actionClick)="onActionClick($event)"
+  (backClick)="onBackClick()"
 >
   <!-- Custom content starts: we keep the header from GenericFormPage -->
   <div [formGroup]="form()">
