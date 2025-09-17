@@ -16,11 +16,12 @@ import { Tenant } from '../../core/models/tenant';
 import { RepairReasonRecord } from '../../core/models/repair-reason';
 import { LabelTemplateRecord } from '../../core/models/label-template';
 import { WorkflowRecord } from '../../core/models/workflow';
+import { Grade } from '../../core/models/grade';
 import { ToastrService } from 'ngx-toastr';
 import { ToastService } from '../../core/services/toast.service';
 
 // Union to drive the generic table
-export type MgmtRow = User | Warehouse | WiFiProfile | Tenant | RepairReasonRecord | LabelTemplateRecord | WorkflowRecord;
+export type MgmtRow = User | Warehouse | WiFiProfile | Tenant | RepairReasonRecord | LabelTemplateRecord | WorkflowRecord | Grade;
 
 @Component({
   selector: 'app-management',
@@ -44,7 +45,7 @@ export class ManagementComponent {
   total = signal(0);
 
   // Tab & pagination
-  activeTab = signal<'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows'>('users');
+  activeTab = signal<'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades'>('users');
   pageIndex = signal(0);
   pageSize = signal(10);
 
@@ -86,6 +87,7 @@ export class ManagementComponent {
       { key: 'wifi', label: 'WiFi Profiles' },
       { key: 'labels', label: 'Label Templates' },
       { key: 'workflows', label: 'Workflows' },
+      { key: 'grades', label: 'Grades' },
     ];
     // Show Tenants first, only for super_admin
     return this.isSuperAdmin() ? [{ key: 'tenants', label: 'Tenants' }, ...base] : base;
@@ -104,7 +106,9 @@ export class ManagementComponent {
             ? 'Add Label Template'
             : t === 'workflows'
               ? 'Add Workflow'
-              : 'Add WiFi Profile';
+              : t === 'grades'
+                ? 'Add Grade'
+                : 'Add WiFi Profile';
     return { label } as { label: string };
   });
 
@@ -130,7 +134,7 @@ export class ManagementComponent {
 
   // Delete confirmation modal state
   isDeleteModalOpen = signal(false);
-  deleteContext = signal<{ tab: 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows'; row: MgmtRow } | null>(null);
+  deleteContext = signal<{ tab: 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades'; row: MgmtRow } | null>(null);
   
   deleteModalActions = computed<ModalAction[]>(() => [
     {
@@ -145,7 +149,7 @@ export class ManagementComponent {
     }
   ]);
 
-  openDeleteModal(tab: 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows', row: MgmtRow) {
+  openDeleteModal(tab: 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades', row: MgmtRow) {
     this.deleteContext.set({ tab, row });
     this.isDeleteModalOpen.set(true);
   }
@@ -182,6 +186,8 @@ export class ManagementComponent {
       deleteObservable = this.api.deleteLabelTemplate((ctx.row as any).id);
     } else if (ctx.tab === 'workflows') {
       deleteObservable = this.api.deleteWorkflow((ctx.row as any).id);
+    } else if (ctx.tab === 'grades') {
+      deleteObservable = this.api.deleteGrade((ctx.row as any).id);
     }
 
     if (deleteObservable) {
@@ -196,7 +202,8 @@ export class ManagementComponent {
                              ctx.tab === 'warehouses' ? 'Warehouse' :
                              ctx.tab === 'wifi' ? 'WiFi Profile' :
                              ctx.tab === 'labels' ? 'Label Template' :
-                             'Workflow';
+                             ctx.tab === 'workflows' ? 'Workflow' :
+                             'Grade';
           this.toast.deleteSuccess(entityName);
         },
         error: (error: any) => {
@@ -209,7 +216,8 @@ export class ManagementComponent {
                              ctx.tab === 'warehouses' ? 'Warehouse' :
                              ctx.tab === 'wifi' ? 'WiFi Profile' :
                              ctx.tab === 'labels' ? 'Label Template' :
-                             'Workflow';
+                             ctx.tab === 'workflows' ? 'Workflow' :
+                             'Grade';
           this.toast.deleteError(entityName);
         }
       });
@@ -369,6 +377,37 @@ export class ManagementComponent {
             }
           } as any,
         ];
+      case 'grades':
+        return [
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
+          { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { 
+            header: 'Color', 
+            id: 'color_display' as any, 
+            enableSorting: false as any, 
+            accessorFn: (r: any) => r.color,
+            meta: { 
+              renderColor: true,
+              cellClass: () => 'text-left'
+            }
+          },
+          {
+            header: 'Actions',
+            id: 'actions' as any,
+            enableSorting: false as any,
+            meta: {
+              actions: [
+                { key: 'edit', label: 'Edit', class: 'text-primary' },
+                { key: 'delete', label: 'Delete', class: 'text-error' },
+              ],
+              cellClass: () => 'text-right'
+            }
+          } as any,
+        ];
       default:
         return [] as any;
     }
@@ -389,6 +428,8 @@ export class ManagementComponent {
         return 'Search label templates';
       case 'workflows':
         return 'Search workflows';
+      case 'grades':
+        return 'Search grades';
       default:
         return '';
     }
@@ -407,7 +448,7 @@ export class ManagementComponent {
 
     const tab = str('tab', 'users');
     if (tab === 'tenants' && this.isSuperAdmin()) this.activeTab.set('tenants');
-    else if (tab === 'warehouses' || tab === 'wifi' || tab === 'users' || tab === 'labels' || tab === 'workflows') this.activeTab.set(tab as any);
+    else if (tab === 'warehouses' || tab === 'wifi' || tab === 'users' || tab === 'labels' || tab === 'workflows' || tab === 'grades') this.activeTab.set(tab as any);
     else this.activeTab.set('users');
 
     // Initialize pagination with service fallback
@@ -630,6 +671,29 @@ export class ManagementComponent {
       });
       return;
     }
+    if (tab === 'grades') {
+      let params = new HttpParams()
+        .set('page', String(this.pageIndex() + 1))
+        .set('limit', String(this.pageSize()));
+      const s = this.search().trim(); if (s) params = params.set('search', s);
+      if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
+      const sort = this.sortField(); if (sort) params = params.set('sort', sort);
+      const order = this.sortOrder(); if (sort) params = params.set('order', order);
+      this.api.getGrades(params).subscribe({
+        next: (res) => { 
+          if (seq !== this.requestSeq) return; 
+          const grades = (res.data ?? []).map(g => ({
+            ...g,
+            tenant_name: (g as any).tenant_name ?? String(g.tenant_id)
+          }));
+          this.data.set(grades); 
+          this.total.set(res.meta?.total ?? 0); 
+          this.loading.set(false); 
+        },
+        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
+      });
+      return;
+    }
   }
 
   // Handlers from GenericPage
@@ -676,7 +740,7 @@ export class ManagementComponent {
   }
 
   onTabChange(key: string | null) {
-    const k = (key ?? 'users') as 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows';
+    const k = (key ?? 'users') as 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades';
     if (k !== this.activeTab()) {
       this.activeTab.set(k);
       // reset some filters per tab
@@ -703,6 +767,8 @@ export class ManagementComponent {
       this.router.navigate(['/label']);
     } else if (t === 'workflows') {
       this.router.navigate(['/workflow-editor']);
+    } else if (t === 'grades') {
+      this.openGradeModal();
     }
   }
 
@@ -726,6 +792,8 @@ export class ManagementComponent {
         this.router.navigate(['/label', row.id]);
       } else if (tab === 'workflows') {
         this.router.navigate(['/workflow-editor', row.id]);
+      } else if (tab === 'grades') {
+        this.openGradeModal(row as Grade);
       }
       return;
     }
@@ -1107,5 +1175,87 @@ export class ManagementComponent {
     if (action === 'close') {
       this.closeAssignedModal();
     }
+  }
+
+  // Grade modal state
+  isGradeModalOpen = signal(false);
+  selectedGrade = signal<Grade | null>(null);
+  gradeForm = signal({ name: '', color: '#000000' });
+  
+  gradeModalActions = computed<ModalAction[]>(() => [
+    {
+      label: 'Cancel',
+      variant: 'ghost',
+      action: 'cancel'
+    },
+    {
+      label: this.selectedGrade() ? 'Update' : 'Create',
+      variant: 'primary',
+      disabled: !this.gradeForm().name.trim(),
+      action: 'save'
+    }
+  ]);
+
+  openGradeModal(grade?: Grade) {
+    if (grade) {
+      this.selectedGrade.set(grade);
+      this.gradeForm.set({ name: grade.name, color: grade.color });
+    } else {
+      this.selectedGrade.set(null);
+      this.gradeForm.set({ name: '', color: '#000000' });
+    }
+    this.isGradeModalOpen.set(true);
+  }
+
+  closeGradeModal() {
+    this.isGradeModalOpen.set(false);
+    this.selectedGrade.set(null);
+    this.gradeForm.set({ name: '', color: '#000000' });
+  }
+
+  onGradeModalAction(action: string): void {
+    if (action === 'save') {
+      this.saveGrade();
+    } else if (action === 'cancel') {
+      this.closeGradeModal();
+    }
+  }
+
+  saveGrade() {
+    const form = this.gradeForm();
+    if (!form.name.trim()) return;
+
+    this.loading.set(true);
+    const payload = { name: form.name.trim(), color: form.color };
+
+    const saveObservable = this.selectedGrade()
+      ? this.api.updateGrade(this.selectedGrade()!.id, payload)
+      : this.api.createGrade(payload);
+
+    saveObservable.subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.closeGradeModal();
+        this.fetchData(); // Refresh the data
+        const action = this.selectedGrade() ? 'updated' : 'created';
+        this.toast.saveSuccess('Grade', action);
+      },
+      error: (error: any) => {
+        console.error('Failed to save grade:', error);
+        this.loading.set(false);
+        const action = this.selectedGrade() ? 'update' : 'create';
+        this.toast.saveError('Grade', action);
+      }
+    });
+  }
+
+  onGradeNameChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.gradeForm.update(form => ({ ...form, name: target.value }));
+  }
+
+  onGradeColorChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.gradeForm.update(form => ({ ...form, color: target.value }));
   }
 }

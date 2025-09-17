@@ -20,6 +20,7 @@ import { LabelTemplateRecord, LabelTemplateCreateInput, LabelTemplateUpdateInput
 import { WorkflowRecord, WorkflowCreateInput, WorkflowUpdateInput, WorkflowListResponse } from '../models/workflow';
 import { DashboardOverviewStats, WarehouseStats, RecentActivity, MonthlyTrend } from '../models/dashboard';
 import { DeadIMEIRecord, DeadIMEICreateInput, DeadIMEIQueryInput, DeadIMEIResult } from '../models/dead-imei';
+import { Grade, GradeCreateRequest, GradeUpdateRequest } from '../models/grade';
 
 @Injectable({
   providedIn: 'root',
@@ -283,6 +284,27 @@ export class ApiService {
 
   getWorkflowTesters(workflowId: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<User[]>> {
     return this.get<ApiResponse<User[]>>(`/configuration/workflows/${workflowId}/testers`, params);
+  }
+
+  // ===== Grades =====
+  getGrades(params: HttpParams = new HttpParams()): Observable<ApiResponse<Grade[]>> {
+    return this.get<ApiResponse<Grade[]>>('/configuration/grades', params);
+  }
+
+  getGrade(id: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<Grade | null>> {
+    return this.get<ApiResponse<Grade | null>>(`/configuration/grades/${id}`, params);
+  }
+
+  createGrade(payload: GradeCreateRequest): Observable<ApiResponse<Grade | null>> {
+    return this.post<ApiResponse<Grade | null>>('/configuration/grades', payload);
+  }
+
+  updateGrade(id: number, payload: GradeUpdateRequest): Observable<ApiResponse<Grade | null>> {
+    return this.patch<ApiResponse<Grade | null>>(`/configuration/grades/${id}`, payload);
+  }
+
+  deleteGrade(id: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/configuration/grades/${id}`);
   }
 
   // ===== Stock =====

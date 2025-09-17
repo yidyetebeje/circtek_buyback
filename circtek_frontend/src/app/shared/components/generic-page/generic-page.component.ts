@@ -241,6 +241,11 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
     return cell.column.columnDef.meta?.truncateText === true;
   }
 
+  // Check if cell should render as color
+  shouldRenderColor(cell: any): boolean {
+    return cell.column.columnDef.meta?.renderColor === true;
+  }
+
   // Get truncation settings for cell
   getTruncationSettings(cell: any): { maxWidth?: string } {
     const meta = cell.column.columnDef.meta;

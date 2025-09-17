@@ -217,6 +217,64 @@
   }
 </app-generic-modal>
 
+<!-- Grade Modal -->
+<app-generic-modal
+  [isOpen]="isGradeModalOpen()"
+  [title]="selectedGrade() ? 'Edit Grade' : 'Add Grade'"
+  [actions]="gradeModalActions()"
+  size="md"
+  (close)="closeGradeModal()"
+  (actionClick)="onGradeModalAction($event)"
+>
+  <div class="space-y-4">
+    <div class="form-control">
+      <label class="label mb-1">
+        <span class="label-text">Name <span class="text-error">*</span></span>
+      </label>
+      <input 
+        type="text" 
+        class="input input-accent" 
+        placeholder="Enter grade name"
+        [value]="gradeForm().name"
+        (input)="onGradeNameChange($event)"
+        [disabled]="loading()"
+        maxlength="100"
+      />
+    </div>
+    
+    <div class="form-control">
+      <label class="label mb-1">
+        <span class="label-text">Color <span class="text-error">*</span></span>
+      </label>
+      <div class="flex items-center gap-3">
+        <input 
+          type="color" 
+          class="input input-accent w-16 h-12 p-1 border-2"
+          [value]="gradeForm().color"
+          (input)="onGradeColorChange($event)"
+          [disabled]="loading()"
+        />
+        <input 
+          type="text" 
+          class="input input-accent flex-1" 
+          placeholder="#000000"
+          [value]="gradeForm().color"
+          (input)="onGradeColorChange($event)"
+          [disabled]="loading()"
+          pattern="^#[0-9A-Fa-f]{6}$"
+        />
+        <div 
+          class="w-12 h-12 rounded border-2 border-base-300"
+          [style.background-color]="gradeForm().color"
+        ></div>
+      </div>
+      <div class="label">
+        <span class="label-text-alt text-base-content/60">Choose a color to represent this grade</span>
+      </div>
+    </div>
+  </div>
+</app-generic-modal>
+
 <!-- Delete Confirmation Modal -->
 <app-generic-modal
   [isOpen]="isDeleteModalOpen()"
