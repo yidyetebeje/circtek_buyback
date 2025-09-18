@@ -15,6 +15,10 @@ export const auth_routes = new Elysia({ prefix: '/auth' })
 		const { body, jwt } = ctx as any
 		return controller.login(body, (payload) => jwt.sign(payload))
 	}, { body: LoginBody, detail: { tags: ['Auth'], summary: 'Login and get JWT' } })
+	.post('/tester-login', async (ctx) => {
+		const { body, jwt } = ctx as any
+		return controller.testerLogin(body, (payload) => jwt.sign(payload))
+	}, { body: LoginBody, detail: { tags: ['Auth'], summary: 'Login for tester users only' } })
 	.post('/shop-login', async (ctx) => {
 		const { body, jwt } = ctx as any
 		return controller.loginToShop(body, (payload) => jwt.sign(payload))

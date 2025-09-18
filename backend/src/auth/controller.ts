@@ -45,6 +45,25 @@ export class AuthController {
 		return { data: user, message: 'OK', status: 200 }
 	}
 
+	async testerLogin(payload: LoginBodyInput, signJwt: (data: any) => Promise<string>): Promise<response<any>> {
+		const user = await this.authRepo.findUserByIdentifier(payload.identifier)
+		if (!user) return { data: null as any, message: 'Invalid credentials', status: 401 }
+		if (!user.status) return { data: null as any, message: 'User inactive', status: 403 }
+		
+		// Check if user has tester role
+		const roleName = await this.authRepo.getRoleName(user.role_id ?? null)
+		if (roleName !== 'tester') {
+			return { data: null as any, message: 'Access denied. Only tester role allowed', status: 403 }
+		}
+		
+		const match = await bcrypt.compare(payload.password, (user as any).password)
+		if (!match) return { data: null as any, message: 'Invalid credentials', status: 401 }
+		
+		delete (user as any).password
+		const token = await signJwt({ sub: user.id, role: roleName, tenant_id: user.tenant_id, warehouse_id: user.warehouse_id, managed_shop_id: user.managed_shop_id })
+		return { data: { token, user }, message: 'Tester login successful', status: 200 }
+	}
+
 	async loginToShop(payload: ShopLoginBodyInput, signJwt: (data: any) => Promise<string>): Promise<response<any>> {
 		try {
 			// Find user by identifier

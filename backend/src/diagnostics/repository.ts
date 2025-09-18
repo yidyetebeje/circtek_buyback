@@ -201,6 +201,12 @@ export class DiagnosticsRepository {
 				.select({ id: devices.id })
 				.from(devices)
 				.where(and(eq(devices.serial, deviceToInsert.serial), eq(devices.tenant_id, tenantId)) as any)
+		} else {
+			await this.database.update(devices).set(deviceToInsert as any).where(eq(devices.id, existingDevice.id))
+			;[existingDevice] = await this.database
+				.select({ id: devices.id })
+				.from(devices)
+				.where(and(eq(devices.serial, deviceToInsert.serial), eq(devices.tenant_id, tenantId)) as any)
 		}
 
 		const toInsertTest = {
