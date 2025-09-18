@@ -115,6 +115,20 @@ export class LabelTemplatesRepository {
             .where(and(eq(users.label_template_id, labelTemplateId), eq(users.tenant_id, tenantId)) as any)
         return rows
     }
+
+    async getByTesterId(testerId: number, tenantId: number): Promise<LabelTemplatePublic | null> {
+        const [row] = await this.database
+            .select(labelTemplateSelection)
+            .from(label_templates)
+            .leftJoin(tenants, eq(label_templates.tenant_id, tenants.id))
+            .innerJoin(users, and(
+                eq(users.label_template_id, label_templates.id),
+                eq(users.id, testerId),
+                eq(users.tenant_id, tenantId)
+            ))
+            .where(eq(label_templates.tenant_id, tenantId))
+        return row as any ?? null
+    }
 }
 
 

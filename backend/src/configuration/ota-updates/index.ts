@@ -46,3 +46,8 @@ export const ota_updates_routes = new Elysia({ prefix: '/ota-updates' })
         const tenantId = currentRole === 'super_admin' ? (query?.tenant_id ?? currentTenantId) : currentTenantId
         return controller.listTesters(Number(params.id), Number(tenantId))
     }, { detail: { tags: ['Configuration'], summary: 'List testers assigned to an OTA update (tenant-scoped)' } })
+    .get('/tester/:testerId', async (ctx) => {
+        const { params, currentTenantId, currentRole, query } = ctx as any
+        const tenantId = currentRole === 'super_admin' ? (query?.tenant_id ?? currentTenantId) : currentTenantId
+        return controller.getByTesterId(Number(params.testerId), Number(tenantId))
+    }, { detail: { tags: ['Configuration'], summary: 'Get OTA update assigned to a tester (tenant-scoped)' } })

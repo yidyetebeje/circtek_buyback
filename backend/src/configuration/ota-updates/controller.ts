@@ -53,4 +53,10 @@ export class OtaUpdatesController {
         const rows = await this.repo.listTesters(otaUpdateId, tenantId)
         return { data: rows, message: 'OK', status: 200 }
     }
+
+    async getByTesterId(testerId: number, tenantId: number): Promise<response<OtaUpdatePublic | null>> {
+        const otaUpdate = await this.repo.getByTesterId(testerId, tenantId)
+        if (!otaUpdate) return { data: null, message: 'No OTA update assigned to this tester', status: 404 }
+        return { data: otaUpdate, message: 'OK', status: 200 }
+    }
 }

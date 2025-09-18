@@ -68,6 +68,12 @@ export class WorkflowsController {
         const rows = await this.repo.listTesters(workflowId, tenantId)
         return { data: rows, message: 'OK', status: 200 }
     }
+
+    async getByTesterId(testerId: number, tenantId: number): Promise<response<WorkflowPublic | null>> {
+        const workflow = await this.repo.getByTesterId(testerId, tenantId)
+        if (!workflow) return { data: null, message: 'No workflow assigned to this tester', status: 404 }
+        return { data: workflow, message: 'OK', status: 200 }
+    }
 }
 
 

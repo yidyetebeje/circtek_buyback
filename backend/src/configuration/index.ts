@@ -4,6 +4,7 @@ import { label_templates_routes } from './label-templates'
 import { wifi_profiles_routes } from './wifi-profiles'
 import { grades_routes } from './grades'
 import { ota_updates_routes } from './ota-updates'
+import { tester_assignments_routes } from './tester-assignments'
 
 export const configuration_routes = new Elysia({ prefix: '/configuration' })
     .use(workflows_routes)
@@ -11,5 +12,6 @@ export const configuration_routes = new Elysia({ prefix: '/configuration' })
     .use(wifi_profiles_routes)
     .use(grades_routes)
     .use(ota_updates_routes)
+    .use(tester_assignments_routes)
 
 

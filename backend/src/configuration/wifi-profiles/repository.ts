@@ -85,6 +85,20 @@ export class WiFiProfilesRepository {
             .where(and(eq(users.wifi_profile_id, wifiProfileId), eq(users.tenant_id, tenantId)) as any)
         return rows
     }
+
+    async getByTesterId(testerId: number, tenantId: number): Promise<WiFiProfilePublic | null> {
+        const [row] = await this.database
+            .select(wifiProfileSelection)
+            .from(wifi_profile)
+            .leftJoin(tenants, eq(wifi_profile.tenant_id, tenants.id))
+            .innerJoin(users, and(
+                eq(users.wifi_profile_id, wifi_profile.id),
+                eq(users.id, testerId),
+                eq(users.tenant_id, tenantId)
+            ))
+            .where(eq(wifi_profile.tenant_id, tenantId))
+        return row as any ?? null
+    }
 }
 
 

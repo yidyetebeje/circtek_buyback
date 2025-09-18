@@ -53,6 +53,12 @@ export class WiFiProfilesController {
         const rows = await this.repo.listTesters(wifiProfileId, tenantId)
         return { data: rows, message: 'OK', status: 200 }
     }
+
+    async getByTesterId(testerId: number, tenantId: number): Promise<response<WiFiProfilePublic | null>> {
+        const wifiProfile = await this.repo.getByTesterId(testerId, tenantId)
+        if (!wifiProfile) return { data: null, message: 'No WiFi profile assigned to this tester', status: 404 }
+        return { data: wifiProfile, message: 'OK', status: 200 }
+    }
 }
 
 

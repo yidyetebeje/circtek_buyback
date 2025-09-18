@@ -90,4 +90,18 @@ export class OtaUpdatesRepository {
             .where(and(eq(users.ota_update_id, otaUpdateId), eq(users.tenant_id, tenantId)) as any)
         return rows
     }
+
+    async getByTesterId(testerId: number, tenantId: number): Promise<OtaUpdatePublic | null> {
+        const [row] = await this.database
+            .select(otaUpdateSelection)
+            .from(ota_update)
+            .leftJoin(tenants, eq(ota_update.tenant_id, tenants.id))
+            .innerJoin(users, and(
+                eq(users.ota_update_id, ota_update.id),
+                eq(users.id, testerId),
+                eq(users.tenant_id, tenantId)
+            ))
+            .where(eq(ota_update.tenant_id, tenantId))
+        return row as any ?? null
+    }
 }
