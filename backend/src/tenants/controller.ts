@@ -28,6 +28,7 @@ export class TenantsController {
 	async getById(id: number): Promise<response<TenantPublic | null>> {
 		const tenant = await this.repo.findOne(id)
 		if (!tenant) return { data: null, message: 'Tenant not found', status: 404 }
+		console.log('Tenant', { tenant })
 		return { data: tenant, message: 'OK', status: 200 }
 	}
 

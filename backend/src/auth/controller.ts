@@ -55,7 +55,6 @@ export class AuthController {
 		if (roleName !== 'tester') {
 			return { data: null as any, message: 'Access denied. Only tester role allowed', status: 403 }
 		}
-		
 		const match = await bcrypt.compare(payload.password, (user as any).password)
 		if (!match) return { data: null as any, message: 'Invalid credentials', status: 401 }
 		

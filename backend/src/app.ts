@@ -23,6 +23,7 @@ import { emailTemplatesModule } from "./email-templates";
 import { statsRoutes } from "./buyback_stats/routes/statsRoutes";
 import emailModule from "./email/email-module";
 import { external_api_routes } from "./external-api";
+import { devices_routes } from "./devices";
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
         .use(cors({
@@ -64,6 +65,7 @@ export const buildApp = () =>
 					{ name: 'Buyback Catalog', description: 'Buyback Catalog' },
 					{ name: 'Email Templates', description: 'Email Templates' },
 					{ name: 'Email', description: 'Email' },
+					{ name: 'Devices', description: 'Device LPN lookup and management' },
 				],
 			},
 		}))
@@ -99,6 +101,7 @@ export const buildApp = () =>
 		.use(upload_routes)
 		.use(dashboard_stats_routes)
 		.use(external_api_routes)
+		.use(devices_routes)
 		.use(catalogApi)
 
 

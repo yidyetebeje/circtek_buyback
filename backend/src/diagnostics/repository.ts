@@ -189,24 +189,33 @@ export class DiagnosticsRepository {
 			memory: input.device.memory,
 			color: input.device.color,
 		}
+		
+		const conditionsForDevice: any[] = [eq(devices.tenant_id, tenantId)]
+		const identifierConds: any[] = []
+		if (deviceToInsert.serial) identifierConds.push(eq(devices.serial, deviceToInsert.serial))
+		if (deviceToInsert.imei) identifierConds.push(eq(devices.imei, deviceToInsert.imei))
+		if (deviceToInsert.imei2) identifierConds.push(eq(devices.imei2, deviceToInsert.imei2))
+		if (deviceToInsert.guid) identifierConds.push(eq(devices.guid, deviceToInsert.guid))
+		if (identifierConds.length) conditionsForDevice.push(or(...identifierConds) as any)
+		const deviceWhere = and(...conditionsForDevice) as any
 
 		let [existingDevice] = await this.database
 			.select({ id: devices.id })
 			.from(devices)
-			.where(and(eq(devices.serial, deviceToInsert.serial), eq(devices.tenant_id, tenantId)) as any)
+			.where(deviceWhere)
 
 		if (!existingDevice) {
 			await this.database.insert(devices).values(deviceToInsert as any)
 			;[existingDevice] = await this.database
 				.select({ id: devices.id })
 				.from(devices)
-				.where(and(eq(devices.serial, deviceToInsert.serial), eq(devices.tenant_id, tenantId)) as any)
+				.where(deviceWhere)
 		} else {
 			await this.database.update(devices).set(deviceToInsert as any).where(eq(devices.id, existingDevice.id))
 			;[existingDevice] = await this.database
 				.select({ id: devices.id })
 				.from(devices)
-				.where(and(eq(devices.serial, deviceToInsert.serial), eq(devices.tenant_id, tenantId)) as any)
+				.where(deviceWhere)
 		}
 
 		const toInsertTest = {

@@ -79,10 +79,12 @@ export class DiagnosticsController {
 	}
 
 	async upload(body: DiagnosticUploadInput, testerId: number, tenantId: number): Promise<response<DiagnosticPublic | null>> {
-		const created = await this.repo.upload(body, testerId, tenantId)
+	
 		// Fire TEST_COMPLETED device event if a device was associated
 		try {
+			const created = await this.repo.upload(body, testerId, tenantId)
 			if (created?.device_id) {
+				
 				await deviceEventsService.createDeviceEvent({
 					device_id: created.device_id,
 					actor_id: testerId,
@@ -93,16 +95,24 @@ export class DiagnosticsController {
 						serial_number: created.serial_number,
 						imei: created.imei,
 						lpn: created.lpn,
+						warehouse_name: created.warehouse_name,
+						tester_username: created.tester_username,
 					},
 					tenant_id: tenantId,
 				})
 			}
+			
+			const returned = { data: created ?? null, message: 'Uploaded', status: 201 }
+			console.log('upload', { returned })
+			return returned
 		} catch (e) {
+			console.log('upload', { e })
 			if (process.env.NODE_ENV === 'test') {
 				console.error('Failed to create TEST_COMPLETED device event', e)
 			}
+			return { data: null, message: 'Failed to upload', status: 500 }
 		}
-		return { data: created ?? null, message: 'Uploaded', status: 201 }
+		
 	}
 
 	async getPublicReport(id: number): Promise<response<DiagnosticPublic | null>> {

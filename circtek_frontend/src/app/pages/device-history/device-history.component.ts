@@ -87,6 +87,35 @@ export class DeviceHistoryComponent {
     return String(details);
   }
 
+  protected formatTestCompletedDetails(event: DeviceEvent): string {
+    if (event.event_type !== 'TEST_COMPLETED' || !event.details) return '';
+    
+    const details = event.details as any;
+    const warehouseName = details.warehouse_name || 'N/A';
+    const testerName = details.tester_username || 'N/A';
+    
+    const basicDetails = Object.entries(details)
+      .filter(([key]) => key !== 'warehouse_name' && key !== 'tester_username')
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(', ');
+    
+    return `${basicDetails}${basicDetails ? ', ' : ''}Warehouse: ${warehouseName}, Tester: ${testerName}`;
+  }
+
+  protected getWarehouseName(event: DeviceEvent): string {
+    if (event.event_type === 'TEST_COMPLETED' && event.details && (event.details as any).warehouse_name) {
+      return (event.details as any).warehouse_name;
+    }
+    return 'N/A';
+  }
+
+  protected getTesterName(event: DeviceEvent): string {
+    if (event.event_type === 'TEST_COMPLETED' && event.details && (event.details as any).tester_username) {
+      return (event.details as any).tester_username;
+    }
+    return 'N/A';
+  }
+
   private searchDeviceHistory(identifier: string) {
     this.loading.set(true);
     this.errorMessage.set('');

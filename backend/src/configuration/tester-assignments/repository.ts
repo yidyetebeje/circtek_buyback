@@ -75,6 +75,7 @@ export class TesterAssignmentsRepository {
                 .from(workflows)
                 .leftJoin(tenants, eq(workflows.tenant_id, tenants.id))
                 .where(eq(workflows.id, testerRow.workflow_id))
+            
             result.workflow = workflowRow as any
         }
 
