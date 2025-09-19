@@ -391,6 +391,102 @@
   </div>
 </app-generic-modal>
 
+<!-- Tenant Profile Modal -->
+<app-generic-modal
+  [isOpen]="isTenantProfileModalOpen()"
+  [title]="'Update Tenant Information'"
+  [actions]="tenantProfileModalActions()"
+  size="lg"
+  (close)="closeTenantProfileModal()"
+  (actionClick)="onTenantProfileModalAction($event)"
+>
+  <div class="space-y-6">
+    <!-- Tenant Name Field -->
+    <div class="form-control w-full">
+      <label class="label">
+        <span class="label-text font-medium">Tenant Name <span class="text-error">*</span></span>
+      </label>
+      <input 
+        type="text" 
+        class="input input-bordered input-accent w-full" 
+        placeholder="Enter tenant name"
+        [value]="tenantProfileForm().name"
+        (input)="onTenantProfileNameChange($event)"
+        [disabled]="loading()"
+        maxlength="100"
+      />
+    </div>
+    
+    <!-- Description Field -->
+    <div class="form-control w-full">
+      <label class="label">
+        <span class="label-text font-medium">Description</span>
+      </label>
+      <textarea 
+        class="textarea textarea-bordered textarea-accent w-full resize-none" 
+        placeholder="Enter tenant description"
+        [value]="tenantProfileForm().description"
+        (input)="onTenantProfileDescriptionChange($event)"
+        [disabled]="loading()"
+        rows="3"
+        maxlength="500"
+      ></textarea>
+      <div class="label">
+        <span class="label-text-alt text-base-content/60">Optional description for your tenant</span>
+      </div>
+    </div>
+    
+    <!-- Logo Upload Field -->
+    <div class="form-control w-full">
+      <label class="label">
+        <span class="label-text font-medium">Logo</span>
+      </label>
+      <input 
+        type="file" 
+        class="file-input file-input-bordered file-input-accent w-full" 
+        accept="image/*"
+        (change)="onTenantProfileLogoChange($event)"
+        [disabled]="loading()"
+      />
+      <div class="label">
+        <span class="label-text-alt text-base-content/60">Upload a logo for your tenant (PNG, JPG, etc.)</span>
+      </div>
+    </div>
+      
+    <!-- Logo Preview and Current Logo -->
+    @if (tenantProfilePreviewUrl() || (currentTenant()?.logo && !tenantProfilePreviewUrl())) {
+      <div class="form-control w-full">
+        <label class="label">
+          <span class="label-text font-medium">
+            @if (tenantProfilePreviewUrl()) {
+              Preview
+            } @else {
+              Current Logo
+            }
+          </span>
+        </label>
+        <div class="flex justify-start">
+          <div class="w-32 h-32 border-2 border-base-300 rounded-lg flex items-center justify-center overflow-hidden bg-base-100">
+            @if (tenantProfilePreviewUrl()) {
+              <img 
+                [src]="tenantProfilePreviewUrl()!" 
+                alt="Logo preview" 
+                class="max-w-full max-h-full object-contain"
+              />
+            } @else {
+              <img 
+                [src]="currentTenant()!.logo!" 
+                alt="Current logo" 
+                class="max-w-full max-h-full object-contain"
+              />
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</app-generic-modal>
+
 <!-- Delete Confirmation Modal -->
 <app-generic-modal
   [isOpen]="isDeleteModalOpen()"

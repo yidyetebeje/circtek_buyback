@@ -14,8 +14,16 @@ export const TenantUpdate = t.Object({
 	logo: t.Optional(t.String()),
 })
 
+// For non-admin users - excludes status field
+export const TenantUpdateNonAdmin = t.Object({
+	name: t.Optional(t.String()),
+	description: t.Optional(t.String()),
+	logo: t.Optional(t.String()),
+})
+
 export type TenantCreateInput = Static<typeof TenantCreate>
 export type TenantUpdateInput = Static<typeof TenantUpdate>
+export type TenantUpdateNonAdminInput = Static<typeof TenantUpdateNonAdmin>
 
 export type TenantPublic = {
 	id: number

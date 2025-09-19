@@ -44,6 +44,8 @@ export const requireRole = (roles: string[]) =>
 				const payload = await (ctx as any).jwt.verify(token)
 				if (!payload) return { authError: { status: 403, message: 'Invalid Token' }, currentUserId: null, currentTenantId: null, currentRole: null, warehouseId: null, managedShopId: null }
 				const role = (payload as any).role as string | undefined
+				console.log(role, "role")
+				console.log(roles, "roles")
 				if (roles.length && (!role || !roles.includes(role))) return { authError: { status: 403, message: 'Forbidden' }, currentUserId: null, currentTenantId: null, currentRole: null, warehouseId: null, managedShopId: null }
 				return { currentUserId: Number((payload as any).sub), currentTenantId: (payload as any).tenant_id, currentRole: role, warehouseId: (payload as any).warehouse_id, managedShopId: (payload as any).managed_shop_id }
 			})

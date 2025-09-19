@@ -5,7 +5,10 @@ import { RoleCreateInput, RoleListQueryInput, RolePublic, RoleUpdateInput } from
 export class RolesController {
 	constructor(private readonly repo: RolesRepository) {}
 
-	async create(payload: RoleCreateInput): Promise<response<RolePublic | null>> {
+	async create(payload: RoleCreateInput, role: string): Promise<response<RolePublic | null>> {
+		if(role !== 'super_admin') {
+			return { data: null, message: 'Forbidden', status: 403 }
+		}
 		const existing = await this.repo.findByName(payload.name)
 		if (existing) return { data: null, message: 'Role name already exists', status: 409 }
 		const created = await this.repo.createRole(payload)
@@ -23,7 +26,10 @@ export class RolesController {
 		return { data: found, message: 'OK', status: 200 }
 	}
 
-	async update(id: number, payload: RoleUpdateInput): Promise<response<RolePublic | null>> {
+	async update(id: number, payload: RoleUpdateInput, role: string): Promise<response<RolePublic | null>> {
+		if(role !== 'super_admin') {
+			return { data: null, message: 'Forbidden', status: 403 }
+		}
 		if (payload.name) {
 			const existing = await this.repo.findByName(payload.name)
 			if (existing && existing.id !== id) return { data: null, message: 'Role name already exists', status: 409 }
@@ -33,7 +39,10 @@ export class RolesController {
 		return { data: updated, message: 'Role updated', status: 200 }
 	}
 
-	async remove(id: number): Promise<response<{ id: number } | null>> {
+	async remove(id: number, role: string): Promise<response<{ id: number } | null>> {
+		if(role !== 'super_admin') {
+			return { data: null, message: 'Forbidden', status: 403 }
+		}
 		const found = await this.repo.findOne(id)
 		if (!found) return { data: null, message: 'Role not found', status: 404 }
 		await this.repo.deleteRole(id)

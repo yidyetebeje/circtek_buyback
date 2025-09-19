@@ -46,7 +46,7 @@ export class ManagementComponent {
   total = signal(0);
 
   // Tab & pagination
-  activeTab = signal<'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates'>('users');
+  activeTab = signal<'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates'>('users');
   pageIndex = signal(0);
   pageSize = signal(10);
 
@@ -65,6 +65,9 @@ export class ManagementComponent {
   tenantOptions = signal<Array<{ label: string; value: string }>>([]);
   testerOptions = signal<Array<{ label: string; value: string }>>([]);
   wifiOptions = signal<Array<{ label: string; value: string }>>([]);
+
+  // Current tenant data for normal users
+  currentTenant = signal<Tenant | null>(null);
 
   // Resolve tester role id based on loaded roles (case-insensitive match)
   testerRoleId = computed<number | null>(() => {
@@ -91,8 +94,12 @@ export class ManagementComponent {
       { key: 'grades', label: 'Grades' },
       { key: 'ota-updates', label: 'OTA Updates' },
     ];
-    // Show Tenants first, only for super_admin
-    return this.isSuperAdmin() ? [{ key: 'tenants', label: 'Tenants' }, ...base] : base;
+    // Show Tenants first for super_admin, Tenant Profile first for normal users
+    if (this.isSuperAdmin()) {
+      return [{ key: 'tenants', label: 'Tenants' }, ...base];
+    } else {
+      return [{ key: 'tenant-profile', label: 'Tenant Profile' }, ...base];
+    }
   });
 
   // Header primary action per tab
@@ -100,19 +107,21 @@ export class ManagementComponent {
     const t = this.activeTab();
     const label = t === 'tenants'
       ? 'Add Tenant'
-      : t === 'users'
-        ? 'Add User'
-        : t === 'warehouses'
-          ? 'Add Warehouse'
-          : t === 'labels'
-            ? 'Add Label Template'
-            : t === 'workflows'
-              ? 'Add Workflow'
-              : t === 'grades'
-                ? 'Add Grade'
-                : t === 'ota-updates'
-                  ? 'Add OTA Update'
-                  : 'Add WiFi Profile';
+      : t === 'tenant-profile'
+        ? 'Edit Tenant Info'
+        : t === 'users'
+          ? 'Add User'
+          : t === 'warehouses'
+            ? 'Add Warehouse'
+            : t === 'labels'
+              ? 'Add Label Template'
+              : t === 'workflows'
+                ? 'Add Workflow'
+                : t === 'grades'
+                  ? 'Add Grade'
+                  : t === 'ota-updates'
+                    ? 'Add OTA Update'
+                    : 'Add WiFi Profile';
     return { label } as { label: string };
   });
 
@@ -129,8 +138,8 @@ export class ManagementComponent {
       // Note: Backend does NOT support filtering users by warehouse; omitting warehouse facet.
     }
 
-    // Tenant facet is irrelevant when viewing tenants tab itself
-    if (this.isSuperAdmin() && this.activeTab() !== 'tenants') {
+    // Tenant facet is irrelevant when viewing tenants or tenant-profile tabs
+    if (this.isSuperAdmin() && this.activeTab() !== 'tenants' && this.activeTab() !== 'tenant-profile') {
       list.unshift({ key: 'tenant_id', label: 'Tenant', type: 'select', options: this.tenantOptions() });
     }
     return list;
@@ -138,7 +147,16 @@ export class ManagementComponent {
 
   // Delete confirmation modal state
   isDeleteModalOpen = signal(false);
-  deleteContext = signal<{ tab: 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates'; row: MgmtRow } | null>(null);
+  deleteContext = signal<{ tab: 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates'; row: MgmtRow } | null>(null);
+
+  // Tenant Profile Modal state
+  isTenantProfileModalOpen = signal(false);
+  tenantProfileForm = signal({
+    name: '',
+    description: '',
+    logo: null as File | null
+  });
+  tenantProfilePreviewUrl = signal<string | null>(null);
   
   deleteModalActions = computed<ModalAction[]>(() => [
     {
@@ -153,7 +171,21 @@ export class ManagementComponent {
     }
   ]);
 
-  openDeleteModal(tab: 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates', row: MgmtRow) {
+  tenantProfileModalActions = computed<ModalAction[]>(() => [
+    {
+      label: 'Cancel',
+      variant: 'ghost',
+      action: 'cancel'
+    },
+    {
+      label: 'Update',
+      variant: 'primary',
+      disabled: !this.tenantProfileForm().name.trim(),
+      action: 'save'
+    }
+  ]);
+
+  openDeleteModal(tab: 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates', row: MgmtRow) {
     this.deleteContext.set({ tab, row });
     this.isDeleteModalOpen.set(true);
   }
@@ -235,6 +267,32 @@ export class ManagementComponent {
   // Columns vary by tab
   columns = computed<ColumnDef<MgmtRow>[]>(() => {
     switch (this.activeTab()) {
+      case 'tenant-profile':
+        return [
+          { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
+          { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '250px' } },
+          { 
+            header: 'Logo', 
+            id: 'logo' as any, 
+            enableSorting: false as any, 
+            accessorFn: (r: any) => r.logo ? 'Yes' : 'No',
+            meta: { 
+              cellClass: () => 'text-left'
+            }
+          },
+          { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
+          {
+            header: 'Actions',
+            id: 'actions' as any,
+            enableSorting: false as any,
+            meta: {
+              actions: [
+                { key: 'edit', label: 'Edit', class: 'text-primary' },
+              ],
+              cellClass: () => 'text-right'
+            }
+          } as any,
+        ];
       case 'tenants':
         return [
           { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
@@ -457,6 +515,8 @@ export class ManagementComponent {
   // Search placeholder per tab
   searchPlaceholder = computed(() => {
     switch (this.activeTab()) {
+      case 'tenant-profile':
+        return 'Tenant information';
       case 'tenants':
         return 'Search tenants';
       case 'users':
@@ -491,8 +551,9 @@ export class ManagementComponent {
 
     const tab = str('tab', 'users');
     if (tab === 'tenants' && this.isSuperAdmin()) this.activeTab.set('tenants');
+    else if (tab === 'tenant-profile' && !this.isSuperAdmin()) this.activeTab.set('tenant-profile');
     else if (tab === 'warehouses' || tab === 'wifi' || tab === 'users' || tab === 'labels' || tab === 'workflows' || tab === 'grades' || tab === 'ota-updates') this.activeTab.set(tab as any);
-    else this.activeTab.set('users');
+    else this.activeTab.set(this.isSuperAdmin() ? 'users' : 'tenant-profile');
 
     // Initialize pagination with service fallback
     this.pageIndex.set(Math.max(0, num('page', 1) - 1));
@@ -563,6 +624,31 @@ export class ManagementComponent {
     this.loading.set(true);
 
     const tab = this.activeTab();
+    if (tab === 'tenant-profile') {
+      // Fetch current user's tenant information
+      const currentUser = this.auth.currentUser();
+      if (currentUser?.tenant_id) {
+        this.api.getTenant(currentUser.tenant_id).subscribe({
+          next: (res) => {
+            if (seq !== this.requestSeq) return;
+            const tenant = res.data;
+            if (tenant) {
+              this.currentTenant.set(tenant);
+              this.data.set([tenant] as any);
+              this.total.set(1);
+            }
+            this.loading.set(false);
+          },
+          error: () => { 
+            if (seq !== this.requestSeq) return; 
+            this.loading.set(false); 
+          },
+        });
+      } else {
+        this.loading.set(false);
+      }
+      return;
+    }
     if (tab === 'tenants') {
       let params = new HttpParams()
         .set('page', String(this.pageIndex() + 1))
@@ -802,7 +888,7 @@ export class ManagementComponent {
   }
 
   onTabChange(key: string | null) {
-    const k = (key ?? 'users') as 'tenants' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates';
+    const k = (key ?? (this.isSuperAdmin() ? 'users' : 'tenant-profile')) as 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates';
     if (k !== this.activeTab()) {
       this.activeTab.set(k);
       // reset some filters per tab
@@ -819,6 +905,8 @@ export class ManagementComponent {
     const t = this.activeTab();
     if (t === 'tenants') {
       this.router.navigate(['/management/tenants/add']);
+    } else if (t === 'tenant-profile') {
+      this.openTenantProfileModal();
     } else if (t === 'users') {
       this.router.navigate(['/management/users/add']);
     } else if (t === 'warehouses') {
@@ -846,6 +934,8 @@ export class ManagementComponent {
       if (tab === 'tenants') {
         // Pass row state for edit form as backend doesn't expose GET /tenants/:id
         this.router.navigate(['/management/tenants/edit', (row as any).id], { state: { data: row } });
+      } else if (tab === 'tenant-profile') {
+        this.openTenantProfileModal();
       } else if (tab === 'users') {
         this.router.navigate(['/management/users/edit', row.id]);
       } else if (tab === 'warehouses') {
@@ -1517,5 +1607,118 @@ export class ManagementComponent {
   onOtaUpdateChannelChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     this.otaUpdateForm.update(form => ({ ...form, release_channel: target.value as 'stable' | 'beta' | 'dev' }));
+  }
+
+  // Tenant Profile Modal Methods
+  openTenantProfileModal() {
+    const currentTenant = this.currentTenant();
+    if (currentTenant) {
+      this.tenantProfileForm.set({
+        name: currentTenant.name,
+        description: currentTenant.description,
+        logo: null
+      });
+    } else {
+      this.tenantProfileForm.set({
+        name: '',
+        description: '',
+        logo: null
+      });
+    }
+    this.tenantProfilePreviewUrl.set(null);
+    this.isTenantProfileModalOpen.set(true);
+  }
+
+  closeTenantProfileModal() {
+    this.isTenantProfileModalOpen.set(false);
+    this.tenantProfileForm.set({
+      name: '',
+      description: '',
+      logo: null
+    });
+    this.tenantProfilePreviewUrl.set(null);
+  }
+
+  onTenantProfileModalAction(action: string): void {
+    if (action === 'save') {
+      this.saveTenantProfile();
+    } else if (action === 'cancel') {
+      this.closeTenantProfileModal();
+    }
+  }
+
+  saveTenantProfile() {
+    const form = this.tenantProfileForm();
+    const currentTenant = this.currentTenant();
+    if (!form.name.trim() || !currentTenant) return;
+
+    this.loading.set(true);
+    
+    // If there's a logo file to upload, upload it first
+    if (form.logo) {
+      this.api.uploadFile(form.logo, 'tenant-logos').subscribe({
+        next: (uploadResponse) => {
+          const logoUrl = uploadResponse.data?.url;
+          this.updateTenantData(currentTenant.id, {
+            name: form.name.trim(),
+            description: form.description.trim(),
+            logo: logoUrl
+          });
+        },
+        error: (error: any) => {
+          console.error('Failed to upload logo:', error);
+          this.loading.set(false);
+          this.toast.error('Failed to upload logo. Please try again.', 'Upload Failed');
+        }
+      });
+    } else {
+      // No logo file, just update the text fields
+      this.updateTenantData(currentTenant.id, {
+        name: form.name.trim(),
+        description: form.description.trim()
+      });
+    }
+  }
+
+  private updateTenantData(tenantId: number, tenantData: any) {
+    this.api.updateTenant(tenantId, tenantData).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.closeTenantProfileModal();
+        this.fetchData(); // Refresh the data
+        this.toast.saveSuccess('Tenant information', 'updated');
+      },
+      error: (error: any) => {
+        console.error('Failed to update tenant:', error);
+        this.loading.set(false);
+        this.toast.saveError('Tenant information', 'update');
+      }
+    });
+  }
+
+  onTenantProfileNameChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.tenantProfileForm.update(form => ({ ...form, name: target.value }));
+  }
+
+  onTenantProfileDescriptionChange(event: Event) {
+    const target = event.target as HTMLTextAreaElement;
+    this.tenantProfileForm.update(form => ({ ...form, description: target.value }));
+  }
+
+  onTenantProfileLogoChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0] || null;
+    this.tenantProfileForm.update(form => ({ ...form, logo: file }));
+    
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.tenantProfilePreviewUrl.set(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      this.tenantProfilePreviewUrl.set(null);
+    }
   }
 }
