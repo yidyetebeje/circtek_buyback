@@ -16,6 +16,8 @@ export interface RepairItemRecord {
   sku: string;
   quantity: number;
   cost: number;
+  reason_id?: number;
+  reason_name?: string;
   purchase_items_id: number | null;
   status: boolean;
   tenant_id: number;

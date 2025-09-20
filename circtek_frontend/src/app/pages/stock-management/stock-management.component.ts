@@ -11,9 +11,10 @@ import { StockWithWarehouse } from '../../core/models/stock';
 import { PurchaseRecord } from '../../core/models/purchase';
 import { TransferWithDetails } from '../../core/models/transfer';
 import { SkuSpecsRecord } from '../../core/models/sku-specs';
+import { SkuUsageAnalyticsItem } from '../../core/models/analytics';
 
 // Union type for table rows across tabs
-export type StockMgmtRow = StockWithWarehouse | PurchaseRecord | TransferWithDetails | SkuSpecsRecord;
+export type StockMgmtRow = StockWithWarehouse | PurchaseRecord | TransferWithDetails | SkuSpecsRecord | SkuUsageAnalyticsItem;
 
 @Component({
   selector: 'app-stock-management',
@@ -34,7 +35,7 @@ export class StockManagementComponent {
   total = signal(0);
 
   // Tabs & pagination
-  activeTab = signal<'stock' | 'purchases' | 'transfers' | 'sku-specs'>('stock');
+  activeTab = signal<'stock' | 'purchases' | 'transfers' | 'sku-specs' | 'analytics'>('stock');
   pageIndex = signal(0);
   pageSize = signal(10);
 
@@ -51,6 +52,11 @@ export class StockManagementComponent {
   fromWarehouseId = signal<number | null>(null); // transfers
   toWarehouseId = signal<number | null>(null); // transfers
   transferStatus = signal<'any' | 'pending' | 'completed'>('any'); // transfers
+  
+  // Analytics filters
+  periodDays = signal<number>(30); // analytics
+  startDate = signal<string | null>(null); // analytics
+  endDate = signal<string | null>(null); // analytics
 
   // Options
   warehouseOptions = signal<Array<{ label: string; value: string }>>([]);
@@ -67,6 +73,7 @@ export class StockManagementComponent {
     { key: 'purchases', label: 'Purchases' },
     { key: 'transfers', label: 'Transfers' },
     { key: 'sku-specs', label: 'SKU Specs' },
+    { key: 'analytics', label: 'Usage Analytics' },
   ]);
 
   // Header
@@ -82,6 +89,28 @@ export class StockManagementComponent {
       return { label: 'Add SKU Specs' };
     }
     return null;
+  });
+
+  // Check if custom date range is selected
+  isCustomDateRange = computed(() => {
+    const tab = this.activeTab();
+    if (tab === 'analytics') {
+      const hasCustomDates = this.startDate() || this.endDate();
+      // Show custom date inputs if either date is set
+      return hasCustomDates;
+    }
+    return false;
+  });
+
+  // Get the current period value for the dropdown
+  currentPeriodValue = computed(() => {
+    if (this.activeTab() === 'analytics') {
+      if (this.isCustomDateRange()) {
+        return 'custom';
+      }
+      return String(this.periodDays());
+    }
+    return '30';
   });
 
   // Facets per tab
@@ -105,6 +134,21 @@ export class StockManagementComponent {
         { label: 'Pending', value: 'pending' },
         { label: 'Completed', value: 'completed' },
       ] });
+    }
+    if (tab === 'analytics') {
+      list.push({ key: 'warehouse_id', label: 'Warehouse', type: 'select', options: this.warehouseOptions() });
+      list.push({ key: 'period_days', label: 'Period', type: 'select', options: [
+        { label: 'Last 7 days', value: '7' },
+        { label: 'Last 30 days', value: '30' },
+        { label: 'Last 60 days', value: '60' },
+        { label: 'Last 90 days', value: '90' },
+        { label: 'Custom Range', value: 'custom' }
+      ] });
+      // Only show date fields when custom range is selected
+      if (this.isCustomDateRange()) {
+        list.push({ key: 'start_date', label: 'Start Date', type: 'text', placeholder: 'YYYY-MM-DD' });
+        list.push({ key: 'end_date', label: 'End Date', type: 'text', placeholder: 'YYYY-MM-DD' });
+      }
     }
     // purchases: keep only search for now
     return list;
@@ -201,6 +245,27 @@ export class StockManagementComponent {
             }
           } as any,
         ];
+      case 'analytics':
+        return [
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
+          { header: 'Warehouse', accessorKey: 'warehouse_name' as any },
+          { header: 'Part SKU', accessorKey: 'part_sku' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Qty Used', accessorKey: 'quantity_used' as any },
+          { header: 'Current Stock', accessorKey: 'current_stock' as any },
+          { header: 'Usage/Day', accessorFn: (r: any) => r.usage_per_day?.toFixed(2) || '0' },
+          { header: 'Days Until Empty', id: 'expected_days_until_empty', accessorFn: (r: any) => {
+            const days = r.expected_days_until_empty;
+            if (days === null || days === undefined) return '∞';
+            if (days <= 0) return 'Out of Stock';
+            if (days <= 30) return `${days} days (⚠️)`;
+            return `${days} days`;
+          } },
+          { header: 'Period', id: 'period_info', accessorFn: (r: any) => `${r.period_days} days` },
+        ];
       default:
         return [];
     }
@@ -213,6 +278,7 @@ export class StockManagementComponent {
       case 'purchases': return 'Search PO, supplier, tracking';
       case 'transfers': return 'Search transfers';
       case 'sku-specs': return 'Search SKU, make, model';
+      case 'analytics': return 'Search part SKU';
       default: return 'Search';
     }
   });
@@ -225,7 +291,7 @@ export class StockManagementComponent {
     const str = (k: string, d = '') => qp.get(k) ?? d;
 
     const tab = str('tab', 'stock');
-    if (tab === 'stock' || tab === 'purchases' || tab === 'transfers' || tab === 'sku-specs') this.activeTab.set(tab as any);
+    if (tab === 'stock' || tab === 'purchases' || tab === 'transfers' || tab === 'sku-specs' || tab === 'analytics') this.activeTab.set(tab as any);
     else this.activeTab.set('stock');
 
     this.pageIndex.set(Math.max(0, num('page', 1) - 1));
@@ -247,6 +313,18 @@ export class StockManagementComponent {
     this.fromWarehouseId.set(optNum('from_warehouse_id'));
     this.toWarehouseId.set(optNum('to_warehouse_id'));
     const ts = str('status', 'any'); this.transferStatus.set(ts === 'pending' || ts === 'completed' ? (ts as any) : 'any');
+    
+    // Analytics parameters
+    const urlPeriodParam = qp.get('period_days');
+    if (urlPeriodParam === 'custom') {
+      // Keep default period but load custom dates
+      this.periodDays.set(30);
+    } else {
+      const urlPeriodDays = num('period_days', 30);
+      this.periodDays.set(this.normalizePeriodDays(urlPeriodDays));
+    }
+    this.startDate.set(qp.get('start_date'));
+    this.endDate.set(qp.get('end_date'));
     
 
     this.initialized.set(true);
@@ -286,6 +364,10 @@ export class StockManagementComponent {
       this.fromWarehouseId();
       this.toWarehouseId();
       this.transferStatus();
+      // analytics
+      this.periodDays();
+      this.startDate();
+      this.endDate();
       this.fetchData();
     });
 
@@ -311,6 +393,24 @@ export class StockManagementComponent {
         const fw = this.fromWarehouseId(); if (fw != null) query['from_warehouse_id'] = String(fw);
         const tw = this.toWarehouseId(); if (tw != null) query['to_warehouse_id'] = String(tw);
         if (this.transferStatus() !== 'any') query['status'] = this.transferStatus();
+      }
+      if (this.activeTab() === 'analytics') {
+        const wid = this.selectedWarehouseId(); if (wid != null) query['warehouse_id'] = String(wid);
+        const sd = this.startDate();
+        const ed = this.endDate();
+        
+        // If custom dates are being used, set period to 'custom'
+        if (sd || ed) {
+          query['period_days'] = 'custom';
+          if (sd) query['start_date'] = sd;
+          if (ed) query['end_date'] = ed;
+        } else {
+          // Use predefined period
+          const pd = this.periodDays();
+          if (pd > 0 && pd <= 365 && pd !== 30) {
+            query['period_days'] = String(pd);
+          }
+        }
       }
       // Only navigate if normalized query differs from last emitted
       const desiredNorm = this._normalizeQuery(query);
@@ -404,6 +504,46 @@ export class StockManagementComponent {
       return;
     }
 
+    if (tab === 'analytics') {
+      let params = new HttpParams()
+        .set('page', String(this.pageIndex() + 1))
+        .set('limit', String(this.pageSize()));
+      const s = this.search().trim(); if (s) params = params.set('search', s);
+      const sb = this.sortBy(); const sd = this.sortDir();
+      if (sb) params = params.set('sort_by', sb);
+      if (sd) params = params.set('sort_dir', sd);
+      const wid = this.selectedWarehouseId(); if (wid != null) params = params.set('warehouse_id', String(wid));
+      const pd = this.periodDays();
+      // Only send period_days if it's valid and different from default
+      if (pd > 0 && pd <= 365 && pd !== 30) {
+        params = params.set('period_days', String(pd));
+      }
+      const startDate = this.startDate(); if (startDate) params = params.set('start_date', startDate);
+      const endDate = this.endDate(); if (endDate) params = params.set('end_date', endDate);
+      
+      // Debug: Log the parameters being sent
+      console.log('Analytics API call parameters:', {
+        page: this.pageIndex() + 1,
+        limit: this.pageSize(),
+        search: this.search(),
+        warehouse_id: this.selectedWarehouseId(),
+        period_days: this.periodDays(),
+        start_date: this.startDate(),
+        end_date: this.endDate(),
+        params_string: params.toString()
+      });
+      
+      this.api.getSkuUsageAnalytics(params).subscribe({
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
+          this.data.set(res.data?.items ?? []);
+          this.total.set(res.data?.total ?? 0);
+          this.loading.set(false);
+        },
+        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
+      });
+      return;
+    }
 
     // sku-specs
     let params = new HttpParams()
@@ -422,6 +562,14 @@ export class StockManagementComponent {
       },
       error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
     });
+  }
+
+  // Helper method to normalize period days
+  private normalizePeriodDays(value: number | null | undefined): number {
+    if (value == null || value <= 0 || value > 365) {
+      return 30; // default
+    }
+    return value;
   }
 
   // Handlers from GenericPage
@@ -455,6 +603,31 @@ export class StockManagementComponent {
       this.toWarehouseId.set(parseNum(f['to_warehouse_id']));
       const ts = f['status']; this.transferStatus.set(ts === 'pending' || ts === 'completed' ? (ts as any) : 'any');
     }
+
+    if (this.activeTab() === 'analytics') {
+      this.selectedWarehouseId.set(parseNum(f['warehouse_id']));
+      
+      // Handle period dropdown
+      const periodValue = f['period_days'];
+      if (periodValue === 'custom') {
+        // When custom is selected, don't change period_days but allow date range
+        // Keep current periodDays value or set to a reasonable default
+        if (!this.startDate() && !this.endDate()) {
+          // If no custom dates exist, keep current period
+        }
+      } else if (periodValue) {
+        const pd = parseNum(periodValue);
+        if (pd) {
+          this.periodDays.set(this.normalizePeriodDays(pd));
+          // Clear custom dates when using predefined periods
+          this.startDate.set(null);
+          this.endDate.set(null);
+        }
+      }
+      
+      this.startDate.set(f['start_date'] || null);
+      this.endDate.set(f['end_date'] || null);
+    }
     
 
     this.pageIndex.set(0); // reset
@@ -474,7 +647,7 @@ export class StockManagementComponent {
   }
 
   onTabChange(key: string | null) {
-    const k = (key ?? 'stock') as 'stock' | 'purchases' | 'transfers' | 'sku-specs';
+    const k = (key ?? 'stock') as 'stock' | 'purchases' | 'transfers' | 'sku-specs' | 'analytics';
     if (k !== this.activeTab()) {
       this.activeTab.set(k);
       // reset filters per tab

@@ -1,6 +1,6 @@
 import { and, count, desc, eq, gte, lte, like, or, sql } from "drizzle-orm"
 import { db } from "../../db"
-import { repair_items, repairs, devices } from "../../db/circtek.schema"
+import { repair_items, repairs, devices, repair_reasons } from "../../db/circtek.schema"
 import { purchase_items } from "../../db/circtek.schema"
 import { RepairConsumeItemsInput, RepairListResult, RepairRecord, RepairWithItems, RepairCreateInput, RepairItemRecord, RepairQueryInput } from "./types"
 
@@ -154,7 +154,23 @@ export class RepairsRepository {
     const repair = this.normalizeRepair(repairRow) as any
 
     const itemConditions = [eq(repair_items.repair_id, id), eq(repair_items.tenant_id, repair.tenant_id)]
-    const rows = await this.database.select().from(repair_items).where(and(...itemConditions))
+    const rows = await this.database.select({
+      id: repair_items.id,
+      repair_id: repair_items.repair_id,
+      sku: repair_items.sku,
+      quantity: repair_items.quantity,
+      cost: repair_items.cost,
+      reason_id: repair_items.reason_id,
+      reason_name: repair_reasons.name,
+      purchase_items_id: repair_items.purchase_items_id,
+      status: repair_items.status,
+      tenant_id: repair_items.tenant_id,
+      created_at: repair_items.created_at,
+      updated_at: repair_items.updated_at,
+    })
+    .from(repair_items)
+    .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
+    .where(and(...itemConditions))
     const items: RepairItemRecord[] = rows.map(r => this.normalizeRepairItem(r))
 
     const total_items = items.length

@@ -1,0 +1,4 @@
+/* Hide the action buttons section entirely for read-only repair detail view */
+:host ::ng-deep app-generic-form-page .flex.justify-end.gap-4.pt-6 {
+  display: none;
+}

@@ -11,6 +11,7 @@ import { RepairWithItems } from '../../core/models/repair';
   selector: 'app-repair-detail',
   imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent],
   templateUrl: './repair-detail.component.html',
+  styleUrl: './repair-detail.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RepairDetailComponent implements OnInit {
@@ -38,13 +39,7 @@ export class RepairDetailComponent implements OnInit {
     return `Device: ${device}`;
   });
 
-  actions = computed(() => [
-    {
-      label: 'Back to Repairs',
-      type: 'button' as const,
-      variant: 'ghost' as const
-    }
-  ]);
+  actions = computed(() => []);
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -77,10 +72,10 @@ export class RepairDetailComponent implements OnInit {
   }
 
   onActionClick(event: { action: string; data?: any }) {
-    if (event.action === 'Back to Repairs') {
-      this.router.navigate(['/stock-management'], { 
-        queryParams: { tab: 'repairs' } 
-      });
-    }
+    // No actions to handle
+  }
+
+  onBackClick() {
+    this.router.navigate(['/repair']);
   }
 }

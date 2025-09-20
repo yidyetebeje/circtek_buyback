@@ -200,6 +200,7 @@
             }
             <button 
              type="submit"
+             (click)="onActionClick({ label: submitLabel(), type: 'submit', variant: 'primary' })"
              [disabled]="loading() || submitting() || submitDisabled()"
              [class]="getButtonClass({ label: submitLabel(), type: 'submit', variant: 'primary' })"
             >

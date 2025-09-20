@@ -20,6 +20,7 @@ export type TextFacet = {
   label: string;
   type: 'text';
   placeholder?: string;
+  inputType?: 'text' | 'date' | 'datetime-local' | 'time' | 'email' | 'number';
 };
 
 export type SelectFacet = {
@@ -219,6 +220,10 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
 
   facetPlaceholder(f: Facet): string {
     return (f as TextFacet).placeholder ?? '';
+  }
+
+  facetInputType(f: Facet): string {
+    return (f as TextFacet).inputType ?? 'text';
   }
 
   isSelectFacet(f: Facet): f is SelectFacet {

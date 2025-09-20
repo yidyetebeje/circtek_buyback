@@ -6,7 +6,10 @@
   [actions]="actions()"
   [loading]="loading()"
   [error]="error()"
+  [showBackButton]="true"
+  [submitDisabled]="true"
   (actionClick)="onActionClick($event)"
+  (backClick)="onBackClick()"
 >
   @if (repair(); as repairData) {
     <div class="max-w-4xl mx-auto space-y-8">
@@ -82,6 +85,11 @@
               <div class="flex items-center justify-between p-4 bg-base-50 rounded-lg border border-base-300">
                 <div class="flex-1">
                   <div class="font-mono font-medium text-lg">{{ item.sku }}</div>
+                  @if (item.reason_name) {
+                    <div class="text-sm text-primary font-medium mt-1">
+                      Reason: {{ item.reason_name }}
+                    </div>
+                  }
                   <div class="text-sm text-base-content/60 mt-1">
                     Quantity: {{ item.quantity }} • Unit Cost: ${{ item.cost | number:'1.2-2' }}
                   </div>

@@ -22,6 +22,7 @@ import { DashboardOverviewStats, WarehouseStats, RecentActivity, MonthlyTrend } 
 import { DeadIMEIRecord, DeadIMEICreateInput, DeadIMEIQueryInput, DeadIMEIResult } from '../models/dead-imei';
 import { Grade, GradeCreateRequest, GradeUpdateRequest } from '../models/grade';
 import { OtaUpdate, OtaUpdateCreateRequest, OtaUpdateUpdateRequest, OtaUpdateListResponse } from '../models/ota-update';
+import { SkuUsageAnalyticsResult, SkuUsageAnalyticsQuery } from '../models/analytics';
 
 @Injectable({
   providedIn: 'root',
@@ -599,5 +600,30 @@ export class ApiService {
   // ===== Device Events =====
   getDeviceEvents(params: HttpParams = new HttpParams()): Observable<ApiResponse<any[]>> {
     return this.get<ApiResponse<any[]>>('/stock/device-events', params);
+  }
+
+  // ===== Analytics =====
+  getSkuUsageAnalytics(params: HttpParams = new HttpParams()): Observable<ApiResponse<SkuUsageAnalyticsResult | null>> {
+    return this.get<ApiResponse<SkuUsageAnalyticsResult | null>>('/stock/analytics/sku-usage', params);
+  }
+
+  getPartsAtRisk(params: HttpParams = new HttpParams()): Observable<ApiResponse<SkuUsageAnalyticsResult | null>> {
+    return this.get<ApiResponse<SkuUsageAnalyticsResult | null>>('/stock/analytics/parts-at-risk', params);
+  }
+
+  getHighUsageParts(params: HttpParams = new HttpParams()): Observable<ApiResponse<SkuUsageAnalyticsResult | null>> {
+    return this.get<ApiResponse<SkuUsageAnalyticsResult | null>>('/stock/analytics/high-usage-parts', params);
+  }
+
+  getWarehouseUsageSummary(warehouseId: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<SkuUsageAnalyticsResult | null>> {
+    return this.get<ApiResponse<SkuUsageAnalyticsResult | null>>(`/stock/analytics/warehouse/${warehouseId}/usage`, params);
+  }
+
+  getSkuUsageAcrossWarehouses(sku: string, params: HttpParams = new HttpParams()): Observable<ApiResponse<SkuUsageAnalyticsResult | null>> {
+    return this.get<ApiResponse<SkuUsageAnalyticsResult | null>>(`/stock/analytics/sku/${encodeURIComponent(sku)}/usage`, params);
+  }
+
+  exportSkuUsageAnalytics(params: HttpParams = new HttpParams()): Observable<ApiResponse<SkuUsageAnalyticsResult | string | null>> {
+    return this.get<ApiResponse<SkuUsageAnalyticsResult | string | null>>('/stock/analytics/export/sku-usage', params);
   }
 }

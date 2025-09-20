@@ -33,6 +33,7 @@ export class RepairFormComponent implements OnInit {
   error = signal<string | null>(null);
   isSkuScannerOpen = signal(false);
   isImeiScannerDisabled = signal(false);
+  deviceFound = signal(false);
   form = signal<FormGroup>(this.createForm());
   createForm() {
     return this.fb.group({
@@ -51,7 +52,6 @@ export class RepairFormComponent implements OnInit {
   submitLabel = 'Create Repair';
   fields = computed<FormField[]>(() => []);
   actions = computed<FormAction[]>(() => [
-   
     { 
       label: 'Cancel', 
       type: 'button', 
@@ -63,17 +63,27 @@ export class RepairFormComponent implements OnInit {
   // Computed form validation
   isFormValid = () => {
     const form = this.form();
-    const hasParts = this.parts.length > 0;
-    const allPartsValid = this.parts.controls.every(partGroup => partGroup.valid);
     
-    // Check required fields manually
+    // Check basic required fields
     const hasIdentifier = form.get('identifier')?.value?.trim();
     const hasWarehouseId = form.get('warehouse_id')?.value;
     const hasDeviceId = form.get('device_id')?.value;
+    const deviceFoundStatus = this.deviceFound();
+    
+    // If device is not found yet, don't validate parts
+    if (!deviceFoundStatus) {
+      return hasIdentifier && hasWarehouseId;
+    }
+    
+    // If device is found, validate parts as well
+    const hasParts = this.parts.length > 0;
+    const allPartsValid = this.parts.controls.every(partGroup => partGroup.valid);
+    
     console.log({
       hasIdentifier,
       hasWarehouseId,
       hasDeviceId,
+      deviceFoundStatus,
       hasParts,
       allPartsValid
     })
@@ -87,9 +97,6 @@ export class RepairFormComponent implements OnInit {
     this.loadWarehouses();
     this.loadRepairReasons();
     
-    // Add default part
-    this.addPart();
-    
     // Auto-fetch device details when identifier changes
     this.form().get('identifier')?.valueChanges.subscribe((identifier: string) => {
       if (identifier && identifier.trim().length > 0) {
@@ -99,6 +106,10 @@ export class RepairFormComponent implements OnInit {
             this.fetchDeviceDetails();
           }
         }, 500);
+      } else {
+        // Reset device found state when identifier is cleared
+        this.deviceFound.set(false);
+        this.form().get('device_id')?.setValue(null);
       }
     });
   }
@@ -139,6 +150,13 @@ export class RepairFormComponent implements OnInit {
     this.parts.push(partForm);
   }
 
+  initializePartsWhenDeviceFound() {
+    // Add initial part when device is found and parts array is empty
+    if (this.parts.length === 0) {
+      this.addPart();
+    }
+  }
+
   removePart(index: number) {
     this.parts.removeAt(index);
   }
@@ -166,7 +184,8 @@ export class RepairFormComponent implements OnInit {
         const device = (res as any)?.data ?? null;
         this.deviceDetails.set(device);
         if (device) {
-
+          this.deviceFound.set(true);
+          this.initializePartsWhenDeviceFound();
           console.log("device id", device);
           const deviceId = Number(device.id ?? device.device_id ?? 0);
           console.log("device id", deviceId);
@@ -198,11 +217,12 @@ export class RepairFormComponent implements OnInit {
           });
         } else {
           this.loading.set(false);
+          this.deviceFound.set(false);
           this.error.set('Device not found for provided identifier');
           this.testResultsText.set('Device not found.');
         }
       },
-      error: () => { this.loading.set(false); this.error.set('Device not found for provided identifier'); this.testResultsText.set('Device not found.'); }
+      error: () => { this.loading.set(false); this.deviceFound.set(false); this.error.set('Device not found for provided identifier'); this.testResultsText.set('Device not found.'); }
     });
   }
 
@@ -328,6 +348,7 @@ export class RepairFormComponent implements OnInit {
   private getValidationErrorMessage(): string {
     const form = this.form();
     const missingFields: string[] = [];
+    const deviceFoundStatus = this.deviceFound();
     console.log(form, "validated form")
     
     if (!form.get('identifier')?.value?.trim()) {
@@ -336,11 +357,20 @@ export class RepairFormComponent implements OnInit {
     if (!form.get('warehouse_id')?.value) {
       missingFields.push('Warehouse');
     }
+    
+    // If device is not found yet, only validate basic fields
+    if (!deviceFoundStatus) {
+      if (!form.get('identifier')?.value?.trim() || !form.get('warehouse_id')?.value) {
+        return 'Please select a warehouse and enter device IMEI/Serial to search for the device';
+      }
+      return 'Device not found. Please verify the IMEI/Serial and try again';
+    }
+    
     if (!form.get('device_id')?.value) {
       missingFields.push('Device Details (fetch device details first)');
     }
     
-    // Check parts validation
+    // Check parts validation only if device is found
     const partsErrors: string[] = [];
     if (this.parts.length === 0) {
       partsErrors.push('at least one part');

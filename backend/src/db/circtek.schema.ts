@@ -282,7 +282,7 @@ export const repairs = mysqlTable('repairs', {
   created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
-
+// parts sku used in repair for the device 
 export const repair_items = mysqlTable('repair_items', {
   id: serial('id').primaryKey(),
   repair_id: bigint('repair_id', { mode: 'number', unsigned: true }).references(() => repairs.id).notNull(),

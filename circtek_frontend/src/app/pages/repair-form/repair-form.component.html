@@ -14,7 +14,7 @@
   <!-- Custom content starts: we keep the header from GenericFormPage -->
   <div [formGroup]="form()">
   <section class="">
-    <!-- Top controls: Warehouse + Identifier scanner -->
+    <!-- Step 1: Warehouse + Identifier scanner (always visible) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
       <div class="md:col-span-1">
         <label class="label"><span class="label-text">Warehouse</span><span class="text-error ml-1">*</span></label>
@@ -41,82 +41,98 @@
       </div>
     </div>
 
-    <!-- Test summary -->
-    <div class="border border-base-300/40 rounded-lg p-3 mb-4">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-sm font-medium">Test results</span>
-        <span class="text-xs" [class.text-success]="!testResultsText().includes('failed')" [class.text-error]="testResultsText().includes('failed')">{{ testResultsText() }}</span>
+    <!-- Step 2: Test results and parts form (only show when device is found) -->
+    @if (deviceFound()) {
+      <!-- Test summary -->
+      <div class="border border-base-300/40 rounded-lg p-3 mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-medium">Test results</span>
+          <span class="text-xs" [class.text-success]="!testResultsText().includes('failed')" [class.text-error]="testResultsText().includes('failed')">{{ testResultsText() }}</span>
+        </div>
+        @if (testResultsText() && testResultsText().includes('failed')) {
+          <div class="flex flex-wrap gap-2">
+            @for (name of failedComponents(); track name) {
+              <span class="badge badge-error badge-sm">{{ name }}</span>
+            }
+          </div>
+        }
       </div>
-      @if (testResultsText() && testResultsText().includes('failed')) {
-        <div class="flex flex-wrap gap-2">
-          @for (name of failedComponents(); track name) {
-            <span class="badge badge-error badge-sm">{{ name }}</span>
-          }
-        </div>
-      }
-    </div>
 
-    <h3 class="text-sm font-semibold text-base-content/80 mb-4">Consumed Parts</h3>
+      <h3 class="text-sm font-semibold text-base-content/80 mb-4">Consumed Parts</h3>
 
-    <!-- Grid header -->
-    <div class="" (focusin)="disableImeiScanner()" (focusout)="enableImeiScanner()">
-      <div class="grid grid-cols-12 gap-0 border border-base-300/40 rounded-lg">
-        <div class="col-span-12 grid grid-cols-12 gap-0 text-xs text-base-content/60 px-3 py-2 border-b border-base-300/40">
-          <div class="col-span-3">PART SKU</div>
-          <div class="col-span-2">QUANTITY</div>
-          <div class="col-span-3">REASON</div>
-          <div class="col-span-3">DESCRIPTION</div>
-          <div class="col-span-1"></div>
-        </div>
+      <!-- Grid header -->
+      <div class="" (focusin)="disableImeiScanner()" (focusout)="enableImeiScanner()">
+        <div class="grid grid-cols-12 gap-0 border border-base-300/40 rounded-lg">
+          <div class="col-span-12 grid grid-cols-12 gap-0 text-xs text-base-content/60 px-3 py-2 border-b border-base-300/40">
+            <div class="col-span-3">PART SKU</div>
+            <div class="col-span-2">QUANTITY</div>
+            <div class="col-span-3">REASON</div>
+            <div class="col-span-3">DESCRIPTION</div>
+            <div class="col-span-1"></div>
+          </div>
 
-        <!-- Rows -->
-        <div formArrayName="parts" class="col-span-12">
-          @for (partGroup of parts.controls; track $index) {
+          <!-- Rows -->
+          <div formArrayName="parts" class="col-span-12">
+            @for (partGroup of parts.controls; track $index) {
 
-            <div [formGroupName]="$index" class="grid grid-cols-12 items-start px-3 py-2 relative" [style.z-index]="parts.length - $index">
-              <div class="col-span-3 pr-3">
-                <app-sku-autocomplete 
-                  [isPart]="true"
-                  [placeholder]="'Search for part SKU...'"
-                  (valueChange)="onSkuSelected($event, $index)"
-                ></app-sku-autocomplete>
+              <div [formGroupName]="$index" class="grid grid-cols-12 items-start px-3 py-2 relative" [style.z-index]="parts.length - $index">
+                <div class="col-span-3 pr-3">
+                  <app-sku-autocomplete 
+                    [isPart]="true"
+                    [placeholder]="'Search for part SKU...'"
+                    (valueChange)="onSkuSelected($event, $index)"
+                  ></app-sku-autocomplete>
+                </div>
+                <div class="col-span-2 pr-3">
+                  <input 
+                    type="number" 
+                    class="input input-bordered input-sm w-full" 
+                    formControlName="quantity" 
+                    placeholder="Qty"
+                    min="1"
+                  />
+                </div>
+                <div class="col-span-3 pr-3">
+                  <select class="select select-accent select-sm w-full" formControlName="reason_id">
+                    <option [ngValue]="null">Select Reason</option>
+                    @for (reason of repairReasonOptions(); track reason.value) {
+                      <option [ngValue]="reason.value">{{ reason.label }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="col-span-3 pr-3">
+                  <textarea class="textarea textarea-bordered w-full h-10" formControlName="remarks" placeholder="Description"></textarea>
+                </div>
+                <div class="col-span-1 flex justify-end items-center">
+                  <button type="button" class="btn btn-error btn-xs" (click)="removePart($index)">Remove</button>
+                </div>
               </div>
-              <div class="col-span-2 pr-3">
-                <input 
-                  type="number" 
-                  class="input input-bordered input-sm w-full" 
-                  formControlName="quantity" 
-                  placeholder="Qty"
-                  min="1"
-                />
-              </div>
-              <div class="col-span-3 pr-3">
-                <select class="select select-accent select-sm w-full" formControlName="reason_id">
-                  <option [ngValue]="null">Select Reason</option>
-                  @for (reason of repairReasonOptions(); track reason.value) {
-                    <option [ngValue]="reason.value">{{ reason.label }}</option>
-                  }
-                </select>
-              </div>
-              <div class="col-span-3 pr-3">
-                <textarea class="textarea textarea-bordered w-full h-10" formControlName="remarks" placeholder="Description"></textarea>
-              </div>
-              <div class="col-span-1 flex justify-end items-center">
-                <button type="button" class="btn btn-error btn-xs" (click)="removePart($index)">Remove</button>
-              </div>
-            </div>
-          }
+            }
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="mt-4 flex justify-end">
-      <button type="button" class="btn btn-sm btn-primary" (click)="addPart()">Add Part</button>
-    </div>
+      <div class="mt-4 flex justify-end">
+        <button type="button" class="btn btn-sm btn-primary" (click)="addPart()">Add Part</button>
+      </div>
+    }
+    
+    @if (!deviceFound() && (form().get('warehouse_id')?.value || form().get('identifier')?.value?.trim())) {
+      <div class="text-center py-8 text-base-content/60">
+        <div class="text-lg mb-2">📱</div>
+        @if (!form().get('warehouse_id')?.value) {
+          <p class="text-sm">Please select a warehouse first</p>
+        } @else if (!form().get('identifier')?.value?.trim()) {
+          <p class="text-sm">Please enter device IMEI/Serial</p>
+          <p class="text-xs">Scan or type the IMEI/Serial and click "Fetch Details"</p>
+        } @else {
+          <p class="text-sm">Device not found</p>
+          <p class="text-xs">Please verify the IMEI/Serial and try fetching details again</p>
+        }
+      </div>
+    }
+
   </section>
-
-  <!-- Consumed Parts Section -->
-  
   </div>
 </app-generic-form-page>
 

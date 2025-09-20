@@ -37,6 +37,8 @@ export class RepairComponent {
 
   // Filters (shared + per tab)
   search = signal('');
+  startDate = signal<string | null>(null); // repairs date range
+  endDate = signal<string | null>(null); // repairs date range
   selectedWarehouseId = signal<number | null>(null); // dead-imei
   repairReasonStatus = signal<'any' | 'true' | 'false'>('any'); // repair-reasons
 
@@ -76,6 +78,10 @@ export class RepairComponent {
     const list: Facet[] = [];
     const tab = this.activeTab();
     
+    if (tab === 'repairs') {
+      list.push({ key: 'start_date', label: 'Start Date', type: 'text', inputType: 'date' });
+      list.push({ key: 'end_date', label: 'End Date', type: 'text', inputType: 'date' });
+    }
     if (tab === 'repair-reasons') {
       list.push({ key: 'status', label: 'Status', type: 'select', options: [
         { label: 'Any', value: 'any' },
@@ -102,7 +108,6 @@ export class RepairComponent {
           { header: 'Device SKU', accessorKey: 'device_sku' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'IMEI', accessorKey: 'device_imei' as any, meta: { truncateText: true, truncateMaxWidth: '130px' } },
           { header: 'Serial', accessorKey: 'device_serial' as any, meta: { truncateText: true, truncateMaxWidth: '130px' } },
-          { header: 'Repair Reason', id: 'reason_name', accessorFn: (r: any) => r.reason_name || `ID: ${r.reason_id}` },
           { header: 'Parts Used', id: 'parts_used', accessorFn: (r: any) => {
             // Check for consumed parts from repair items
             if (r.consumed_parts && r.consumed_parts.length > 0) {
@@ -110,8 +115,6 @@ export class RepairComponent {
             }
             return 'No parts used';
           }},
-          { header: 'Remarks', accessorKey: 'remarks' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
-          { header: 'Created', accessorKey: 'created_at' as any },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
@@ -196,6 +199,8 @@ export class RepairComponent {
     this.pageSize.set(num('limit', 10) || 10);
     this.search.set(str('search', ''));
 
+    this.startDate.set(str('start_date') || null);
+    this.endDate.set(str('end_date') || null);
     this.selectedWarehouseId.set(optNum('warehouse_id'));
     const rrs = str('repair_reason_status', 'any'); this.repairReasonStatus.set(rrs === 'true' || rrs === 'false' ? (rrs as any) : 'any');
 
@@ -225,6 +230,9 @@ export class RepairComponent {
       this.pageIndex();
       this.pageSize();
       this.search();
+      // repairs
+      this.startDate();
+      this.endDate();
       // dead-imei
       this.selectedWarehouseId();
       // repair-reasons
@@ -242,6 +250,10 @@ export class RepairComponent {
       };
       const s = this.search().trim(); if (s) query['search'] = s;
       
+      if (this.activeTab() === 'repairs') {
+        const startDate = this.startDate(); if (startDate) query['start_date'] = startDate;
+        const endDate = this.endDate(); if (endDate) query['end_date'] = endDate;
+      }
       if (this.activeTab() === 'repair-reasons') {
         if (this.repairReasonStatus() !== 'any') query['repair_reason_status'] = this.repairReasonStatus();
       }
@@ -280,6 +292,8 @@ export class RepairComponent {
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
       const s = this.search().trim(); if (s) params = params.set('search', s);
+      const startDate = this.startDate(); if (startDate) params = params.set('date_from', startDate);
+      const endDate = this.endDate(); if (endDate) params = params.set('date_to', endDate);
       this.api.getRepairs(params).subscribe({
         next: (res) => {
           if (seq !== this.requestSeq) return;
@@ -344,6 +358,11 @@ export class RepairComponent {
     const f = event.facets ?? {};
     const parseNum = (v?: string) => { if (!v) return null; const n = Number(v); return Number.isFinite(n) ? n : null; };
 
+    if (this.activeTab() === 'repairs') {
+      this.startDate.set(f['start_date'] || null);
+      this.endDate.set(f['end_date'] || null);
+    }
+
     if (this.activeTab() === 'repair-reasons') {
       const rrs = f['status']; this.repairReasonStatus.set(rrs === 'true' || rrs === 'false' ? (rrs as any) : 'any');
     }
@@ -365,6 +384,8 @@ export class RepairComponent {
       this.activeTab.set(k);
       // reset filters per tab
       this.search.set('');
+      this.startDate.set(null);
+      this.endDate.set(null);
       this.pageIndex.set(0);
     }
   }
