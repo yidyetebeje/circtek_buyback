@@ -27,7 +27,7 @@ import { devices_routes } from "./devices";
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
         .use(cors({
-            origin: ["http://localhost:4200", "https://circtek-aws.vercel.app"],
+            origin: ["http://localhost:4200", "https://circtek-aws.vercel.app", "https://staging-db.circtek.io"],
             methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
             allowedHeaders: ["Content-Type", "Authorization", "Accept", "Cookie"],
             credentials: true,
