@@ -205,13 +205,13 @@ export class DiagnosticsRepository {
 			.where(deviceWhere)
 
 		if (!existingDevice) {
-			await this.database.insert(devices).values(deviceToInsert as any)
+			await this.database.insert(devices).values(deviceToInsert)
 			;[existingDevice] = await this.database
 				.select({ id: devices.id })
 				.from(devices)
 				.where(deviceWhere)
 		} else {
-			await this.database.update(devices).set(deviceToInsert as any).where(eq(devices.id, existingDevice.id))
+			await this.database.update(devices).set(deviceToInsert).where(eq(devices.id, existingDevice.id))
 			;[existingDevice] = await this.database
 				.select({ id: devices.id })
 				.from(devices)

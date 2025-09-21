@@ -368,6 +368,53 @@ export const ota_update = mysqlTable('ota_update', {
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+// API Keys for external API access
+export const api_keys = mysqlTable('api_keys', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  key_hash: varchar('key_hash', { length: 255 }).notNull().unique(),
+  key_prefix: varchar('key_prefix', { length: 20 }).notNull(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  created_by: bigint('created_by', { mode: 'number', unsigned: true }).references(() => users.id).notNull(),
+  rate_limit: int('rate_limit').default(1000), // requests per hour
+  expires_at: timestamp('expires_at'),
+  last_used_at: timestamp('last_used_at'),
+  last_used_ip: varchar('last_used_ip', { length: 45 }),
+  usage_count: bigint('usage_count', { mode: 'number', unsigned: true }).default(0),
+  is_active: boolean('is_active').default(true),
+  revoked_at: timestamp('revoked_at'),
+  revoked_by: bigint('revoked_by', { mode: 'number', unsigned: true }).references(() => users.id),
+  revoked_reason: text('revoked_reason'),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_api_keys_tenant').on(table.tenant_id),
+  index('idx_api_keys_key_hash').on(table.key_hash),
+  index('idx_api_keys_prefix').on(table.key_prefix),
+  index('idx_api_keys_active').on(table.is_active),
+  index('idx_api_keys_expires').on(table.expires_at),
+]);
+
+// API Key usage logs for audit and rate limiting
+export const api_key_usage_logs = mysqlTable('api_key_usage_logs', {
+  id: serial('id').primaryKey(),
+  api_key_id: bigint('api_key_id', { mode: 'number', unsigned: true }).references(() => api_keys.id).notNull(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  endpoint: varchar('endpoint', { length: 255 }).notNull(),
+  method: varchar('method', { length: 10 }).notNull(),
+  ip_address: varchar('ip_address', { length: 45 }),
+  user_agent: text('user_agent'),
+  request_size: int('request_size'),
+  response_status: int('response_status'),
+  response_time_ms: int('response_time_ms'),
+  error_message: text('error_message'),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_api_usage_key_time').on(table.api_key_id, table.created_at),
+  index('idx_api_usage_tenant_time').on(table.tenant_id, table.created_at),
+  index('idx_api_usage_endpoint').on(table.endpoint),
+]);
 
 // buybacks tables
 

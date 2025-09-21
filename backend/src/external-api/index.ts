@@ -1,9 +1,13 @@
 import Elysia from "elysia";
 import { powerbi_routes } from "./powerbi";
+import { api_key_routes } from "./api-keys";
 
 // Main external API routes that combines all external integrations
 export const external_api_routes = new Elysia({ prefix: '/external-api' })
-  // PowerBI integration routes
+  // API Key Management routes (protected by regular user authentication)
+  .use(api_key_routes)
+  
+  // PowerBI integration routes (protected by API key authentication)
   .use(powerbi_routes)
 
   // Health check endpoint
@@ -12,6 +16,7 @@ export const external_api_routes = new Elysia({ prefix: '/external-api' })
       data: {
         status: 'healthy',
         modules: [
+          'api-key-management',
           'powerbi'
         ],
         timestamp: new Date().toISOString()
