@@ -46,6 +46,22 @@ export class RepairsController {
       const created = await this.repo.createRepair({ ...repairPayload, tenant_id })
       if (!created) return { data: null, message: 'Failed to create repair', status: 500 }
 
+      // Fire device event for repair started
+      try {
+        await deviceEventsService.createDeviceEvent({
+          device_id: created.device_id,
+          actor_id,
+          event_type: 'REPAIR_STARTED',
+          details: { repair_id: created.id, remarks: created.remarks },
+          tenant_id,
+        })
+      } catch (e) {
+        // Non-blocking: log in tests
+        if (process.env.NODE_ENV === 'test') {
+          console.error('Failed to create REPAIR_STARTED device event', e)
+        }
+      }
+
       // 2) If no items to consume, return early
       if (!payload.items || payload.items.length === 0) {
         return { 
@@ -152,6 +168,31 @@ export class RepairsController {
         total_quantity_consumed: totals.quantity,
         total_cost: totals.cost,
         results,
+      }
+
+      // Fire device event for repair completed when items are consumed
+      try {
+        await deviceEventsService.createDeviceEvent({
+          device_id: repair.device_id,
+          actor_id,
+          event_type: 'REPAIR_COMPLETED',
+          details: {
+            repair_id: repair.id,
+            warehouse_id: payload.warehouse_id,
+            warehouse_name: repair.warehouse_name || 'Unknown',
+            repairer_username: repair.repairer_username || 'Unknown',
+            items_count: payload.items.length,
+            total_quantity_consumed: totals.quantity,
+            total_cost: totals.cost,
+            consumed_skus: results.filter(r => r.success).map(r => r.sku),
+          },
+          tenant_id,
+        })
+      } catch (e) {
+        // Non-blocking: log in tests
+        if (process.env.NODE_ENV === 'test') {
+          console.error('Failed to create REPAIR_COMPLETED device event', e)
+        }
       }
 
       return { data, message: 'Consumption recorded', status: 200 }

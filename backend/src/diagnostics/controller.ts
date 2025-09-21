@@ -103,10 +103,10 @@ export class DiagnosticsController {
 			}
 			
 			const returned = { data: created ?? null, message: 'Uploaded', status: 201 }
-			console.log('upload', { returned })
+			
 			return returned
 		} catch (e) {
-			console.log('upload', { e })
+			
 			if (process.env.NODE_ENV === 'test') {
 				console.error('Failed to create TEST_COMPLETED device event', e)
 			}

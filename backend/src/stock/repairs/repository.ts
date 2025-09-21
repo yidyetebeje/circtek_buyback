@@ -1,6 +1,6 @@
 import { and, count, desc, eq, gte, lte, like, or, sql } from "drizzle-orm"
 import { db } from "../../db"
-import { repair_items, repairs, devices, repair_reasons } from "../../db/circtek.schema"
+import { repair_items, repairs, devices, repair_reasons, warehouses, users } from "../../db/circtek.schema"
 import { purchase_items } from "../../db/circtek.schema"
 import { RepairConsumeItemsInput, RepairListResult, RepairRecord, RepairWithItems, RepairCreateInput, RepairItemRecord, RepairQueryInput } from "./types"
 
@@ -26,7 +26,26 @@ export class RepairsRepository {
     const conditions = [eq(repairs.id, id)] as any[]
     if (typeof tenant_id === 'number') conditions.push(eq(repairs.tenant_id, tenant_id))
 
-    const [row] = await this.database.select().from(repairs).where(and(...conditions))
+    const [row] = await this.database.select({
+      id: repairs.id,
+      device_id: repairs.device_id,
+      remarks: repairs.remarks,
+      status: repairs.status,
+      actor_id: repairs.actor_id,
+      tenant_id: repairs.tenant_id,
+      warehouse_id: repairs.warehouse_id,
+      warehouse_name: warehouses.name,
+      repairer_username: users.user_name,
+      created_at: repairs.created_at,
+      updated_at: repairs.updated_at,
+      device_sku: devices.sku,
+    })
+    .from(repairs)
+    .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+    .leftJoin(users, eq(repairs.actor_id, users.id))
+    .leftJoin(devices, eq(repairs.device_id, devices.id))
+    .where(and(...conditions))
+    
     return this.normalizeRepair(row)
   }
 
@@ -75,6 +94,9 @@ export class RepairsRepository {
         status: repairs.status,
         tenant_id: repairs.tenant_id,
         actor_id: repairs.actor_id,
+        warehouse_id: repairs.warehouse_id,
+        warehouse_name: warehouses.name,
+        repairer_username: users.user_name,
         created_at: repairs.created_at,
         updated_at: repairs.updated_at,
         device_sku: devices.sku,
@@ -83,6 +105,8 @@ export class RepairsRepository {
       })
         .from(repairs)
         .leftJoin(devices, eq(repairs.device_id, devices.id))
+        .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+        .leftJoin(users, eq(repairs.actor_id, users.id))
         .where(final as any)
         .orderBy(desc(repairs.created_at))
         .limit(limit)
@@ -95,6 +119,9 @@ export class RepairsRepository {
         status: repairs.status,
         tenant_id: repairs.tenant_id,
         actor_id: repairs.actor_id,
+        warehouse_id: repairs.warehouse_id,
+        warehouse_name: warehouses.name,
+        repairer_username: users.user_name,
         created_at: repairs.created_at,
         updated_at: repairs.updated_at,
         device_sku: devices.sku,
@@ -103,6 +130,8 @@ export class RepairsRepository {
       })
         .from(repairs)
         .leftJoin(devices, eq(repairs.device_id, devices.id))
+        .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+        .leftJoin(users, eq(repairs.actor_id, users.id))
         .orderBy(desc(repairs.created_at))
         .limit(limit)
         .offset(offset)
@@ -140,6 +169,9 @@ export class RepairsRepository {
       status: repairs.status,
       tenant_id: repairs.tenant_id,
       actor_id: repairs.actor_id,
+      warehouse_id: repairs.warehouse_id,
+      warehouse_name: warehouses.name,
+      repairer_username: users.user_name,
       created_at: repairs.created_at,
       updated_at: repairs.updated_at,
       device_sku: devices.sku,
@@ -148,6 +180,8 @@ export class RepairsRepository {
     })
       .from(repairs)
       .leftJoin(devices, eq(repairs.device_id, devices.id))
+      .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+      .leftJoin(users, eq(repairs.actor_id, users.id))
       .where(and(...conditions))
 
     if (!repairRow) return undefined

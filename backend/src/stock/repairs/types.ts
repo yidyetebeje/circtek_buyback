@@ -38,6 +38,9 @@ export type RepairRecord = {
   status: boolean
   actor_id: number
   tenant_id: number
+  warehouse_id: number
+  warehouse_name?: string
+  repairer_username?: string
   created_at: Date | null
   updated_at: Date | null
 }
