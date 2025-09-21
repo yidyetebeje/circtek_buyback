@@ -1,7 +1,7 @@
 import Elysia from "elysia";
 import { PowerBIRepository } from "./repository";
 import { PowerBIController } from "./controller";
-import { RepairListQuery, DeviceRepairHistoryQuery } from "./types";
+import { RepairListQuery, DeviceRepairHistoryQuery, DeviceListQuery } from "./types";
 import { db } from "../../db";
 
 const repo = new PowerBIRepository(db);
@@ -31,6 +31,19 @@ export const powerbi_routes = new Elysia({ prefix: '/powerbi' })
       tags: ['PowerBI'],
       summary: 'Get device repair history',
       description: 'Get complete repair history for a device by IMEI or serial number with all related properties joined.'
+    }
+  })
+
+  // List devices with only IMEI, serial, and LPN
+  .get('/devices', async (ctx) => {
+    const { query } = ctx as any;
+    return controller.getDevicesList(query as any);
+  }, {
+    query: DeviceListQuery,
+    detail: {
+      tags: ['PowerBI'],
+      summary: 'Get devices list',
+      description: 'Get list of devices with only IMEI, serial number, and LPN fields. Can be filtered by tenant ID for tenant-specific results.'
     }
   })
 

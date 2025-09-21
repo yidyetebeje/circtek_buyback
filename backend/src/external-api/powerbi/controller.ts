@@ -76,4 +76,33 @@ export class PowerBIController {
       };
     }
   }
+
+  async getDevicesList(filters: {
+    tenant_id?: number;
+    page?: number;
+    limit?: number;
+  }) {
+    try {
+      const result = await this.repository.getDevicesList(filters);
+      
+      return {
+        data: result.data,
+        pagination: {
+          page: result.page,
+          limit: result.limit,
+          total: result.total,
+          total_pages: Math.ceil(result.total / result.limit)
+        },
+        message: 'Devices list retrieved successfully',
+        status: 200
+      };
+    } catch (error) {
+      return {
+        data: null,
+        message: 'Failed to retrieve devices list',
+        status: 500,
+        error: (error as Error).message
+      };
+    }
+  }
 }

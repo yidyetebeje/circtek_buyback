@@ -1,7 +1,7 @@
 import { MySql2Database } from "drizzle-orm/mysql2";
 import { eq, and, gte, lte, or, desc, sql } from "drizzle-orm";
 import { repairs, repair_items, devices, repair_reasons, users, warehouses, tenants } from "../../db/circtek.schema";
-import { RepairListResponse, DeviceRepairHistoryResponse } from "./types";
+import { RepairListResponse, DeviceRepairHistoryResponse, DeviceListResponse } from "./types";
 
 export class PowerBIRepository {
   constructor(private db: MySql2Database<any>) {}
@@ -304,6 +304,54 @@ export class PowerBIRepository {
     return {
       device,
       repairs: repairsWithItems
+    };
+  }
+
+  async getDevicesList(filters: {
+    tenant_id?: number;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: DeviceListResponse[]; total: number; page: number; limit: number }> {
+    const { tenant_id, page = 1, limit = 100 } = filters;
+    const offset = (page - 1) * limit;
+
+    // Build where conditions
+    const conditions = [];
+    
+    if (tenant_id) {
+      conditions.push(eq(devices.tenant_id, tenant_id));
+    }
+
+    // Only include active devices
+    conditions.push(eq(devices.status, true));
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Get total count
+    const totalResult = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(devices)
+      .where(whereClause);
+    
+    const total = totalResult[0]?.count || 0;
+
+    // Get devices with only required fields
+    const devicesData = await this.db
+      .select({
+        imei: devices.imei,
+        serial: devices.serial,
+        lpn: devices.lpn,
+      })
+      .from(devices)
+      .where(whereClause)
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      data: devicesData,
+      total,
+      page,
+      limit
     };
   }
 }

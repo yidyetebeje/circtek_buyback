@@ -17,6 +17,12 @@ export const DeviceRepairHistoryQuery = t.Object({
   tenant_id: t.Optional(t.Numeric())
 });
 
+export const DeviceListQuery = t.Object({
+  tenant_id: t.Optional(t.Numeric()),
+  page: t.Optional(t.Numeric({ minimum: 1, default: 1 })),
+  limit: t.Optional(t.Numeric({ minimum: 1, maximum: 1000, default: 100 }))
+});
+
 export interface RepairListResponse {
   id: number;
   device_id: number;
@@ -72,3 +78,11 @@ export interface DeviceRepairHistoryResponse {
   };
   repairs: Array<RepairListResponse>;
 }
+
+export interface DeviceListResponse {
+  imei: string | null;
+  serial: string | null;
+  lpn: string | null;
+}
+
+
