@@ -79,13 +79,13 @@ export class DiagnosticsComponent {
   columns = computed<ColumnDef<Diagnostic>[]>(() => [
     // 1) Order number starting at 1 across pages
     {
-      header: '#',
+      header: 'S.No',
       id: 'order',
       enableSorting: false as any,
       meta: {
         cellComponent: OrderCellComponent,
         cellComponentData: (_row: Diagnostic, cell: any) => ({ base: this.pageIndex() * this.pageSize(), idx: cell.row.index }),
-        cellClass: () => 'text-right w-12',
+        cellClass: () => 'text-left w-12',
       },
     },
     // 2) PDF icon to detailed report
