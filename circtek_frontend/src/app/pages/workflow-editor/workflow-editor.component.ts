@@ -250,8 +250,6 @@ export class WorkflowEditorComponent
   lastClickPosition: IPoint = { x: 0, y: 0 };
   lastSelectedNodeType: INodeType | null = null;
 
-  // Client ID for the current workflow
-  currentClientId: string | null = null;
 
   // Context Menu Logic
   contextMenuVisible: boolean = false;
@@ -924,19 +922,8 @@ export class WorkflowEditorComponent
     console.log("WorkflowEditorComponent: ngOnInit started");
     this.renderer.addClass(document.body, "workflow-editor-fullscreen");
 
-    const clientId = localStorage.getItem("clientId");
-    console.log(
-      "WorkflowEditorComponent: ngOnInit - Client ID from localStorage:",
-      clientId,
-    );
-    if (clientId) {
-      this.currentClientId = clientId; // Keep as string here
-      this.loadLabelNodes(); // Load labels early if client ID is known
-    } else {
-      // If no client ID, still ensure nodeTypes are initialized
-      this.nodeTypes = [...this.staticNodeTypes];
-      this.changeDetectorRef.detectChanges();
-    }
+    // Always load labels from the label templates endpoint
+    this.loadLabelNodes();
 
     // Initialize ResizeObserver to detect node dimension changes
     this.initializeResizeObserver();
@@ -1078,25 +1065,7 @@ export class WorkflowEditorComponent
   }
 
   loadLabelNodes(): void {
-    if (!this.currentClientId) {
-      console.warn("Cannot load label nodes without a client ID.");
-      this.nodeTypes = [...this.staticNodeTypes];
-      this.changeDetectorRef.detectChanges();
-      return;
-    }
-    console.log(`Loading label nodes for client ID: ${this.currentClientId}`);
-    // Convert clientId to number for the service call
-    const clientIdNumber = parseInt(this.currentClientId, 10);
-    if (isNaN(clientIdNumber)) {
-      console.error("Invalid client ID format:", this.currentClientId);
-      this.showToast("Invalid Client ID", "error");
-      this.nodeTypes = [...this.staticNodeTypes];
-      this.changeDetectorRef.detectChanges();
-      return;
-    }
-    const isAdmin = getAuthUserData()?.roleSlug === "admin";
-    const clientId = isAdmin ? this.currentClientId : clientIdNumber;
-    console.log("clientId", clientId, this.currentWorkflowData);
+    console.log("Loading label nodes from label templates endpoint...");
 
     this.documentService
       .getDocuments({
@@ -1104,13 +1073,11 @@ export class WorkflowEditorComponent
         limit: 100,
         sortBy: "name",
         sortDirection: "asc",
-        client_id:
-          typeof clientId === "string" ? parseInt(clientId, 10) : clientId,
       })
       .subscribe({
         next: (response) => {
           const labels = response.data;
-          console.log(`Found ${labels.length} labels for client.`);
+          console.log(`Found ${labels.length} label templates.`);
           const labelNodeTypes: INodeType[] = labels.map((label: any) => ({
             id: `print_label_${label.id}`,
             label: `Print label: "${label.name}"`,
@@ -1144,8 +1111,8 @@ export class WorkflowEditorComponent
     this.edges = [];
     this.selectedNode = null;
     this.selectedEdge = null;
-    this.nodeTypes = [...this.staticNodeTypes]; // Reset to static types
-    this.currentClientId = null; // Reset client ID
+    // Reload labels when clearing workflow
+    this.loadLabelNodes();
     this.changeDetectorRef.detectChanges(); // Update view
   }
 
