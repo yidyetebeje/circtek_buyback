@@ -31,8 +31,8 @@ export const diagnostic_routes = new Elysia({ prefix: '/diagnostics' })
 	}, { query: DiagnosticListQuery, detail: { tags: ['Diagnostics'], summary: 'Export test results (CSV)' } })
 	// Upload test results from desktop app
 	.post('/tests/upload', async (ctx) => {
-		const { body, currentUserId, currentTenantId } = ctx as any
-		return controller.upload(body as any, Number(currentUserId), Number(currentTenantId))
+		const { body, currentUserId, currentTenantId,warehouseId} = ctx as any
+		return controller.upload(body, Number(currentUserId), Number(currentTenantId), warehouseId)
 	}, { body: DiagnosticUploadBody, detail: { tags: ['Diagnostics'], summary: 'Upload test result' } })
 	.use(diagnostics_stats_routes)
 

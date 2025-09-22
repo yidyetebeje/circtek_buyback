@@ -78,12 +78,12 @@ export class DiagnosticsController {
 		}
 	}
 
-	async upload(body: DiagnosticUploadInput, testerId: number, tenantId: number): Promise<response<DiagnosticPublic | null>> {
+	async upload(body: DiagnosticUploadInput, testerId: number, tenantId: number, warehouseId: number): Promise<response<DiagnosticPublic | null>> {
 	
 		// Fire TEST_COMPLETED device event if a device was associated
 		try {
 			console.log('upload', body)
-			const created = await this.repo.upload(body, testerId, tenantId)
+			const created = await this.repo.upload(body, testerId, tenantId, warehouseId)
 			if (created?.device_id) {
 				
 				await deviceEventsService.createDeviceEvent({

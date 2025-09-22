@@ -168,7 +168,7 @@ export class DiagnosticsRepository {
 		return rows as unknown as DiagnosticPublic[]
 	}
 
-	async upload(input: DiagnosticUploadInput, testerId: number, tenantId: number): Promise<DiagnosticPublic | undefined> {
+	async upload(input: DiagnosticUploadInput, testerId: number, tenantId: number, warehouseId: number): Promise<DiagnosticPublic | undefined> {
 		// Ensure device exists or create it
 		const deviceToInsert = {
 			make: input.device.make,
@@ -182,7 +182,7 @@ export class DiagnosticsRepository {
 			description: input.device.description ?? `${input.device.make} ${input.device.model_name}`,
 			status: 1 as any,
 			tenant_id: tenantId,
-			warehouse_id: input.test.warehouse_id, // Add warehouse_id from test input
+			warehouse_id: warehouseId, // Add warehouse_id from test input
 			lpn: input.device.lpn,
 			sku: input.device.sku,
 			storage: input.device.storage,
@@ -221,7 +221,7 @@ export class DiagnosticsRepository {
 		const toInsertTest = {
 			tenant_id: tenantId,
 			device_id: existingDevice.id,
-			warehouse_id: input.test.warehouse_id,
+			warehouse_id: warehouseId,
 			tester_id: testerId,
 			battery_info: input.test.battery_info as any,
 			passed_components: input.test.passed_components,

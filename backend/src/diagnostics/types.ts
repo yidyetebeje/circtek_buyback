@@ -125,7 +125,6 @@ export const DiagnosticUploadBody = t.Object({
 	}),
 	// Test result info
 	test: t.Object({
-		warehouse_id: t.Number(),
 		battery_info: t.Optional(t.Any()),
 		passed_components: t.Optional(t.String()),
 		failed_components: t.Optional(t.String()),
