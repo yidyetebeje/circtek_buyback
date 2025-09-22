@@ -82,6 +82,7 @@ export class DiagnosticsController {
 	
 		// Fire TEST_COMPLETED device event if a device was associated
 		try {
+			console.log('upload', body)
 			const created = await this.repo.upload(body, testerId, tenantId)
 			if (created?.device_id) {
 				
@@ -101,12 +102,13 @@ export class DiagnosticsController {
 					tenant_id: tenantId,
 				})
 			}
+			console.log('created', created)
 			
 			const returned = { data: created ?? null, message: 'Uploaded', status: 201 }
-			
+			console.log('returned', returned)
 			return returned
 		} catch (e) {
-			
+			console.log('error', e)
 			if (process.env.NODE_ENV === 'test') {
 				console.error('Failed to create TEST_COMPLETED device event', e)
 			}
