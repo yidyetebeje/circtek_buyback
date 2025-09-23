@@ -43,6 +43,7 @@
   <app-battery-drain-test-options-modal
   *ngIf="optionsModalType === 'airpods_battery_drain_test'"
   [nodeData]="selectedOptionsNode"
+  [isOpen]="true"
   (cancel)="closeOptionsModal()"
   (save)="handleSaveOptionsModal($event)"
 >
@@ -51,6 +52,7 @@
 <app-parrot-test-options-modal
   *ngIf="optionsModalType === 'airpods_parrot_test'"
   [nodeData]="selectedOptionsNode"
+  [isOpen]="true"
   (cancel)="closeOptionsModal()"
   (save)="handleSaveOptionsModal($event)"
 >
@@ -96,7 +98,7 @@
           <lucide-icon [img]="Trash2" class="size-4 mr-2"></lucide-icon> Delete Node
         </button>
         <button
-            class="btn btn-sm btn-outline-primary me-2"
+            class="btn btn-sm btn-outline btn-accent"
             [disabled]="!hasNodeOptions()"
             (click)="openNodeOptions()"
           >
@@ -182,12 +184,11 @@
           <ng-container *ngFor="let node of nodes">
             <!-- Yes/No Decision Node (Check Restore Mode, OEM) -->
             <ng-container
-              *ngIf="
-                node.data?.type === 'start_test' ||
-                    node.data?.type === 'use_app' ||
-                    node.data?.type === 'airpods_audio_test' ||
-                    node.data?.type === 'airpods_battery_drain_test' ||
-                    node.data?.type === 'airpods_parrot_test';
+            *ngIf="
+            node.data?.type === 'check_restore_mode' ||
+              node.data?.type === 'airpods_oem_test';
+          
+
                 else decisionNodeCheck
               "
             >
@@ -217,9 +218,11 @@
               <!-- Existing 2-output decision nodes (Pass/Fail) -->
               <ng-container
                 *ngIf="
-                  node.data?.type === 'start_test' ||
+                   node.data?.type === 'start_test' ||
                     node.data?.type === 'use_app' ||
-                    node.data?.type === 'airpods_audio_test';
+                    node.data?.type === 'airpods_audio_test' ||
+                    node.data?.type === 'airpods_battery_drain_test' ||
+                    node.data?.type === 'airpods_parrot_test';
                   else checkTripleDecisionNode
                 "
               >

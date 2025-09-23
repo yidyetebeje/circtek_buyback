@@ -1,50 +1,47 @@
-<div class="modal-backdrop">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Battery drain test options</h5>
-        <button type="button" class="btn btn-close" aria-label="Close" (click)="close()"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <form [formGroup]="optionsForm">
-          <!-- Duration -->
-          <div class="form-group mb-3">
-            <label for="duration" class="form-label">Duration</label>
-            <input type="text"
-                   id="duration"
-                   class="form-control"
-                   formControlName="duration"
-                   placeholder="hh:mm:ss"
-                   pattern="([0-9]{1,2}:)?([0-9]{1,2}:)?[0-9]{1,2}"
-                   [class.is-invalid]="f['duration'].touched && f['duration'].invalid">
-            <div *ngIf="f['duration'].touched && f['duration'].invalid" class="text-danger small mt-1">
-              <div *ngIf="f['duration'].errors?.['required']">Duration is required.</div>
-            </div>
-          </div>
-
-          <!-- Threshold -->
-          <div class="form-group mb-3">
-            <label for="threshold" class="form-label">Fail threshold</label>
-            <input type="text"
-                   id="threshold"
-                   class="form-control"
-                   formControlName="threshold"
-                   placeholder="i.e. 5%"
-                   pattern="[0-9]+%?"
-                   [class.is-invalid]="f['threshold'].touched && f['threshold'].invalid">
-            <div *ngIf="f['threshold'].touched && f['threshold'].invalid" class="text-danger small mt-1">
-              <div *ngIf="f['threshold'].errors?.['required']">Fail threshold is required.</div>
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" (click)="close()">Cancel</button>
-        <button type="button" class="btn btn-success" style="background-color: #a7d48e; border-color: #a7d48e;" (click)="submitForm()" [disabled]="optionsForm.invalid">
-          <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-          Save
-        </button>
-      </div>
+<app-generic-modal
+  [isOpen]="isOpen"
+  title="Battery drain test options"
+  [actions]="modalActions"
+  (close)="close()"
+  (actionClick)="onModalAction($event)"
+>
+  <form [formGroup]="optionsForm" class="space-y-4">
+    <!-- Duration -->
+    <div>
+      <label for="duration" class="block text-sm font-medium mb-2">Duration <span class="text-red-500">*</span></label>
+      <input type="text"
+             id="duration"
+             class="w-full px-3 py-2 input"
+             formControlName="duration"
+             placeholder="hh:mm:ss"
+             pattern="([0-9]{1,2}:)?([0-9]{1,2}:)?[0-9]{1,2}"
+             [class.input-error]="f['duration'].touched && f['duration'].invalid">
+      @if (f['duration'].touched && f['duration'].invalid) {
+        <div class="text-error text-sm mt-1">
+          @if (f['duration'].errors?.['required']) {
+            <div>Duration is required.</div>
+          }
+        </div>
+      }
     </div>
-  </div>
-</div>
+
+    <!-- Threshold -->
+    <div>
+      <label for="threshold" class="block text-sm font-medium mb-2">Fail threshold <span class="text-red-500">*</span></label>
+      <input type="text"
+             id="threshold"
+             class="w-full px-3 py-2 input"
+             formControlName="threshold"
+             placeholder="i.e. 5%"
+             pattern="[0-9]+%?"
+             [class.input-error]="f['threshold'].touched && f['threshold'].invalid">
+      @if (f['threshold'].touched && f['threshold'].invalid) {
+        <div class="text-error text-sm mt-1">
+          @if (f['threshold'].errors?.['required']) {
+            <div>Fail threshold is required.</div>
+          }
+        </div>
+      }
+    </div>
+  </form>
+</app-generic-modal>

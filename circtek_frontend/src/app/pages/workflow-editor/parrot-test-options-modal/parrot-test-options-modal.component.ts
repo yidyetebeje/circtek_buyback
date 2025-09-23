@@ -1,20 +1,42 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { GenericModalComponent, ModalAction } from '../../../shared/components/generic-modal/generic-modal.component';
 import { INode } from '../decision-node/decision-node.component';
 
 @Component({
   selector: 'app-parrot-test-options-modal',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, GenericModalComponent],
   templateUrl: './parrot-test-options-modal.component.html',
   styleUrls: ['./parrot-test-options-modal.component.scss']
 })
 export class ParrotTestOptionsModal implements OnInit, OnChanges {
   @Input() nodeData: INode | null = null;
+  @Input() isOpen: boolean = false;
 
   @Output() save = new EventEmitter<{ recordDurationPerSide: string }>();
   @Output() cancel = new EventEmitter<void>();
 
   optionsForm: FormGroup;
   isSaving: boolean = false;
+
+  get modalActions(): ModalAction[] {
+    return [
+      {
+        label: 'Cancel',
+        variant: 'ghost',
+        action: 'cancel'
+      },
+      {
+        label: 'Save',
+        variant: 'accent',
+        disabled: this.optionsForm?.invalid || this.isSaving,
+        loading: this.isSaving,
+        action: 'save'
+      }
+    ];
+  }
 
   constructor(private fb: FormBuilder) {
     this.optionsForm = this.fb.group({
@@ -70,5 +92,17 @@ export class ParrotTestOptionsModal implements OnInit, OnChanges {
   close(): void {
     this.cancel.emit();
     this.resetForm(); // Reset form on explicit cancel
+  }
+
+  // Handle modal actions
+  onModalAction(action: string): void {
+    switch (action) {
+      case 'cancel':
+        this.close();
+        break;
+      case 'save':
+        this.submitForm();
+        break;
+    }
   }
 }

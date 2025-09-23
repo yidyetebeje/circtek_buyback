@@ -282,6 +282,7 @@ export class WorkflowEditorComponent
   currentWorkflowData: IWorkflow | null = null;
   // Remove clientOptions since client ID is not necessary
   // Signal-based form state (no @angular/forms)
+  
   name = signal<string>("");
   description = signal<string>("");
   // Remove clientIdSignal since client ID is not necessary
@@ -351,7 +352,6 @@ export class WorkflowEditorComponent
       node.data?.type === "check_if_locked" ||
       node.data?.type === "check_restore_mode" ||
       node.data?.type === "airpods_oem_test" ||
-      node.data?.type === "airpods_audio_test" ||
       node.data?.type === "airpods_audio_test" ||
       node.data?.type === "airpods_battery_drain_test" ||
       node.data?.type === "airpods_parrot_test";
@@ -1246,8 +1246,13 @@ export class WorkflowEditorComponent
     if (!this.selectedNode) {
       return false;
     }
-    return this.selectedNode.data.type === "airpods_battery_drain_test"
+    const hasOptions = this.selectedNode.data.type === "airpods_battery_drain_test"
       || this.selectedNode.data.type === "airpods_parrot_test";
+    console.log('hasNodeOptions check', { 
+      nodeType: this.selectedNode.data.type, 
+      hasOptions 
+    });
+    return hasOptions;
   }
 
   closeOptionsModal() {
@@ -1256,21 +1261,111 @@ export class WorkflowEditorComponent
   }
 
   handleSaveOptionsModal(options: any) {
-    this.selectedNode!.data = {
-      ...this.selectedOptionsNode!.data,
+    console.log('handleSaveOptionsModal called', { 
+      options, 
+      selectedOptionsNode: this.selectedOptionsNode,
+      selectedNode: this.selectedNode,
+      nodesArrayLength: this.nodes.length
+    });
+    
+    if (!this.selectedOptionsNode) {
+      console.error('selectedOptionsNode is null, cannot save options');
+      return;
+    }
+
+    const nodeId = this.selectedOptionsNode.id;
+    console.log('Updating node with ID:', nodeId);
+
+    // Find the node in the nodes array
+    const nodeIndex = this.nodes.findIndex(node => node.id === nodeId);
+    if (nodeIndex === -1) {
+      console.error('Node not found in nodes array:', nodeId);
+      console.error('Available nodes:', this.nodes.map(n => ({ id: n.id, type: n.data?.type })));
+      console.error('selectedOptionsNode:', this.selectedOptionsNode);
+      console.error('selectedNode:', this.selectedNode);
+      
+      // Try to find if the node exists with a different ID pattern
+      const similarNodes = this.nodes.filter(n => n.id.includes(nodeId.split('_').pop() || ''));
+      if (similarNodes.length > 0) {
+        console.error('Similar nodes found:', similarNodes.map(n => ({ id: n.id, type: n.data?.type })));
+      }
+      return;
+    }
+
+    console.log('Found node at index:', nodeIndex, 'Current node data:', this.nodes[nodeIndex].data);
+
+    // Create a new nodes array with the updated node to trigger change detection
+    const updatedNodes = [...this.nodes];
+    const originalNode = updatedNodes[nodeIndex];
+    const updatedData = {
+      ...originalNode.data,
       ...options
     };
+    
+    console.log('Original node data:', originalNode.data);
+    console.log('Options to merge:', options);
+    console.log('Merged data:', updatedData);
+    
+    updatedNodes[nodeIndex] = {
+      ...originalNode,
+      data: updatedData
+    };
+
+    // Update the nodes array
+    this.nodes = updatedNodes;
+
+    console.log('Updated node data:', this.nodes[nodeIndex].data);
+    console.log('Node type after update:', this.nodes[nodeIndex].data.type);
+    console.log('Nodes array after update:', this.nodes.length);
+
+    // Update selectedOptionsNode to reflect the changes
+    this.selectedOptionsNode.data = {
+      ...this.selectedOptionsNode.data,
+      ...options
+    };
+
+    // Also update the selectedNode if it's the same node
+    if (this.selectedNode && this.selectedNode.id === nodeId) {
+      this.selectedNode.data = this.nodes[nodeIndex].data;
+    }
+
+    // Trigger change detection
+    this.changeDetectorRef.detectChanges();
+
+    console.log('Options saved successfully, change detection triggered');
+
     this.optionsModalType = null;
     this.selectedOptionsNode = null;
   }
 
   openNodeOptions() {
+    console.log('openNodeOptions called', { selectedNode: this.selectedNode });
     if (!this.selectedNode) {
+      console.log('No selected node, returning');
       return;
     }
 
-    this.selectedOptionsNode = this.selectedNode;
+    console.log('Setting options modal', { 
+      nodeType: this.selectedNode.data.type,
+      nodeData: this.selectedNode.data 
+    });
+    
+    // Create a deep copy of the selected node to avoid reference issues
+    this.selectedOptionsNode = {
+      ...this.selectedNode,
+      data: { ...this.selectedNode.data },
+      position: { ...this.selectedNode.position },
+      config: this.selectedNode.config ? { 
+        ...this.selectedNode.config,
+        style: { ...this.selectedNode.config.style }
+      } : undefined
+    };
+    
     this.optionsModalType = this.selectedNode.data.type;
+    console.log('Modal state set', { 
+      optionsModalType: this.optionsModalType,
+      selectedOptionsNode: this.selectedOptionsNode 
+    });
   }
 
   onNodeSelect(event: MouseEvent, node: INode): void {
@@ -1284,6 +1379,13 @@ export class WorkflowEditorComponent
   deleteSelectedNode(): void {
     if (this.selectedNode) {
       const nodeId = this.selectedNode.id;
+      
+      // Prevent deletion if options modal is open for this node
+      if (this.selectedOptionsNode && this.selectedOptionsNode.id === nodeId) {
+        console.warn("Cannot delete node while options modal is open");
+        return;
+      }
+      
       console.log("Deleting node:", nodeId);
 
       // Stop observing the deleted node
@@ -1325,7 +1427,9 @@ export class WorkflowEditorComponent
       sourceNode.data.type === "start_test" ||
       sourceNode.data.type === "use_app" ||
       sourceNode.data.type === "check_restore_mode" ||
-      sourceNode.data.type === "airpods_audio_test";
+      sourceNode.data.type === "airpods_audio_test" ||
+      sourceNode.data.type === "airpods_battery_drain_test" ||
+      sourceNode.data.type === "airpods_parrot_test";
     const isYesNoDecisionNode =
       sourceNode.data.type === "check_restore_mode" ||
       sourceNode.data.type === "airpods_oem_test";
