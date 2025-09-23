@@ -106,6 +106,9 @@ export class OtaUpdatesRepository {
     }
 
     async checkForUpdate(testerId: number, tenantId: number, currentVersion: string, targetOs: string, targetArchitecture: string): Promise<OtaUpdatePublic | null> {
+        if (targetArchitecture === 'aarch64') {
+            targetArchitecture = 'arm'
+        }
         const [row] = await this.database
             .select(otaUpdateSelection)
             .from(ota_update)
