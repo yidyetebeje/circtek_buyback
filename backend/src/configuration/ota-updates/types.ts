@@ -22,7 +22,7 @@ export type OtaUpdateUpdateInput = Static<typeof OtaUpdateUpdate>
 export const VersionCheckRequest = t.Object({
     current_version: t.String(),
     target_os: t.Union([t.Literal('window'), t.Literal('macos')]),
-    target_architecture: t.Union([t.Literal('x86'), t.Literal('arm')]),
+    target_architecture: t.Union([t.Literal('x86'), t.Literal('arm'), t.Literal('aarch64'), t.Literal('arm64'), t.Literal('x64')]),
 })
 
 export type VersionCheckRequestInput = Static<typeof VersionCheckRequest>
@@ -40,7 +40,7 @@ export type OtaUpdatePublic = {
     version: string
     url: string
     target_os: 'window' | 'macos'
-    target_architecture: 'x86' | 'arm'
+    target_architecture: 'x86' | 'arm' | 'aarch64' | 'arm64' | 'x64'
     release_channel: 'stable' | 'beta' | 'dev'
     tenant_id: number
     tenant_name?: string | null
