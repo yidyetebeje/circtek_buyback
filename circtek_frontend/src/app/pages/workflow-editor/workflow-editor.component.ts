@@ -43,8 +43,10 @@ import {
   Grid,
   Minus,
   Plus,
+  Settings2
 } from 'lucide-angular';
-
+import { BatteryDrainTestOptionsModal } from './battery-drain-test-options-modal/battery-drain-test-options-modal.component';
+import { ParrotTestOptionsModal } from './parrot-test-options-modal/parrot-test-options-modal.component';
 // Interfaces (reconstructed based on usage)
 interface IPoint {
   x: number;
@@ -109,7 +111,9 @@ interface IContextMenuAction {
     DecisionNodeComponent,
     YesNoDecisionNodeComponent,
     TripleDecisionNodeComponent,
-    StandardNodeComponent
+    StandardNodeComponent,
+    BatteryDrainTestOptionsModal,
+    ParrotTestOptionsModal,
   ],
 })
 export class WorkflowEditorComponent
@@ -125,6 +129,7 @@ export class WorkflowEditorComponent
   Grid = Grid;
   Minus = Minus;
   Plus = Plus;
+  Settings2 = Settings2;
 
   // Add jsPlumbInstance declaration with any type to avoid TypeScript errors with dynamic import
   jsPlumbInstance: any = null;
@@ -145,9 +150,21 @@ export class WorkflowEditorComponent
     },
     {
       id: "airpods_audio_test",
-      label: "Audio Test",
+      label: "Airpods Audio Test",
       color: "#E91E63",
       type: "decision",
+    },
+    {
+      id: "airpods_battery_drain_test",
+      label: "Airpods battery drain test",
+      color: "#C200C2",
+      type: "decision",
+    },
+    {
+      id: "airpods_parrot_test",
+      label: "Airpods parrot test",
+      color: "#E91E63",
+      type: "decision"
     },
     { id: "disconnect_airpods", label: "Disconnect Airpods", color: "#795548" },
     {
@@ -186,7 +203,10 @@ export class WorkflowEditorComponent
 
   selectedNode: INode | null = null;
   selectedEdge: IEdge | null = null;
+  
 
+  selectedOptionsNode: INode | null = null;
+  optionsModalType: string | null = null;
   lastNodePosition: IPoint = { x: 100, y: 100 };
   draggingNodeType: INodeType | null = null;
 
@@ -331,7 +351,10 @@ export class WorkflowEditorComponent
       node.data?.type === "check_if_locked" ||
       node.data?.type === "check_restore_mode" ||
       node.data?.type === "airpods_oem_test" ||
-      node.data?.type === "airpods_audio_test";
+      node.data?.type === "airpods_audio_test" ||
+      node.data?.type === "airpods_audio_test" ||
+      node.data?.type === "airpods_battery_drain_test" ||
+      node.data?.type === "airpods_parrot_test";
 
     let position: IPoint;
 
@@ -423,7 +446,9 @@ export class WorkflowEditorComponent
     if (
       nodeType === "start_test" ||
       nodeType === "use_app" ||
-      nodeType === "airpods_audio_test"
+      nodeType === "airpods_audio_test" ||
+      nodeType === "airpods_battery_drain_test" ||
+      nodeType === "airpods_parrot_test"
     ) {
       // Standard decision node (Pass/Fail)
       return this.calculateDecisionNodeHandlePosition(
@@ -1177,11 +1202,22 @@ export class WorkflowEditorComponent
           y: this.lastNodePosition.y + (this.lastNodePosition.x > 400 ? 80 : 0),
         };
     this.lastNodePosition = { ...nodePosition };
-
+    let initialData: { [key: string]: any } | null = null;
+    if (nodeType.id === "airpods_battery_drain_test") {
+      initialData = {
+        duration: "5:00",
+        threshold: 5
+      };
+    }
+    else if (nodeType.id === "airpods_parrot_test") {
+      initialData = {
+        recordDurationPerSide: "5"
+      };
+    }
     const newNode: INode = {
       id: "node_" + Date.now(),
       label: nodeType.label,
-      data: { type: nodeType.id },
+      data: { type: nodeType.id, ...initialData },
       position: nodePosition,
       config: {
         style: {
@@ -1205,6 +1241,36 @@ export class WorkflowEditorComponent
       }
       this.updateConnectionPaths(); // Update connections after node is rendered
     }, 50);
+  }
+  hasNodeOptions() {
+    if (!this.selectedNode) {
+      return false;
+    }
+    return this.selectedNode.data.type === "airpods_battery_drain_test"
+      || this.selectedNode.data.type === "airpods_parrot_test";
+  }
+
+  closeOptionsModal() {
+    this.optionsModalType = null;
+    this.selectedOptionsNode = null;
+  }
+
+  handleSaveOptionsModal(options: any) {
+    this.selectedNode!.data = {
+      ...this.selectedOptionsNode!.data,
+      ...options
+    };
+    this.optionsModalType = null;
+    this.selectedOptionsNode = null;
+  }
+
+  openNodeOptions() {
+    if (!this.selectedNode) {
+      return;
+    }
+
+    this.selectedOptionsNode = this.selectedNode;
+    this.optionsModalType = this.selectedNode.data.type;
   }
 
   onNodeSelect(event: MouseEvent, node: INode): void {

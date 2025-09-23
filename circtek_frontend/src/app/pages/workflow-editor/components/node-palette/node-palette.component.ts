@@ -63,7 +63,7 @@ export class NodePaletteComponent implements OnChanges {
   isConditionalNode(nodeTypeId: string): boolean {
     // The bundle checks nodeType.id directly, let's assume nodeTypeId is passed
     // Based on the template usage, it seems `nodeType.id` was intended
-    return nodeTypeId === 'test_passed' || nodeTypeId === 'test_failed' || nodeTypeId === 'start_test';
+    return nodeTypeId === 'test_passed' || nodeTypeId === 'test_failed' || nodeTypeId === 'start_test' || nodeTypeId === 'airpods_battery_drain_test' || nodeTypeId === 'airpods_parrot_test';
   }
 
   // Emit the selected node type to the parent component

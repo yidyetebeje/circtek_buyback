@@ -7,6 +7,7 @@
     (close)="closeSaveModal()"
     (actionClick)="onModalAction($event)"
   >
+   
     <form class="space-y-4">
       <div>
         <label class="block text-sm font-medium mb-2">Workflow Name <span class="text-red-500">*</span></label>
@@ -37,7 +38,24 @@
       <!-- Client ID field removed as it's not necessary -->
     </form>
   </app-generic-modal>
+  
 
+  <app-battery-drain-test-options-modal
+  *ngIf="optionsModalType === 'airpods_battery_drain_test'"
+  [nodeData]="selectedOptionsNode"
+  (cancel)="closeOptionsModal()"
+  (save)="handleSaveOptionsModal($event)"
+>
+</app-battery-drain-test-options-modal>
+
+<app-parrot-test-options-modal
+  *ngIf="optionsModalType === 'airpods_parrot_test'"
+  [nodeData]="selectedOptionsNode"
+  (cancel)="closeOptionsModal()"
+  (save)="handleSaveOptionsModal($event)"
+>
+
+</app-parrot-test-options-modal>
   <!-- Header Section -->
   <div class="mb-6">
     <!-- Title, Back Button, and Save Button Row -->
@@ -77,7 +95,15 @@
         <button class="btn btn-outline btn-error btn-sm" [disabled]="!selectedNode" (click)="deleteSelectedNode()">
           <lucide-icon [img]="Trash2" class="size-4 mr-2"></lucide-icon> Delete Node
         </button>
+        <button
+            class="btn btn-sm btn-outline-primary me-2"
+            [disabled]="!hasNodeOptions()"
+            (click)="openNodeOptions()"
+          >
+            <lucide-icon [img]="Settings2" class="size-4 mr-2"></lucide-icon> Node options
+          </button>
       </div>
+      
       
       <!-- Viewport controls -->
       <div class="join">
@@ -157,8 +183,11 @@
             <!-- Yes/No Decision Node (Check Restore Mode, OEM) -->
             <ng-container
               *ngIf="
-                node.data?.type === 'check_restore_mode' ||
-                  node.data?.type === 'airpods_oem_test';
+                node.data?.type === 'start_test' ||
+                    node.data?.type === 'use_app' ||
+                    node.data?.type === 'airpods_audio_test' ||
+                    node.data?.type === 'airpods_battery_drain_test' ||
+                    node.data?.type === 'airpods_parrot_test';
                 else decisionNodeCheck
               "
             >
