@@ -1,6 +1,6 @@
 import { buildApp } from './app'
 
-const app = buildApp().listen(3000);
+const app = buildApp().listen(3020);
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
