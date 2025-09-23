@@ -1,7 +1,7 @@
 import Elysia from 'elysia'
 import { db } from '../../db'
 import { requireRole } from '../../auth'
-import { OtaUpdateCreate, OtaUpdateUpdate } from './types'
+import { OtaUpdateCreate, OtaUpdateUpdate, VersionCheckRequest } from './types'
 import { OtaUpdatesController } from './controller'
 import { OtaUpdatesRepository } from './repository'
 
@@ -51,3 +51,13 @@ export const ota_updates_routes = new Elysia({ prefix: '/ota-updates' })
         const tenantId = currentRole === 'super_admin' ? (query?.tenant_id ?? currentTenantId) : currentTenantId
         return controller.getByTesterId(Number(params.testerId), Number(tenantId))
     }, { detail: { tags: ['Configuration'], summary: 'Get OTA update assigned to a tester (tenant-scoped)' } })
+    .post('/check-update', async (ctx) => {
+        const { body, currentUserId, currentTenantId } = ctx as any
+        return controller.checkForUpdate(Number(currentUserId), Number(currentTenantId), body as any)
+    }, { 
+        body: VersionCheckRequest, 
+        detail: { 
+            tags: ['Configuration'], 
+            summary: 'Check for available updates by comparing current version with assigned OTA update' 
+        } 
+    })

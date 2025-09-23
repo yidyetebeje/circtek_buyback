@@ -19,6 +19,22 @@ export const OtaUpdateUpdate = t.Object({
 export type OtaUpdateCreateInput = Static<typeof OtaUpdateCreate>
 export type OtaUpdateUpdateInput = Static<typeof OtaUpdateUpdate>
 
+export const VersionCheckRequest = t.Object({
+    current_version: t.String(),
+    target_os: t.Union([t.Literal('window'), t.Literal('macos')]),
+    target_architecture: t.Union([t.Literal('x86'), t.Literal('arm')]),
+})
+
+export type VersionCheckRequestInput = Static<typeof VersionCheckRequest>
+
+export type VersionCheckResponse = {
+    update_available: boolean
+    current_version: string
+    latest_version?: string
+    download_url?: string
+    message: string
+}
+
 export type OtaUpdatePublic = {
     id: number
     version: string

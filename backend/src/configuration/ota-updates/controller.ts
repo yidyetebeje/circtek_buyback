@@ -1,6 +1,6 @@
 import type { response } from '../../types/response'
 import { OtaUpdatesRepository } from './repository'
-import type { OtaUpdateCreateInput, OtaUpdatePublic, OtaUpdateUpdateInput } from './types'
+import type { OtaUpdateCreateInput, OtaUpdatePublic, OtaUpdateUpdateInput, VersionCheckRequestInput, VersionCheckResponse } from './types'
 
 export class OtaUpdatesController {
     constructor(private readonly repo: OtaUpdatesRepository) {}
@@ -58,5 +58,44 @@ export class OtaUpdatesController {
         const otaUpdate = await this.repo.getByTesterId(testerId, tenantId)
         if (!otaUpdate) return { data: null, message: 'No OTA update assigned to this tester', status: 404 }
         return { data: otaUpdate, message: 'OK', status: 200 }
+    }
+
+    async checkForUpdate(testerId: number, tenantId: number, payload: VersionCheckRequestInput): Promise<response<VersionCheckResponse>> {
+        const { current_version, target_os, target_architecture } = payload
+        
+        try {
+            const availableUpdate = await this.repo.checkForUpdate(
+                testerId, 
+                tenantId, 
+                current_version, 
+                target_os, 
+                target_architecture
+            )
+            
+            if (availableUpdate) {
+                const response: VersionCheckResponse = {
+                    update_available: true,
+                    current_version,
+                    latest_version: availableUpdate.version,
+                    download_url: availableUpdate.url,
+                    message: `Update available: ${availableUpdate.version} for ${target_os} (${target_architecture})`
+                }
+                return { data: response, message: 'Update available', status: 200 }
+            } else {
+                const response: VersionCheckResponse = {
+                    update_available: false,
+                    current_version,
+                    message: `No updates available for ${target_os} (${target_architecture}). You are running the latest version or no update is assigned.`
+                }
+                return { data: response, message: 'No update available', status: 200 }
+            }
+        } catch (error) {
+            const response: VersionCheckResponse = {
+                update_available: false,
+                current_version,
+                message: 'Error checking for updates. Please try again later.'
+            }
+            return { data: response, message: 'Error checking for updates', status: 500 }
+        }
     }
 }
