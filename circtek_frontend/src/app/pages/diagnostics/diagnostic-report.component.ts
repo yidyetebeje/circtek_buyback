@@ -5,6 +5,7 @@ import { ApiService } from '../../core/services/api.service';
 import { Diagnostic } from '../../core/models/diagnostic';
 import { LogosService } from '../../services/logos.service';
 import { DiagnosticPdfService } from '../../shared/services/diagnostic-pdf.service';
+import { CipherService } from '../../core/services/cipher.service';
 import qrcode from 'qrcode';
 import { LucideAngularModule, Download, Printer } from 'lucide-angular';
 import html2canvas from 'html2canvas-pro';
@@ -22,27 +23,89 @@ export class DiagnosticReportComponent {
   private readonly api = inject(ApiService);
   private readonly logosService = inject(LogosService);
   private readonly diagnosticPdfService = inject(DiagnosticPdfService);
+  private readonly cipherService = inject(CipherService);
 
   loading = signal<boolean>(true);
   report = signal<Diagnostic | null>(null);
   logoUrl = computed(() => this.logosService.getClientLogoUrl());
   qrCodeDataUrl = signal<string | null>(null);
+  
+  // Computed property for encoded report ID to display in PDF
+  encodedReportId = computed(() => {
+    const report = this.report();
+    if (!report) return '';
+    return this.cipherService.encodeTestId(report.id, report.serial_number || undefined);
+  });
   // Expose Math for template usage (ceil/slicing)
   protected readonly Math = Math;
+  
+  // Helper methods for field mapping
+  protected getBatteryInfo = computed(() => {
+    const report = this.report();
+    if (!report?.battery_info) return '-';
+    
+    const batteryInfo = report.battery_info as any;
+    
+    // Handle different battery info structures
+    if (batteryInfo.health_percentage !== undefined) {
+      // iPhone/Android format
+      return `${batteryInfo.health_percentage}%`;
+    } else if (batteryInfo.health !== undefined) {
+      // Alternative health format
+      return batteryInfo.health;
+    } else if (batteryInfo.case || batteryInfo.left || batteryInfo.right) {
+      // AirPods format - show case battery
+      const caseBattery = batteryInfo.case?.charge_percentage;
+      const leftBattery = batteryInfo.left?.charge_percentage;
+      const rightBattery = batteryInfo.right?.charge_percentage;
+      
+      const parts = [];
+      if (caseBattery) parts.push(`Case: ${caseBattery}`);
+      if (leftBattery) parts.push(`L: ${leftBattery}`);
+      if (rightBattery) parts.push(`R: ${rightBattery}`);
+      
+      return parts.length > 0 ? parts.join(', ') : '-';
+    }
+    
+    return '-';
+  });
+  
+  protected getICloudStatus = computed(() => {
+    const report = this.report();
+    if (!report?.iCloud) return '-';
+    
+    const iCloud = report.iCloud as any;
+    return iCloud.status || iCloud || '-';
+  });
+  
+  protected getCarrierLock = computed(() => {
+    const report = this.report();
+    if (!report?.carrier_lock) return '-';
+    
+    const carrierLock = report.carrier_lock as any;
+    return carrierLock.carrier || carrierLock || '-';
+  });
   // Lucide icons
   protected readonly Download = Download;
   protected readonly Printer = Printer;
 
-  id = computed<number>(() => Number(this.route.snapshot.paramMap.get('id')));
+  encodedId = computed<string>(() => this.route.snapshot.paramMap.get('id') || '');
+  id = computed<number | null>(() => {
+    const encoded = this.encodedId();
+    if (!encoded) return null;
+    return this.cipherService.decodeTestId(encoded);
+  });
 
   constructor() {
     const id = this.id();
-    if (Number.isFinite(id)) {
+    if (id && id > 0) {
       this.api.getPublicDiagnostic(id).subscribe(res => {
         this.report.set(res.data ?? null);
         this.loading.set(false);
         if (res.data) {
-          this.generateQrCode(res.data.id);
+          // Generate QR code with encoded ID for security
+          const encodedId = this.cipherService.encodeTestId(res.data.id, res.data.serial_number);
+          this.generateQrCode(encodedId);
         }
       });
     } else {
@@ -50,9 +113,9 @@ export class DiagnosticReportComponent {
     }
   }
 
-  async generateQrCode(reportId: number) {
+  async generateQrCode(encodedReportId: string) {
     try {
-      const reportUrl = `${window.location.origin}/diagnostics/report/${reportId}`;
+      const reportUrl = `${window.location.origin}/diagnostics/report/${encodedReportId}`;
       const dataUrl = await qrcode.toDataURL(reportUrl, { errorCorrectionLevel: 'H', width: 256 });
       this.qrCodeDataUrl.set(dataUrl);
     } catch (err) {
@@ -137,9 +200,10 @@ export class DiagnosticReportComponent {
         heightLeft -= pageHeight;
       }
 
-      // Generate filename with report ID and current date
+      // Generate filename with encoded report ID and current date
       const report = this.report();
-      const fileName = `diagnostic_report_${report?.id || 'unknown'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      const encodedId = report ? this.cipherService.encodeTestId(report.id, report.serial_number || undefined) : 'unknown';
+      const fileName = `diagnostic_report_${encodedId}_${new Date().toISOString().split('T')[0]}.pdf`;
       
       // Save the PDF
       pdf.save(fileName);

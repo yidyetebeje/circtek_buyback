@@ -7,7 +7,6 @@ const userPublicSelection = {
   id: users.id,
   name: users.name,
   user_name: users.user_name,
-  email: users.email,
   created_at: users.created_at,
   status: users.status,
   role_id: users.role_id,
@@ -26,7 +25,6 @@ const sortableFields = {
   id: users.id,
   name: users.name,
   user_name: users.user_name,
-  email: users.email,
   created_at: users.created_at,
   status: users.status,
   role_name: roles.name,
@@ -65,13 +63,6 @@ export class UsersRepository {
     return result;
   }
 
-  async findByEmail(email: string): Promise<UserPublic | undefined> {
-    const [result] = await this.database
-      .select(userPublicSelection)
-      .from(users)
-      .where(eq(users.email, email));
-    return result;
-  }
 
   async findAll(filters: UserFilters): Promise<UserListResult> {
     const conditions: any[] = [];
@@ -83,8 +74,7 @@ export class UsersRepository {
       conditions.push(
         or(
           like(users.name, pattern),
-          like(users.user_name, pattern),
-          like(users.email, pattern)
+          like(users.user_name, pattern)
         )
       );
     }

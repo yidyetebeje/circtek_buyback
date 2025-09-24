@@ -31,7 +31,7 @@ describe('Users routes', () => {
 		const tenantId = await ensureTenant('t1')
 
 		const create = await server(new Request('http://localhost/api/v1/users', {
-			method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ name: 'A B', user_name: 'u2', password: 'secret', email: 'u2@example.com', role_id: roleId, tenant_id: tenantId })
+			method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ name: 'A B', user_name: 'u2', password: 'secret', role_id: roleId, tenant_id: tenantId })
 		}))
 		expect(create.status).toBe(200)
 		const createBody = await create.json()
@@ -63,7 +63,7 @@ describe('Users routes', () => {
 		const roleId = await ensureRole('super_admin')
 		const tenantId = await ensureTenant('t2')
 
-		await server(new Request('http://localhost/api/v1/users', { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ name: 'X Y', user_name: 'u3', password: 'secret', email: 'u3@example.com', role_id: roleId, tenant_id: tenantId }) }))
+		await server(new Request('http://localhost/api/v1/users', { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify({ name: 'X Y', user_name: 'u3', password: 'secret', role_id: roleId, tenant_id: tenantId }) }))
 		const list = await server(new Request('http://localhost/api/v1/users', { headers: { authorization: `Bearer ${token}` } }))
 		const { data } = await list.json()
 		expect(data.find((x: any) => x.user_name === 'u3')).toBeUndefined()

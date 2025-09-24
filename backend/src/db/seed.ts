@@ -91,13 +91,11 @@ async function seed_roles() {
     ]
     await db.insert(roles).values(roles_data)
 }
-
 async function seed_users() {
     const users_data = [
         {
             name: 'John Doe',
             user_name: 'super_admin',
-            email: 'super_admin@circtek.com',
             password: 'password',
             role_id: 1,
             tenant_id: 1,

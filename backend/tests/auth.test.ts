@@ -18,7 +18,7 @@ describe('Auth routes', () => {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({
-				name: 'Test User', user_name: 'test_user', password: 'pass1234', email: 'test@example.com', role_id: roleId, tenant_id: tenantId
+				name: 'Test User', user_name: 'test_user', password: 'pass1234', role_id: roleId, tenant_id: tenantId
 			})
 		}))
 		
@@ -45,21 +45,17 @@ describe('Auth routes', () => {
 		expect(me.status).toBe(200)
 	})
 
-	it('should reject duplicate username/email on register', async () => {
+	it('should reject duplicate username on register', async () => {
 		const app = buildApp()
 		const server = app.handle
 		const roleId = await ensureRole('super_admin')
 		const tenantId = await ensureTenant('t1')
-		const body = { name: 'A B', user_name: 'dup', password: 'x', email: 'dup@example.com', role_id: roleId, tenant_id: tenantId }
+		const body = { name: 'A B', user_name: 'dup', password: 'x', role_id: roleId, tenant_id: tenantId }
 		await server(new Request('http://localhost/api/v1/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }))
-		const dupUser = await server(new Request('http://localhost/api/v1/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...body, email: 'dup2@example.com' }) }))
+		const dupUser = await server(new Request('http://localhost/api/v1/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }))
 		expect(dupUser.status).toBe(200)
 		const dupUserBody = await dupUser.json()
 		expect(dupUserBody.status).toBe(409)
-		const dupEmail = await server(new Request('http://localhost/api/v1/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...body, user_name: 'another' }) }))
-		expect(dupEmail.status).toBe(200)
-		const dupEmailBody = await dupEmail.json()
-		expect(dupEmailBody.status).toBe(409)
 	})
 
 	it('should deny invalid credentials', async () => {
@@ -67,7 +63,7 @@ describe('Auth routes', () => {
 		const server = app.handle
 		const roleId = await ensureRole('super_admin')
 		const tenantId = await ensureTenant('t1')
-		await server(new Request('http://localhost/api/v1/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'A B', user_name: 'x', password: 'right', email: 'x@example.com', role_id: roleId, tenant_id: tenantId }) }))
+		await server(new Request('http://localhost/api/v1/auth/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'A B', user_name: 'x', password: 'right', role_id: roleId, tenant_id: tenantId }) }))
 		const bad = await server(new Request('http://localhost/api/v1/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ identifier: 'x', password: 'wrong' }) }))
 		expect(bad.status).toBe(200)
 		const badBody = await bad.json()

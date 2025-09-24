@@ -8,7 +8,6 @@ export const users = mysqlTable('users', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   user_name: varchar('user_name', { length: 255 }).notNull().unique(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
   password: varchar('password', { length: 255 }).notNull(),
   status: boolean('status').default(true),
   wifi_profile_id: bigint('wifi_profile_id', { mode: 'number', unsigned: true }).references(() => wifi_profile.id),

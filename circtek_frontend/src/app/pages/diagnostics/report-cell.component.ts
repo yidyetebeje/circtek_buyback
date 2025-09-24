@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Diagnostic } from '../../core/models/diagnostic';
+import { CipherService } from '../../core/services/cipher.service';
 
 @Component({
   selector: 'app-report-cell',
@@ -9,7 +10,7 @@ import { Diagnostic } from '../../core/models/diagnostic';
   template: `
     <a
       class="btn btn-ghost btn-xs"
-      [routerLink]="['/diagnostics/report', row.id]"
+      [routerLink]="['/diagnostics/report', encodedId()]"
       [attr.aria-label]="'Open detailed report for #' + row.id"
       title="Open detailed report"
     >
@@ -21,5 +22,11 @@ import { Diagnostic } from '../../core/models/diagnostic';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReportCellComponent {
+  private readonly cipherService = inject(CipherService);
+  
   @Input() row!: Diagnostic;
+  
+  protected readonly encodedId = computed(() => 
+    this.cipherService.encodeTestId(this.row.id, this.row.serial_number || undefined)
+  );
 }

@@ -15,7 +15,6 @@ export const UserCreate = t.Object({
 	name: t.String(),
 	user_name: t.String(),
 	password: t.String(),
-	email: t.String(),
 	role_id: t.Number(),
 	tenant_id: t.Number(),
 	warehouse_id: t.Optional(t.Number()),
@@ -26,7 +25,6 @@ export const UserUpdate = t.Object({
 	name: t.Optional(t.String()),
 	user_name: t.Optional(t.String()),
 	password: t.Optional(t.String()),
-	email: t.Optional(t.String()),
 	role_id: t.Optional(t.Number()),
 	tenant_id: t.Optional(t.Optional(t.Number())),
 	warehouse_id: t.Optional(t.Optional(t.Number())),
@@ -53,7 +51,6 @@ export type UserPublic = {
 	id: number
 	name: string
 	user_name: string
-	email: string
 	created_at: Date | null
 	status: boolean | null
 	role_id: number | null

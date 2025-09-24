@@ -4,7 +4,7 @@
   align-items: center;
   background-color: var(--color-secondary);
   padding: 0.5rem 2rem;
-  color: var(--color-secondary-content);
+  color: #ffffff;
   position: fixed;
   top: 0;
   left: 80px;
@@ -17,7 +17,7 @@
   display: none;
   background: none;
   border: none;
-  color: var(--color-secondary-content);
+  color: #ffffff;
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 0.375rem;
@@ -44,7 +44,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  color: var(--color-secondary-content);
+  color: #ffffff;
   text-decoration: none;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -63,7 +63,7 @@
 }
 
 .nav-links a {
-  color: var(--color-secondary-content);
+  color: #ffffff;
   text-decoration: none;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -86,7 +86,7 @@
 }
 
 .user-name {
-  color: var(--color-secondary-content);
+  color: #ffffff;
   font-size: 0.875rem;
   font-weight: 500;
   white-space: nowrap;

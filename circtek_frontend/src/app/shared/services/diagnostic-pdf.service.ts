@@ -5,6 +5,7 @@ import { jsPDF } from 'jspdf';
 import { Diagnostic } from '../../core/models/diagnostic';
 import { ApiService } from '../../core/services/api.service';
 import { LogosService } from '../../services/logos.service';
+import { CipherService } from '../../core/services/cipher.service';
 import qrcode from 'qrcode';
 
 @Injectable({
@@ -13,6 +14,7 @@ import qrcode from 'qrcode';
 export class DiagnosticPdfService {
   private readonly apiService = inject(ApiService);
   private readonly logosService = inject(LogosService);
+  private readonly cipherService = inject(CipherService);
   private readonly appRef = inject(ApplicationRef);
   private readonly injector = inject(EnvironmentInjector);
 
@@ -535,6 +537,7 @@ export class DiagnosticPdfService {
   
   generateFilename(diagnostic: Diagnostic): string {
     const timestamp = new Date().toISOString().split('T')[0];
-    return `diagnostic_report_${diagnostic.id}_${timestamp}.pdf`;
+    const encodedId = this.cipherService.encodeTestId(diagnostic.id, diagnostic.serial_number || undefined);
+    return `diagnostic_report_${encodedId}_${timestamp}.pdf`;
   }
 }

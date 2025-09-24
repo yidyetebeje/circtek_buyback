@@ -399,13 +399,35 @@ export class DiagnosticsComponent {
   protected batterySummary(row: Diagnostic): string {
     const info = row.battery_info as any;
     if (!info) return 'N/A';
-    // Try common fields if present
+    
     const parts: string[] = [];
     if (typeof info === 'object') {
-      if (info.health) parts.push(`Health: ${info.health}`);
-      if (info.cycle_count ?? info.cycles) parts.push(`Cycles: ${info.cycle_count ?? info.cycles}`);
-      if (info.capacity) parts.push(`Cap: ${info.capacity}`);
+      // Handle iPhone/Android format
+      if (info.health_percentage !== undefined) {
+        parts.push(`Health: ${info.health_percentage}%`);
+      } else if (info.health) {
+        parts.push(`Health: ${info.health}`);
+      }
+      
+      // Handle cycle count
+      if (info.cycle_count ?? info.cycles) {
+        parts.push(`Cycles: ${info.cycle_count ?? info.cycles}`);
+      }
+      
+      // Handle capacity
+      if (info.capacity) {
+        parts.push(`Cap: ${info.capacity}`);
+      }
+      
+      // Handle AirPods format
+      if (info.case?.charge_percentage) {
+        parts.push(`Case: ${info.case.charge_percentage}`);
+      }
+      if (info.left?.charge_percentage && info.right?.charge_percentage) {
+        parts.push(`Buds: ${info.left.charge_percentage}/${info.right.charge_percentage}`);
+      }
     }
+    
     return parts.length ? parts.join(' · ') : 'N/A';
   }
 

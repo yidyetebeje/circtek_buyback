@@ -106,13 +106,6 @@ export class UserFormComponent {
         validation: { minLength: 3, maxLength: 50 }
       },
       {
-        key: 'email',
-        label: 'Email',
-        type: 'email',
-        placeholder: 'Enter email address',
-        required: true
-      },
-      {
         key: 'role_id',
         label: 'Role',
         type: 'select',
@@ -282,7 +275,6 @@ export class UserFormComponent {
         Validators.maxLength(50),
         this.noWhitespaceValidator
       ]],
-      email: ['', [Validators.required, Validators.email]],
       role_id: [null, [Validators.required]],
       warehouse_id: [null], // Will be set as required conditionally
       status: [true]
@@ -416,7 +408,6 @@ export class UserFormComponent {
         const formValue = {
           name: user?.name ?? '',
           user_name: user?.user_name ?? '',
-          email: user?.email ?? '',
           role_id: user?.role_id ?? null,
           warehouse_id: user?.warehouse_id ?? null,
           status: !!user?.status

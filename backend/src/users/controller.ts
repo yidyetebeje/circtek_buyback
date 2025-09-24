@@ -12,9 +12,6 @@ export class UsersController {
 			const existingUsername = await this.repo.findByUsername(payload.user_name)
 			if (existingUsername)
 				return { data: null as any, message: 'Username already taken', status: 409 }
-			const existingEmail = await this.repo.findByEmail(payload.email)
-			if (existingEmail)
-				return { data: null as any, message: 'Email already registered', status: 409 }
 
 			const passwordHash = await bcrypt.hash(payload.password, 10)
 			const created = await this.repo.createUser({ ...payload, password: passwordHash })
@@ -60,16 +57,11 @@ export class UsersController {
 				if (existing.tenant_id !== requiredTenantId)
 					return { data: null, message: 'Forbidden: cross-tenant access denied', status: 403 }
 			}
-			// If changing username/email, ensure uniqueness
+			// If changing username, ensure uniqueness
 			if (payload.user_name) {
 				const existingUsername = await this.repo.findByUsername(payload.user_name)
 				if (existingUsername && existingUsername.id !== id)
 					return { data: null, message: 'Username already taken', status: 409 }
-			}
-			if (payload.email) {
-				const existingEmail = await this.repo.findByEmail(payload.email)
-				if (existingEmail && existingEmail.id !== id)
-					return { data: null, message: 'Email already registered', status: 409 }
 			}
 
 			const body: UserUpdateInput = { ...payload }

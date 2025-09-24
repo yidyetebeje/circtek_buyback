@@ -8,6 +8,7 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { DiagnosticPdfService } from '../../shared/services/diagnostic-pdf.service';
 import { DiagnosticDataService } from '../../core/services/diagnostic-data.service';
+import { CipherService } from '../../core/services/cipher.service';
 import { firstValueFrom } from 'rxjs';
 import { DashboardOverviewStats, WarehouseStats, RecentActivity, MonthlyTrend } from '../../core/models/dashboard';
 import { Diagnostic } from '../../core/models/diagnostic';
@@ -27,6 +28,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly router = inject(Router);
   private readonly diagnosticPdfService = inject(DiagnosticPdfService);
   private readonly diagnosticDataService = inject(DiagnosticDataService);
+  private readonly cipherService = inject(CipherService);
 
   // Signals for reactive state
   protected readonly isLoading = signal(true);
@@ -458,10 +460,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   protected navigateToReport(testId: number): void {
-    // Navigate to the diagnostics page with the specific test result
-    this.router.navigate(['/diagnostics/report', testId], { 
-      queryParams: { identifier: testId.toString() } 
-    });
+    // Navigate to the diagnostics page with encoded test ID for security
+    const encodedId = this.cipherService.encodeTestId(testId);
+    this.router.navigate(['/diagnostics/report', encodedId]);
   }
 
   protected formatDate(dateString: string): string {
@@ -707,7 +708,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   protected viewReport(row: Diagnostic): void {
-    this.router.navigate(['/diagnostics/report', row.id]);
+    const encodedId = this.cipherService.encodeTestId(row.id, row.serial_number || undefined);
+    this.router.navigate(['/diagnostics/report', encodedId]);
   }
 
   protected downloadDashboard(): void {

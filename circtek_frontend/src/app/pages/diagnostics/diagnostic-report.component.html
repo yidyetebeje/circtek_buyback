@@ -11,7 +11,7 @@
           }
           <div class="report-title-block">
             <h1 class="report-title">Diagnostic Report</h1>
-            <div class="report-id">Report ID: <span class="report-id-value">{{ r.id }}</span></div>
+            <div class="report-id">Report ID: <span class="report-id-value">{{ encodedReportId() }}</span></div>
           </div>
         </div>
         <div class="report-meta-section">
@@ -52,8 +52,8 @@
                 <div><span class="font-semibold">IMEI:</span> {{ r.imei || r.device_imei || '-' }}</div>
                 <div><span class="font-semibold">Serial:</span> {{ r.serial_number || r.device_serial || '-' }}</div>
                 <div><span class="font-semibold">LPN:</span> {{ r.lpn || r.device_lpn || '-' }}</div>
-                <div><span class="font-semibold">Battery:</span> {{ (r.battery_info?.health || '-') }}</div>
-                <div><span class="font-semibold">Carrier:</span> {{ (r.carrier_lock?.carrier || '-') }}</div>
+                <div><span class="font-semibold">Battery:</span> {{ getBatteryInfo() }}</div>
+                <div><span class="font-semibold">Carrier:</span> {{ getCarrierLock() }}</div>
                 <div><span class="font-semibold">OS:</span> {{ r.os_version || '-' }}</div>
               </div>
             </div>
@@ -72,7 +72,7 @@
           <div class="bg-base-300/60 py-2 rounded-r-lg">Wipe</div>
         </div>
         <div class="grid grid-cols-6 text-center border border-t-0 border-base-300 rounded-b-lg rounded-t-none text-sm">
-          <div class="py-2 font-medium">{{ r.iCloud || '-' }}</div>
+          <div class="py-2 font-medium">{{ getICloudStatus() }}</div>
           <div class="py-2 font-medium">No</div>
           <div class="py-2 font-medium">-</div>
           <div class="py-2 font-medium">{{ r.ESN || '-' }}</div>
