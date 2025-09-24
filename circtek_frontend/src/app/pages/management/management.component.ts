@@ -325,7 +325,7 @@ export class ManagementComponent {
           } },
           { header: 'Username', accessorKey: 'user_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
-          { header: 'Email', accessorKey: 'email' as any, meta: { truncateText: true, truncateMaxWidth: '180px' } },
+          
           { header: 'Role', accessorKey: 'role_name' as any, meta: { truncateText: true, truncateMaxWidth: '100px' } },
           { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
