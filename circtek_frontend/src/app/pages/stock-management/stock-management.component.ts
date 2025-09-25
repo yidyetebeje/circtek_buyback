@@ -33,7 +33,7 @@ export class StockManagementComponent {
   total = signal(0);
 
   // Tabs & pagination
-  activeTab = signal<'stock' | 'purchases' | 'transfers' | 'sku-specs'>('stock');
+  activeTab = signal<'stock' | 'purchases' | 'transfers' | 'sku-specs' | 'stock-in'>('stock');
   pageIndex = signal(0);
   pageSize = signal(10);
 
@@ -225,7 +225,7 @@ export class StockManagementComponent {
     const str = (k: string, d = '') => qp.get(k) ?? d;
 
     const tab = str('tab', 'stock');
-    if (tab === 'stock' || tab === 'purchases' || tab === 'transfers' || tab === 'sku-specs') this.activeTab.set(tab as any);
+    if (tab === 'stock' || tab === 'purchases' || tab === 'transfers' || tab === 'sku-specs' || tab === 'stock-in') this.activeTab.set(tab as any);
     else this.activeTab.set('stock');
 
     this.pageIndex.set(Math.max(0, num('page', 1) - 1));
@@ -475,7 +475,7 @@ export class StockManagementComponent {
   }
 
   onTabChange(key: string | null) {
-    const k = (key ?? 'stock') as 'stock' | 'purchases' | 'transfers' | 'sku-specs';
+    const k = (key ?? 'stock') as 'stock' | 'purchases' | 'transfers' | 'sku-specs' | 'stock-in';
     if (k !== this.activeTab()) {
       this.activeTab.set(k);
       // reset filters per tab

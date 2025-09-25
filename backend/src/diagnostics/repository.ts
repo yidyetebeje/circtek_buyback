@@ -119,7 +119,7 @@ export class DiagnosticsRepository {
 		const rows = await (whereCond
 			? baseFrom.where(whereCond).orderBy(orderExpr).limit(limit).offset(offset)
 			: baseFrom.orderBy(orderExpr).limit(limit).offset(offset))
-
+		console.log(rows, "rows from the underground");
 		return { rows: rows as unknown as DiagnosticPublic[], total: totalRow?.total ?? 0, page, limit }
 	}
 

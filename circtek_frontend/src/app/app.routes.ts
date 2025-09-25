@@ -138,6 +138,14 @@ export const routes: Routes = [
       import('./pages/stock-management/stock-management.component').then((m) => m.StockManagementComponent),
   },
 
+  // Stock In page route (lazy-loaded component)
+  {
+    path: 'stock-in',
+    canMatch: [authGuard],
+    loadComponent: () =>
+      import('./pages/stock-in/stock-in.component').then((m) => m.StockInComponent),
+  },
+
   // Repair Management page route (lazy-loaded component)
   {
     path: 'repair',

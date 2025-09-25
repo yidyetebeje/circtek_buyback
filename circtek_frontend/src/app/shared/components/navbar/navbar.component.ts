@@ -10,7 +10,8 @@ import {
   History,
   Users,
   Package,
-  Wrench
+  Wrench,
+  PackagePlus
 } from 'lucide-angular';
 
 @Component({
@@ -35,6 +36,7 @@ export class NavbarComponent {
   readonly History = History;
   readonly Users = Users;
   readonly Package = Package;
+  readonly PackagePlus = PackagePlus;
   readonly Wrench = Wrench;
 
   // Mobile menu toggle

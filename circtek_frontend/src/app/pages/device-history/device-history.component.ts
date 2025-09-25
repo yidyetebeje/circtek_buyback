@@ -116,6 +116,52 @@ export class DeviceHistoryComponent {
     return 'N/A';
   }
 
+  protected isStockInEvent(event: DeviceEvent): boolean {
+    return event.event_type === 'TEST_COMPLETED' && 
+           event.details && 
+           (event.details as any).action === 'stock_in';
+  }
+
+  protected getStockInEventConfig(event: DeviceEvent) {
+    if (this.isStockInEvent(event)) {
+      return {
+        label: 'Stock In',
+        icon: '📦',
+        color: 'text-emerald-600',
+        bgColor: 'bg-emerald-50'
+      };
+    }
+    return this.getEventConfig(event.event_type);
+  }
+
+  protected getGradeName(event: DeviceEvent): string {
+    if (this.isStockInEvent(event) && event.details && (event.details as any).grade_name) {
+      return (event.details as any).grade_name;
+    }
+    return 'N/A';
+  }
+
+  protected getGradeColor(event: DeviceEvent): string {
+    if (this.isStockInEvent(event) && event.details && (event.details as any).grade_color) {
+      return (event.details as any).grade_color;
+    }
+    return '#6b7280';
+  }
+
+  protected getActorName(event: DeviceEvent): string {
+    if (this.isStockInEvent(event) && event.details && (event.details as any).actor_name) {
+      return (event.details as any).actor_name;
+    }
+    return 'N/A';
+  }
+
+  protected getStockInRemarks(event: DeviceEvent): string {
+    if (this.isStockInEvent(event) && event.details && (event.details as any).remarks) {
+      return (event.details as any).remarks;
+    }
+    return '';
+  }
+
   private searchDeviceHistory(identifier: string) {
     this.loading.set(true);
     this.errorMessage.set('');

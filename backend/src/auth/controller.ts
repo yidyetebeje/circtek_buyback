@@ -147,7 +147,6 @@ export class AuthController {
 				id: user.id,
 				name: user.name,
 				user_name: user.user_name,
-				email: user.email,
 				roleName: userRoleDetails.title,
 				roleSlug: userRoleDetails.slug,
 				shopId: shop.id,

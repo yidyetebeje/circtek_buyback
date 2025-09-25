@@ -626,4 +626,20 @@ export class ApiService {
   exportSkuUsageAnalytics(params: HttpParams = new HttpParams()): Observable<ApiResponse<SkuUsageAnalyticsResult | string | null>> {
     return this.get<ApiResponse<SkuUsageAnalyticsResult | string | null>>('/stock/analytics/export/sku-usage', params);
   }
+
+  // ===== Stock In =====
+  stockInDevice(request: any): Observable<ApiResponse<any>> {
+    return this.post<ApiResponse<any>>('/stock/stock-in', request);
+  }
+
+  getDeviceGradeHistory(imei: string): Observable<ApiResponse<any[]>> {
+    return this.get<ApiResponse<any[]>>(`/stock/stock-in/history/${encodeURIComponent(imei)}`);
+  }
+
+  searchDevicesByIdentifier(imei?: string, serial?: string): Observable<ApiResponse<any[]>> {
+    let params = new HttpParams();
+    if (imei) params = params.set('imei', imei);
+    if (serial) params = params.set('serial', serial);
+    return this.get<ApiResponse<any[]>>('/devices', params);
+  }
 }

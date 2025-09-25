@@ -10,6 +10,7 @@ import { sku_specs_routes } from "./sku-specs";
 import { repair_reasons_routes } from "./repair-reasons";
 import { device_events_routes } from "./device-events/index";
 import { analytics_routes } from "./analytics";
+import { stock_in_routes } from "./stock-in";
 
 // Main stock management routes that combines all submodules
 export const stock_management_routes = new Elysia({ prefix: '/stock' })
@@ -42,6 +43,9 @@ export const stock_management_routes = new Elysia({ prefix: '/stock' })
 
   // Device events history
   .use(device_events_routes)
+
+  // Stock in with grading
+  .use(stock_in_routes)
 
   // Stock analytics and reporting
   .use(analytics_routes)
@@ -111,6 +115,8 @@ export const stock_management_routes = new Elysia({ prefix: '/stock' })
           'repairs',
           'sku-specs',
           'repair-reasons',
+          'device-events',
+          'stock-in',
           'analytics'
         ],
         timestamp: new Date().toISOString()

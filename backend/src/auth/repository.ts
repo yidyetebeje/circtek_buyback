@@ -1,4 +1,4 @@
-import { eq, or, and, sql } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { db } from '../db'
 import { users, roles } from '../db/circtek.schema'
 import { shops, user_shop_access } from '../db/shops.schema'
@@ -7,7 +7,6 @@ const userPublicSelection = {
 	id: users.id,
 	name: users.name,
 	user_name: users.user_name,
-	email: users.email,
 	created_at: users.created_at,
 	status: users.status,
 	role_id: users.role_id,
@@ -26,7 +25,7 @@ export class AuthRepository {
 				password: users.password,
 			})
 			.from(users)
-			.where(or(eq(users.user_name, identifier), eq(users.email, identifier)))
+			.where(eq(users.user_name, identifier))
 			.limit(1)
 		return row
 	}

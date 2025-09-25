@@ -275,12 +275,7 @@ async function seed_shop() {
     console.log('Detailed shops seeded successfully');
 }
 async function seed() {
-    await cleanup();
-    await seed_tenants();
-    await seed_roles();
-    await seed_users();
-    await seed_shops();
-    await seed_warehouses();
+   
     await seed_devices();
     await seed_test_results();
     await seed_shop(); // Detailed shop seeding

@@ -63,6 +63,20 @@ export class DeviceEventsService {
     });
   }
 
+  async createStockInEvent(device_id: number, actor_id: number, tenant_id: number, grade_id: number, remarks?: string): Promise<boolean> {
+    return this.createDeviceEvent({
+      device_id,
+      actor_id,
+      event_type: 'TEST_COMPLETED',
+      details: { 
+        action: 'stock_in', 
+        grade_id, 
+        remarks: remarks || 'Device graded and stocked in' 
+      },
+      tenant_id,
+    });
+  }
+
   async getDeviceEvents(device_id: number, tenant_id?: number) {
     const conditions = [eq(device_events.device_id, device_id)];
     if (typeof tenant_id === 'number') {
@@ -93,4 +107,7 @@ export const createDeviceEvents = {
     
   adjustment: (device_id: number, actor_id: number, tenant_id: number, adjustment_type: string, details?: any) => 
     deviceEventsService.createAdjustmentEvent(device_id, actor_id, tenant_id, adjustment_type, details),
+    
+  stockIn: (device_id: number, actor_id: number, tenant_id: number, grade_id: number, remarks?: string) => 
+    deviceEventsService.createStockInEvent(device_id, actor_id, tenant_id, grade_id, remarks),
 };
