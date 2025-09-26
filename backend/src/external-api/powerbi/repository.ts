@@ -6,18 +6,20 @@ import { RepairListResponse, DeviceRepairHistoryResponse, DeviceListResponse } f
 export class PowerBIRepository {
   constructor(private db: MySql2Database<any>) {}
 
-  async getRepairsList(filters: {
-    page?: number;
-    limit?: number;
+  async getRepairsList(filters?: {
+    page?: number | string;
+    limit?: number | string;
     start_date?: string;
     end_date?: string;
-    warehouse_id?: number;
-    actor_id?: number;
-    tenant_id?: number;
-    status?: boolean;
+    warehouse_id?: number | string;
+    actor_id?: number | string;
+    tenant_id?: number | string;
+    status?: boolean | string;
   }): Promise<{ data: RepairListResponse[]; total: number; page: number; limit: number }> {
-    const { page = 1, limit = 50, start_date, end_date, warehouse_id, actor_id, tenant_id, status } = filters;
-    const offset = (page - 1) * limit;
+    const { page, limit, start_date, end_date, warehouse_id, actor_id, tenant_id, status } = (filters ?? {}) as any;
+    const pageNum = Number(page) > 0 ? Number(page) : 1;
+    const limitNum = Number(limit) > 0 ? Number(limit) : 50;
+    const offset = (pageNum - 1) * limitNum;
 
     // Build where conditions
     const conditions = [];
@@ -30,20 +32,21 @@ export class PowerBIRepository {
       conditions.push(lte(repairs.created_at, new Date(end_date)));
     }
     
-    if (warehouse_id) {
-      conditions.push(eq(repairs.warehouse_id, warehouse_id));
+    if (warehouse_id !== undefined && warehouse_id !== null && `${warehouse_id}` !== '') {
+      conditions.push(eq(repairs.warehouse_id, Number(warehouse_id)));
     }
     
-    if (actor_id) {
-      conditions.push(eq(repairs.actor_id, actor_id));
+    if (actor_id !== undefined && actor_id !== null && `${actor_id}` !== '') {
+      conditions.push(eq(repairs.actor_id, Number(actor_id)));
     }
     
-    if (tenant_id) {
-      conditions.push(eq(repairs.tenant_id, tenant_id));
+    if (tenant_id !== undefined && tenant_id !== null && `${tenant_id}` !== '') {
+      conditions.push(eq(repairs.tenant_id, Number(tenant_id)));
     }
     
     if (status !== undefined) {
-      conditions.push(eq(repairs.status, status));
+      const statusBool = typeof status === 'boolean' ? status : `${status}`.toLowerCase() === 'true';
+      conditions.push(eq(repairs.status, statusBool));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -81,7 +84,7 @@ export class PowerBIRepository {
         // Actor (user) fields
         actor_name: users.name,
         actor_user_name: users.user_name,
-        actor_email: users.email,
+        actor_email: users.user_name,
         
         // Warehouse fields
         warehouse_name: warehouses.name,
@@ -99,7 +102,7 @@ export class PowerBIRepository {
       .innerJoin(tenants, eq(repairs.tenant_id, tenants.id))
       .where(whereClause)
       .orderBy(desc(repairs.created_at))
-      .limit(limit)
+      .limit(limitNum)
       .offset(offset);
 
     // Get repair items for each repair
@@ -151,17 +154,17 @@ export class PowerBIRepository {
     return {
       data: result,
       total,
-      page,
-      limit
+      page: pageNum,
+      limit: limitNum
     };
   }
 
-  async getDeviceRepairHistory(filters: {
+  async getDeviceRepairHistory(filters?: {
     imei?: string;
     serial?: string;
-    tenant_id?: number;
+    tenant_id?: number | string;
   }): Promise<DeviceRepairHistoryResponse | null> {
-    const { imei, serial, tenant_id } = filters;
+    const { imei, serial, tenant_id } = (filters ?? {}) as any;
 
     if (!imei && !serial) {
       throw new Error('Either IMEI or serial number must be provided');
@@ -178,8 +181,8 @@ export class PowerBIRepository {
       deviceConditions.push(eq(devices.serial, serial));
     }
     
-    if (tenant_id) {
-      deviceConditions.push(eq(devices.tenant_id, tenant_id));
+    if (tenant_id !== undefined && tenant_id !== null && `${tenant_id}` !== '') {
+      deviceConditions.push(eq(devices.tenant_id, Number(tenant_id)));
     }
 
     const deviceWhereClause = deviceConditions.length > 0 ? and(...deviceConditions) : undefined;
@@ -239,7 +242,7 @@ export class PowerBIRepository {
         // Actor (user) fields
         actor_name: users.name,
         actor_user_name: users.user_name,
-        actor_email: users.email,
+        actor_email: users.user_name,
         
         // Warehouse fields
         warehouse_name: warehouses.name,
@@ -307,19 +310,21 @@ export class PowerBIRepository {
     };
   }
 
-  async getDevicesList(filters: {
-    tenant_id?: number;
-    page?: number;
-    limit?: number;
+  async getDevicesList(filters?: {
+    tenant_id?: number | string;
+    page?: number | string;
+    limit?: number | string;
   }): Promise<{ data: DeviceListResponse[]; total: number; page: number; limit: number }> {
-    const { tenant_id, page = 1, limit = 100 } = filters;
-    const offset = (page - 1) * limit;
+    const { tenant_id, page, limit } = (filters ?? {}) as any;
+    const pageNum = Number(page) > 0 ? Number(page) : 1;
+    const limitNum = Number(limit) > 0 ? Number(limit) : 100;
+    const offset = (pageNum - 1) * limitNum;
 
     // Build where conditions
     const conditions = [];
     
-    if (tenant_id) {
-      conditions.push(eq(devices.tenant_id, tenant_id));
+    if (tenant_id !== undefined && tenant_id !== null && `${tenant_id}` !== '') {
+      conditions.push(eq(devices.tenant_id, Number(tenant_id)));
     }
 
     // Only include active devices
@@ -344,14 +349,14 @@ export class PowerBIRepository {
       })
       .from(devices)
       .where(whereClause)
-      .limit(limit)
+      .limit(limitNum)
       .offset(offset);
 
     return {
       data: devicesData,
       total,
-      page,
-      limit
+      page: pageNum,
+      limit: limitNum
     };
   }
 }

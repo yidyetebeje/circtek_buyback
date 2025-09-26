@@ -1,6 +1,7 @@
 import Elysia from "elysia";
 import { powerbi_routes } from "./powerbi";
 import { api_key_routes } from "./api-keys";
+import { authenticateAndScope } from "./api-keys/middleware";
 
 // Main external API routes that combines all external integrations
 export const external_api_routes = new Elysia({ prefix: '/external-api' })
@@ -8,6 +9,7 @@ export const external_api_routes = new Elysia({ prefix: '/external-api' })
   .use(api_key_routes)
   
   // PowerBI integration routes (protected by API key authentication)
+  .use(authenticateAndScope())
   .use(powerbi_routes)
 
   // Health check endpoint

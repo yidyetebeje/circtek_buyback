@@ -14,8 +14,28 @@ export const powerbi_routes = new Elysia({ prefix: '/powerbi' })
   
   // List repairs with detailed joins for PowerBI
   .get('/repairs', async (ctx) => {
-    const { scopedQuery } = ctx as any;
-    return controller.getRepairsList(scopedQuery as any);
+    try {
+      const authContext = ctx as any;
+     
+      // Check if authentication succeeded
+      if (!authContext.isAuthenticated) {
+        return {
+          data: null,
+          message: authContext.error || 'Authentication failed',
+          status: authContext.statusCode || 401
+        };
+      }
+      
+      const scopedQuery = authContext.scopedQuery || {};
+      return controller.getRepairsList(scopedQuery);
+    } catch (error) {
+      return {
+        data: null,
+        message: 'Failed to retrieve repairs list',
+        status: 500,
+        error: (error as Error).message
+      };
+    }
   }, {
     query: RepairListQuery,
     detail: {
@@ -27,8 +47,19 @@ export const powerbi_routes = new Elysia({ prefix: '/powerbi' })
 
   // Get device repair history by IMEI or serial
   .get('/device-repair-history', async (ctx) => {
-    const { scopedQuery } = ctx as any;
-    return controller.getDeviceRepairHistory(scopedQuery as any);
+    const authContext = ctx as any;
+    
+    // Check if authentication succeeded
+    if (!authContext.isAuthenticated) {
+      return {
+        data: null,
+        message: authContext.error || 'Authentication failed',
+        status: authContext.statusCode || 401
+      };
+    }
+    
+    const scopedQuery = authContext.scopedQuery || {};
+    return controller.getDeviceRepairHistory(scopedQuery);
   }, {
     query: DeviceRepairHistoryQuery,
     detail: {
@@ -40,8 +71,19 @@ export const powerbi_routes = new Elysia({ prefix: '/powerbi' })
 
   // Get devices list with only IMEI, serial, and LPN
   .get('/devices', async (ctx) => {
-    const { scopedQuery } = ctx as any;
-    return controller.getDevicesList(scopedQuery as any);
+    const authContext = ctx as any;
+    
+    // Check if authentication succeeded
+    if (!authContext.isAuthenticated) {
+      return {
+        data: null,
+        message: authContext.error || 'Authentication failed',
+        status: authContext.statusCode || 401
+      };
+    }
+    
+    const scopedQuery = authContext.scopedQuery || {};
+    return controller.getDevicesList(scopedQuery);
   }, {
     query: DeviceListQuery,
     detail: {
