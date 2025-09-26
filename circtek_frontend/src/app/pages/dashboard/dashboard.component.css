@@ -131,6 +131,23 @@ canvas {
   color: #1e40af;
 }
 
+/* Table sticky header z-index fix */
+.table thead th.sticky {
+  z-index: 10;
+}
+
+/* Ensure action buttons and other table content stay below sticky headers */
+.table tbody td {
+  position: relative;
+  z-index: 1;
+}
+
+/* Specifically target action buttons to ensure they don't overlap headers */
+.table tbody td .btn {
+  position: relative;
+  z-index: 1;
+}
+
 /* Responsive grid adjustments */
 @media (max-width: 768px) {
   .dashboard-grid {
