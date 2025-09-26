@@ -562,6 +562,22 @@ body { margin: 0; font-family: "Poppins", sans-serif; }
   }
 }
 
+/* Input Primary Color Styling for Barcode Scanner */
+.input-primary {
+  border-color: oklch(var(--p)) !important;
+  background-color: oklch(var(--b1)) !important;
+}
+
+.input-primary:focus {
+  border-color: oklch(var(--p)) !important;
+  outline: 2px solid oklch(var(--p) / 0.2) !important;
+  outline-offset: 2px !important;
+}
+
+.border-primary {
+  border-color: oklch(var(--p)) !important;
+}
+
 /* Modal Text Handling Styles - Fixed for Tailwind compatibility */
 .modal-context-info {
   background-color: oklch(var(--b2) / 0.3);

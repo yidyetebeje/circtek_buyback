@@ -362,7 +362,7 @@ export class BarcodeScannerComponent {
     
     if (this.inputValue() && this.isValid() !== null) {
       if (this.isValid()) {
-        return `${baseClasses} input-success border-success`;
+        return `${baseClasses} input-primary border-primary`;
       } else {
         return `${baseClasses} input-error border-error`;
       }

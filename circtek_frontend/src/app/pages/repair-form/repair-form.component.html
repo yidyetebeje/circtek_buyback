@@ -36,7 +36,7 @@
               [disabled]="isImeiScannerDisabled()"
             ></app-barcode-scanner>
           </div>
-          <button type="button" class="btn btn-outline btn-sm" (click)="fetchDeviceDetails()">Fetch Details</button>
+          <button type="button" class="btn btn-outline" (click)="fetchDeviceDetails()">Fetch Details</button>
         </div>
       </div>
     </div>
@@ -86,14 +86,14 @@
                 <div class="col-span-2 pr-3">
                   <input 
                     type="number" 
-                    class="input input-bordered input-sm w-full" 
+                    class="input input-bordered w-full" 
                     formControlName="quantity" 
                     placeholder="Qty"
                     min="1"
                   />
                 </div>
                 <div class="col-span-3 pr-3">
-                  <select class="select select-accent select-sm w-full" formControlName="reason_id">
+                  <select class="select select-accent w-full" formControlName="reason_id">
                     <option [ngValue]="null">Select Reason</option>
                     @for (reason of repairReasonOptions(); track reason.value) {
                       <option [ngValue]="reason.value">{{ reason.label }}</option>
@@ -101,7 +101,7 @@
                   </select>
                 </div>
                 <div class="col-span-3 pr-3">
-                  <textarea class="textarea textarea-bordered w-full h-10" formControlName="remarks" placeholder="Description"></textarea>
+                  <input class="input input-bordered w-full" formControlName="remarks" placeholder="Description" />
                 </div>
                 <div class="col-span-1 flex justify-end items-center">
                   <button type="button" class="btn btn-error btn-xs" (click)="removePart($index)">Remove</button>

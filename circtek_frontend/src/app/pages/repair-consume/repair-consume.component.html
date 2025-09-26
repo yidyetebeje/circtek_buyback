@@ -60,13 +60,18 @@
             />
           </div>
           
-          <button
-            type="button"
-            (click)="removeItem($index)"
-            class="btn btn-ghost btn-sm"
-          >
-            Remove
-          </button>
+          <div class="flex flex-col">
+            <label class="label">
+              <span class="label-text font-medium">&nbsp;</span>
+            </label>
+            <button
+              type="button"
+              (click)="removeItem($index)"
+              class="btn btn-ghost btn-sm"
+            >
+              Remove
+            </button>
+          </div>
         </div>
         
         @if (itemGroup.get('sku')?.invalid && itemGroup.get('sku')?.touched) {
