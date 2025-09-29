@@ -120,7 +120,7 @@ export class WorkflowsRepository {
 
     async listTesters(workflowId: number, tenantId: number) {
         const rows = await this.database
-            .select({ id: users.id, user_name: users.user_name, email: users.email })
+            .select({ id: users.id, user_name: users.user_name })
             .from(users)
             .where(and(eq(users.workflow_id, workflowId), eq(users.tenant_id, tenantId)) as any)
         return rows

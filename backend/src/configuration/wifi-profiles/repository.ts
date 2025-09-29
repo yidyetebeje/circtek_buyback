@@ -80,7 +80,7 @@ export class WiFiProfilesRepository {
 
     async listTesters(wifiProfileId: number, tenantId: number) {
         const rows = await this.database
-            .select({ id: users.id, user_name: users.user_name, name: users.name, email: users.email })
+            .select({ id: users.id, user_name: users.user_name, name: users.name })
             .from(users)
             .where(and(eq(users.wifi_profile_id, wifiProfileId), eq(users.tenant_id, tenantId)) as any)
         return rows

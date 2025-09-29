@@ -85,7 +85,7 @@ export class OtaUpdatesRepository {
 
     async listTesters(otaUpdateId: number, tenantId: number) {
         const rows = await this.database
-            .select({ id: users.id, user_name: users.user_name, name: users.name, email: users.email })
+            .select({ id: users.id, user_name: users.user_name, name: users.name})
             .from(users)
             .where(and(eq(users.ota_update_id, otaUpdateId), eq(users.tenant_id, tenantId)) as any)
         return rows
