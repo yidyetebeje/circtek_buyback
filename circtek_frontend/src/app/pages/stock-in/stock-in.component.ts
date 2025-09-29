@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Search, RotateCcw, Save } from 'lucide-angular';
+import { LucideAngularModule, Search, RotateCcw, Save, Check } from 'lucide-angular';
 import { StockInService, Device, Grade, Warehouse, StockInRequest, GradeHistoryRecord } from '../../services/stock-in.service';
 import { BarcodeScannerComponent, ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 
@@ -122,18 +122,24 @@ import { BarcodeScannerComponent, ScanResult } from '../../shared/components/bar
                     <span>Loading grades...</span>
                   </div>
                 } @else {
-                  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
                     @for (grade of grades(); track grade.id) {
                       <button
                         type="button"
-                        class="grade-card p-4 rounded-lg border-2 transition-all duration-200 hover:scale-105"
+                        class="grade-card relative p-5 rounded-xl border-2 transition-all duration-200 hover:scale-105 h-36 "
                         [class.selected]="selectedGradeId() === grade.id"
                         [style.background-color]="grade.color"
                         [style.border-color]="selectedGradeId() === grade.id ? '#1f2937' : 'transparent'"
+                        [style.border-width.px]="selectedGradeId() === grade.id ? 3 : 2"
                         (click)="selectGrade(grade.id)"
                       >
+                        @if (selectedGradeId() === grade.id) {
+                          <div class="absolute top-2 right-2 bg-base-100/90 text-base-content rounded-full p-1 shadow">
+                            <lucide-icon [img]="Check" class="size-4"></lucide-icon>
+                          </div>
+                        }
                         <div class="text-center">
-                          <div class="text-white font-bold text-sm drop-shadow-lg">
+                          <div class="text-white font-bold text-base drop-shadow-lg">
                             {{ grade.name }}
                           </div>
                         </div>
@@ -267,6 +273,7 @@ export class StockInComponent {
   protected readonly Search = Search;
   protected readonly RotateCcw = RotateCcw;
   protected readonly Save = Save;
+  protected readonly Check = Check;
 
   constructor() {
     // Load initial data

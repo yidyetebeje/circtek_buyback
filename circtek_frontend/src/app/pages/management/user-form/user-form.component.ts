@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors, FormControl } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../../shared/components/generic-form-page/generic-form-page.component';
 import { GenericModalComponent, type ModalAction } from '../../../shared/components/generic-modal/generic-modal.component';
@@ -10,6 +10,7 @@ import { ToastrService } from 'ngx-toastr';
 import { ToastService } from '../../../core/services/toast.service';
 import { User } from '../../../core/models/user';
 import { HttpParams } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-user-form',
@@ -52,6 +53,48 @@ export class UserFormComponent {
     }
     return this.loading();
   });
+
+  // Ensure the tenant control exists (added when user becomes super admin after async auth load)
+  private ensureTenantControlExists() {
+    const form = this.userForm();
+    if (!form.get('tenant_id')) {
+      form.addControl('tenant_id', new FormControl<number | null>(null, [Validators.required]));
+    }
+  }
+
+  // Attach or reattach subscription to tenant selection changes
+  private attachTenantValueChangesSubscription() {
+    // Cleanup previous subscription to avoid duplicates
+    if (this.tenantValueChangesSub) {
+      this.tenantValueChangesSub.unsubscribe();
+      this.tenantValueChangesSub = null;
+    }
+
+    const tenantControl = this.userForm().get('tenant_id');
+    if (!tenantControl) return;
+
+    this.tenantValueChangesSub = tenantControl.valueChanges.subscribe((tenantId: number | null) => {
+      // Update selected tenant signal for reactivity
+      this.selectedTenantId.set(tenantId || null);
+
+      // Clear any warehouse errors when tenant changes
+      this.warehousesError.set(null);
+      // Reset selected warehouse when tenant changes
+      this.userForm().patchValue({ warehouse_id: null }, { emitEvent: false });
+
+      // Update warehouse field validation based on tenant selection
+      this.updateWarehouseFieldValidation();
+
+      // Only load warehouses if a tenant is selected
+      if (tenantId) {
+        this.loadWarehousesForTenant(tenantId);
+      } else {
+        // Clear warehouses if no tenant is selected
+        this.warehouseOptions.set([]);
+        this.warehousesLoading.set(false);
+      }
+    });
+  }
   
   // Show message when tenant is selected but no warehouses are available
   showNoWarehousesMessage = computed(() => {
@@ -69,6 +112,9 @@ export class UserFormComponent {
   
   // Track selected tenant for reactivity
   selectedTenantId = signal<number | null>(null);
+
+  // Subscriptions
+  private tenantValueChangesSub: Subscription | null = null;
 
   // Guards
   isSuperAdmin = computed(() => this.auth.currentUser()?.role_id === 1);
@@ -178,29 +224,12 @@ export class UserFormComponent {
     // Load options
     this.loadRoleOptions();
     if (this.isSuperAdmin()) {
-      this.loadTenantOptions();
-      // React to tenant changes to reload warehouses
-      this.userForm().get('tenant_id')?.valueChanges.subscribe((tenantId) => {
-        // Update selected tenant signal for reactivity
-        this.selectedTenantId.set(tenantId || null);
-        
-        // Clear any warehouse errors when tenant changes
-        this.warehousesError.set(null);
-        // Reset selected warehouse when tenant changes
-        this.userForm().patchValue({ warehouse_id: null }, { emitEvent: false });
-        
-        // Update warehouse field validation based on tenant selection
-        this.updateWarehouseFieldValidation();
-        
-        // Only load warehouses if a tenant is selected
-        if (tenantId) {
-          this.loadWarehousesForTenant(tenantId);
-        } else {
-          // Clear warehouses if no tenant is selected
-          this.warehouseOptions.set([]);
-          this.warehousesLoading.set(false);
-        }
-      });
+      // Ensure tenant control exists and subscribe safely
+      this.ensureTenantControlExists();
+      if (this.tenantOptions().length === 0 && !this.tenantsLoading()) {
+        this.loadTenantOptions();
+      }
+      this.attachTenantValueChangesSubscription();
     } else {
       // Non super_admin: load warehouses for current tenant
       this.loadWarehousesForTenant();
@@ -211,6 +240,20 @@ export class UserFormComponent {
       const userId = this.userId();
       if (userId) {
         this.loadUser(userId);
+      }
+    });
+
+    // React when currentUser arrives asynchronously or when the form is recreated
+    effect(() => {
+      const superAdmin = this.isSuperAdmin();
+      // Track form identity to reattach subscriptions after form recreation
+      this.userForm();
+      if (superAdmin) {
+        this.ensureTenantControlExists();
+        if (this.tenantOptions().length === 0 && !this.tenantsLoading()) {
+          this.loadTenantOptions();
+        }
+        this.attachTenantValueChangesSubscription();
       }
     });
   }
