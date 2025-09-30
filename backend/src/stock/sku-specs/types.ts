@@ -20,6 +20,7 @@ export const SkuSpecsCreate = t.Object({
 })
 
 export const SkuSpecsUpdate = t.Object({
+  sku: t.Optional(t.String()),
   make: t.Optional(t.String()),
   model_no: t.Optional(t.String()),
   model_name: t.Optional(t.String()),

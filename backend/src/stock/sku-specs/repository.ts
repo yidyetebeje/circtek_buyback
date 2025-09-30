@@ -161,6 +161,7 @@ export class SkuSpecsRepository {
   }
 
   async updateSkuSpecs(id: number, updates: SkuSpecsUpdateInput, tenant_id?: number): Promise<SkuSpecsRecord | undefined> {
+    console.log("update sku", updates)
     const conditions = [eq(sku_specs.id, id)];
     if (typeof tenant_id === 'number') {
       conditions.push(eq(sku_specs.tenant_id, tenant_id));
