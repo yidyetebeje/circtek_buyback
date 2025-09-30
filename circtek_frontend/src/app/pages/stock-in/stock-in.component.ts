@@ -31,6 +31,7 @@ import { BarcodeScannerComponent, ScanResult } from '../../shared/components/bar
                   [enableCamera]="true"
                   [autoClear]="false"
                   (scanned)="onBarcodeScanned($event)"
+                  (inputChanged)="onInputChanged($event)"
                 />
               </div>
               <div class="flex gap-2 items-start" style="padding-top: 1.75rem;">
@@ -291,6 +292,10 @@ export class StockInComponent {
   protected onBarcodeScanned(result: ScanResult) {
     this.searchValue.set(result.value);
     this.searchDevice(result.value);
+  }
+
+  protected onInputChanged(value: string) {
+    this.searchValue.set(value);
   }
 
   protected onSearchSubmit() {

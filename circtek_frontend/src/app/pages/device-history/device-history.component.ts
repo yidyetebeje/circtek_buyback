@@ -52,6 +52,10 @@ export class DeviceHistoryComponent {
     this.searchDeviceHistory(result.value);
   }
 
+  protected onInputChanged(value: string) {
+    this.searchValue.set(value);
+  }
+
   protected toggleViewMode() {
     this.viewMode.update(mode => mode === 'timeline' ? 'table' : 'timeline');
   }

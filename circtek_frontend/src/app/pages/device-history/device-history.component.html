@@ -20,6 +20,7 @@
               [enableCamera]="true"
               [autoClear]="false"
               (scanned)="onBarcodeScanned($event)"
+              (inputChanged)="onInputChanged($event)"
             />
           </div>
           <div class="flex gap-2 items-start" style="padding-top: 1.75rem;">
