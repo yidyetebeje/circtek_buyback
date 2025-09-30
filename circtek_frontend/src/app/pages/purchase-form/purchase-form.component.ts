@@ -126,6 +126,7 @@ export class PurchaseFormComponent implements OnInit {
       label: 'Warehouse',
       type: 'select',
       required: true,
+      placeholder: 'Select Warehouse',
       options: this.warehouses()
     },
     {
@@ -362,7 +363,7 @@ export class PurchaseFormComponent implements OnInit {
         PurchaseFormComponent.whitespaceValidator,
         PurchaseFormComponent.maxLengthWithTrim(100)
       ]],
-      warehouse_id: ['', [Validators.required]],
+      warehouse_id: [null, [Validators.required]],
       remarks: ['', [
         PurchaseFormComponent.whitespaceValidator,
         PurchaseFormComponent.maxLengthWithTrim(500)
@@ -381,8 +382,6 @@ export class PurchaseFormComponent implements OnInit {
       ]]
     });
   }
-
-
 
   onSubmit(): void {
     // Mark all form fields as touched to show validation errors

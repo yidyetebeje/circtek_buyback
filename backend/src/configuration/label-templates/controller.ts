@@ -50,14 +50,22 @@ export class LabelTemplatesController {
         return { data: { id }, message: 'Deleted', status: 200 }
     }
 
-    async assignToUser(labelTemplateId: number, userId: number, tenantId: number, actorId: number): Promise<response<{ user_id: number; label_template_id: number } | null>> {
+    async assignToUser(labelTemplateId: number, userId: number, tenantId: number, actorId: number, currentRole?: string): Promise<response<{ user_id: number; label_template_id: number } | null>> {
+        if (currentRole === 'super_admin') {
+            await this.repo.setUserLabelTemplate(userId, labelTemplateId)
+            return { data: { user_id: userId, label_template_id: labelTemplateId }, message: 'Assigned', status: 200 }
+        }
         const allowed = await this.repo.ensureSameTenantForUserAndLabel(userId, labelTemplateId, tenantId)
         if (!allowed) return { data: null, message: 'Forbidden: tenants mismatch', status: 403 }
         await this.repo.setUserLabelTemplate(userId, labelTemplateId)
         return { data: { user_id: userId, label_template_id: labelTemplateId }, message: 'Assigned', status: 200 }
     }
 
-    async unassignFromUser(labelTemplateId: number, userId: number, tenantId: number, actorId: number): Promise<response<{ user_id: number; label_template_id: null } | null>> {
+    async unassignFromUser(labelTemplateId: number, userId: number, tenantId: number, actorId: number, currentRole?: string): Promise<response<{ user_id: number; label_template_id: null } | null>> {
+        if (currentRole === 'super_admin') {
+            await this.repo.setUserLabelTemplate(userId, null)
+            return { data: { user_id: userId, label_template_id: null }, message: 'Unassigned', status: 200 }
+        }
         const allowed = await this.repo.ensureSameTenantForUserAndLabel(userId, labelTemplateId, tenantId)
         if (!allowed) return { data: null, message: 'Forbidden: tenants mismatch', status: 403 }
         await this.repo.setUserLabelTemplate(userId, null)

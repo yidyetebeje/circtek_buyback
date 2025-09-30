@@ -50,14 +50,22 @@ export class WorkflowsController {
         return { data: { id }, message: 'Deleted', status: 200 }
     }
 
-    async assignToUser(workflowId: number, userId: number, tenantId: number, actorId: number): Promise<response<{ user_id: number; workflow_id: number } | null>> {
+    async assignToUser(workflowId: number, userId: number, tenantId: number, actorId: number, currentRole?: string): Promise<response<{ user_id: number; workflow_id: number } | null>> {
+        if (currentRole === 'super_admin') {
+            await this.repo.setUserWorkflow(userId, workflowId)
+            return { data: { user_id: userId, workflow_id: workflowId }, message: 'Assigned', status: 200 }
+        }
         const allowed = await this.repo.ensureSameTenantForUserAndWorkflow(userId, workflowId, tenantId)
         if (!allowed) return { data: null, message: 'Forbidden: tenants mismatch', status: 403 }
         await this.repo.setUserWorkflow(userId, workflowId)
         return { data: { user_id: userId, workflow_id: workflowId }, message: 'Assigned', status: 200 }
     }
 
-    async unassignFromUser(workflowId: number, userId: number, tenantId: number, actorId: number): Promise<response<{ user_id: number; workflow_id: null } | null>> {
+    async unassignFromUser(workflowId: number, userId: number, tenantId: number, actorId: number, currentRole?: string): Promise<response<{ user_id: number; workflow_id: null } | null>> {
+        if (currentRole === 'super_admin') {
+            await this.repo.setUserWorkflow(userId, null)
+            return { data: { user_id: userId, workflow_id: null }, message: 'Unassigned', status: 200 }
+        }
         const allowed = await this.repo.ensureSameTenantForUserAndWorkflow(userId, workflowId, tenantId)
         if (!allowed) return { data: null, message: 'Forbidden: tenants mismatch', status: 403 }
         await this.repo.setUserWorkflow(userId, null)

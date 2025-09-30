@@ -35,14 +35,22 @@ export class OtaUpdatesController {
         return { data: { id }, message: 'Deleted', status: 200 }
     }
 
-    async assignToUser(otaUpdateId: number, userId: number, tenantId: number, actorId: number): Promise<response<{ user_id: number; ota_update_id: number } | null>> {
+    async assignToUser(otaUpdateId: number, userId: number, tenantId: number, actorId: number, currentRole?: string): Promise<response<{ user_id: number; ota_update_id: number } | null>> {
+        if (currentRole === 'super_admin') {
+            await this.repo.setUserOtaUpdate(userId, otaUpdateId)
+            return { data: { user_id: userId, ota_update_id: otaUpdateId }, message: 'Assigned', status: 200 }
+        }
         const allowed = await this.repo.ensureSameTenantForUserAndOta(userId, otaUpdateId, tenantId)
         if (!allowed) return { data: null, message: 'Forbidden: tenants mismatch', status: 403 }
         await this.repo.setUserOtaUpdate(userId, otaUpdateId)
         return { data: { user_id: userId, ota_update_id: otaUpdateId }, message: 'Assigned', status: 200 }
     }
 
-    async unassignFromUser(otaUpdateId: number, userId: number, tenantId: number, actorId: number): Promise<response<{ user_id: number; ota_update_id: null } | null>> {
+    async unassignFromUser(otaUpdateId: number, userId: number, tenantId: number, actorId: number, currentRole?: string): Promise<response<{ user_id: number; ota_update_id: null } | null>> {
+        if (currentRole === 'super_admin') {
+            await this.repo.setUserOtaUpdate(userId, null)
+            return { data: { user_id: userId, ota_update_id: null }, message: 'Unassigned', status: 200 }
+        }
         const allowed = await this.repo.ensureSameTenantForUserAndOta(userId, otaUpdateId, tenantId)
         if (!allowed) return { data: null, message: 'Forbidden: tenants mismatch', status: 403 }
         await this.repo.setUserOtaUpdate(userId, null)

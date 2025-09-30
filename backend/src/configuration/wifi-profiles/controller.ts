@@ -35,14 +35,22 @@ export class WiFiProfilesController {
         return { data: { id }, message: 'Deleted', status: 200 }
     }
 
-    async assignToUser(wifiProfileId: number, userId: number, tenantId: number, actorId: number): Promise<response<{ user_id: number; wifi_profile_id: number } | null>> {
+    async assignToUser(wifiProfileId: number, userId: number, tenantId: number, actorId: number, currentRole?: string): Promise<response<{ user_id: number; wifi_profile_id: number } | null>> {
+        if (currentRole === 'super_admin') {
+            await this.repo.setUserWiFiProfile(userId, wifiProfileId)
+            return { data: { user_id: userId, wifi_profile_id: wifiProfileId }, message: 'Assigned', status: 200 }
+        }
         const allowed = await this.repo.ensureSameTenantForUserAndWiFi(userId, wifiProfileId, tenantId)
         if (!allowed) return { data: null, message: 'Forbidden: tenants mismatch', status: 403 }
         await this.repo.setUserWiFiProfile(userId, wifiProfileId)
         return { data: { user_id: userId, wifi_profile_id: wifiProfileId }, message: 'Assigned', status: 200 }
     }
 
-    async unassignFromUser(wifiProfileId: number, userId: number, tenantId: number, actorId: number): Promise<response<{ user_id: number; wifi_profile_id: null } | null>> {
+    async unassignFromUser(wifiProfileId: number, userId: number, tenantId: number, actorId: number, currentRole?: string): Promise<response<{ user_id: number; wifi_profile_id: null } | null>> {
+        if (currentRole === 'super_admin') {
+            await this.repo.setUserWiFiProfile(userId, null)
+            return { data: { user_id: userId, wifi_profile_id: null }, message: 'Unassigned', status: 200 }
+        }
         const allowed = await this.repo.ensureSameTenantForUserAndWiFi(userId, wifiProfileId, tenantId)
         if (!allowed) return { data: null, message: 'Forbidden: tenants mismatch', status: 403 }
         await this.repo.setUserWiFiProfile(userId, null)

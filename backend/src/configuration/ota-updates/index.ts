@@ -34,12 +34,12 @@ export const ota_updates_routes = new Elysia({ prefix: '/ota-updates' })
         return controller.delete(Number(params.id), Number(currentTenantId))
     }, { detail: { tags: ['Configuration'], summary: 'Delete OTA update (tenant-scoped)' } })
     .post('/:id/assign/:userId', async (ctx) => {
-        const { params, currentTenantId, currentUserId } = ctx as any
-        return controller.assignToUser(Number(params.id), Number(params.userId), Number(currentTenantId), Number(currentUserId))
+        const { params, currentTenantId, currentUserId, currentRole } = ctx as any
+        return controller.assignToUser(Number(params.id), Number(params.userId), Number(currentTenantId), Number(currentUserId), currentRole)
     }, { detail: { tags: ['Configuration'], summary: 'Assign OTA update to tester (tenant-guarded)' } })
     .post('/:id/unassign/:userId', async (ctx) => {
-        const { params, currentTenantId, currentUserId } = ctx as any
-        return controller.unassignFromUser(Number(params.id), Number(params.userId), Number(currentTenantId), Number(currentUserId))
+        const { params, currentTenantId, currentUserId, currentRole } = ctx as any
+        return controller.unassignFromUser(Number(params.id), Number(params.userId), Number(currentTenantId), Number(currentUserId), currentRole)
     }, { detail: { tags: ['Configuration'], summary: 'Unassign OTA update from tester (tenant-guarded)' } })
     .get('/:id/testers', async (ctx) => {
         const { params, currentTenantId, currentRole, query } = ctx as any
