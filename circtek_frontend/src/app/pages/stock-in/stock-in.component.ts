@@ -33,7 +33,7 @@ import { BarcodeScannerComponent, ScanResult } from '../../shared/components/bar
                   (scanned)="onBarcodeScanned($event)"
                 />
               </div>
-              <div class="flex gap-2 items-end">
+              <div class="flex gap-2 items-start" style="padding-top: 1.75rem;">
                 <button
                   type="button"
                   (click)="onSearchSubmit()"

@@ -1,3 +1,11 @@
+/* Wrapper to maintain consistent height for external button alignment */
+.barcode-scanner-wrapper {
+  display: flex;
+  flex-direction: column;
+  /* Export the input height for parent components to align external buttons */
+  --scanner-input-height: 3rem; /* DaisyUI input height */
+}
+
 .scanner-input {
   transition: all 0.2s ease-in-out;
 }
