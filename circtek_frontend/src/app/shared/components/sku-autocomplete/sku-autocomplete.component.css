@@ -139,13 +139,15 @@
 }
 
 .badge-part {
-  background-color: oklch(var(--in) / 0.2);
+  background-color: oklch(var(--in) / 0.15);
   color: oklch(var(--in));
+  border: 1px solid oklch(var(--in) / 0.3);
 }
 
 .badge-device {
-  background-color: oklch(var(--su) / 0.2);
+  background-color: oklch(var(--su) / 0.15);
   color: oklch(var(--su));
+  border: 1px solid oklch(var(--su) / 0.3);
 }
 
 .create-option {

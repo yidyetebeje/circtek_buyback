@@ -66,6 +66,7 @@ export class TransferFormComponent {
       label: 'From Warehouse',
       type: 'select',
       required: true,
+      placeholder: 'Select warehouse',
       options: this.warehouseOptions()
     },
     {
@@ -73,6 +74,7 @@ export class TransferFormComponent {
       label: 'To Warehouse',
       type: 'select',
       required: true,
+      placeholder: 'Select warehouse',
       options: this.warehouseOptions()
     },
     {

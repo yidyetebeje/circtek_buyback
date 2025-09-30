@@ -215,6 +215,15 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
   updateFacet(key: string, value: string) {
     const next = { ...this.facetModel() };
     next[key] = value;
+    // If updating a start_date, ensure paired end_date is not before or equal to it
+    if (key.endsWith('start_date')) {
+      const endKey = key.replace('start_date', 'end_date');
+      const endVal = next[endKey];
+      // Values are expected as YYYY-MM-DD; lexical compare works
+      if (endVal && value && endVal <= value) {
+        next[endKey] = '';
+      }
+    }
     this.facetModel.set(next);
   }
 
@@ -228,6 +237,33 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
 
   isSelectFacet(f: Facet): f is SelectFacet {
     return f.type === 'select';
+  }
+
+  // Date helpers for template
+  datePlusDays(dateStr: string, days: number): string {
+    if (!dateStr) return '';
+    // dateStr expected in YYYY-MM-DD
+    const d = new Date(`${dateStr}T00:00:00`);
+    if (isNaN(d.getTime())) return dateStr;
+    d.setDate(d.getDate() + days);
+    const y = d.getFullYear();
+    const m = `${d.getMonth() + 1}`.padStart(2, '0');
+    const day = `${d.getDate()}`.padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  minDateForFacet(f: Facet): string | null {
+    // Only apply to text facets with date input type
+    if (f.type !== 'text') return null;
+    const inputType = (f as TextFacet).inputType ?? 'text';
+    if (inputType !== 'date') return null;
+    const key = f.key;
+    if (!key.endsWith('end_date')) return null;
+    const startKey = key.replace('end_date', 'start_date');
+    const startVal = this.facetModel()[startKey];
+    if (!startVal) return null;
+    // Enforce that End Date must be AFTER Start Date (min = start + 1 day)
+    return this.datePlusDays(startVal, 1);
   }
 
   // Header/cell helpers to avoid TS syntax in templates

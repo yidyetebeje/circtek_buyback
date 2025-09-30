@@ -102,17 +102,19 @@
 
         <!-- Part Fields (only for parts) -->
         @if (isPartItem()) {
-          <!-- SKU Field -->
+          <!-- SKU Field with Autocomplete -->
           <div class="form-control">
             <label class="label">
               <span class="label-text font-medium">SKU <span class="text-error">*</span></span>
             </label>
-            <input
-              type="text"
-              formControlName="sku"
-              class="input input-bordered w-full"
-              [class.input-error]="isFieldInvalid('sku')"
-              placeholder="e.g., IPH-14-128-BLK"
+            <app-sku-autocomplete
+              [value]="selectedSku()"
+              [placeholder]="'Search or enter part SKU...'"
+              [required]="true"
+              [isPart]="true"
+              (valueChange)="onSkuChange($event)"
+              (skuSelected)="onSkuSelected($event)"
+              (createNew)="onCreateNewSku($event)"
             />
             @if (isFieldInvalid('sku')) {
               <div class="label">
@@ -145,3 +147,11 @@
 
   </form>
 </app-generic-modal>
+
+<!-- SKU Specs Creation Modal -->
+<app-sku-specs-create-modal
+  [isOpen]="isSkuCreateModalOpen()"
+  [suggestedSku]="suggestedSku()"
+  (close)="onSkuCreateModalClose()"
+  (created)="onSkuCreated($event)"
+/>

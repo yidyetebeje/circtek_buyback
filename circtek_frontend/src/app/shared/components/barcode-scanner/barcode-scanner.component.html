@@ -37,7 +37,7 @@
           [placeholder]="placeholder()"
           [disabled]="disabled() || searching()"
           [class]="getInputClasses()"
-          [style.padding-left]="enableCamera() && hasCamera() ? '2.5rem' : '0.75rem'"
+          [style.padding-left]="enableCamera() && hasCamera() ? '3.5rem' : '0.75rem'"
           [style.padding-right]="'2.5rem'"
           (input)="onInputChange($event)"
           (keydown)="onInputKeyDown($event)"
@@ -107,7 +107,7 @@
         [placeholder]="placeholder()"
         [disabled]="disabled()"
         [class]="getInputClasses()"
-        [style.padding-left]="enableCamera() && hasCamera() ? '2.5rem' : '0.75rem'"
+        [style.padding-left]="enableCamera() && hasCamera() ? '3.5rem' : '0.75rem'"
         [style.padding-right]="inputValue() ? '2.5rem' : '0.75rem'"
         (input)="onInputChange($event)"
         (keydown)="onInputKeyDown($event)"
@@ -116,11 +116,12 @@
       />
 
       <!-- Clear button -->
-      @if (inputValue()) {
+      @if (inputValue() && !isScanning() && !isCameraScanning()) {
         <button
           type="button"
-          class="absolute right-6 top-1/2 transform -translate-y-1/2 z-10 btn btn-ghost btn-xs"
+          class="clear-btn"
           (click)="clear()"
+          (mousedown)="$event.preventDefault()"
           [disabled]="disabled()"
           title="Clear input"
         >

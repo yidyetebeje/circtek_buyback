@@ -45,6 +45,16 @@ export class RepairComponent {
   selectedWarehouseId = signal<number | null>(null); // dead-imei and analytics
   repairReasonStatus = signal<'any' | 'true' | 'false'>('any'); // repair-reasons
   
+  // Validation
+  dateRangeError = computed<string | null>(() => {
+    if (this.activeTab() !== 'repairs') return null;
+    const s = this.startDate();
+    const e = this.endDate();
+    if (!s || !e) return null;
+    // Facet inputType is 'date', which yields YYYY-MM-DD values; lexical compare is safe
+    return s > e ? 'Start Date cannot be later than End Date.' : null;
+  });
+  
   // Analytics filters
   periodDays = signal<number>(30); // analytics
   analyticsStartDate = signal<string | null>(null); // analytics
@@ -358,8 +368,10 @@ export class RepairComponent {
       const s = this.search().trim(); if (s) query['search'] = s;
       
       if (this.activeTab() === 'repairs') {
-        const startDate = this.startDate(); if (startDate) query['start_date'] = startDate;
-        const endDate = this.endDate(); if (endDate) query['end_date'] = endDate;
+        if (!this.dateRangeError()) {
+          const startDate = this.startDate(); if (startDate) query['start_date'] = startDate;
+          const endDate = this.endDate(); if (endDate) query['end_date'] = endDate;
+        }
       }
       if (this.activeTab() === 'repair-reasons') {
         if (this.repairReasonStatus() !== 'any') query['repair_reason_status'] = this.repairReasonStatus();
@@ -415,6 +427,13 @@ export class RepairComponent {
     const tab = this.activeTab();
 
     if (tab === 'repairs') {
+      // Guard against invalid date range; do not fetch and surface no results
+      if (this.dateRangeError()) {
+        this.data.set([]);
+        this.total.set(0);
+        this.loading.set(false);
+        return;
+      }
       let params = new HttpParams()
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));

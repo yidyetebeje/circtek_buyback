@@ -63,6 +63,7 @@
                         class="input input-sm input-bordered bg-base-50 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 placeholder:text-base-content/50 placeholder:font-normal"
                         [attr.type]="facetInputType(f)" 
                         [placeholder]="facetPlaceholder(f)"
+                        [attr.min]="minDateForFacet(f) ?? null"
                         [ngModel]="facetValue(f.key)" 
                         (ngModelChange)="updateFacet(f.key, $event)" 
                       />

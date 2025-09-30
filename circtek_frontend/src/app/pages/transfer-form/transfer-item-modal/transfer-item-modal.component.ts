@@ -3,6 +3,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { CommonModule } from '@angular/common';
 import { GenericModalComponent, type ModalAction } from '../../../shared/components/generic-modal/generic-modal.component';
 import { BarcodeScannerComponent, type ScanResult } from '../../../shared/components/barcode-scanner/barcode-scanner.component';
+import { SkuAutocompleteComponent, type SkuOption } from '../../../shared/components/sku-autocomplete/sku-autocomplete.component';
+import { SkuSpecsCreateModalComponent } from '../../../shared/components/sku-specs-create-modal/sku-specs-create-modal.component';
 import { ApiService } from '../../../core/services/api.service';
 
 export interface TransferItem {
@@ -15,7 +17,7 @@ export interface TransferItem {
 
 @Component({
   selector: 'app-transfer-item-modal',
-  imports: [CommonModule, ReactiveFormsModule, GenericModalComponent, BarcodeScannerComponent],
+  imports: [CommonModule, ReactiveFormsModule, GenericModalComponent, BarcodeScannerComponent, SkuAutocompleteComponent, SkuSpecsCreateModalComponent],
   templateUrl: './transfer-item-modal.component.html',
   styleUrls: ['./transfer-item-modal.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +42,9 @@ export class TransferItemModalComponent {
   deviceLookupError = signal<string>('');
   foundDevice = signal<any | null>(null);
   formUpdateTrigger = signal<number>(0); // Trigger to force computed updates
+  selectedSku = signal<string>(''); // Track selected SKU for autocomplete
+  isSkuCreateModalOpen = signal<boolean>(false);
+  suggestedSku = signal<string>('');
 
   // Computed
   title = computed(() => this.editingItem() ? 'Edit Item' : 'Add Item');
@@ -94,6 +99,8 @@ export class TransferItemModalComponent {
       // Recreate form when modal opens or editing item changes
       if (isOpen) {
         this.form.set(this.createForm());
+        // Set initial SKU value for autocomplete
+        this.selectedSku.set(item?.sku || '');
         // Set initial form validity after form is created
         setTimeout(() => {
           this.updateFormValiditySignal();
@@ -253,6 +260,7 @@ export class TransferItemModalComponent {
     this.foundDevice.set(null);
     this.deviceLookupError.set('');
     this.deviceLookupLoading.set(false);
+    this.selectedSku.set(''); // Clear selected SKU
     
     // Always reset SKU and device_id, and set quantity to 1
     form.patchValue({
@@ -269,6 +277,40 @@ export class TransferItemModalComponent {
     
     // Ensure template updates under OnPush
     this.cdr.markForCheck();
+  }
+
+  onSkuChange(sku: string): void {
+    this.selectedSku.set(sku);
+    this.form().patchValue({ sku });
+    this.updateFormValiditySignal();
+    this.formUpdateTrigger.set(this.formUpdateTrigger() + 1);
+  }
+
+  onSkuSelected(option: SkuOption): void {
+    this.selectedSku.set(option.sku);
+    this.form().patchValue({ sku: option.sku });
+    this.updateFormValiditySignal();
+    this.formUpdateTrigger.set(this.formUpdateTrigger() + 1);
+  }
+
+  onCreateNewSku(suggestedSku: string): void {
+    this.suggestedSku.set(suggestedSku);
+    this.isSkuCreateModalOpen.set(true);
+  }
+
+  onSkuCreated(createdSku: { sku: string; model_name: string | null; is_part: boolean | null }): void {
+    this.selectedSku.set(createdSku.sku);
+    this.form().patchValue({ 
+      sku: createdSku.sku
+    });
+    this.updateFormValiditySignal();
+    this.formUpdateTrigger.set(this.formUpdateTrigger() + 1);
+    this.isSkuCreateModalOpen.set(false);
+  }
+
+  onSkuCreateModalClose(): void {
+    this.isSkuCreateModalOpen.set(false);
+    this.suggestedSku.set('');
   }
 
   onActionClick(action: string): void {
@@ -297,6 +339,11 @@ export class TransferItemModalComponent {
 
   onClose(): void {
     this.form().reset();
+    this.selectedSku.set('');
+    this.foundDevice.set(null);
+    this.deviceLookupError.set('');
+    this.isSkuCreateModalOpen.set(false);
+    this.suggestedSku.set('');
     this.close.emit();
   }
 

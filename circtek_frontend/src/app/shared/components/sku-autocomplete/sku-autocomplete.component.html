@@ -41,68 +41,85 @@
   }
 
   @if (showDropdown()) {
-    <ul class="menu absolute z-10 mt-1 p-2 shadow bg-base-100 rounded-box w-full max-h-60 overflow-auto focus:outline-none sm:text-sm" role="listbox" id="sku-listbox">
+    <div class="absolute z-50 mt-2 w-full bg-base-100 rounded-lg shadow-xl border border-base-300/50 overflow-hidden" role="listbox" id="sku-listbox">
       @if (loading()) {
-        <li class="p-4 flex justify-center items-center" aria-live="polite">
-          <span class="loading loading-spinner"></span>
-          <span class="ml-3 text-base-content/70">
+        <div class="p-6 flex flex-col items-center justify-center gap-3" aria-live="polite">
+          <span class="loading loading-spinner loading-md text-primary"></span>
+          <span class="text-sm text-base-content/70">
             @if (searchControl.value?.trim()) {
-              Loading results...
+              Searching SKU specs...
             } @else {
               Loading SKU specs...
             }
           </span>
-        </li>
+        </div>
       } @else {
         @if (hasResults()) {
-          @for (option of filteredOptions(); track option.sku; let i = $index) {
-            <li 
-              (click)="selectOption(option)" 
-              [class.active]="highlightedIndex() === i"
-              [id]="'sku-option-' + i"
-              role="option"
-              [attr.aria-selected]="highlightedIndex() === i">
-              <a class="flex justify-between items-center">
-                <div class="truncate">
-                  <span class="font-semibold">{{ option.sku }}</span>
-                  <span class="ml-2 opacity-70">{{ option.model_name || 'No model name' }}</span>
+          <div class="max-h-80 overflow-y-auto">
+            @for (option of filteredOptions(); track option.sku; let i = $index) {
+              <div 
+                (click)="selectOption(option)" 
+                [class.bg-primary/10]="highlightedIndex() === i"
+                [id]="'sku-option-' + i"
+                role="option"
+                [attr.aria-selected]="highlightedIndex() === i"
+                class="px-4 py-3 cursor-pointer hover:bg-base-200/50 transition-colors border-b border-base-300/30 last:border-b-0">
+                <div class="flex flex-col gap-1">
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="font-semibold text-base text-base-content">{{ option.sku }}</span>
+                    <span 
+                      class="badge badge-sm shrink-0"
+                      [ngClass]="getOptionBadgeClass(option)">
+                      {{ getOptionBadgeText(option) }}
+                    </span>
+                  </div>
+                  @if (option.model_name) {
+                    <span class="text-sm text-base-content/60">{{ option.model_name }}</span>
+                  } @else {
+                    <span class="text-sm text-base-content/40 italic">No model name</span>
+                  }
                 </div>
-                <span 
-                  class="badge badge-sm"
-                  [ngClass]="getOptionBadgeClass(option)">
-                  {{ getOptionBadgeText(option) }}
-                </span>
-              </a>
-            </li>
-          }
+              </div>
+            }
+          </div>
         }
 
         @if (showCreateOption()) {
-          <li (click)="createNewSku()" role="option">
-            <a class="flex items-center">
-              <lucide-icon [img]="PlusIcon" class="inline-block h-4 w-4 mr-2"></lucide-icon>
-              <span class="font-semibold">Add this SKU to SKU specs:</span>
-              <span class="ml-1 italic">"{{ searchControl.value }}"</span>
-            </a>
-          </li>
+          <div 
+            (click)="createNewSku()" 
+            role="option"
+            class="px-4 py-3 cursor-pointer hover:bg-primary/5 transition-colors border-t-2 border-primary/20 bg-primary/5">
+            <div class="flex items-center gap-2 text-primary">
+              <lucide-icon [img]="PlusIcon" class="h-5 w-5"></lucide-icon>
+              <div class="flex flex-col">
+                <span class="font-semibold text-sm">Add new SKU to specs</span>
+                <span class="text-xs opacity-80">"{{ searchControl.value }}"</span>
+              </div>
+            </div>
+          </div>
         }
 
         @if (!hasResults() && !showCreateOption()) {
-          <li class="p-4 text-center text-base-content/70 menu-title">
+          <div class="p-8 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-base-content/20 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
             @if (searchControl.value?.trim()) {
-              <span>No SKU specs found</span>
+              <p class="text-base-content/60 font-medium">No SKU specs found</p>
+              <p class="text-base-content/40 text-sm mt-1">Try a different search term</p>
             } @else {
-              <span>No SKU specs available</span>
+              <p class="text-base-content/60 font-medium">No SKU specs available</p>
+              <p class="text-base-content/40 text-sm mt-1">Start typing to search</p>
             }
-          </li>
+          </div>
         }
 
         @if (hasResults() && !searchControl.value?.trim()) {
-          <li class="p-2 text-center text-xs text-base-content/50 border-t">
+          <div class="px-4 py-2 text-center text-xs text-base-content/50 bg-base-200/30 border-t border-base-300/30">
             Showing {{ filteredOptions().length }} of {{ options().length }} SKU specs
-          </li>
+          </div>
         }
       }
-    </ul>
+    </div>
   }
 </div>

@@ -54,3 +54,36 @@
     transform: rotate(360deg);
   }
 }
+
+/* Clear button styling */
+.clear-btn {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  padding: 0.25rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  transition: background-color 0.15s ease;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.clear-btn:hover:not(:disabled) {
+  background-color: hsl(var(--base-300));
+}
+
+.clear-btn:active:not(:disabled) {
+  background-color: hsl(var(--base-content) / 0.1);
+}
+
+.clear-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
