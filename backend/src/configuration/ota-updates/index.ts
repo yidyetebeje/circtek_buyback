@@ -14,7 +14,12 @@ export const ota_updates_routes = new Elysia({ prefix: '/ota-updates' })
         const { currentRole, currentTenantId, query } = ctx as any
         const tenantParam = query?.tenant_id
         const queryTenantId = tenantParam !== undefined ? Number(tenantParam) : undefined
-        return controller.list(queryTenantId, currentRole, Number(currentTenantId))
+        const page = query?.page ? Number(query.page) : 1
+        const limit = query?.limit ? Number(query.limit) : 10
+        const search = query?.search || undefined
+        const sortField = query?.sort || undefined
+        const sortOrder = (query?.order === 'asc' || query?.order === 'desc') ? query.order : 'desc'
+        return controller.list(queryTenantId, currentRole, Number(currentTenantId), page, limit, search, sortField, sortOrder)
     }, { detail: { tags: ['Configuration'], summary: 'List OTA updates (tenant-scoped)' } })
     .post('/', async (ctx) => {
         const { body, currentTenantId } = ctx as any

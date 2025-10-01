@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
       #container
       class="truncated-text-container relative overflow-hidden cursor-pointer group"
       [style.max-width]="maxWidth()"
-      [title]="showTooltip() && isTextTruncated() ? text() : null"
+      [attr.title]="showTooltip() && isTextTruncated() ? text() : null"
     >
       <span 
         #textSpan

@@ -328,7 +328,13 @@
           (input)="onOtaUpdateVersionChange($event)"
           [disabled]="loading()"
           maxlength="50"
+          [class.input-error]="otaUpdateVersionError()"
         />
+        @if (otaUpdateVersionError()) {
+          <div class="mt-1">
+            <span class="text-xs text-error">{{ otaUpdateVersionError() }}</span>
+          </div>
+        }
       </div>
       
       <div class="form-control">
@@ -382,7 +388,7 @@
     
     <div class="form-control">
       <label class="label mb-1">
-        <span class="label-text">Download URL <span class="text-error">*</span></span>
+        <span class="label-text">Download URL <span class="text-error ml-0.5">*</span></span>
       </label>
       <input 
         type="url" 
@@ -391,8 +397,14 @@
         [value]="otaUpdateForm().url"
         (input)="onOtaUpdateUrlChange($event)"
         [disabled]="loading()"
+        [class.input-error]="otaUpdateUrlError()"
       />
-      <div class="label">
+      @if (otaUpdateUrlError()) {
+        <div class="mt-1">
+          <span class="text-xs text-error">{{ otaUpdateUrlError() }}</span>
+        </div>
+      }
+      <div class="label mt-2">
         <span class="label-text-alt text-base-content/60">Enter the full URL where the update file can be downloaded</span>
       </div>
     </div>

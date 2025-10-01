@@ -481,17 +481,17 @@ export class ManagementComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'Version', accessorKey: 'version' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
-          { header: 'Target OS', id: 'target_os_display' as any, enableSorting: false as any, accessorFn: (r: any) => {
+          { header: 'Version', accessorKey: 'version' as any, enableSorting: true, meta: { truncateText: true, truncateMaxWidth: '120px' } },
+          { header: 'Target OS', accessorKey: 'target_os' as any, enableSorting: true, accessorFn: (r: any) => {
             const osMap = { 'window': 'Windows', 'macos': 'macOS' };
             return (osMap as any)[r.target_os] || r.target_os;
           } },
-          { header: 'Architecture', accessorKey: 'target_architecture' as any },
-          { header: 'Channel', id: 'channel_display' as any, enableSorting: false as any, accessorFn: (r: any) => {
+          { header: 'Architecture', accessorKey: 'target_architecture' as any, enableSorting: true },
+          { header: 'Channel', accessorKey: 'release_channel' as any, enableSorting: true, accessorFn: (r: any) => {
             const channelMap = { 'stable': 'Stable', 'beta': 'Beta', 'dev': 'Development' };
             return (channelMap as any)[r.release_channel] || r.release_channel;
           } },
-          { header: 'URL', accessorKey: 'url' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
+          { header: 'URL', accessorKey: 'url' as any, enableSorting: true, meta: { truncateText: true, truncateMaxWidth: '200px' } },
           {
             header: 'Actions',
             id: 'actions' as any,
@@ -828,6 +828,7 @@ export class ManagementComponent {
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
       const s = this.search().trim(); if (s) params = params.set('search', s);
+      if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getOtaUpdates(params).subscribe({
@@ -1508,6 +1509,8 @@ export class ManagementComponent {
     target_architecture: 'x86' as 'x86' | 'arm',
     release_channel: 'stable' as 'stable' | 'beta' | 'dev'
   });
+  otaUpdateVersionError = signal<string | null>(null);
+  otaUpdateUrlError = signal<string | null>(null);
   
   otaUpdateModalActions = computed<ModalAction[]>(() => [
     {
@@ -1518,7 +1521,7 @@ export class ManagementComponent {
     {
       label: this.selectedOtaUpdate() ? 'Update' : 'Create',
       variant: 'primary',
-      disabled: !this.otaUpdateForm().version.trim() || !this.otaUpdateForm().url.trim(),
+      disabled: !this.otaUpdateForm().version.trim() || !this.otaUpdateForm().url.trim() || !!this.otaUpdateVersionError() || !!this.otaUpdateUrlError(),
       action: 'save'
     }
   ]);
@@ -1543,6 +1546,8 @@ export class ManagementComponent {
         release_channel: 'stable'
       });
     }
+    this.otaUpdateVersionError.set(null);
+    this.otaUpdateUrlError.set(null);
     this.isOtaUpdateModalOpen.set(true);
   }
 
@@ -1556,6 +1561,8 @@ export class ManagementComponent {
       target_architecture: 'x86',
       release_channel: 'stable'
     });
+    this.otaUpdateVersionError.set(null);
+    this.otaUpdateUrlError.set(null);
   }
 
   onOtaUpdateModalAction(action: string): void {
@@ -1568,9 +1575,10 @@ export class ManagementComponent {
 
   saveOtaUpdate() {
     const form = this.otaUpdateForm();
-    if (!form.version.trim() || !form.url.trim()) return;
+    if (!form.version.trim() || !form.url.trim() || this.otaUpdateVersionError() || this.otaUpdateUrlError()) return;
 
     this.loading.set(true);
+    const isUpdate = !!this.selectedOtaUpdate();
     const payload = {
       version: form.version.trim(),
       url: form.url.trim(),
@@ -1579,7 +1587,7 @@ export class ManagementComponent {
       release_channel: form.release_channel
     };
 
-    const saveObservable = this.selectedOtaUpdate()
+    const saveObservable = isUpdate
       ? this.api.updateOtaUpdate(this.selectedOtaUpdate()!.id, payload)
       : this.api.createOtaUpdate(payload);
 
@@ -1588,13 +1596,13 @@ export class ManagementComponent {
         this.loading.set(false);
         this.closeOtaUpdateModal();
         this.fetchData(); // Refresh the data
-        const action = this.selectedOtaUpdate() ? 'updated' : 'created';
+        const action = isUpdate ? 'updated' : 'created';
         this.toast.saveSuccess('OTA Update', action);
       },
       error: (error: any) => {
         console.error('Failed to save OTA update:', error);
         this.loading.set(false);
-        const action = this.selectedOtaUpdate() ? 'update' : 'create';
+        const action = isUpdate ? 'update' : 'create';
         this.toast.saveError('OTA Update', action);
       }
     });
@@ -1602,12 +1610,42 @@ export class ManagementComponent {
 
   onOtaUpdateVersionChange(event: Event) {
     const target = event.target as HTMLInputElement;
-    this.otaUpdateForm.update(form => ({ ...form, version: target.value }));
+    const value = target.value;
+    
+    // Validate version format: should be numbers and dots (e.g., 1.0.0, 2.5.1)
+    const versionRegex = /^[0-9.]*$/;
+    if (value && !versionRegex.test(value)) {
+      this.otaUpdateVersionError.set('Version must contain only numbers and dots (e.g., 1.0.0)');
+    } else if (value.trim() && !/^\d+(\.\d+)*$/.test(value.trim())) {
+      this.otaUpdateVersionError.set('Invalid version format. Use format like 1.0.0');
+    } else {
+      this.otaUpdateVersionError.set(null);
+    }
+    
+    this.otaUpdateForm.update(form => ({ ...form, version: value }));
   }
 
   onOtaUpdateUrlChange(event: Event) {
     const target = event.target as HTMLInputElement;
-    this.otaUpdateForm.update(form => ({ ...form, url: target.value }));
+    const value = target.value;
+    
+    // Validate URL format
+    if (value.trim()) {
+      try {
+        const url = new URL(value.trim());
+        if (!url.protocol.startsWith('http')) {
+          this.otaUpdateUrlError.set('URL must start with http:// or https://');
+        } else {
+          this.otaUpdateUrlError.set(null);
+        }
+      } catch {
+        this.otaUpdateUrlError.set('Please enter a valid URL (e.g., https://example.com/update.zip)');
+      }
+    } else {
+      this.otaUpdateUrlError.set(null);
+    }
+    
+    this.otaUpdateForm.update(form => ({ ...form, url: value }));
   }
 
   onOtaUpdateTargetOsChange(event: Event) {

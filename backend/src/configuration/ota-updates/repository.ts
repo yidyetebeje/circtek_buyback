@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, asc, desc, eq, like, or, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { ota_update, users, tenants } from '../../db/circtek.schema'
 import type { OtaUpdateCreateInput, OtaUpdatePublic, OtaUpdateUpdateInput } from './types'
@@ -19,22 +19,73 @@ const otaUpdateSelection = {
 export class OtaUpdatesRepository {
     constructor(private readonly database: typeof db) {}
 
-    async list(tenantId?: number | null): Promise<OtaUpdatePublic[]> {
-        if (tenantId == null) {
-            const rows = await this.database
-                .select(otaUpdateSelection)
-                .from(ota_update)
-                .leftJoin(tenants, eq(ota_update.tenant_id, tenants.id))
-                .orderBy(desc(ota_update.created_at))
-            return rows as any
+    async list(
+        tenantId?: number | null,
+        page: number = 1,
+        limit: number = 10,
+        search?: string,
+        sortField?: string,
+        sortOrder: 'asc' | 'desc' = 'desc'
+    ): Promise<{ data: OtaUpdatePublic[]; total: number }> {
+        // Build where conditions
+        const conditions: any[] = []
+        if (tenantId != null) {
+            conditions.push(eq(ota_update.tenant_id, tenantId))
         }
-        const rows = await this.database
+        if (search) {
+            conditions.push(
+                or(
+                    like(ota_update.version, `%${search}%`),
+                    like(ota_update.url, `%${search}%`)
+                )
+            )
+        }
+
+        const whereClause = conditions.length > 0 ? and(...conditions) : undefined
+
+        // Determine sort column
+        let orderByColumn: any = ota_update.created_at
+        if (sortField === 'version') orderByColumn = ota_update.version
+        else if (sortField === 'target_os') orderByColumn = ota_update.target_os
+        else if (sortField === 'target_architecture') orderByColumn = ota_update.target_architecture
+        else if (sortField === 'release_channel') orderByColumn = ota_update.release_channel
+        else if (sortField === 'url') orderByColumn = ota_update.url
+
+        const orderByFn = sortOrder === 'asc' ? asc : desc
+
+        // Get total count
+        const countQuery = this.database
+            .select({ count: sql<number>`count(*)` })
+            .from(ota_update)
+            .leftJoin(tenants, eq(ota_update.tenant_id, tenants.id))
+        
+        if (whereClause) {
+            countQuery.where(whereClause as any)
+        }
+
+        const [{ count }] = await countQuery
+        const total = Number(count)
+
+        // Get paginated data
+        const offset = (page - 1) * limit
+        const dataQuery = this.database
             .select(otaUpdateSelection)
             .from(ota_update)
             .leftJoin(tenants, eq(ota_update.tenant_id, tenants.id))
-            .where(eq(ota_update.tenant_id, tenantId))
-            .orderBy(desc(ota_update.created_at))
-        return rows as any
+            .limit(limit)
+            .offset(offset)
+            .orderBy(orderByFn(orderByColumn))
+
+        if (whereClause) {
+            dataQuery.where(whereClause as any)
+        }
+
+        const rows = await dataQuery
+
+        return {
+            data: rows as any,
+            total
+        }
     }
 
     async create(payload: OtaUpdateCreateInput & { tenant_id: number }): Promise<OtaUpdatePublic | undefined> {

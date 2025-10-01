@@ -5,11 +5,29 @@ import type { OtaUpdateCreateInput, OtaUpdatePublic, OtaUpdateUpdateInput, Versi
 export class OtaUpdatesController {
     constructor(private readonly repo: OtaUpdatesRepository) {}
 
-    async list(queryTenantId: number | null | undefined, currentRole: string | undefined, currentTenantId: number): Promise<response<OtaUpdatePublic[]>> {
+    async list(
+        queryTenantId: number | null | undefined,
+        currentRole: string | undefined,
+        currentTenantId: number,
+        page: number = 1,
+        limit: number = 10,
+        search?: string,
+        sortField?: string,
+        sortOrder: 'asc' | 'desc' = 'desc'
+    ): Promise<response<OtaUpdatePublic[]>> {
         const hasValidQueryTenant = typeof queryTenantId === 'number' && Number.isFinite(queryTenantId)
         const resolvedTenantId = currentRole === 'super_admin' ? (hasValidQueryTenant ? queryTenantId! : null) : currentTenantId
-        const rows = await this.repo.list(resolvedTenantId)
-        return { data: rows, message: 'OK', status: 200 }
+        const result = await this.repo.list(resolvedTenantId, page, limit, search, sortField, sortOrder)
+        return {
+            data: result.data,
+            message: 'OK',
+            status: 200,
+            meta: {
+                total: result.total,
+                page,
+                limit
+            }
+        } as any
     }
 
     async create(payload: OtaUpdateCreateInput, tenantId: number): Promise<response<OtaUpdatePublic | null>> {
