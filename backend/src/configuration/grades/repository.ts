@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, asc, desc, eq, like, or, sql } from 'drizzle-orm'
 import { db } from '../../db'
 import { grades } from '../../db/circtek.schema'
 import type { GradeCreateInput, GradePublic, GradeUpdateInput } from './types'
@@ -14,13 +14,61 @@ const gradeSelection = {
 export class GradesRepository {
     constructor(private readonly database: typeof db) {}
 
-    async list(tenantId?: number | null): Promise<GradePublic[]> {
-        if (tenantId == null) {
-            const rows = await this.database.select(gradeSelection).from(grades).orderBy(desc(grades.created_at))
-            return rows as any
+    async list(
+        tenantId?: number | null,
+        search?: string,
+        page?: number,
+        limit?: number,
+        sort?: string,
+        order?: 'asc' | 'desc'
+    ): Promise<{ data: GradePublic[]; total: number }> {
+        // Build where conditions
+        const conditions: any[] = []
+        
+        if (tenantId != null) {
+            conditions.push(eq(grades.tenant_id, tenantId))
         }
-        const rows = await this.database.select(gradeSelection).from(grades).where(eq(grades.tenant_id, tenantId)).orderBy(desc(grades.created_at))
-        return rows as any
+        
+        if (search && search.trim()) {
+            conditions.push(
+                or(
+                    like(grades.name, `%${search.trim()}%`),
+                    like(grades.color, `%${search.trim()}%`)
+                )
+            )
+        }
+        
+        const whereClause = conditions.length > 0 ? and(...conditions) : undefined
+        
+        // Get total count
+        const countResult = await this.database
+            .select({ count: sql<number>`count(*)` })
+            .from(grades)
+            .where(whereClause as any)
+        const total = Number(countResult[0]?.count ?? 0)
+        
+        // Build order by
+        let orderByClause: any
+        if (sort === 'name') {
+            orderByClause = order === 'desc' ? desc(grades.name) : asc(grades.name)
+        } else {
+            orderByClause = desc(grades.created_at)
+        }
+        
+        // Build query with pagination
+        const pageNum = page && page > 0 ? page : 1
+        const limitNum = limit && limit > 0 ? limit : 10
+        const offset = (pageNum - 1) * limitNum
+        
+        const rows = await this.database
+            .select(gradeSelection)
+            .from(grades)
+            .where(whereClause as any)
+            .orderBy(orderByClause)
+            .limit(limitNum)
+            .offset(offset)
+        
+        return { data: rows as any, total }
     }
 
     async create(payload: GradeCreateInput & { tenant_id: number }): Promise<GradePublic | undefined> {

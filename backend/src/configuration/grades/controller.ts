@@ -5,11 +5,30 @@ import type { GradeCreateInput, GradePublic, GradeUpdateInput } from './types'
 export class GradesController {
     constructor(private readonly repo: GradesRepository) {}
 
-    async list(queryTenantId: number | null | undefined, currentRole: string | undefined, currentTenantId: number): Promise<response<GradePublic[]>> {
+    async list(
+        queryTenantId: number | null | undefined,
+        currentRole: string | undefined,
+        currentTenantId: number,
+        search?: string,
+        page?: number,
+        limit?: number,
+        sort?: string,
+        order?: 'asc' | 'desc'
+    ): Promise<response<GradePublic[]>> {
         const hasValidQueryTenant = typeof queryTenantId === 'number' && Number.isFinite(queryTenantId)
         const resolvedTenantId = currentRole === 'super_admin' ? (hasValidQueryTenant ? queryTenantId! : null) : currentTenantId
-        const rows = await this.repo.list(resolvedTenantId)
-        return { data: rows, message: 'OK', status: 200 }
+        const result = await this.repo.list(resolvedTenantId, search, page, limit, sort, order)
+        return {
+            data: result.data,
+            message: 'OK',
+            status: 200,
+            meta: {
+                total: result.total,
+                page: page ?? 1,
+                limit: limit ?? 10,
+                totalPages: Math.ceil(result.total / (limit ?? 10))
+            }
+        }
     }
 
     async create(payload: GradeCreateInput, tenantId: number): Promise<response<GradePublic | null>> {

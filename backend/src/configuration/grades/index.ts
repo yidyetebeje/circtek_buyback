@@ -14,7 +14,12 @@ export const grades_routes = new Elysia({ prefix: '/grades' })
         const { currentRole, currentTenantId, query } = ctx as any
         const tenantParam = query?.tenant_id
         const queryTenantId = tenantParam !== undefined ? Number(tenantParam) : undefined
-        return controller.list(queryTenantId, currentRole, Number(currentTenantId))
+        const search = query?.search
+        const page = query?.page ? Number(query.page) : undefined
+        const limit = query?.limit ? Number(query.limit) : undefined
+        const sort = query?.sort
+        const order = query?.order === 'desc' ? 'desc' : 'asc'
+        return controller.list(queryTenantId, currentRole, Number(currentTenantId), search, page, limit, sort, order)
     }, { detail: { tags: ['Grades'], summary: 'List grades (tenant-scoped or all for super_admin)' } })
     .post('/', async (ctx) => {
         const { body, currentTenantId } = ctx as any

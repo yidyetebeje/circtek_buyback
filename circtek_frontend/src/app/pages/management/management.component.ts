@@ -450,7 +450,7 @@ export class ManagementComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Name', accessorKey: 'name' as any, enableSorting: true, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { 
             header: 'Color', 
             id: 'color_display' as any, 
@@ -1404,6 +1404,7 @@ export class ManagementComponent {
   isGradeModalOpen = signal(false);
   selectedGrade = signal<Grade | null>(null);
   gradeForm = signal({ name: '', color: '#000000' });
+  gradeNameError = signal<string | null>(null);
   
   gradeModalActions = computed<ModalAction[]>(() => [
     {
@@ -1414,7 +1415,7 @@ export class ManagementComponent {
     {
       label: this.selectedGrade() ? 'Update' : 'Create',
       variant: 'primary',
-      disabled: !this.gradeForm().name.trim(),
+      disabled: !this.gradeForm().name.trim() || !!this.gradeNameError(),
       action: 'save'
     }
   ]);
@@ -1427,6 +1428,7 @@ export class ManagementComponent {
       this.selectedGrade.set(null);
       this.gradeForm.set({ name: '', color: '#000000' });
     }
+    this.gradeNameError.set(null);
     this.isGradeModalOpen.set(true);
   }
 
@@ -1434,6 +1436,7 @@ export class ManagementComponent {
     this.isGradeModalOpen.set(false);
     this.selectedGrade.set(null);
     this.gradeForm.set({ name: '', color: '#000000' });
+    this.gradeNameError.set(null);
   }
 
   onGradeModalAction(action: string): void {
@@ -1446,12 +1449,13 @@ export class ManagementComponent {
 
   saveGrade() {
     const form = this.gradeForm();
-    if (!form.name.trim()) return;
+    if (!form.name.trim() || this.gradeNameError()) return;
 
     this.loading.set(true);
     const payload = { name: form.name.trim(), color: form.color };
+    const isUpdate = !!this.selectedGrade();
 
-    const saveObservable = this.selectedGrade()
+    const saveObservable = isUpdate
       ? this.api.updateGrade(this.selectedGrade()!.id, payload)
       : this.api.createGrade(payload);
 
@@ -1460,13 +1464,13 @@ export class ManagementComponent {
         this.loading.set(false);
         this.closeGradeModal();
         this.fetchData(); // Refresh the data
-        const action = this.selectedGrade() ? 'updated' : 'created';
+        const action = isUpdate ? 'updated' : 'created';
         this.toast.saveSuccess('Grade', action);
       },
       error: (error: any) => {
         console.error('Failed to save grade:', error);
         this.loading.set(false);
-        const action = this.selectedGrade() ? 'update' : 'create';
+        const action = isUpdate ? 'update' : 'create';
         this.toast.saveError('Grade', action);
       }
     });
@@ -1474,7 +1478,19 @@ export class ManagementComponent {
 
   onGradeNameChange(event: Event) {
     const target = event.target as HTMLInputElement;
-    this.gradeForm.update(form => ({ ...form, name: target.value }));
+    const value = target.value;
+    
+    // Validate: only letters and spaces allowed
+    const nameRegex = /^[a-zA-Z\s]*$/;
+    if (!nameRegex.test(value)) {
+      this.gradeNameError.set('Name must contain only letters and spaces');
+    } else if (value.trim() && value.trim().length < 2) {
+      this.gradeNameError.set('Name must be at least 2 characters');
+    } else {
+      this.gradeNameError.set(null);
+    }
+    
+    this.gradeForm.update(form => ({ ...form, name: value }));
   }
 
   onGradeColorChange(event: Event) {

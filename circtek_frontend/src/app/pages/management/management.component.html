@@ -251,22 +251,33 @@
   <div class="space-y-4">
     <div class="form-control">
       <label class="label mb-1">
-        <span class="label-text">Name <span class="text-error">*</span></span>
+        <span class="label-text inline-flex items-center gap-1">
+          <span>Name</span>
+          <span class="text-error">*</span>
+        </span>
       </label>
       <input 
         type="text" 
         class="input input-accent" 
-        placeholder="Enter grade name"
+        placeholder="Enter grade name (letters only)"
         [value]="gradeForm().name"
         (input)="onGradeNameChange($event)"
         [disabled]="loading()"
         maxlength="100"
       />
+      @if (gradeNameError()) {
+        <div class="label">
+          <span class="label-text-alt text-error">{{ gradeNameError() }}</span>
+        </div>
+      }
     </div>
     
     <div class="form-control">
       <label class="label mb-1">
-        <span class="label-text">Color <span class="text-error">*</span></span>
+        <span class="label-text inline-flex items-center gap-1">
+          <span>Color</span>
+          <span class="text-error">*</span>
+        </span>
       </label>
       <div class="flex items-center gap-3">
         <input 
@@ -275,6 +286,7 @@
           [value]="gradeForm().color"
           (input)="onGradeColorChange($event)"
           [disabled]="loading()"
+          [title]="gradeForm().color"
         />
         <input 
           type="text" 
@@ -284,10 +296,12 @@
           (input)="onGradeColorChange($event)"
           [disabled]="loading()"
           pattern="^#[0-9A-Fa-f]{6}$"
+          [title]="gradeForm().color"
         />
         <div 
           class="w-12 h-12 rounded border-2 border-base-300"
           [style.background-color]="gradeForm().color"
+          [title]="gradeForm().color"
         ></div>
       </div>
       <div class="label">
