@@ -12,7 +12,7 @@
 
   @if (showSearchButton()) {
     <!-- Layout with search button -->
-    <div class="flex gap-3">
+    <div class="flex gap-3 items-start">
       <div class="flex-1">
         <div class="relative">
           <!-- Camera Scanner Button -->
@@ -63,34 +63,32 @@
             </div>
           }
         </div>
-        
-        <!-- Error message with fixed height to prevent layout shift -->
-        <div class="min-h-[1.5rem] mt-1">
-          @if (errorMessage()) {
-            <span class="label-text-alt text-error">{{ errorMessage() }}</span>
-          }
-        </div>
       </div>
       
       <!-- Search Button - aligned to top of input field -->
-      <div class="flex items-start">
-        <button
-          type="button"
-          class="btn btn-primary flex-shrink-0"
-          (click)="onSearchButtonClick()"
-          [disabled]="!inputValue().trim() || searching() || disabled()"
-        >
-          @if (searching()) {
-            <span class="loading loading-spinner loading-sm"></span>
-            Searching...
-          } @else {
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z" />
-            </svg>
-            {{ searchButtonText() }}
-          }
-        </button>
-      </div>
+      <button
+        type="button"
+        class="btn btn-primary flex-shrink-0"
+        (click)="onSearchButtonClick()"
+        [disabled]="!inputValue().trim() || searching() || disabled()"
+      >
+        @if (searching()) {
+          <span class="loading loading-spinner loading-sm"></span>
+          Searching...
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 mr-1">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z" />
+          </svg>
+          {{ searchButtonText() }}
+        }
+      </button>
+    </div>
+    
+    <!-- Error message with fixed height to prevent layout shift - moved outside flex container -->
+    <div class="min-h-[1.5rem] mt-1">
+      @if (errorMessage()) {
+        <span class="label-text-alt text-error">{{ errorMessage() }}</span>
+      }
     </div>
   } @else {
     <!-- Original layout without search button -->

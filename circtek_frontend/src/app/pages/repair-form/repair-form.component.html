@@ -15,7 +15,7 @@
   <div [formGroup]="form()">
   <section class="">
     <!-- Step 1: Warehouse + Identifier scanner (always visible) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
       <div class="md:col-span-1">
         <label class="label"><span class="label-text">Warehouse</span><span class="text-error ml-1">*</span></label>
         <select class="select select-accent w-full" formControlName="warehouse_id">
@@ -25,7 +25,7 @@
       </div>
 
       <div class="md:col-span-2">
-        <div class="flex gap-2 items-end">
+        <div class="flex gap-2 items-start">
           <div class="flex-1">
             <app-barcode-scanner 
               #imeiScanner
@@ -36,8 +36,12 @@
               [disabled]="isImeiScannerDisabled()"
             ></app-barcode-scanner>
           </div>
-          <button type="button" class="btn btn-outline" (click)="fetchDeviceDetails()">Fetch Details</button>
+         
         </div>
+      </div>
+      <div>
+        <label class="label"><span class="label-text"></span><span class="text-error ml-1"></span></label><br/>
+        <button type="button" class="btn btn-outline md:col-span-1"  (click)="fetchDeviceDetails()">Fetch Details</button>
       </div>
     </div>
 
