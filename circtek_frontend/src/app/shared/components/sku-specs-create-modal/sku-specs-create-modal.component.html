@@ -5,10 +5,10 @@
   (actionClick)="onActionClick($event)"
   (close)="onClose()">
   
-  <form [formGroup]="form()" class="sku-specs-form">
+  <form [formGroup]="form()" class="space-y-6">
     @if (error()) {
-      <div class="error-banner">
-        {{ error() }}
+      <div class="alert alert-error">
+        <span>{{ error() }}</span>
       </div>
     }
 
@@ -18,78 +18,96 @@
       
       <div class="form-row">
         <div class="form-group">
-          <label for="sku" class="form-label required">SKU</label>
+          <label for="sku" class="label">
+            <span class="label-text font-medium">SKU <span class="text-error">*</span></span>
+          </label>
           <input
             id="sku"
             type="text"
             formControlName="sku"
-            class="form-input"
-            [class.error]="isFieldInvalid('sku')"
+            class="input input-bordered w-full placeholder:text-base-content/50 placeholder:font-normal"
+            [class.input-error]="isFieldInvalid('sku')"
             placeholder="Enter SKU code"
           />
           @if (isFieldInvalid('sku')) {
-            <span class="error-text">{{ getFieldError('sku') }}</span>
+            <div class="label">
+              <span class="label-text-alt text-error">{{ getFieldError('sku') }}</span>
+            </div>
           }
         </div>
 
         <div class="form-group">
-          <label for="make" class="form-label">Make</label>
+          <label for="make" class="label">
+            <span class="label-text font-medium">Make</span>
+          </label>
           <input
             id="make"
             type="text"
             formControlName="make"
-            class="form-input"
-            [class.error]="isFieldInvalid('make')"
+            class="input input-bordered w-full placeholder:text-base-content/50 placeholder:font-normal"
+            [class.input-error]="isFieldInvalid('make')"
             placeholder="e.g., Apple, Samsung"
           />
           @if (isFieldInvalid('make')) {
-            <span class="error-text">{{ getFieldError('make') }}</span>
+            <div class="label">
+              <span class="label-text-alt text-error">{{ getFieldError('make') }}</span>
+            </div>
           }
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label for="model_no" class="form-label">Model Number</label>
+          <label for="model_no" class="label">
+            <span class="label-text font-medium">Model Number</span>
+          </label>
           <input
             id="model_no"
             type="text"
             formControlName="model_no"
-            class="form-input"
-            [class.error]="isFieldInvalid('model_no')"
+            class="input input-bordered w-full placeholder:text-base-content/50 placeholder:font-normal"
+            [class.input-error]="isFieldInvalid('model_no')"
             placeholder="e.g., A2482, SM-G998B"
           />
           @if (isFieldInvalid('model_no')) {
-            <span class="error-text">{{ getFieldError('model_no') }}</span>
+            <div class="label">
+              <span class="label-text-alt text-error">{{ getFieldError('model_no') }}</span>
+            </div>
           }
         </div>
 
         <div class="form-group">
-          <label for="model_name" class="form-label">Model Name</label>
+          <label for="model_name" class="label">
+            <span class="label-text font-medium">Model Name</span>
+          </label>
           <input
             id="model_name"
             type="text"
             formControlName="model_name"
-            class="form-input"
-            [class.error]="isFieldInvalid('model_name')"
+            class="input input-bordered w-full placeholder:text-base-content/50 placeholder:font-normal"
+            [class.input-error]="isFieldInvalid('model_name')"
             placeholder="e.g., iPhone 15 Pro, Galaxy S24 Ultra"
           />
           @if (isFieldInvalid('model_name')) {
-            <span class="error-text">{{ getFieldError('model_name') }}</span>
+            <div class="label">
+              <span class="label-text-alt text-error">{{ getFieldError('model_name') }}</span>
+            </div>
           }
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="checkbox-label">
+      <div class="form-control">
+        <label class="label cursor-pointer justify-start gap-3">
           <input
             type="checkbox"
             formControlName="is_part"
-            class="checkbox-input"
+            class="checkbox checkbox-primary"
           />
-          <span class="checkbox-text">This is a part/component</span>
-          <span class="checkbox-help">Check if this is a part rather than a complete device</span>
+          <span class="label-text">This is a part/component</span>
         </label>
+        <div class="label">
+          <span class="label-text-alt text-base-content/60">Check if this is a part rather than a complete device</span>
+        </div>
       </div>
     </div>
 
@@ -101,11 +119,13 @@
         
         <div class="form-row">
           <div class="form-group">
-            <label for="device_type" class="form-label">Device Type</label>
+            <label for="device_type" class="label">
+              <span class="label-text font-medium">Device Type</span>
+            </label>
             <select
               id="device_type"
               formControlName="device_type"
-              class="form-select select select-sm select-accent">
+              class="select select-accent w-full">
               <option value="">Select device type</option>
               <option value="iPhone">iPhone</option>
               <option value="Android">Android</option>
@@ -115,49 +135,61 @@
           </div>
 
           <div class="form-group">
-            <label for="storage" class="form-label">Storage</label>
+            <label for="storage" class="label">
+              <span class="label-text font-medium">Storage</span>
+            </label>
             <input
               id="storage"
               type="text"
               formControlName="storage"
-              class="form-input"
-              [class.error]="isFieldInvalid('storage')"
+              class="input input-bordered w-full placeholder:text-base-content/50 placeholder:font-normal"
+              [class.input-error]="isFieldInvalid('storage')"
               placeholder="e.g., 128GB, 256GB"
             />
             @if (isFieldInvalid('storage')) {
-              <span class="error-text">{{ getFieldError('storage') }}</span>
+              <div class="label">
+                <span class="label-text-alt text-error">{{ getFieldError('storage') }}</span>
+              </div>
             }
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="memory" class="form-label">Memory</label>
+            <label for="memory" class="label">
+              <span class="label-text font-medium">Memory</span>
+            </label>
             <input
               id="memory"
               type="text"
               formControlName="memory"
-              class="form-input"
-              [class.error]="isFieldInvalid('memory')"
+              class="input input-bordered w-full placeholder:text-base-content/50 placeholder:font-normal"
+              [class.input-error]="isFieldInvalid('memory')"
               placeholder="e.g., 8GB, 12GB"
             />
             @if (isFieldInvalid('memory')) {
-              <span class="error-text">{{ getFieldError('memory') }}</span>
+              <div class="label">
+                <span class="label-text-alt text-error">{{ getFieldError('memory') }}</span>
+              </div>
             }
           </div>
 
           <div class="form-group">
-            <label for="color" class="form-label">Color</label>
+            <label for="color" class="label">
+              <span class="label-text font-medium">Color</span>
+            </label>
             <input
               id="color"
               type="text"
               formControlName="color"
-              class="form-input"
-              [class.error]="isFieldInvalid('color')"
+              class="input input-bordered w-full placeholder:text-base-content/50 placeholder:font-normal"
+              [class.input-error]="isFieldInvalid('color')"
               placeholder="e.g., Space Gray, Midnight Blue"
             />
             @if (isFieldInvalid('color')) {
-              <span class="error-text">{{ getFieldError('color') }}</span>
+              <div class="label">
+                <span class="label-text-alt text-error">{{ getFieldError('color') }}</span>
+              </div>
             }
           </div>
         </div>
@@ -166,16 +198,18 @@
 
     <!-- Status -->
     <div class="form-section">
-      <div class="form-group">
-        <label class="checkbox-label">
+      <div class="form-control">
+        <label class="label cursor-pointer justify-start gap-3">
           <input
             type="checkbox"
             formControlName="status"
-            class="checkbox-input"
+            class="checkbox checkbox-primary"
           />
-          <span class="checkbox-text">Active</span>
-          <span class="checkbox-help">Uncheck to create as inactive</span>
+          <span class="label-text">Active</span>
         </label>
+        <div class="label">
+          <span class="label-text-alt text-base-content/60">Uncheck to create as inactive</span>
+        </div>
       </div>
     </div>
   </form>
