@@ -338,6 +338,18 @@
   color: oklch(var(--bc)) !important;
 }
 
+/* Fixed width for all select dropdowns */
+:host .select {
+  min-width: 200px;
+  width: 200px;
+}
+
+/* Smaller fixed width for pagination select */
+:host .select.select-sm {
+  min-width: 120px;
+  width: 120px;
+}
+
 :host .select option:hover,
 :host .select option:focus {
   background-color: oklch(var(--b2)) !important;
