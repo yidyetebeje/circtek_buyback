@@ -48,8 +48,10 @@ export class OtaUpdatesController {
     }
 
     async delete(id: number, tenantId: number): Promise<response<{ id: number } | null>> {
-        const ok = await this.repo.delete(id, tenantId)
-        if (!ok) return { data: null, message: 'Not found or forbidden', status: 404 }
+        const result = await this.repo.delete(id, tenantId)
+        if (!result.success) {
+            return { data: null, message: result.error || 'Failed to delete', status: 400 }
+        }
         return { data: { id }, message: 'Deleted', status: 200 }
     }
 

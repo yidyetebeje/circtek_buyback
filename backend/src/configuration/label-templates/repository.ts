@@ -91,11 +91,34 @@ export class LabelTemplatesRepository {
         return this.get(id, tenantId)
     }
 
-    async delete(id: number, tenantId: number): Promise<boolean> {
+    async delete(id: number, tenantId: number): Promise<{ success: boolean; error?: string }> {
         const [existing] = await this.database.select({ id: label_templates.id }).from(label_templates).where(and(eq(label_templates.id, id), eq(label_templates.tenant_id, tenantId)) as any)
-        if (!existing) return false
-        await this.database.delete(label_templates).where(eq(label_templates.id, id))
-        return true
+        if (!existing) return { success: false, error: 'Label template not found or access denied' }
+        
+        // Check if any users are assigned to this label template
+        const [assignedUser] = await this.database
+            .select({ id: users.id, user_name: users.user_name })
+            .from(users)
+            .where(eq(users.label_template_id, id))
+            .limit(1)
+        
+        if (assignedUser) {
+            return { 
+                success: false, 
+                error: 'Cannot delete label template. It is currently assigned to one or more testers. Please unassign all testers first.' 
+            }
+        }
+        
+        try {
+            await this.database.delete(label_templates).where(eq(label_templates.id, id))
+            return { success: true }
+        } catch (error: any) {
+            console.error('Failed to delete label template:', error)
+            return { 
+                success: false, 
+                error: 'Failed to delete label template. It may be in use by the system.' 
+            }
+        }
     }
 
     async ensureSameTenantForUserAndLabel(userId: number, labelTemplateId: number, tenantId: number): Promise<boolean> {

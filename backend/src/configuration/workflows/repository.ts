@@ -101,11 +101,34 @@ export class WorkflowsRepository {
         return this.get(id, tenantId)
     }
 
-    async delete(id: number, tenantId: number): Promise<boolean> {
+    async delete(id: number, tenantId: number): Promise<{ success: boolean; error?: string }> {
         const [existing] = await this.database.select({ id: workflows.id }).from(workflows).where(and(eq(workflows.id, id), eq(workflows.tenant_id, tenantId)) as any)
-        if (!existing) return false
-        await this.database.delete(workflows).where(eq(workflows.id, id))
-        return true
+        if (!existing) return { success: false, error: 'Workflow not found or access denied' }
+        
+        // Check if any users are assigned to this workflow
+        const [assignedUser] = await this.database
+            .select({ id: users.id, user_name: users.user_name })
+            .from(users)
+            .where(eq(users.workflow_id, id))
+            .limit(1)
+        
+        if (assignedUser) {
+            return { 
+                success: false, 
+                error: 'Cannot delete workflow. It is currently assigned to one or more testers. Please unassign all testers first.' 
+            }
+        }
+        
+        try {
+            await this.database.delete(workflows).where(eq(workflows.id, id))
+            return { success: true }
+        } catch (error: any) {
+            console.error('Failed to delete workflow:', error)
+            return { 
+                success: false, 
+                error: 'Failed to delete workflow. It may be in use by the system.' 
+            }
+        }
     }
 
     async ensureSameTenantForUserAndWorkflow(userId: number, workflowId: number, tenantId: number): Promise<boolean> {

@@ -28,6 +28,22 @@ export class WorkflowsController {
     }
 
     async create(payload: WorkflowCreateInput, tenantId: number): Promise<response<WorkflowPublic | null>> {
+        // Additional validation
+        if (!payload.name || payload.name.trim().length === 0) {
+            return { data: null, message: 'Workflow name is required', status: 400 }
+        }
+        if (payload.name.length > 255) {
+            return { data: null, message: 'Workflow name must not exceed 255 characters', status: 400 }
+        }
+        // Validate alphanumeric only (letters, numbers, spaces, hyphens, underscores)
+        const alphanumericPattern = /^[a-zA-Z0-9\s_-]+$/
+        if (!alphanumericPattern.test(payload.name)) {
+            return { data: null, message: 'Workflow name must contain only letters, numbers, spaces, hyphens, and underscores', status: 400 }
+        }
+        if (payload.description && payload.description.length > 1000) {
+            return { data: null, message: 'Workflow description must not exceed 1000 characters', status: 400 }
+        }
+        
         const created = await this.repo.create({ ...payload, tenant_id: tenantId })
         return { data: created ?? null, message: 'Workflow created', status: 201 }
     }
@@ -39,14 +55,34 @@ export class WorkflowsController {
     }
 
     async update(id: number, payload: WorkflowUpdateInput, tenantId: number): Promise<response<WorkflowPublic | null>> {
+        // Additional validation
+        if (payload.name !== undefined) {
+            if (!payload.name || payload.name.trim().length === 0) {
+                return { data: null, message: 'Workflow name cannot be empty', status: 400 }
+            }
+            if (payload.name.length > 255) {
+                return { data: null, message: 'Workflow name must not exceed 255 characters', status: 400 }
+            }
+            // Validate alphanumeric only (letters, numbers, spaces, hyphens, underscores)
+            const alphanumericPattern = /^[a-zA-Z0-9\s_-]+$/
+            if (!alphanumericPattern.test(payload.name)) {
+                return { data: null, message: 'Workflow name must contain only letters, numbers, spaces, hyphens, and underscores', status: 400 }
+            }
+        }
+        if (payload.description !== undefined && payload.description && payload.description.length > 1000) {
+            return { data: null, message: 'Workflow description must not exceed 1000 characters', status: 400 }
+        }
+        
         const updated = await this.repo.update(id, payload, tenantId)
         if (!updated) return { data: null, message: 'Not found or forbidden', status: 404 }
         return { data: updated, message: 'Updated', status: 200 }
     }
 
     async delete(id: number, tenantId: number): Promise<response<{ id: number } | null>> {
-        const ok = await this.repo.delete(id, tenantId)
-        if (!ok) return { data: null, message: 'Not found or forbidden', status: 404 }
+        const result = await this.repo.delete(id, tenantId)
+        if (!result.success) {
+            return { data: null, message: result.error || 'Failed to delete', status: 400 }
+        }
         return { data: { id }, message: 'Deleted', status: 200 }
     }
 

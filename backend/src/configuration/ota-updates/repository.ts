@@ -116,11 +116,34 @@ export class OtaUpdatesRepository {
         return this.get(id, tenantId)
     }
 
-    async delete(id: number, tenantId: number): Promise<boolean> {
+    async delete(id: number, tenantId: number): Promise<{ success: boolean; error?: string }> {
         const [existing] = await this.database.select({ id: ota_update.id }).from(ota_update).where(and(eq(ota_update.id, id), eq(ota_update.tenant_id, tenantId)) as any)
-        if (!existing) return false
-        await this.database.delete(ota_update).where(eq(ota_update.id, id))
-        return true
+        if (!existing) return { success: false, error: 'OTA update not found or access denied' }
+        
+        // Check if any users are assigned to this OTA update
+        const [assignedUser] = await this.database
+            .select({ id: users.id, user_name: users.user_name })
+            .from(users)
+            .where(eq(users.ota_update_id, id))
+            .limit(1)
+        
+        if (assignedUser) {
+            return { 
+                success: false, 
+                error: 'Cannot delete OTA update. It is currently assigned to one or more testers. Please unassign all testers first.' 
+            }
+        }
+        
+        try {
+            await this.database.delete(ota_update).where(eq(ota_update.id, id))
+            return { success: true }
+        } catch (error: any) {
+            console.error('Failed to delete OTA update:', error)
+            return { 
+                success: false, 
+                error: 'Failed to delete OTA update. It may be in use by the system.' 
+            }
+        }
     }
 
     // Assignment methods

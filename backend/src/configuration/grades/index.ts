@@ -35,7 +35,9 @@ export const grades_routes = new Elysia({ prefix: '/grades' })
     }, { body: GradeUpdate, detail: { tags: ['Grades'], summary: 'Update grade (tenant-scoped)' } })
     .delete('/:id', async (ctx) => {
         const { params, currentTenantId } = ctx as any
-        return controller.delete(Number(params.id), Number(currentTenantId))
+        const response = await controller.delete(Number(params.id), Number(currentTenantId))
+        ctx.set.status = response.status
+        return response
     }, { detail: { tags: ['Grades'], summary: 'Delete grade (tenant-scoped)' } })
 
 

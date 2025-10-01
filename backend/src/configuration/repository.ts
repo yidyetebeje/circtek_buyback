@@ -69,11 +69,34 @@ export class ConfigurationRepository {
         return this.getLabelTemplate(id, tenantId)
     }
 
-    async deleteLabelTemplate(id: number, tenantId: number): Promise<boolean> {
+    async deleteLabelTemplate(id: number, tenantId: number): Promise<{ success: boolean; error?: string }> {
         const [existing] = await this.database.select({ id: label_templates.id }).from(label_templates).where(and(eq(label_templates.id, id), eq(label_templates.tenant_id, tenantId)) as any)
-        if (!existing) return false
-        await this.database.delete(label_templates).where(eq(label_templates.id, id))
-        return true
+        if (!existing) return { success: false, error: 'Label template not found or access denied' }
+        
+        // Check if any users are assigned to this label template
+        const [assignedUser] = await this.database
+            .select({ id: users.id, user_name: users.user_name })
+            .from(users)
+            .where(eq(users.label_template_id, id))
+            .limit(1)
+        
+        if (assignedUser) {
+            return { 
+                success: false, 
+                error: 'Cannot delete label template. It is currently assigned to one or more testers. Please unassign all testers first.' 
+            }
+        }
+        
+        try {
+            await this.database.delete(label_templates).where(eq(label_templates.id, id))
+            return { success: true }
+        } catch (error: any) {
+            console.error('Failed to delete label template:', error)
+            return { 
+                success: false, 
+                error: 'Failed to delete label template. It may be in use by the system.' 
+            }
+        }
     }
 
     // Workflows
@@ -106,11 +129,34 @@ export class ConfigurationRepository {
         return this.getWorkflow(id, tenantId)
     }
 
-    async deleteWorkflow(id: number, tenantId: number): Promise<boolean> {
+    async deleteWorkflow(id: number, tenantId: number): Promise<{ success: boolean; error?: string }> {
         const [existing] = await this.database.select({ id: workflows.id }).from(workflows).where(and(eq(workflows.id, id), eq(workflows.tenant_id, tenantId)) as any)
-        if (!existing) return false
-        await this.database.delete(workflows).where(eq(workflows.id, id))
-        return true
+        if (!existing) return { success: false, error: 'Workflow not found or access denied' }
+        
+        // Check if any users are assigned to this workflow
+        const [assignedUser] = await this.database
+            .select({ id: users.id, user_name: users.user_name })
+            .from(users)
+            .where(eq(users.workflow_id, id))
+            .limit(1)
+        
+        if (assignedUser) {
+            return { 
+                success: false, 
+                error: 'Cannot delete workflow. It is currently assigned to one or more testers. Please unassign all testers first.' 
+            }
+        }
+        
+        try {
+            await this.database.delete(workflows).where(eq(workflows.id, id))
+            return { success: true }
+        } catch (error: any) {
+            console.error('Failed to delete workflow:', error)
+            return { 
+                success: false, 
+                error: 'Failed to delete workflow. It may be in use by the system.' 
+            }
+        }
     }
 
     // Assignments via users table foreign keys
@@ -180,11 +226,34 @@ export class ConfigurationRepository {
         return this.getWiFiProfile(id, tenantId)
     }
 
-    async deleteWiFiProfile(id: number, tenantId: number): Promise<boolean> {
+    async deleteWiFiProfile(id: number, tenantId: number): Promise<{ success: boolean; error?: string }> {
         const [existing] = await this.database.select({ id: wifi_profile.id }).from(wifi_profile).where(and(eq(wifi_profile.id, id), eq(wifi_profile.tenant_id, tenantId)) as any)
-        if (!existing) return false
-        await this.database.delete(wifi_profile).where(eq(wifi_profile.id, id))
-        return true
+        if (!existing) return { success: false, error: 'WiFi profile not found or access denied' }
+        
+        // Check if any users are assigned to this WiFi profile
+        const [assignedUser] = await this.database
+            .select({ id: users.id, user_name: users.user_name })
+            .from(users)
+            .where(eq(users.wifi_profile_id, id))
+            .limit(1)
+        
+        if (assignedUser) {
+            return { 
+                success: false, 
+                error: 'Cannot delete WiFi profile. It is currently assigned to one or more testers. Please unassign all testers first.' 
+            }
+        }
+        
+        try {
+            await this.database.delete(wifi_profile).where(eq(wifi_profile.id, id))
+            return { success: true }
+        } catch (error: any) {
+            console.error('Failed to delete WiFi profile:', error)
+            return { 
+                success: false, 
+                error: 'Failed to delete WiFi profile. It may be in use by the system.' 
+            }
+        }
     }
 
     // WiFi profile assignments

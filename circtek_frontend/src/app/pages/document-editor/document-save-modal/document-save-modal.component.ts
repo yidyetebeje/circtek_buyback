@@ -74,11 +74,15 @@ export class DocumentSaveModalComponent implements OnInit, OnChanges {
     ];
   }
 
+  // Validation constants
+  readonly MAX_NAME_LENGTH = 255;
+  readonly MAX_DESCRIPTION_LENGTH = 1000;
+
   constructor(private fb: FormBuilder) {
     // Initialize the form group
     this.documentForm = this.fb.group({
-      name: ['', [Validators.required, this.trimmedRequiredValidator]],
-      description: [''],
+      name: ['', [Validators.required, Validators.maxLength(this.MAX_NAME_LENGTH), this.trimmedRequiredValidator, this.alphanumericValidator]],
+      description: ['', [Validators.maxLength(this.MAX_DESCRIPTION_LENGTH)]],
       is_published: [true], // Default to Draft/Not Published
       clientId: [''] // Keep if client selection is needed
     });
@@ -226,4 +230,52 @@ export class DocumentSaveModalComponent implements OnInit, OnChanges {
     const value = (control.value ?? '').toString();
     return value.trim().length > 0 ? null : { required: true };
   };
+
+  // Validator: ensures name contains only alphanumeric characters, spaces, hyphens, and underscores
+  private alphanumericValidator = (control: AbstractControl): ValidationErrors | null => {
+    const value = (control.value ?? '').toString();
+    if (value.length === 0) return null; // Let required validator handle empty values
+    const alphanumericPattern = /^[a-zA-Z0-9\s_-]+$/;
+    return alphanumericPattern.test(value) ? null : { alphanumeric: true };
+  };
+
+  // Handle input to filter non-alphanumeric characters in real-time
+  onNameInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let value = input.value;
+    
+    // Remove non-alphanumeric characters (except spaces, hyphens, underscores)
+    value = value.replace(/[^a-zA-Z0-9\s_-]/g, '');
+    
+    // Enforce max length
+    if (value.length > this.MAX_NAME_LENGTH) {
+      value = value.substring(0, this.MAX_NAME_LENGTH);
+    }
+    
+    input.value = value;
+    this.documentForm.patchValue({ name: value }, { emitEvent: false });
+  }
+
+  // Handle description input to enforce max length
+  onDescriptionInput(event: Event): void {
+    const input = event.target as HTMLTextAreaElement;
+    let value = input.value;
+    
+    // Enforce max length
+    if (value.length > this.MAX_DESCRIPTION_LENGTH) {
+      value = value.substring(0, this.MAX_DESCRIPTION_LENGTH);
+      input.value = value;
+      this.documentForm.patchValue({ description: value }, { emitEvent: false });
+    }
+  }
+
+  // Handle Enter key press in name field
+  onNameKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      if (this.documentForm.valid && !this.isSaving) {
+        this.saveDocument();
+      }
+    }
+  }
 } 

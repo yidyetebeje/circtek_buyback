@@ -36,7 +36,9 @@ export const workflows_routes = new Elysia({ prefix: '/workflows' })
     }, { body: WorkflowUpdate, detail: { tags: ['Configuration'], summary: 'Update workflow (tenant-scoped)' } })
     .delete('/:id', async (ctx) => {
         const { params, currentTenantId } = ctx as any
-        return controller.delete(Number(params.id), Number(currentTenantId))
+        const response = await controller.delete(Number(params.id), Number(currentTenantId))
+        ctx.set.status = response.status
+        return response
     }, { detail: { tags: ['Configuration'], summary: 'Delete workflow (tenant-scoped)' } })
     .post('/:id/assign/:userId', async (ctx) => {
         const { params, currentTenantId, currentUserId, currentRole } = ctx as any

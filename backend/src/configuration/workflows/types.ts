@@ -1,8 +1,8 @@
 import { t, type Static } from 'elysia'
 
 export const WorkflowCreate = t.Object({
-    name: t.String(),
-    description: t.Optional(t.String()),
+    name: t.String({ minLength: 1, maxLength: 255 }),
+    description: t.Optional(t.String({ maxLength: 1000 })),
     status: t.Optional(t.Boolean()),
     canvas_state: t.Unknown(),
     position_x: t.Optional(t.Number()),
@@ -17,8 +17,8 @@ export const WorkflowCreate = t.Object({
 })
 
 export const WorkflowUpdate = t.Object({
-    name: t.Optional(t.String()),
-    description: t.Optional(t.String()),
+    name: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
+    description: t.Optional(t.String({ maxLength: 1000 })),
     status: t.Optional(t.Boolean()),
     canvas_state: t.Optional(t.Unknown()),
     position_x: t.Optional(t.Number()),

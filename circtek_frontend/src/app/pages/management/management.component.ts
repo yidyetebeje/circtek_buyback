@@ -138,8 +138,8 @@ export class ManagementComponent {
       // Note: Backend does NOT support filtering users by warehouse; omitting warehouse facet.
     }
 
-    // Tenant facet is irrelevant when viewing tenants or tenant-profile tabs
-    if (this.isSuperAdmin() && this.activeTab() !== 'tenants' && this.activeTab() !== 'tenant-profile') {
+    // Tenant facet is irrelevant when viewing tenants, tenant-profile, or ota-updates tabs
+    if (this.isSuperAdmin() && this.activeTab() !== 'tenants' && this.activeTab() !== 'tenant-profile' && this.activeTab() !== 'ota-updates') {
       list.unshift({ key: 'tenant_id', label: 'Tenant', type: 'select', options: this.tenantOptions() });
     }
     return list;

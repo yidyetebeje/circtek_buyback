@@ -287,7 +287,39 @@ export class WorkflowEditorComponent
   description = signal<string>("");
   // Remove clientIdSignal since client ID is not necessary
   nameTouched = signal<boolean>(false);
-  isFormValid = computed(() => this.name().trim().length > 0);
+  descriptionTouched = signal<boolean>(false);
+  
+  // Validation constants
+  readonly MAX_NAME_LENGTH = 255;
+  readonly MAX_DESCRIPTION_LENGTH = 1000;
+  readonly MIN_NAME_LENGTH = 1;
+  
+  // Computed validation signals
+  nameError = computed(() => {
+    if (!this.nameTouched()) return null;
+    const nameValue = this.name().trim();
+    if (nameValue.length === 0) return 'Name is required';
+    if (nameValue.length > this.MAX_NAME_LENGTH) return `Name must not exceed ${this.MAX_NAME_LENGTH} characters`;
+    // Check for alphanumeric only (letters, numbers, spaces, hyphens, underscores)
+    const alphanumericPattern = /^[a-zA-Z0-9\s_-]+$/;
+    if (!alphanumericPattern.test(nameValue)) return 'Name must contain only letters, numbers, spaces, hyphens, and underscores';
+    return null;
+  });
+  
+  descriptionError = computed(() => {
+    if (!this.descriptionTouched()) return null;
+    const descValue = this.description();
+    if (descValue.length > this.MAX_DESCRIPTION_LENGTH) return `Description must not exceed ${this.MAX_DESCRIPTION_LENGTH} characters`;
+    return null;
+  });
+  
+  isFormValid = computed(() => {
+    const nameValue = this.name().trim();
+    return nameValue.length > 0 && 
+           nameValue.length <= this.MAX_NAME_LENGTH && 
+           this.description().length <= this.MAX_DESCRIPTION_LENGTH;
+  });
+  
   modalActions: ModalAction[] = [];
   isSaving = signal<boolean>(false);
 
@@ -927,7 +959,18 @@ export class WorkflowEditorComponent
    */
   onNameInput(event: Event): void {
     const target = event.target as HTMLInputElement;
-    this.name.set(target.value || '');
+    let value = target.value || '';
+    
+    // Remove non-alphanumeric characters (except spaces, hyphens, underscores)
+    value = value.replace(/[^a-zA-Z0-9\s_-]/g, '');
+    
+    // Enforce max length
+    if (value.length > this.MAX_NAME_LENGTH) {
+      value = value.substring(0, this.MAX_NAME_LENGTH);
+    }
+    
+    this.name.set(value);
+    target.value = value;
     
     // Update validation state immediately
     if (this.isSaveModalVisible) {
@@ -940,7 +983,29 @@ export class WorkflowEditorComponent
    */
   onDescriptionInput(event: Event): void {
     const target = event.target as HTMLTextAreaElement;
-    this.description.set(target.value || '');
+    const value = target.value || '';
+    
+    // Enforce max length
+    if (value.length > this.MAX_DESCRIPTION_LENGTH) {
+      const truncated = value.substring(0, this.MAX_DESCRIPTION_LENGTH);
+      this.description.set(truncated);
+      target.value = truncated;
+    } else {
+      this.description.set(value);
+    }
+  }
+  
+  /**
+   * Handle Enter key press in name field to save workflow
+   */
+  onNameKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.nameTouched.set(true);
+      if (this.isFormValid()) {
+        this.onModalAction('save');
+      }
+    }
   }
 
   ngOnInit(): void {
@@ -1171,7 +1236,7 @@ export class WorkflowEditorComponent
   ): void {
     const options = {
       closeButton: true,
-      positionClass: "toast-top-center",
+      positionClass: "toast-top-right",
       timeOut: 5000,
       progressBar: true,
     };

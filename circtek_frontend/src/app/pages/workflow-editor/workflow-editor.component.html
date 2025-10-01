@@ -10,29 +10,46 @@
    
     <form class="space-y-4">
       <div>
-        <label class="block text-sm font-medium mb-2">Workflow Name <span class="text-red-500">*</span></label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="block text-sm font-medium">Workflow Name <span class="text-red-500">*</span></label>
+          <span class="text-xs text-base-content/60">{{ name().length }}/{{ MAX_NAME_LENGTH }}</span>
+        </div>
         <input
           type="text"
           [value]="name()"
           (input)="onNameInput($event)"
           (blur)="nameTouched.set(true)"
+          (keydown)="onNameKeyDown($event)"
+          [attr.maxlength]="MAX_NAME_LENGTH"
           class="w-full px-3 py-2 input"
+          [class.input-error]="nameError()"
           placeholder="Enter workflow name"
+          autocomplete="off"
         />
-        @if (nameTouched() && !isFormValid()) {
-          <div class="text-error text-sm mt-1">Name is required.</div>
+        @if (nameError()) {
+          <div class="text-error text-sm mt-1">{{ nameError() }}</div>
         }
+        <div class="text-xs text-base-content/60 mt-1">Press Enter to save</div>
       </div>
 
       <div>
-        <label class="block text-sm font-medium mb-2">Description</label>
+        <div class="flex justify-between items-center mb-2">
+          <label class="block text-sm font-medium">Description</label>
+          <span class="text-xs text-base-content/60">{{ description().length }}/{{ MAX_DESCRIPTION_LENGTH }}</span>
+        </div>
         <textarea
           [value]="description()"
           (input)="onDescriptionInput($event)"
+          (blur)="descriptionTouched.set(true)"
+          [attr.maxlength]="MAX_DESCRIPTION_LENGTH"
           rows="3"
           class="w-full px-3 py-2 input"
+          [class.input-error]="descriptionError()"
           placeholder="Enter workflow description"
         ></textarea>
+        @if (descriptionError()) {
+          <div class="text-error text-sm mt-1">{{ descriptionError() }}</div>
+        }
       </div>
 
       <!-- Client ID field removed as it's not necessary -->

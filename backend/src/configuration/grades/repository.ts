@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, like, or, sql } from 'drizzle-orm'
 import { db } from '../../db'
-import { grades } from '../../db/circtek.schema'
+import { grades, device_grades } from '../../db/circtek.schema'
 import type { GradeCreateInput, GradePublic, GradeUpdateInput } from './types'
 
 const gradeSelection = {
@@ -91,11 +91,34 @@ export class GradesRepository {
         return this.get(id, tenantId)
     }
 
-    async delete(id: number, tenantId: number): Promise<boolean> {
+    async delete(id: number, tenantId: number): Promise<{ success: boolean; error?: string }> {
         const [existing] = await this.database.select({ id: grades.id }).from(grades).where(and(eq(grades.id, id), eq(grades.tenant_id, tenantId)) as any)
-        if (!existing) return false
-        await this.database.delete(grades).where(eq(grades.id, id))
-        return true
+        if (!existing) return { success: false, error: 'Grade not found or access denied' }
+        
+        // Check if any devices are assigned to this grade
+        const [assignedDevice] = await this.database
+            .select({ id: device_grades.id })
+            .from(device_grades)
+            .where(eq(device_grades.grade_id, id))
+            .limit(1)
+        
+        if (assignedDevice) {
+            return { 
+                success: false, 
+                error: 'Cannot delete grade. It is currently assigned to one or more devices. Please remove all device assignments first.' 
+            }
+        }
+        
+        try {
+            await this.database.delete(grades).where(eq(grades.id, id))
+            return { success: true }
+        } catch (error: any) {
+            console.error('Failed to delete grade:', error)
+            return { 
+                success: false, 
+                error: 'Failed to delete grade. It may be in use by the system.' 
+            }
+        }
     }
 }
 

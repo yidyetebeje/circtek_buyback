@@ -8,19 +8,50 @@
   <form [formGroup]="documentForm" (ngSubmit)="submitForm()" novalidate>
     <!-- Label Name -->
     <div class="mb-4">
-      <label for="documentName" class="block text-sm font-medium">
-        Label Name <span class="text-red-500">*</span>
-      </label>
-      <input type="text" id="documentName" class="input mt-1 block w-full px-3 py-2" formControlName="name" placeholder="Enter label name" required>
-      <div *ngIf="f['name'].touched && f['name'].invalid" class="text-red-600 text-sm mt-1">
-        <div *ngIf="f['name'].errors?.['required']">Label name is required.</div>
+      <div class="flex justify-between items-center mb-2">
+        <label for="documentName" class="block text-sm font-medium">
+          Label Name <span class="text-red-500">*</span>
+        </label>
+        <span class="text-xs text-base-content/60">{{ f['name'].value?.length || 0 }}/{{ MAX_NAME_LENGTH }}</span>
       </div>
+      <input 
+        type="text" 
+        id="documentName" 
+        class="input mt-1 block w-full px-3 py-2" 
+        [class.input-error]="f['name'].touched && f['name'].invalid"
+        formControlName="name" 
+        (input)="onNameInput($event)"
+        (keydown)="onNameKeyDown($event)"
+        [attr.maxlength]="MAX_NAME_LENGTH"
+        placeholder="Enter label name" 
+        autocomplete="off"
+        required>
+      <div *ngIf="f['name'].touched && f['name'].invalid" class="text-error text-sm mt-1">
+        <div *ngIf="f['name'].errors?.['required']">Label name is required.</div>
+        <div *ngIf="f['name'].errors?.['maxlength']">Label name must not exceed {{ MAX_NAME_LENGTH }} characters.</div>
+        <div *ngIf="f['name'].errors?.['alphanumeric']">Label name must contain only letters, numbers, spaces, hyphens, and underscores.</div>
+      </div>
+      <div class="text-xs text-base-content/60 mt-1">Press Enter to save</div>
     </div>
 
     <!-- Description -->
     <div class="mb-4">
-      <label for="documentDescription" class="block text-sm font-medium">Description</label>
-      <textarea id="documentDescription" class="mt-1 block w-full px-3 py-2 input" formControlName="description" rows="3" placeholder="Enter document description"></textarea>
+      <div class="flex justify-between items-center mb-2">
+        <label for="documentDescription" class="block text-sm font-medium">Description</label>
+        <span class="text-xs text-base-content/60">{{ f['description'].value?.length || 0 }}/{{ MAX_DESCRIPTION_LENGTH }}</span>
+      </div>
+      <textarea 
+        id="documentDescription" 
+        class="mt-1 block w-full px-3 py-2 input" 
+        [class.input-error]="f['description'].touched && f['description'].invalid"
+        formControlName="description" 
+        (input)="onDescriptionInput($event)"
+        [attr.maxlength]="MAX_DESCRIPTION_LENGTH"
+        rows="3" 
+        placeholder="Enter document description"></textarea>
+      <div *ngIf="f['description'].touched && f['description'].invalid" class="text-error text-sm mt-1">
+        <div *ngIf="f['description'].errors?.['maxlength']">Description must not exceed {{ MAX_DESCRIPTION_LENGTH }} characters.</div>
+      </div>
     </div>
 
     <!-- Client Selection (Optional) -->

@@ -36,7 +36,9 @@ export const label_templates_routes = new Elysia({ prefix: '/label-templates' })
     }, { body: LabelTemplateUpdate, detail: { tags: ['Configuration'], summary: 'Update label template (tenant-scoped)' } })
     .delete('/:id', async (ctx) => {
         const { params, currentTenantId } = ctx as any
-        return controller.delete(Number(params.id), Number(currentTenantId))
+        const response = await controller.delete(Number(params.id), Number(currentTenantId))
+        ctx.set.status = response.status
+        return response
     }, { detail: { tags: ['Configuration'], summary: 'Delete label template (tenant-scoped)' } })
     .post('/:id/assign/:userId', async (ctx) => {
         const { params, currentTenantId, currentUserId, currentRole } = ctx as any
