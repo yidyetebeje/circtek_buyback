@@ -1477,7 +1477,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
               this.documentSaveModal.onSaveSuccess();
               this.isSaveModalVisible = false;
               this.toastr.success(
-                "Document updated successfully!",
+                "Label updated successfully!",
                 "Save Successful",
               );
             // Navigate back to the management page labels tab after updating
@@ -1502,7 +1502,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
             this.documentSaveModal.onSaveSuccess();
             this.isSaveModalVisible = false;
             this.toastr.success(
-              "Document created successfully!",
+              "Label added successfully!",
               "Save Successful",
             );
             // Navigate back to the management page labels tab after creation

@@ -6,14 +6,14 @@
   (actionClick)="onModalAction($event)"
 >
   <form [formGroup]="documentForm" (ngSubmit)="submitForm()" novalidate>
-    <!-- Document Name -->
+    <!-- Label Name -->
     <div class="mb-4">
       <label for="documentName" class="block text-sm font-medium">
-        Document Name <span class="text-red-500">*</span>
+        Label Name <span class="text-red-500">*</span>
       </label>
-      <input type="text" id="documentName" class="input mt-1 block w-full px-3 py-2" formControlName="name" placeholder="Enter document name" required>
+      <input type="text" id="documentName" class="input mt-1 block w-full px-3 py-2" formControlName="name" placeholder="Enter label name" required>
       <div *ngIf="f['name'].touched && f['name'].invalid" class="text-red-600 text-sm mt-1">
-        <div *ngIf="f['name'].errors?.['required']">Document name is required.</div>
+        <div *ngIf="f['name'].errors?.['required']">Label name is required.</div>
       </div>
     </div>
 

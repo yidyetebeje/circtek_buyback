@@ -54,7 +54,7 @@ export class DocumentSaveModalComponent implements OnInit, OnChanges {
   saveError: string = '';
 
   get modalTitle(): string {
-    return this.isEditing ? 'Update Document' : 'Save New Document';
+    return this.isEditing ? 'Update Label' : 'Save New Label';
   }
 
   get modalActions(): ModalAction[] {
