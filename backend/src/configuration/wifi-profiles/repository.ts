@@ -57,15 +57,42 @@ export class WiFiProfilesRepository {
 
     async update(id: number, payload: WiFiProfileUpdateInput, tenantId: number): Promise<WiFiProfilePublic | undefined> {
         const { tenant_id, ...body } = payload as any
+        // Remove password from update if it's empty (to keep existing password)
+        if (body.password === undefined || body.password === null || body.password === '') {
+            delete body.password
+        }
         await this.database.update(wifi_profile).set(body as any).where(and(eq(wifi_profile.id, id), eq(wifi_profile.tenant_id, tenantId)) as any)
         return this.get(id, tenantId)
     }
 
-    async delete(id: number, tenantId: number): Promise<boolean> {
+    async delete(id: number, tenantId: number): Promise<{ success: boolean; error?: string }> {
         const [existing] = await this.database.select({ id: wifi_profile.id }).from(wifi_profile).where(and(eq(wifi_profile.id, id), eq(wifi_profile.tenant_id, tenantId)) as any)
-        if (!existing) return false
-        await this.database.delete(wifi_profile).where(eq(wifi_profile.id, id))
-        return true
+        if (!existing) return { success: false, error: 'WiFi profile not found or access denied' }
+        
+        // Check if any users are assigned to this WiFi profile
+        const [assignedUser] = await this.database
+            .select({ id: users.id, user_name: users.user_name })
+            .from(users)
+            .where(eq(users.wifi_profile_id, id))
+            .limit(1)
+        
+        if (assignedUser) {
+            return { 
+                success: false, 
+                error: 'Cannot delete WiFi profile. It is currently assigned to one or more testers. Please unassign all testers first.' 
+            }
+        }
+        
+        try {
+            await this.database.delete(wifi_profile).where(eq(wifi_profile.id, id))
+            return { success: true }
+        } catch (error: any) {
+            console.error('Failed to delete WiFi profile:', error)
+            return { 
+                success: false, 
+                error: 'Failed to delete WiFi profile. It may be in use by the system.' 
+            }
+        }
     }
 
     async ensureSameTenantForUserAndWiFi(userId: number, wifiProfileId: number, tenantId: number): Promise<boolean> {

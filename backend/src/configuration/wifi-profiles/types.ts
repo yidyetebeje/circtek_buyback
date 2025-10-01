@@ -5,6 +5,7 @@ export const WiFiProfileCreate = t.Object({
     ssid: t.String(),
     password: t.String(),
     status: t.Optional(t.Boolean()),
+    tenant_id: t.Optional(t.Number()),
 })
 
 export const WiFiProfileUpdate = t.Object({

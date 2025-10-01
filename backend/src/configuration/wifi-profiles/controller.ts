@@ -30,9 +30,12 @@ export class WiFiProfilesController {
     }
 
     async delete(id: number, tenantId: number): Promise<response<{ id: number } | null>> {
-        const ok = await this.repo.delete(id, tenantId)
-        if (!ok) return { data: null, message: 'Not found or forbidden', status: 404 }
-        return { data: { id }, message: 'Deleted', status: 200 }
+        const result = await this.repo.delete(id, tenantId)
+        if (!result.success) {
+            const status = result.error?.includes('not found') || result.error?.includes('access denied') ? 404 : 400
+            return { data: null, message: result.error || 'Failed to delete', status }
+        }
+        return { data: { id }, message: 'WiFi profile deleted successfully', status: 200 }
     }
 
     async assignToUser(wifiProfileId: number, userId: number, tenantId: number, actorId: number, currentRole?: string): Promise<response<{ user_id: number; wifi_profile_id: number } | null>> {

@@ -249,7 +249,7 @@ export class ManagementComponent {
           console.error('Failed to delete:', error);
           this.loading.set(false);
           this.closeDeleteModal();
-          // Show error message
+          // Show error message with backend message if available
           const entityName = ctx.tab === 'tenants' ? 'Tenant' : 
                              ctx.tab === 'users' ? 'User' :
                              ctx.tab === 'warehouses' ? 'Warehouse' :
@@ -258,7 +258,12 @@ export class ManagementComponent {
                              ctx.tab === 'workflows' ? 'Workflow' :
                              ctx.tab === 'grades' ? 'Grade' :
                              'OTA Update';
-          this.toast.deleteError(entityName);
+          const errorMessage = error?.error?.message || error?.message;
+          if (errorMessage) {
+            this.toastr.error(errorMessage, `Delete ${entityName} Failed`);
+          } else {
+            this.toast.deleteError(entityName);
+          }
         }
       });
     }

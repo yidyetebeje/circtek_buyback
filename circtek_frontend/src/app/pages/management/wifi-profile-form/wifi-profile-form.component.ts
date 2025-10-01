@@ -48,7 +48,20 @@ export class WiFiProfileFormComponent {
   submitLabel = computed(() => this.isEditMode() ? 'Update WiFi Profile' : 'Create WiFi Profile');
 
   fields = computed<FormField[]>(() => {
-    const baseFields: FormField[] = [
+    const baseFields: FormField[] = [];
+
+    // Tenant selection only for super_admin and only on create
+    if (this.isSuperAdmin() && !this.isEditMode()) {
+      baseFields.push({
+        key: 'tenant_id',
+        label: 'Tenant',
+        type: 'select',
+        required: true,
+        options: this.tenantOptions()
+      });
+    }
+
+    baseFields.push(
       {
         key: 'name',
         label: 'Profile Name',
@@ -69,30 +82,19 @@ export class WiFiProfileFormComponent {
         key: 'password',
         label: 'Password',
         type: 'password',
-        placeholder: 'Enter WiFi password',
-        required: true,
-        autocomplete: 'new-password',
-        preventPasswordManager: true,
-        validation: { minLength: 8, maxLength: 63 }
+        placeholder: this.isEditMode() ? 'Leave blank to keep existing password' : 'Enter WiFi password',
+        required: !this.isEditMode(),
+        autocomplete: 'off',
+        validation: { minLength: 8, maxLength: 63 },
+        helpText: this.isEditMode() ? 'Only enter a new password if you want to change it' : undefined
+      },
+      {
+        key: 'status',
+        label: 'Active',
+        type: 'checkbox',
+        placeholder: 'WiFi profile is active'
       }
-    ];
-
-    if (this.isSuperAdmin()) {
-      baseFields.push({
-        key: 'tenant_id',
-        label: 'Tenant',
-        type: 'select',
-        required: true,
-        options: this.tenantOptions()
-      });
-    }
-
-    baseFields.push({
-      key: 'status',
-      label: 'Active',
-      type: 'checkbox',
-      placeholder: 'WiFi profile is active'
-    });
+    );
 
     return baseFields;
   });
@@ -112,28 +114,12 @@ export class WiFiProfileFormComponent {
       this.wifiProfileId.set(Number(id));
     }
 
-    // Load tenant options and ensure tenant control only for super admins
+    // Load tenant options for super admins on create mode
     effect(() => {
       const superAdmin = this.isSuperAdmin();
-      const form = this.wifiProfileForm();
-      if (superAdmin) {
-        // Ensure form has tenant_id control and load options
-        if (!form.get('tenant_id')) {
-          const prev = form.getRawValue();
-          this.wifiProfileForm.set(this.createForm());
-          this.wifiProfileForm().patchValue(prev as any);
-        }
-        if (this.tenantOptions().length === 0) {
-          this.loadTenantOptions();
-        }
-      } else {
-        // Ensure form does not carry tenant_id when not super admin
-        if (form.get('tenant_id')) {
-          const prev = form.getRawValue();
-          delete (prev as any).tenant_id;
-          this.wifiProfileForm.set(this.createForm());
-          this.wifiProfileForm().patchValue(prev as any);
-        }
+      const isEdit = this.isEditMode();
+      if (superAdmin && !isEdit && this.tenantOptions().length === 0) {
+        this.loadTenantOptions();
       }
     });
 
@@ -151,11 +137,12 @@ export class WiFiProfileFormComponent {
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       ssid: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(32)]],
       // On edit, password should be optional (leave blank to keep existing)
-      password: ['', this.isEditMode() ? [] : [Validators.required, Validators.minLength(8), Validators.maxLength(63)]],
+      password: ['', this.isEditMode() ? [Validators.minLength(8), Validators.maxLength(63)] : [Validators.required, Validators.minLength(8), Validators.maxLength(63)]],
       status: [true]
     };
 
-    if (this.isSuperAdmin()) {
+    // Only add tenant_id for super_admin on create mode
+    if (this.isSuperAdmin() && !this.isEditMode()) {
       formConfig.tenant_id = [null, [Validators.required]];
     }
 
@@ -188,13 +175,11 @@ export class WiFiProfileFormComponent {
         const formValue: any = {
           name: wifiProfile?.name ?? '',
           ssid: wifiProfile?.ssid ?? '',
-          // Do not patch password on edit for security; leave empty to keep existing
+          password: '', // Leave empty - user can enter new password if they want to change it
           status: !!wifiProfile?.status
         };
 
-        if (this.isSuperAdmin()) {
-          formValue.tenant_id = wifiProfile?.tenant_id ?? null;
-        }
+        // Don't include tenant_id in edit mode - it's not editable
 
         // Recreate form with loaded data (password optional in edit mode)
         this.wifiProfileForm.set(this.createForm());
@@ -221,9 +206,14 @@ export class WiFiProfileFormComponent {
       delete (wifiProfileData as any).password;
     }
     
-    // Set tenant_id from current user if not super admin
-    if (!this.isSuperAdmin()) {
+    // Set tenant_id from current user if not super admin (only for create)
+    if (!this.isEditMode() && !this.isSuperAdmin()) {
       wifiProfileData.tenant_id = this.auth.currentUser()?.tenant_id;
+    }
+    
+    // Remove tenant_id in edit mode (not editable)
+    if (this.isEditMode()) {
+      delete (wifiProfileData as any).tenant_id;
     }
 
     if (this.isEditMode()) {
