@@ -17,7 +17,8 @@ export const workflows_routes = new Elysia({ prefix: '/workflows' })
             page: query?.page ? Number(query.page) : undefined,
             limit: query?.limit ? Number(query.limit) : undefined,
             sort: query?.sort,
-            order: query?.order
+            order: query?.order,
+            search: query?.search   
         }
         return controller.list(filters, currentRole, Number(currentTenantId))
     }, { detail: { tags: ['Configuration'], summary: 'List workflows (tenant-scoped)' } })

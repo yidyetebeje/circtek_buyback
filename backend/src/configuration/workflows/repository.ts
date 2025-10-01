@@ -40,6 +40,14 @@ export class WorkflowsRepository {
     async list(filters: WorkflowListQueryInput): Promise<WorkflowListResult> {
         const conditions: SQL<unknown>[] = []
         if (typeof filters.tenant_id === 'number') conditions.push(eq(workflows.tenant_id, filters.tenant_id))
+        
+        // Add search filter for name and description
+        if (filters.search && filters.search.trim().length > 0) {
+            const searchTerm = `%${filters.search.trim()}%`
+            conditions.push(
+                like(workflows.name, searchTerm)
+            )
+        }
 
         const page = Math.max(1, filters.page ?? 1)
         const limit = Math.max(1, Math.min(100, filters.limit ?? 10))

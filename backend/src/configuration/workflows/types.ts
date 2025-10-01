@@ -39,6 +39,7 @@ export const WorkflowListQuery = t.Object({
     tenant_id: t.Optional(t.Number()),
     page: t.Optional(t.Number({ default: 1 })),
     limit: t.Optional(t.Number({ default: 10 })),
+    search: t.Optional(t.String()),
     sort: t.Optional(t.String()),
     order: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
 })

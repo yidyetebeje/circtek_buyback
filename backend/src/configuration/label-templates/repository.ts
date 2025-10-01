@@ -30,6 +30,14 @@ export class LabelTemplatesRepository {
     async list(filters: LabelTemplateListQueryInput): Promise<LabelTemplateListResult> {
         const conditions: SQL<unknown>[] = []
         if (typeof filters.tenant_id === 'number') conditions.push(eq(label_templates.tenant_id, filters.tenant_id))
+        
+        // Add search filter for name and description
+        if (filters.search && filters.search.trim().length > 0) {
+            const searchTerm = `%${filters.search.trim()}%`
+            conditions.push(
+                like(label_templates.name, searchTerm)
+            )
+        }
 
         const page = Math.max(1, filters.page ?? 1)
         const limit = Math.max(1, Math.min(100, filters.limit ?? 10))

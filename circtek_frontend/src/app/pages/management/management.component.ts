@@ -52,6 +52,8 @@ export class ManagementComponent {
 
   // Filters
   search = signal('');
+  private debouncedSearch = signal('');
+  private searchTimeout: any = null;
   selectedRoleId = signal<number | null>(null); // users
   selectedTenantId = signal<number | null>(null); // super_admin only
   selectedUserActive = signal<'any' | 'true' | 'false'>('any'); // users
@@ -591,13 +593,24 @@ export class ManagementComponent {
       });
     });
 
+    // Debounce search input
+    effect(() => {
+      const searchValue = this.search();
+      if (this.searchTimeout) {
+        clearTimeout(this.searchTimeout);
+      }
+      this.searchTimeout = setTimeout(() => {
+        this.debouncedSearch.set(searchValue);
+      }, 500); // 500ms debounce delay
+    });
+
     // Fetch data when state changes
     effect(() => {
       if (!this.initialized()) return;
       this.activeTab();
       this.pageIndex();
       this.pageSize();
-      this.search();
+      this.debouncedSearch();
       this.selectedRoleId();
       this.selectedTenantId();
       this.selectedUserActive();
@@ -614,7 +627,7 @@ export class ManagementComponent {
         page: this.pageIndex() + 1,
         limit: this.pageSize(),
       };
-      const s = this.search().trim(); if (s) query['search'] = s;
+      const s = this.debouncedSearch().trim(); if (s) query['search'] = s;
       const rid = this.selectedRoleId(); if (rid != null && this.activeTab() === 'users') query['role_id'] = String(rid);
       if (this.isSuperAdmin()) {
         const tid = this.selectedTenantId(); if (tid != null) query['tenant_id'] = String(tid);
@@ -658,7 +671,7 @@ export class ManagementComponent {
       let params = new HttpParams()
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
-      const s = this.search().trim(); if (s) params = params.set('name', s);
+      const s = this.debouncedSearch().trim(); if (s) params = params.set('name', s);
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getTenants(params).subscribe({
@@ -677,7 +690,7 @@ export class ManagementComponent {
       let params = new HttpParams()
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
-      const s = this.search().trim(); if (s) params = params.set('search', s);
+      const s = this.debouncedSearch().trim(); if (s) params = params.set('search', s);
       const rid = this.selectedRoleId(); if (rid != null) params = params.set('role_id', String(rid));
       if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
       const ia = this.selectedUserActive(); if (ia !== 'any') params = params.set('is_active', ia === 'true' ? 'true' : 'false');
@@ -704,7 +717,7 @@ export class ManagementComponent {
       let params = new HttpParams()
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
-      const s = this.search().trim(); if (s) params = params.set('search', s);
+      const s = this.debouncedSearch().trim(); if (s) params = params.set('search', s);
       if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
@@ -735,7 +748,7 @@ export class ManagementComponent {
             ...p,
             tenant_name: p.tenant_name ?? String(p.tenant_id)
           }));
-          const s = this.search().trim().toLowerCase();
+          const s = this.debouncedSearch().trim().toLowerCase();
           let filtered = s ? all.filter(r => `${r.name} ${r.ssid}`.toLowerCase().includes(s)) : all;
           
           // Apply client-side sorting
@@ -763,7 +776,7 @@ export class ManagementComponent {
       let params = new HttpParams()
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
-      const s = this.search().trim(); if (s) params = params.set('search', s);
+      const s = this.debouncedSearch().trim(); if (s) params = params.set('search', s);
       if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
@@ -786,7 +799,7 @@ export class ManagementComponent {
       let params = new HttpParams()
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
-      const s = this.search().trim(); if (s) params = params.set('search', s);
+      const s = this.debouncedSearch().trim(); if (s) params = params.set('search', s);
       if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
@@ -809,7 +822,7 @@ export class ManagementComponent {
       let params = new HttpParams()
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
-      const s = this.search().trim(); if (s) params = params.set('search', s);
+      const s = this.debouncedSearch().trim(); if (s) params = params.set('search', s);
       if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
@@ -832,7 +845,7 @@ export class ManagementComponent {
       let params = new HttpParams()
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
-      const s = this.search().trim(); if (s) params = params.set('search', s);
+      const s = this.debouncedSearch().trim(); if (s) params = params.set('search', s);
       if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
