@@ -95,7 +95,7 @@ export class StockManagementComponent {
         { label: 'Part', value: 'true' },
         { label: 'Device', value: 'false' },
       ] });
-      list.push({ key: 'low_stock_threshold', label: 'Low stock ≤', type: 'text', placeholder: 'e.g., 5' });
+      list.push({ key: 'low_stock_threshold', label: 'Low stock ≤', type: 'text', placeholder: 'e.g., 5', inputType: 'number' });
     }
     if (tab === 'transfers') {
       list.push({ key: 'from_warehouse_id', label: 'From Warehouse', type: 'select', options: this.warehouseOptions() });
@@ -443,11 +443,12 @@ export class StockManagementComponent {
     this.search.set(event.search ?? '');
     const f = event.facets ?? {};
     const parseNum = (v?: string) => { if (!v) return null; const n = Number(v); return Number.isFinite(n) ? n : null; };
+    const parsePositiveNum = (v?: string) => { if (!v) return null; const n = Number(v); return Number.isFinite(n) && n >= 0 ? n : null; };
 
     if (this.activeTab() === 'stock') {
       this.selectedWarehouseId.set(parseNum(f['warehouse_id']));
       const ip = f['is_part']; this.selectedIsPart.set(ip === 'true' || ip === 'false' ? (ip as any) : 'any');
-      this.lowStockThreshold.set(parseNum(f['low_stock_threshold']));
+      this.lowStockThreshold.set(parsePositiveNum(f['low_stock_threshold']));
     }
 
     if (this.activeTab() === 'transfers') {
