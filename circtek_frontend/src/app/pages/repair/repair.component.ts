@@ -266,10 +266,10 @@ export class RepairComponent {
   // Search placeholder per tab
   searchPlaceholder = computed(() => {
     switch (this.activeTab()) {
-      case 'repairs': return 'Search device SKU, IMEI, serial, remarks';
-      case 'repair-reasons': return 'Search name, description';
-      case 'dead-imei': return 'Search device ID, SKU, IMEI, serial';
-      case 'analytics': return 'Search part SKU';
+      case 'repairs': return 'SKU, IMEI, serial';
+      case 'repair-reasons': return 'Name, description';
+      case 'dead-imei': return 'Device ID, SKU, IMEI, serial';
+      case 'analytics': return 'Part SKU';
       default: return 'Search';
     }
   });
