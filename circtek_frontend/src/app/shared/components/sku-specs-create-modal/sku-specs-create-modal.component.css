@@ -70,6 +70,10 @@
   transition: all 0.2s ease;
 }
 
+.form-select {
+  height: 42px;
+}
+
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {

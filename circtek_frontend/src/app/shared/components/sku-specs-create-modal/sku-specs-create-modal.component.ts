@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { GenericModalComponent, type ModalAction } from '../generic-modal/generic-modal.component';
 import { ApiService } from '../../../core/services/api.service';
 import { SkuSpecsCreateInput } from '../../../core/models/sku-specs';
+import { noWhitespaceValidator } from '../../../core/validators/custom-validators';
 
 @Component({
   selector: 'app-sku-specs-create-modal',
@@ -78,15 +79,15 @@ export class SkuSpecsCreateModalComponent {
   private createForm(): FormGroup {
     const suggested = this.suggestedSku();
     return this.fb.group({
-      sku: [suggested || '', [Validators.required]],
-      make: [''],
-      model_no: [''],
-      model_name: [''],
+      sku: [suggested || '', [Validators.required, noWhitespaceValidator()]],
+      make: ['', [noWhitespaceValidator()]],
+      model_no: ['', [noWhitespaceValidator()]],
+      model_name: ['', [noWhitespaceValidator()]],
       is_part: [false],
       // Device-specific fields (conditionally required)
-      storage: [''],
-      memory: [''],
-      color: [''],
+      storage: ['', [noWhitespaceValidator()]],
+      memory: ['', [noWhitespaceValidator()]],
+      color: ['', [noWhitespaceValidator()]],
       device_type: [''],
       status: [true]
     });
@@ -122,23 +123,26 @@ export class SkuSpecsCreateModalComponent {
 
   onSubmit(): void {
     const form = this.form();
-    if (form.invalid) return;
+    if (form.invalid) {
+      form.markAllAsTouched();
+      return;
+    }
 
     this.submitting.set(true);
     this.error.set(null);
 
     const formValue = form.value;
     const payload: SkuSpecsCreateInput = {
-      sku: formValue.sku,
-      make: formValue.make || undefined,
-      model_no: formValue.model_no || undefined,
-      model_name: formValue.model_name || undefined,
+      sku: formValue.sku?.trim(),
+      make: formValue.make?.trim() || undefined,
+      model_no: formValue.model_no?.trim() || undefined,
+      model_name: formValue.model_name?.trim() || undefined,
       is_part: formValue.is_part,
       // Device-specific fields (only include if not a part)
       ...(formValue.is_part ? {} : {
-        storage: formValue.storage || undefined,
-        memory: formValue.memory || undefined,
-        color: formValue.color || undefined,
+        storage: formValue.storage?.trim() || undefined,
+        memory: formValue.memory?.trim() || undefined,
+        color: formValue.color?.trim() || undefined,
         device_type: formValue.device_type || undefined,
       }),
       status: formValue.status
@@ -182,6 +186,7 @@ export class SkuSpecsCreateModalComponent {
     const field = this.form().get(fieldName);
     if (field && field.invalid && field.touched) {
       if (field.errors?.['required']) return `${fieldName} is required`;
+      if (field.errors?.['whitespace']) return `${fieldName} cannot contain only spaces`;
     }
     return null;
   }

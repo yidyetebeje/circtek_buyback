@@ -39,8 +39,12 @@
             type="text"
             formControlName="make"
             class="form-input"
+            [class.error]="isFieldInvalid('make')"
             placeholder="e.g., Apple, Samsung"
           />
+          @if (isFieldInvalid('make')) {
+            <span class="error-text">{{ getFieldError('make') }}</span>
+          }
         </div>
       </div>
 
@@ -52,8 +56,12 @@
             type="text"
             formControlName="model_no"
             class="form-input"
+            [class.error]="isFieldInvalid('model_no')"
             placeholder="e.g., A2482, SM-G998B"
           />
+          @if (isFieldInvalid('model_no')) {
+            <span class="error-text">{{ getFieldError('model_no') }}</span>
+          }
         </div>
 
         <div class="form-group">
@@ -63,8 +71,12 @@
             type="text"
             formControlName="model_name"
             class="form-input"
+            [class.error]="isFieldInvalid('model_name')"
             placeholder="e.g., iPhone 15 Pro, Galaxy S24 Ultra"
           />
+          @if (isFieldInvalid('model_name')) {
+            <span class="error-text">{{ getFieldError('model_name') }}</span>
+          }
         </div>
       </div>
 
@@ -109,8 +121,12 @@
               type="text"
               formControlName="storage"
               class="form-input"
+              [class.error]="isFieldInvalid('storage')"
               placeholder="e.g., 128GB, 256GB"
             />
+            @if (isFieldInvalid('storage')) {
+              <span class="error-text">{{ getFieldError('storage') }}</span>
+            }
           </div>
         </div>
 
@@ -122,8 +138,12 @@
               type="text"
               formControlName="memory"
               class="form-input"
+              [class.error]="isFieldInvalid('memory')"
               placeholder="e.g., 8GB, 12GB"
             />
+            @if (isFieldInvalid('memory')) {
+              <span class="error-text">{{ getFieldError('memory') }}</span>
+            }
           </div>
 
           <div class="form-group">
@@ -133,8 +153,12 @@
               type="text"
               formControlName="color"
               class="form-input"
+              [class.error]="isFieldInvalid('color')"
               placeholder="e.g., Space Gray, Midnight Blue"
             />
+            @if (isFieldInvalid('color')) {
+              <span class="error-text">{{ getFieldError('color') }}</span>
+            }
           </div>
         </div>
       </div>

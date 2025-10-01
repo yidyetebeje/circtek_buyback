@@ -8,6 +8,7 @@ import { GenericFormPageComponent, type FormField, type FormAction } from '../..
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { SkuSpecsCreateInput, SkuSpecsUpdateInput, SkuSpecsRecord } from '../../core/models/sku-specs';
+import { noWhitespaceValidator } from '../../core/validators/custom-validators';
 
 interface SkuSpecsFormData {
   sku: string;
@@ -45,14 +46,14 @@ export class SkuSpecsFormComponent implements OnInit {
 
   // Form
   form = this.fb.group({
-    sku: ['', [Validators.required, Validators.minLength(2), Validators.pattern(/^[A-Za-z0-9-_]+$/)]],
-    make: [''],
-    model_no: [''],
-    model_name: [''],
+    sku: ['', [Validators.required, Validators.minLength(2), Validators.pattern(/^[A-Za-z0-9-_]+$/), noWhitespaceValidator()]],
+    make: ['', [noWhitespaceValidator()]],
+    model_no: ['', [noWhitespaceValidator()]],
+    model_name: ['', [noWhitespaceValidator()]],
     is_part: [false],
-    storage: [''],
-    memory: [''],
-    color: [''],
+    storage: ['', [noWhitespaceValidator()]],
+    memory: ['', [noWhitespaceValidator()]],
+    color: ['', [noWhitespaceValidator()]],
     device_type: [''],
     status: [true],
   });
@@ -194,16 +195,16 @@ export class SkuSpecsFormComponent implements OnInit {
 
     const formData = this.form.value as SkuSpecsFormData;
     
-    // Clean up empty strings to undefined for optional fields
+    // Clean up empty strings and trim whitespace for optional fields
     const cleanData = {
-      sku: formData.sku,
-      make: formData.make || undefined,
-      model_no: formData.model_no || undefined,
-      model_name: formData.model_name || undefined,
+      sku: formData.sku?.trim(),
+      make: formData.make?.trim() || undefined,
+      model_no: formData.model_no?.trim() || undefined,
+      model_name: formData.model_name?.trim() || undefined,
       is_part: formData.is_part,
-      storage: formData.storage || undefined,
-      memory: formData.memory || undefined,
-      color: formData.color || undefined,
+      storage: formData.storage?.trim() || undefined,
+      memory: formData.memory?.trim() || undefined,
+      color: formData.color?.trim() || undefined,
       device_type: formData.device_type || undefined,
       status: formData.status,
     };
