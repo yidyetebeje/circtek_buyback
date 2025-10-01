@@ -386,13 +386,13 @@
       </div>
     </div>
     
-    <div class="form-control">
-      <label class="label mb-1">
-        <span class="label-text">Download URL <span class="text-error ml-0.5">*</span></span>
+    <div class="form-control w-full">
+      <label class="block mb-2">
+        <span class="text-sm font-medium">Download URL <span class="text-error ml-0.5">*</span></span>
       </label>
       <input 
         type="url" 
-        class="input input-accent" 
+        class="input input-accent w-full" 
         placeholder="https://example.com/update.zip"
         [value]="otaUpdateForm().url"
         (input)="onOtaUpdateUrlChange($event)"
