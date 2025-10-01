@@ -249,16 +249,13 @@
   (actionClick)="onGradeModalAction($event)"
 >
   <div class="space-y-4">
-    <div class="form-control">
-      <label class="label mb-1">
-        <span class="label-text inline-flex items-center gap-1">
-          <span>Name</span>
-          <span class="text-error">*</span>
-        </span>
+    <div class="form-control w-full">
+      <label class="block mb-2">
+        <span class="text-sm font-medium">Name <span class="text-error">*</span></span>
       </label>
       <input 
         type="text" 
-        class="input input-accent" 
+        class="input input-accent w-full" 
         placeholder="Enter grade name (letters only)"
         [value]="gradeForm().name"
         (input)="onGradeNameChange($event)"
@@ -266,18 +263,15 @@
         maxlength="100"
       />
       @if (gradeNameError()) {
-        <div class="label">
-          <span class="label-text-alt text-error">{{ gradeNameError() }}</span>
+        <div class="mt-1">
+          <span class="text-xs text-error">{{ gradeNameError() }}</span>
         </div>
       }
     </div>
     
-    <div class="form-control">
-      <label class="label mb-1">
-        <span class="label-text inline-flex items-center gap-1">
-          <span>Color</span>
-          <span class="text-error">*</span>
-        </span>
+    <div class="form-control w-full">
+      <label class="block mb-2">
+        <span class="text-sm font-medium">Color <span class="text-error">*</span></span>
       </label>
       <div class="flex items-center gap-3">
         <input 

@@ -179,10 +179,10 @@
                           <div class="flex items-center justify-start gap-3">
                             <div 
                               class="w-8 h-8 rounded-lg border-2 border-base-300 shadow-sm cursor-help transition-all hover:scale-110"
-                              [style.background-color]="cellText(cell)"
-                              [title]="'Color: ' + cellText(cell)"
+                              [style.background-color]="cell.getValue()"
+                              [title]="cell.getValue() || 'No color set'"
                             ></div>
-                            <span class="text-xs text-base-content/50 font-mono hidden sm:inline">{{ cellText(cell) }}</span>
+                            <span class="text-xs text-base-content/50 font-mono hidden sm:inline">{{ cell.getValue() || 'N/A' }}</span>
                           </div>
                         } @else if (shouldTruncateText(cell)) {
                           <app-truncated-text 
