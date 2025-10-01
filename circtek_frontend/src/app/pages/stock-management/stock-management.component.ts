@@ -209,10 +209,10 @@ export class StockManagementComponent {
   // Search placeholder per tab
   searchPlaceholder = computed(() => {
     switch (this.activeTab()) {
-      case 'stock': return 'Search SKU';
-      case 'purchases': return 'Search PO, supplier, tracking';
-      case 'transfers': return 'Search transfers';
-      case 'sku-specs': return 'Search SKU, make, model';
+      case 'stock': return 'SKU';
+      case 'purchases': return 'PO,supplier,tracking';
+      case 'transfers': return 'transfers';
+      case 'sku-specs': return 'SKU,make,model';
       default: return 'Search';
     }
   });
