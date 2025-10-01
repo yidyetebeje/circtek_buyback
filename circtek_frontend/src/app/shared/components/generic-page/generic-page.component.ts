@@ -75,6 +75,7 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
   // Filters
   searchPlaceholder = input<string>('Search…');
   searchQuery = signal<string>('');
+  searchQueryInput = input<string>(''); // External control of search query
   facets = input<Facet[] | null>(null);
   facetModel = signal<Record<string, string>>({});
   filtersChange = output<{ search: string; facets: Record<string, string> }>();
@@ -145,6 +146,7 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
 
   // Emit filters when search/facets change
   private _filtersInitialized = false;
+  private _syncingSearchFromExternal = false;
   private _filtersEffect = effect(() => {
     // read signals to subscribe
     const search = this.searchQuery();
@@ -152,6 +154,10 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
     // Skip the very first run to avoid resetting page via initial mount
     if (!this._filtersInitialized) {
       this._filtersInitialized = true;
+      return;
+    }
+    // Skip if we're syncing from external input to avoid emitting back to parent
+    if (this._syncingSearchFromExternal) {
       return;
     }
     // Reset pagination to first page on any filter change
@@ -186,6 +192,21 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
     const current = this.activeTabKey();
     if (ext != null && ext !== current) {
       this.activeTabKey.set(ext);
+    }
+  });
+
+  // Sync external search query into internal state without emitting filtersChange
+  private _syncSearchQueryInput = effect(() => {
+    const ext = this.searchQueryInput();
+    const current = this.searchQuery();
+    if (ext !== current) {
+      // Set flag to prevent filters effect from emitting
+      this._syncingSearchFromExternal = true;
+      this.searchQuery.set(ext);
+      // Reset flag after a microtask to allow the effect to complete
+      queueMicrotask(() => {
+        this._syncingSearchFromExternal = false;
+      });
     }
   });
 

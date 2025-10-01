@@ -337,6 +337,7 @@ export class DiagnosticsComponent {
 
   onTabChange(key: string | null) {
     this.deviceType.set(key ?? '');
+    this.identifier.set('');
     this.pageIndex.set(0);
   }
 
