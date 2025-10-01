@@ -8,5 +8,6 @@ import { CanMatchFn, Router, UrlTree } from '@angular/router';
 export const authGuard: CanMatchFn = (): boolean | UrlTree => {
   const router = inject(Router);
   const token = localStorage.getItem('auth_token');
+
   return token ? true : router.parseUrl('/login');
 };

@@ -33,7 +33,7 @@ export class ApiService {
   private readonly apiUrl = environment.apiUrl;
 
   private handleError = (err: HttpErrorResponse) => {
-    if (err.status === 401) {
+    if (err.status === 401 || err.status === 403) {
       try {
         // Clear any stored token and redirect to login
         localStorage.removeItem('auth_token');
