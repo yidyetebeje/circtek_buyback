@@ -83,10 +83,10 @@
 
             <!-- List Mode Toggle -->
             <button
-              class="btn btn-sm flex-shrink-0"
+              class="btn btn-sm flex-shrink-0 border border-base-300"
               [ngClass]="{
                 'btn-primary': isListModeActive,
-                'btn-outline btn-primary': !isListModeActive
+                'bg-base-100 hover:bg-base-200': !isListModeActive
               }"
               (click)="toggleListMode()"
             >
