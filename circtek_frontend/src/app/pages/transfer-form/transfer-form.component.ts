@@ -60,6 +60,14 @@ export class TransferFormComponent {
   subtitle = signal('Transfer items between warehouses');
   submitLabel = signal('Create Transfer');
 
+  // Check if warehouses are the same for visual feedback
+  hasWarehouseError = computed(() => {
+    const form = this.form();
+    const fromWarehouse = form.get('from_warehouse_id')?.value;
+    const toWarehouse = form.get('to_warehouse_id')?.value;
+    return fromWarehouse && toWarehouse && fromWarehouse === toWarehouse;
+  });
+
   fields = computed<FormField[]>(() => [
     {
       key: 'from_warehouse_id',
@@ -67,7 +75,8 @@ export class TransferFormComponent {
       type: 'select',
       required: true,
       placeholder: 'Select warehouse',
-      options: this.warehouseOptions()
+      options: this.warehouseOptions(),
+      helpText: this.hasWarehouseError() ? 'Must be different from To Warehouse' : undefined
     },
     {
       key: 'to_warehouse_id',
@@ -75,7 +84,8 @@ export class TransferFormComponent {
       type: 'select',
       required: true,
       placeholder: 'Select warehouse',
-      options: this.warehouseOptions()
+      options: this.warehouseOptions(),
+      helpText: this.hasWarehouseError() ? 'Must be different from From Warehouse' : undefined
     },
     {
       key: 'tracking_number',
@@ -143,7 +153,30 @@ export class TransferFormComponent {
     const toWarehouse = formGroup.get('to_warehouse_id')?.value;
     
     if (fromWarehouse && toWarehouse && fromWarehouse === toWarehouse) {
+      // Set error on both fields for visual feedback
+      const fromControl = formGroup.get('from_warehouse_id');
+      const toControl = formGroup.get('to_warehouse_id');
+      
+      if (fromControl && toControl) {
+        fromControl.setErrors({ ...fromControl.errors, sameWarehouse: true });
+        toControl.setErrors({ ...toControl.errors, sameWarehouse: true });
+      }
+      
       return { 'sameWarehouse': true };
+    } else {
+      // Clear the sameWarehouse error if warehouses are different
+      const fromControl = formGroup.get('from_warehouse_id');
+      const toControl = formGroup.get('to_warehouse_id');
+      
+      if (fromControl?.errors?.['sameWarehouse']) {
+        const { sameWarehouse, ...rest } = fromControl.errors;
+        fromControl.setErrors(Object.keys(rest).length > 0 ? rest : null);
+      }
+      
+      if (toControl?.errors?.['sameWarehouse']) {
+        const { sameWarehouse, ...rest } = toControl.errors;
+        toControl.setErrors(Object.keys(rest).length > 0 ? rest : null);
+      }
     }
     
     return null;
@@ -203,11 +236,15 @@ export class TransferFormComponent {
   }
 
   onSubmit(): void {
-    if (this.form().invalid || this.submitting()) return;
-
-    // Check for warehouse validation errors
+    // Check for warehouse validation errors first
     if (this.form().hasError('sameWarehouse')) {
       this.error.set('From and To warehouses must be different');
+      this.form().markAllAsTouched();
+      return;
+    }
+
+    if (this.form().invalid || this.submitting()) {
+      this.form().markAllAsTouched();
       return;
     }
 

@@ -174,6 +174,9 @@ export class GenericFormPageComponent {
     if (errors['usernameExists']) {
       return 'This username is already taken';
     }
+    if (errors['sameWarehouse']) {
+      return 'Must be different from the other warehouse';
+    }
 
     return 'Invalid input';
   }
