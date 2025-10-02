@@ -97,17 +97,9 @@ export class RepairFormComponent implements OnInit {
     this.loadWarehouses();
     this.loadRepairReasons();
     
-    // Auto-fetch device details when identifier changes
+    // Reset device found state when identifier is cleared
     this.form().get('identifier')?.valueChanges.subscribe((identifier: string) => {
-      if (identifier && identifier.trim().length > 0) {
-        // Debounce the API call to avoid too many requests
-        setTimeout(() => {
-          if (this.form().get('identifier')?.value === identifier) {
-            this.fetchDeviceDetails();
-          }
-        }, 500);
-      } else {
-        // Reset device found state when identifier is cleared
+      if (!identifier || identifier.trim().length === 0) {
         this.deviceFound.set(false);
         this.form().get('device_id')?.setValue(null);
       }
@@ -255,6 +247,11 @@ export class RepairFormComponent implements OnInit {
       this.form().get('identifier')?.setValue(result.value);
       this.fetchDeviceDetails();
     }
+  }
+
+  onImeiInputChanged(value: string) {
+    // Update the form control value in real-time as user types
+    this.form().get('identifier')?.setValue(value);
   }
 
   onSkuScanned(result: ScanResult) {
