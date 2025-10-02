@@ -8,6 +8,7 @@ export const CreateApiKeyRequest = t.Object({
   description: t.Optional(t.String({ maxLength: 1000 })),
   rate_limit: t.Optional(t.Number({ minimum: 1, maximum: 10000 })),
   expires_at: t.Optional(t.String({ format: 'date-time' })),
+  tenant_id: t.Optional(t.Number({ minimum: 1 })), // For super_admin to specify tenant
 });
 
 export const UpdateApiKeyRequest = t.Object({
@@ -27,6 +28,7 @@ export const ApiKeyListQuery = t.Object({
   limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
   is_active: t.Optional(t.Boolean()),
   search: t.Optional(t.String({ minLength: 1 })),
+  tenant_id: t.Optional(t.Number({ minimum: 1 })), // For super_admin to filter by tenant
 });
 
 export const ApiKeyUsageQuery = t.Object({

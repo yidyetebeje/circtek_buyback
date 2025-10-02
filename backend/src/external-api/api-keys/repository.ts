@@ -140,49 +140,38 @@ export class ApiKeyRepository {
 
     // Get API keys with details
     const result = await this.db
-      .select({
-        // API Key fields
-        id: api_keys.id,
-        name: api_keys.name,
-        description: api_keys.description,
-        key_hash: api_keys.key_hash,
-        key_prefix: api_keys.key_prefix,
-        tenant_id: api_keys.tenant_id,
-        created_by: api_keys.created_by,
-        rate_limit: api_keys.rate_limit,
-        expires_at: api_keys.expires_at,
-        last_used_at: api_keys.last_used_at,
-        last_used_ip: api_keys.last_used_ip,
-        usage_count: api_keys.usage_count,
-        is_active: api_keys.is_active,
-        revoked_at: api_keys.revoked_at,
-        revoked_by: api_keys.revoked_by,
-        revoked_reason: api_keys.revoked_reason,
-        created_at: api_keys.created_at,
-        updated_at: api_keys.updated_at,
-        
-        // Joined fields
-        tenant_name: tenants.name,
-        created_by_name: users.name,
-        created_by_email: users.email,
-        revoked_by_name: sql<string | null>`revoked_user.name`,
-      })
+      .select()
       .from(api_keys)
       .innerJoin(tenants, eq(api_keys.tenant_id, tenants.id))
       .innerJoin(users, eq(api_keys.created_by, users.id))
-      .leftJoin(
-        sql`${users} as revoked_user`,
-        eq(api_keys.revoked_by, sql`revoked_user.id`)
-      )
       .where(whereClause)
       .orderBy(desc(api_keys.created_at))
       .limit(limit)
       .offset(offset);
 
     const apiKeysWithDetails: ApiKeyWithDetails[] = result.map(row => ({
-      ...row,
-      revoked_by_name: row.revoked_by_name || undefined,
-    })) as ApiKeyWithDetails[];
+      id: row.api_keys.id,
+      name: row.api_keys.name,
+      description: row.api_keys.description,
+      key_hash: row.api_keys.key_hash,
+      key_prefix: row.api_keys.key_prefix,
+      tenant_id: row.api_keys.tenant_id,
+      created_by: row.api_keys.created_by,
+      rate_limit: row.api_keys.rate_limit,
+      expires_at: row.api_keys.expires_at,
+      last_used_at: row.api_keys.last_used_at,
+      last_used_ip: row.api_keys.last_used_ip,
+      usage_count: row.api_keys.usage_count,
+      is_active: row.api_keys.is_active,
+      revoked_at: row.api_keys.revoked_at,
+      revoked_by: row.api_keys.revoked_by,
+      revoked_reason: row.api_keys.revoked_reason,
+      created_at: row.api_keys.created_at,
+      updated_at: row.api_keys.updated_at,
+      tenant_name: row.tenants.name,
+      created_by_name: row.users.name,
+      created_by_email: row.users.email,
+    }));
 
     return {
       data: apiKeysWithDetails,

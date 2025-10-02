@@ -18,11 +18,12 @@ import { LabelTemplateRecord } from '../../core/models/label-template';
 import { WorkflowRecord } from '../../core/models/workflow';
 import { Grade } from '../../core/models/grade';
 import { OtaUpdate } from '../../core/models/ota-update';
+import { ApiKey } from '../../core/models/api-key';
 import { ToastrService } from 'ngx-toastr';
 import { ToastService } from '../../core/services/toast.service';
 
 // Union to drive the generic table
-export type MgmtRow = User | Warehouse | WiFiProfile | Tenant | RepairReasonRecord | LabelTemplateRecord | WorkflowRecord | Grade | OtaUpdate;
+export type MgmtRow = User | Warehouse | WiFiProfile | Tenant | RepairReasonRecord | LabelTemplateRecord | WorkflowRecord | Grade | OtaUpdate | ApiKey;
 
 @Component({
   selector: 'app-management',
@@ -46,7 +47,7 @@ export class ManagementComponent {
   total = signal(0);
 
   // Tab & pagination
-  activeTab = signal<'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates'>('users');
+  activeTab = signal<'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates' | 'api-keys'>('users');
   pageIndex = signal(0);
   pageSize = signal(10);
 
@@ -57,6 +58,7 @@ export class ManagementComponent {
   selectedRoleId = signal<number | null>(null); // users
   selectedTenantId = signal<number | null>(null); // super_admin only
   selectedUserActive = signal<'any' | 'true' | 'false'>('any'); // users
+  selectedApiKeyActive = signal<'' | 'true' | 'false'>(''); // api-keys
 
   // Sorting
   sortField = signal<string | null>(null);
@@ -96,9 +98,13 @@ export class ManagementComponent {
       { key: 'grades', label: 'Grades' },
       { key: 'ota-updates', label: 'OTA Updates' },
     ];
-    // Show Tenants first for super_admin, Tenant Profile first for normal users
+    // Show Tenants and API Keys first for super_admin, Tenant Profile first for normal users
     if (this.isSuperAdmin()) {
-      return [{ key: 'tenants', label: 'Tenants' }, ...base];
+      return [
+        { key: 'tenants', label: 'Tenants' },
+        { key: 'api-keys', label: 'API Keys' },
+        ...base
+      ];
     } else {
       return [{ key: 'tenant-profile', label: 'Tenant Profile' }, ...base];
     }
@@ -123,7 +129,9 @@ export class ManagementComponent {
                   ? 'Add Grade'
                   : t === 'ota-updates'
                     ? 'Add OTA Update'
-                    : 'Add WiFi Profile';
+                    : t === 'api-keys'
+                      ? 'Create API Key'
+                      : 'Add WiFi Profile';
     return { label } as { label: string };
   });
 
@@ -144,12 +152,38 @@ export class ManagementComponent {
     if (this.isSuperAdmin() && this.activeTab() !== 'tenants' && this.activeTab() !== 'tenant-profile' && this.activeTab() !== 'ota-updates') {
       list.unshift({ key: 'tenant_id', label: 'Tenant', type: 'select', options: this.tenantOptions() });
     }
+
+    // Add status filter for API keys
+    if (this.activeTab() === 'api-keys') {
+      list.push({ 
+        key: 'is_active', 
+        label: 'Status', 
+        type: 'select', 
+        options: [
+          { label: 'All', value: '' },
+          { label: 'Active', value: 'true' },
+          { label: 'Inactive', value: 'false' },
+        ] 
+      });
+    }
+
     return list;
   });
 
   // Delete confirmation modal state
   isDeleteModalOpen = signal(false);
-  deleteContext = signal<{ tab: 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates'; row: MgmtRow } | null>(null);
+  deleteContext = signal<{ tab: 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates' | 'api-keys'; row: MgmtRow } | null>(null);
+
+  // API Key Create Modal state
+  isApiKeyCreateModalOpen = signal(false);
+  apiKeyCreateForm = signal({
+    name: '',
+    description: '',
+    tenant_id: null as number | null,
+    rate_limit: 1000,
+    expires_at: ''
+  });
+  createdApiKey = signal<{ key: string; name: string } | null>(null);
 
   // Tenant Profile Modal state
   isTenantProfileModalOpen = signal(false);
@@ -187,9 +221,92 @@ export class ManagementComponent {
     }
   ]);
 
-  openDeleteModal(tab: 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates', row: MgmtRow) {
+  apiKeyCreateModalActions = computed<ModalAction[]>(() => {
+    const form = this.apiKeyCreateForm();
+    const isValid = form.name.trim() && form.tenant_id !== null;
+    
+    return [
+      {
+        label: 'Cancel',
+        variant: 'ghost',
+        action: 'cancel'
+      },
+      {
+        label: 'Create',
+        variant: 'accent',
+        disabled: !isValid,
+        action: 'create'
+      }
+    ];
+  });
+
+  openDeleteModal(tab: 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates' | 'api-keys', row: MgmtRow) {
     this.deleteContext.set({ tab, row });
     this.isDeleteModalOpen.set(true);
+  }
+
+  openApiKeyCreateModal() {
+    this.apiKeyCreateForm.set({
+      name: '',
+      description: '',
+      tenant_id: null,
+      rate_limit: 1000,
+      expires_at: ''
+    });
+    this.createdApiKey.set(null);
+    this.isApiKeyCreateModalOpen.set(true);
+  }
+
+  closeApiKeyCreateModal() {
+    this.isApiKeyCreateModalOpen.set(false);
+    this.apiKeyCreateForm.set({
+      name: '',
+      description: '',
+      tenant_id: null,
+      rate_limit: 1000,
+      expires_at: ''
+    });
+    this.createdApiKey.set(null);
+  }
+
+  onApiKeyCreateModalAction(action: string): void {
+    if (action === 'create') {
+      this.createApiKey();
+    } else if (action === 'cancel') {
+      this.closeApiKeyCreateModal();
+    }
+  }
+
+  createApiKey() {
+    const form = this.apiKeyCreateForm();
+    if (!form.name.trim() || !form.tenant_id) return;
+
+    this.loading.set(true);
+    const requestData: any = {
+      name: form.name.trim(),
+      description: form.description.trim() || undefined,
+      rate_limit: form.rate_limit,
+      tenant_id: form.tenant_id
+    };
+
+    if (form.expires_at) {
+      requestData.expires_at = new Date(form.expires_at).toISOString();
+    }
+
+    this.api.createApiKey(requestData).subscribe({
+      next: (res) => {
+        this.loading.set(false);
+        if (res.data && res.data.key) {
+          this.createdApiKey.set({ key: res.data.key, name: res.data.name });
+          this.toast.success('API Key created successfully! Copy the key now - it won\'t be shown again.');
+          this.fetchData(); // Refresh the list
+        }
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.toast.error(err.error?.message || 'Failed to create API key');
+      }
+    });
   }
 
   closeDeleteModal() {
@@ -228,6 +345,8 @@ export class ManagementComponent {
       deleteObservable = this.api.deleteGrade((ctx.row as any).id);
     } else if (ctx.tab === 'ota-updates') {
       deleteObservable = this.api.deleteOtaUpdate((ctx.row as any).id);
+    } else if (ctx.tab === 'api-keys') {
+      deleteObservable = this.api.deleteApiKey((ctx.row as any).id);
     }
 
     if (deleteObservable) {
@@ -244,6 +363,7 @@ export class ManagementComponent {
                              ctx.tab === 'labels' ? 'Label Template' :
                              ctx.tab === 'workflows' ? 'Workflow' :
                              ctx.tab === 'grades' ? 'Grade' :
+                             ctx.tab === 'api-keys' ? 'API Key' :
                              'OTA Update';
           this.toast.deleteSuccess(entityName);
         },
@@ -259,6 +379,7 @@ export class ManagementComponent {
                              ctx.tab === 'labels' ? 'Label Template' :
                              ctx.tab === 'workflows' ? 'Workflow' :
                              ctx.tab === 'grades' ? 'Grade' :
+                             ctx.tab === 'api-keys' ? 'API Key' :
                              'OTA Update';
           const errorMessage = error?.error?.message || error?.message;
           if (errorMessage) {
@@ -514,6 +635,40 @@ export class ManagementComponent {
             }
           } as any,
         ];
+      case 'api-keys':
+        return [
+          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+            const idx = this.data().indexOf(r as any);
+            const base = this.pageIndex() * this.pageSize();
+            return base + (idx >= 0 ? idx : 0) + 1;
+          } },
+          { header: 'Name', accessorKey: 'name' as any, enableSorting: true, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Key Prefix', accessorKey: 'key_display' as any, enableSorting: false, meta: { truncateText: true, truncateMaxWidth: '120px' } },
+          { header: 'Tenant', accessorKey: 'tenant_name' as any, enableSorting: false, meta: { truncateText: true, truncateMaxWidth: '120px' } },
+          { header: 'Rate Limit', accessorKey: 'rate_limit' as any, enableSorting: true },
+          { header: 'Usage Count', accessorKey: 'usage_count' as any, enableSorting: true },
+          { header: 'Status', id: 'status' as any, enableSorting: false, accessorFn: (r: any) => {
+            if (r.revoked_at) return 'Revoked';
+            if (r.expires_at && new Date(r.expires_at) < new Date()) return 'Expired';
+            return r.is_active ? 'Active' : 'Inactive';
+          } },
+          { header: 'Last Used', accessorKey: 'last_used_at' as any, enableSorting: true, accessorFn: (r: any) => {
+            if (!r.last_used_at) return 'Never';
+            return new Date(r.last_used_at).toLocaleDateString();
+          } },
+          {
+            header: 'Actions',
+            id: 'actions' as any,
+            enableSorting: false as any,
+            meta: {
+              actions: [
+                { key: 'revoke', label: 'Revoke', class: 'text-warning' },
+                { key: 'delete', label: 'Delete', class: 'text-error' },
+              ],
+              cellClass: () => 'text-right'
+            }
+          } as any,
+        ];
       default:
         return [] as any;
     }
@@ -540,6 +695,8 @@ export class ManagementComponent {
         return 'Search grades';
       case 'ota-updates':
         return 'Search OTA updates';
+      case 'api-keys':
+        return 'Search API keys by name';
       default:
         return '';
     }
@@ -558,6 +715,7 @@ export class ManagementComponent {
 
     const tab = str('tab', 'users');
     if (tab === 'tenants' && this.isSuperAdmin()) this.activeTab.set('tenants');
+    else if (tab === 'api-keys' && this.isSuperAdmin()) this.activeTab.set('api-keys');
     else if (tab === 'tenant-profile' && !this.isSuperAdmin()) this.activeTab.set('tenant-profile');
     else if (tab === 'warehouses' || tab === 'wifi' || tab === 'users' || tab === 'labels' || tab === 'workflows' || tab === 'grades' || tab === 'ota-updates') this.activeTab.set(tab as any);
     else this.activeTab.set(this.isSuperAdmin() ? 'users' : 'tenant-profile');
@@ -614,6 +772,7 @@ export class ManagementComponent {
       this.selectedRoleId();
       this.selectedTenantId();
       this.selectedUserActive();
+      this.selectedApiKeyActive();
       this.sortField();
       this.sortOrder();
       this.fetchData();
@@ -861,6 +1020,32 @@ export class ManagementComponent {
       });
       return;
     }
+    if (tab === 'api-keys') {
+      let params = new HttpParams()
+        .set('page', String(this.pageIndex() + 1))
+        .set('limit', String(this.pageSize()));
+      const s = this.debouncedSearch().trim(); if (s) params = params.set('search', s);
+      if (this.isSuperAdmin()) { 
+        const tid = this.selectedTenantId(); 
+        if (tid != null) params = params.set('tenant_id', String(tid)); 
+      }
+      // Handle is_active filter
+      const isActive = this.selectedApiKeyActive();
+      if (isActive === 'true') params = params.set('is_active', 'true');
+      else if (isActive === 'false') params = params.set('is_active', 'false');
+      
+      this.api.getApiKeys(params).subscribe({
+        next: (res) => { 
+          if (seq !== this.requestSeq) return; 
+          const apiKeys = res.data ?? [];
+          this.data.set(apiKeys); 
+          this.total.set(res.pagination?.total ?? 0); 
+          this.loading.set(false); 
+        },
+        error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
+      });
+      return;
+    }
   }
 
   // Handlers from GenericPage
@@ -889,6 +1074,10 @@ export class ManagementComponent {
       this.selectedRoleId.set(parseNum(f['role_id']));
       const ia = f['is_active']; this.selectedUserActive.set(ia === 'true' || ia === 'false' ? (ia as any) : 'any');
     }
+    if (this.activeTab() === 'api-keys') {
+      const ia = f['is_active']; 
+      this.selectedApiKeyActive.set(ia === 'true' || ia === 'false' ? (ia as '' | 'true' | 'false') : '');
+    }
     this.pageIndex.set(0); // reset
   }
 
@@ -907,7 +1096,7 @@ export class ManagementComponent {
   }
 
   onTabChange(key: string | null) {
-    const k = (key ?? (this.isSuperAdmin() ? 'users' : 'tenant-profile')) as 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates';
+    const k = (key ?? (this.isSuperAdmin() ? 'users' : 'tenant-profile')) as 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates' | 'api-keys';
     if (k !== this.activeTab()) {
       this.activeTab.set(k);
       // reset some filters per tab
@@ -940,6 +1129,8 @@ export class ManagementComponent {
       this.openGradeModal();
     } else if (t === 'ota-updates') {
       this.openOtaUpdateModal();
+    } else if (t === 'api-keys') {
+      this.openApiKeyCreateModal();
     }
   }
 
@@ -979,6 +1170,12 @@ export class ManagementComponent {
       return;
     }
 
+    // Handle revoke action for API keys
+    if (event.action === 'revoke' && tab === 'api-keys') {
+      this.revokeApiKey(row as ApiKey);
+      return;
+    }
+
   // Assignment actions for wifi, labels, workflows, and ota-updates
     if (tab === 'wifi' || tab === 'labels' || tab === 'workflows' || tab === 'ota-updates') {
       const assignableRow = row as WiFiProfile | LabelTemplateRecord | WorkflowRecord | OtaUpdate;
@@ -991,6 +1188,25 @@ export class ManagementComponent {
         return;
       }
     }
+  }
+
+  revokeApiKey(apiKey: ApiKey) {
+    if (!confirm(`Are you sure you want to revoke the API key "${apiKey.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    this.loading.set(true);
+    this.api.revokeApiKey(apiKey.id, { reason: 'Revoked by admin' }).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.toast.success('API key revoked successfully');
+        this.fetchData();
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.toast.error(err.error?.message || 'Failed to revoke API key');
+      }
+    });
   }
 
   // Assign tester modal state
@@ -1792,5 +2008,41 @@ export class ManagementComponent {
     } else {
       this.tenantProfilePreviewUrl.set(null);
     }
+  }
+
+  // API Key form handlers
+  onApiKeyNameChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.apiKeyCreateForm.update(form => ({ ...form, name: target.value }));
+  }
+
+  onApiKeyDescriptionChange(event: Event) {
+    const target = event.target as HTMLTextAreaElement;
+    this.apiKeyCreateForm.update(form => ({ ...form, description: target.value }));
+  }
+
+  onApiKeyTenantChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    const tenantId = target.value ? Number(target.value) : null;
+    this.apiKeyCreateForm.update(form => ({ ...form, tenant_id: tenantId }));
+  }
+
+  onApiKeyRateLimitChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const rateLimit = Number(target.value) || 1000;
+    this.apiKeyCreateForm.update(form => ({ ...form, rate_limit: rateLimit }));
+  }
+
+  onApiKeyExpiresAtChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.apiKeyCreateForm.update(form => ({ ...form, expires_at: target.value }));
+  }
+
+  copyApiKey(key: string) {
+    navigator.clipboard.writeText(key).then(() => {
+      this.toast.success('API key copied to clipboard');
+    }).catch(() => {
+      this.toast.error('Failed to copy API key');
+    });
   }
 }

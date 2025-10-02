@@ -20,7 +20,7 @@ export const api_key_routes = new Elysia({ prefix: '/api-keys' })
   
   // Create new API key
   .post('/', async (ctx) => {
-    const { body, currentUserId, currentTenantId } = ctx as any;
+    const { body, currentUserId, currentTenantId, currentRole } = ctx as any;
     
     if (!currentUserId || !currentTenantId) {
       return {
@@ -30,20 +30,27 @@ export const api_key_routes = new Elysia({ prefix: '/api-keys' })
       };
     }
 
-    return controller.createApiKey(body, currentTenantId, currentUserId);
+    // For super_admin (role_id === 1), allow specifying tenant_id in body
+    // Otherwise, use the user's tenant
+    let targetTenantId = currentTenantId;
+    if (currentRole === 'super_admin' && body.tenant_id) {
+      targetTenantId = body.tenant_id;
+    }
+
+    return controller.createApiKey(body, targetTenantId, currentUserId);
   }, {
     body: CreateApiKeyRequest,
     detail: {
       tags: ['API Key Management'],
       summary: 'Create API Key',
-      description: 'Create a new API key for external API access. Requires JWT authentication.',
+      description: 'Create a new API key for external API access. Requires JWT authentication. Super admins can specify tenant_id.',
       security: [{ bearerAuth: [] }]
     }
   })
 
   // List API keys
   .get('/', async (ctx) => {
-    const { query, currentTenantId } = ctx as any;
+    const { query, currentTenantId, currentRole } = ctx as any;
     
     if (!currentTenantId) {
       return {
@@ -54,11 +61,15 @@ export const api_key_routes = new Elysia({ prefix: '/api-keys' })
       };
     }
 
-    // Scope to user's tenant
-    const filters = {
-      ...query,
-      tenant_id: currentTenantId
-    };
+    // For super_admin, allow filtering by tenant_id from query or show all
+    // For regular users, always scope to their tenant
+    const filters = { ...query };
+    if (currentRole !== 'super_admin') {
+      filters.tenant_id = currentTenantId;
+    } else if (!filters.tenant_id) {
+      // Super admin without tenant filter - show all (remove tenant_id filter)
+      delete filters.tenant_id;
+    }
 
     return controller.listApiKeys(filters);
   }, {
@@ -66,7 +77,7 @@ export const api_key_routes = new Elysia({ prefix: '/api-keys' })
     detail: {
       tags: ['API Key Management'],
       summary: 'List API Keys',
-      description: 'List API keys for the authenticated user\'s tenant with pagination and filtering. Requires JWT authentication.',
+      description: 'List API keys with pagination and filtering. Regular users see only their tenant keys. Super admins can filter by tenant or see all. Requires JWT authentication.',
       security: [{ bearerAuth: [] }]
     }
   })

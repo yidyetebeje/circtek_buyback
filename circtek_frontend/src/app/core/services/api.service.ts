@@ -23,6 +23,7 @@ import { DeadIMEIRecord, DeadIMEICreateInput, DeadIMEIQueryInput, DeadIMEIResult
 import { Grade, GradeCreateRequest, GradeUpdateRequest } from '../models/grade';
 import { OtaUpdate, OtaUpdateCreateRequest, OtaUpdateUpdateRequest, OtaUpdateListResponse } from '../models/ota-update';
 import { SkuUsageAnalyticsResult, SkuUsageAnalyticsQuery } from '../models/analytics';
+import { ApiKey, ApiKeyCreated, ApiKeyCreateRequest, ApiKeyUpdateRequest, ApiKeyRevokeRequest, ApiKeyListResponse, ApiKeyUsageResponse } from '../models/api-key';
 
 @Injectable({
   providedIn: 'root',
@@ -641,5 +642,34 @@ export class ApiService {
     if (imei) params = params.set('imei', imei);
     if (serial) params = params.set('serial', serial);
     return this.get<ApiResponse<any[]>>('/devices', params);
+  }
+
+  // ===== API Keys (super_admin only) =====
+  getApiKeys(params: HttpParams = new HttpParams()): Observable<ApiKeyListResponse> {
+    return this.get<ApiKeyListResponse>('/external-api/api-keys', params);
+  }
+
+  getApiKey(id: number): Observable<ApiResponse<ApiKey>> {
+    return this.get<ApiResponse<ApiKey>>(`/external-api/api-keys/${id}`);
+  }
+
+  createApiKey(data: ApiKeyCreateRequest): Observable<ApiResponse<ApiKeyCreated>> {
+    return this.post<ApiResponse<ApiKeyCreated>>('/external-api/api-keys', data);
+  }
+
+  updateApiKey(id: number, data: ApiKeyUpdateRequest): Observable<ApiResponse<ApiKey>> {
+    return this.patch<ApiResponse<ApiKey>>(`/external-api/api-keys/${id}`, data);
+  }
+
+  revokeApiKey(id: number, data: ApiKeyRevokeRequest): Observable<ApiResponse<any>> {
+    return this.post<ApiResponse<any>>(`/external-api/api-keys/${id}/revoke`, data);
+  }
+
+  deleteApiKey(id: number): Observable<ApiResponse<any>> {
+    return this.delete<ApiResponse<any>>(`/external-api/api-keys/${id}`);
+  }
+
+  getApiKeyUsage(id: number, params: HttpParams = new HttpParams()): Observable<ApiKeyUsageResponse> {
+    return this.get<ApiKeyUsageResponse>(`/external-api/api-keys/${id}/usage`, params);
   }
 }

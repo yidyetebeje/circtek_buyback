@@ -508,6 +508,103 @@
   </div>
 </app-generic-modal>
 
+<!-- API Key Create Modal -->
+<app-generic-modal
+  [isOpen]="isApiKeyCreateModalOpen()"
+  [title]="createdApiKey() ? 'API Key Created' : 'Create API Key'"
+  [actions]="createdApiKey() ? [] : apiKeyCreateModalActions()"
+  size="lg"
+  [closable]="!loading()"
+  (close)="closeApiKeyCreateModal()"
+  (actionClick)="onApiKeyCreateModalAction($event)"
+>
+  @if (createdApiKey(); as created) {
+    <div class="space-y-4">
+      <div class="alert alert-success">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <span>API Key created successfully!</span>
+      </div>
+      
+      <div class="alert alert-warning">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+        <span>Copy this key now! It won't be shown again.</span>
+      </div>
+      
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-medium">API Key Name</span>
+        </label>
+        <input 
+          type="text" 
+          class="input input-bordered" 
+          [value]="created.name"
+          readonly
+        />
+      </div>
+      
+      <div class="form-control">
+        <label class="label">
+          <span class="label-text font-medium">API Key</span>
+        </label>
+        <div class="flex gap-2">
+          <input 
+            type="text" 
+            class="input input-bordered flex-1 font-mono text-sm" 
+            [value]="created.key"
+            readonly
+          />
+          <button 
+            class="btn btn-accent"
+            (click)="copyApiKey(created.key)"
+          >
+            Copy
+          </button>
+        </div>
+      </div>
+      
+      <div class="flex justify-end mt-4">
+        <button class="btn btn-primary" (click)="closeApiKeyCreateModal()">
+          Done
+        </button>
+      </div>
+    </div>
+  } @else {
+    <div class="space-y-6">
+      <div class="form-control w-full">
+        <label class="block mb-2">
+          <span class="text-sm font-medium">Name <span class="text-error">*</span></span>
+        </label>
+        <input 
+          type="text" 
+          class="input input-accent w-full" 
+          placeholder="Enter API key name"
+          [value]="apiKeyCreateForm().name"
+          (input)="onApiKeyNameChange($event)"
+          [disabled]="loading()"
+          maxlength="255"
+        />
+      </div>
+      
+      <div class="form-control w-full">
+        <label class="block mb-2">
+          <span class="text-sm font-medium">Tenant <span class="text-error">*</span></span>
+        </label>
+        <select 
+          class="select select-accent w-full"
+          [value]="apiKeyCreateForm().tenant_id ?? ''"
+          (change)="onApiKeyTenantChange($event)"
+          [disabled]="loading()"
+        >
+          <option value="">Select tenant...</option>
+          @for (opt of tenantOptions(); track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+  }
+</app-generic-modal>
+
 <!-- Delete Confirmation Modal -->
 <app-generic-modal
   [isOpen]="isDeleteModalOpen()"
