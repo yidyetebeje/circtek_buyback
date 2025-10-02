@@ -494,6 +494,99 @@
   }
 }
 
+/* Fix button positioning - ensure buttons stay in place regardless of text length */
+.flex.justify-between.items-start {
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.flex.gap-3 {
+  flex-shrink: 0;
+  min-width: fit-content;
+}
+
+/* Prevent long text from affecting button layout */
+.stat-value {
+  word-break: break-word;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+/* Dropdown styling improvements */
+select.select {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+select.select option {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ensure dropdowns handle long text gracefully */
+.select-accent {
+  min-width: 200px;
+}
+
+/* Error message spacing */
+.label-text-alt {
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.label {
+  margin-bottom: 0.5rem;
+}
+
+/* Input field spacing to prevent icon overlap */
+.input-group {
+  position: relative;
+}
+
+.input-group input {
+  padding-right: 2.5rem;
+}
+
+.input-group .icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* Breadcrumb/Description text styling */
+.text-base-content\/60 {
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: hsl(var(--bc) / 0.6);
+}
+
+/* Placeholder text visibility */
+::placeholder {
+  color: hsl(var(--bc) / 0.4);
+  opacity: 1;
+  font-weight: 400;
+}
+
+input::placeholder,
+select::placeholder,
+textarea::placeholder {
+  color: hsl(var(--bc) / 0.4);
+  font-size: 0.875rem;
+}
+
+/* Ensure Device Type field is wide enough */
+input[type="text"],
+select {
+  min-width: 200px;
+  width: 100%;
+}
+
 /* Responsive enhancements */
 @media (max-width: 768px) {
   .card-container {
@@ -526,5 +619,20 @@
   .document-card .flex-1.min-w-0 {
     min-width: 100%;
     margin-top: 1rem;
+  }
+  
+  /* Mobile button positioning */
+  .flex.justify-between.items-start {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .flex.gap-3 {
+    width: 100%;
+    justify-content: stretch;
+  }
+  
+  .flex.gap-3 button {
+    flex: 1;
   }
 }

@@ -24,6 +24,33 @@ export class PurchaseItemModalComponent {
   private readonly fb = inject(FormBuilder);
 
   // Custom validators
+  private static skuValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (!value) {
+      return null; // Let required validator handle empty values
+    }
+
+    const trimmedValue = typeof value === 'string' ? value.trim() : String(value);
+    
+    // Minimum character limit (3 characters)
+    if (trimmedValue.length < 3) {
+      return { minLength: { message: 'SKU must be at least 3 characters', requiredLength: 3, actualLength: trimmedValue.length } };
+    }
+
+    // Check for whitespace only
+    if (trimmedValue.length === 0) {
+      return { whitespace: { message: 'SKU cannot be empty or spaces only' } };
+    }
+
+    // Validate alphanumeric format (no special characters except hyphen and underscore)
+    const validSkuPattern = /^[A-Za-z0-9_-]+$/;
+    if (!validSkuPattern.test(trimmedValue)) {
+      return { invalidFormat: { message: 'SKU can only contain letters, numbers, hyphens, and underscores' } };
+    }
+
+    return null;
+  };
+
   private static quantityValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
     const value = control.value;
     if (value === null || value === undefined || value === '') {
@@ -99,6 +126,8 @@ export class PurchaseItemModalComponent {
   formValid = signal<boolean>(false);
   isSkuCreateModalOpen = signal<boolean>(false);
   suggestedSku = signal<string>('');
+  skuCreationSuccess = signal<string | null>(null);
+  skuCreationError = signal<string | null>(null);
 
   // Computed
   title = computed(() => this.editingItem() ? 'Edit Item' : 'Add Item');
@@ -143,7 +172,7 @@ export class PurchaseItemModalComponent {
   private createForm(): FormGroup {
     const item = this.editingItem();
     return this.fb.group({
-      sku: [item?.sku || '', [Validators.required]],
+      sku: [item?.sku || '', [Validators.required, Validators.minLength(3), PurchaseItemModalComponent.skuValidator]],
       quantity: [item?.quantity || 1, [Validators.required, PurchaseItemModalComponent.quantityValidator]],
       price: [item?.price || 0, [Validators.required, PurchaseItemModalComponent.priceValidator]],
       is_part: [item?.is_part || false]
@@ -190,6 +219,10 @@ export class PurchaseItemModalComponent {
     if (field && field.invalid && field.touched) {
       const errors = field.errors;
       if (errors?.['required']) return `${fieldName} is required`;
+      if (errors?.['minLength']) return errors['minLength'].message || `${fieldName} must be at least ${errors['minLength'].requiredLength} characters`;
+      if (errors?.['minlength']) return `${fieldName} must be at least ${errors['minlength'].requiredLength} characters`;
+      if (errors?.['whitespace']) return errors['whitespace'].message;
+      if (errors?.['invalidFormat']) return errors['invalidFormat'].message;
       if (errors?.['min']) return `${fieldName} must be greater than ${errors['min'].min}`;
       if (errors?.['invalidNumber']) return errors['invalidNumber'].message;
       if (errors?.['mustBePositive']) return errors['mustBePositive'].message;
@@ -224,10 +257,22 @@ export class PurchaseItemModalComponent {
       is_part: createdSku.is_part || false
     });
     this.isSkuCreateModalOpen.set(false);
+    this.skuCreationSuccess.set(`SKU "${createdSku.sku}" created successfully`);
+    this.skuCreationError.set(null);
+    
+    // Clear success message after 5 seconds
+    setTimeout(() => {
+      this.skuCreationSuccess.set(null);
+    }, 5000);
   }
 
   onSkuCreateModalClose(): void {
     this.isSkuCreateModalOpen.set(false);
     this.suggestedSku.set('');
+  }
+
+  clearMessages(): void {
+    this.skuCreationSuccess.set(null);
+    this.skuCreationError.set(null);
   }
 }

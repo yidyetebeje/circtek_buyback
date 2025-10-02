@@ -41,10 +41,11 @@
           class="select select-accent w-full"
           [class.select-error]="form.get('purchase_id')?.invalid && form.get('purchase_id')?.touched"
           [disabled]="loading() || loadingSpecificPurchase() || submitting()"
+          size="1"
         >
           <option value="">Select Purchase Order</option>
           @for (option of purchaseOptions(); track option.value) {
-            <option [value]="option.value">{{ option.label }}</option>
+            <option [value]="option.value" [title]="option.label">{{ option.label }}</option>
           }
         </select>
         @if (form.get('purchase_id')?.invalid && form.get('purchase_id')?.touched) {

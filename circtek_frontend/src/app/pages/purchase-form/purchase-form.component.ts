@@ -76,8 +76,9 @@ export class PurchaseFormComponent implements OnInit {
       label: 'Purchase Order Number',
       type: 'text',
       required: true,
-      placeholder: 'Enter purchase order number',
+      placeholder: 'Enter purchase order number (min. 3 characters)',
       validation: {
+        minlength: 3,
         maxlength: 50
       }
     },
@@ -86,8 +87,9 @@ export class PurchaseFormComponent implements OnInit {
       label: 'Supplier Name',
       type: 'text',
       required: true,
-      placeholder: 'Enter supplier name',
+      placeholder: 'Enter supplier name (min. 3 characters)',
       validation: {
+        minlength: 3,
         maxlength: 100
       }
     },
@@ -96,8 +98,9 @@ export class PurchaseFormComponent implements OnInit {
       label: 'Supplier Order Number',
       type: 'text',
       required: true,
-      placeholder: 'Enter supplier order number',
+      placeholder: 'Enter supplier order number (min. 3 characters)',
       validation: {
+        minlength: 3,
         maxlength: 50
       }
     },
@@ -344,22 +347,26 @@ export class PurchaseFormComponent implements OnInit {
   private createForm(): FormGroup {
     return this.fb.group({
       purchase_order_no: ['', [
-        Validators.required, 
+        Validators.required,
+        Validators.minLength(3),
         PurchaseFormComponent.whitespaceValidator,
         PurchaseFormComponent.maxLengthWithTrim(50)
       ]],
       supplier_name: ['', [
-        Validators.required, 
+        Validators.required,
+        Validators.minLength(3),
         PurchaseFormComponent.whitespaceValidator,
         PurchaseFormComponent.maxLengthWithTrim(100)
       ]],
       supplier_order_no: ['', [
-        Validators.required, 
+        Validators.required,
+        Validators.minLength(3),
         PurchaseFormComponent.whitespaceValidator,
         PurchaseFormComponent.maxLengthWithTrim(50)
       ]],
       expected_delivery_date: ['', [Validators.required, PurchaseFormComponent.dateValidator]],
       customer_name: ['', [
+        Validators.minLength(3),
         PurchaseFormComponent.whitespaceValidator,
         PurchaseFormComponent.maxLengthWithTrim(100)
       ]],

@@ -68,6 +68,92 @@
   backdrop-filter: blur(4px);
 }
 
+/* Fix input/icon overlap in Scan IMEI field */
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-group input {
+  padding-right: 3rem !important;
+  flex: 1;
+}
+
+.input-group lucide-icon,
+.input-group svg {
+  position: absolute;
+  right: 0.75rem;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* Ensure camera icon doesn't overlap with input text */
+app-barcode-scanner {
+  width: 100%;
+}
+
+app-barcode-scanner .input-group input {
+  padding-right: 3.5rem !important;
+}
+
+/* Error message spacing */
+.label {
+  margin-bottom: 0.5rem;
+}
+
+.label-text-alt {
+  margin-top: 0.375rem;
+  display: block;
+  line-height: 1.4;
+}
+
+/* Dropdown improvements */
+select.select {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+select.select option {
+  padding: 0.5rem;
+}
+
+/* Purchase Order dropdown - handle long text */
+.max-w-md select {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Ensure all dropdowns show all options with scrollbar */
+select.select {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Placeholder visibility improvements */
+::placeholder {
+  color: hsl(var(--bc) / 0.4);
+  opacity: 1;
+  font-weight: 400;
+}
+
+input::placeholder,
+select::placeholder {
+  color: hsl(var(--bc) / 0.45);
+  font-size: 0.875rem;
+}
+
+/* Breadcrumb/subtitle styling */
+.text-base-content\/60 {
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: hsl(var(--bc) / 0.6);
+  margin-top: 0.25rem;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .card-container {
@@ -77,5 +163,13 @@
   
   .grid {
     grid-template-columns: 1fr;
+  }
+  
+  .input-group input {
+    padding-right: 2.5rem !important;
+  }
+  
+  app-barcode-scanner .input-group input {
+    padding-right: 3rem !important;
   }
 }
