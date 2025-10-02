@@ -23,6 +23,10 @@ export interface FormField {
     min?: number | string;
     max?: number | string;
   };
+  // File upload specific properties
+  accept?: string;
+  maxSize?: number;
+  folder?: string;
 }
 
 export interface FormAction {

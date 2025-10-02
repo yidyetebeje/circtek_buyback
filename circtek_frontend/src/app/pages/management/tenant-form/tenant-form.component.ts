@@ -72,6 +72,10 @@ export class TenantFormComponent {
       label: 'Logo',
       type: 'file',
       placeholder: 'Upload logo',
+      accept: 'image/*,.jpg,.jpeg,.png,.gif,.webp,.svg',
+      maxSize: 10 * 1024 * 1024, // 10MB
+      folder: 'tenants/logos',
+      helpText: 'Accepted formats: JPG, PNG, GIF, WebP, SVG. Maximum size: 10 MB',
     },
   ]);
 
@@ -183,13 +187,18 @@ export class TenantFormComponent {
     this.successMessage.set(null);
     this.submitting.set(true);
 
-    // Trim all string values
+    // Trim all string values and remove logo if empty/null
     const tenantData = { ...formValue };
     Object.keys(tenantData).forEach(key => {
       if (typeof tenantData[key] === 'string') {
         tenantData[key] = tenantData[key].trim();
       }
     });
+
+    // Remove logo field if it's empty or null
+    if (!tenantData.logo || tenantData.logo === '') {
+      delete tenantData.logo;
+    }
 
     if (this.isEditMode()) {
       this.api.updateTenant(this.tenantId()!, tenantData).subscribe({

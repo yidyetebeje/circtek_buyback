@@ -117,8 +117,10 @@
                   @case ('file') {
                     <app-file-upload
                       [formControlName]="field.key"
-                      [accept]="field.validation?.pattern || '.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif'"
-                      [folder]="'purchases'"
+                      [accept]="field.accept || '.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif'"
+                      [folder]="field.folder || 'purchases'"
+                      [maxSize]="field.maxSize || (10 * 1024 * 1024)"
+                      [helpText]="field.helpText || ''"
                     ></app-file-upload>
                   }
                   @default {
@@ -167,7 +169,7 @@
                   <div class="label">
                     <span class="label-text-alt text-error">{{ error }}</span>
                   </div>
-                } @else if (field.helpText) {
+                } @else if (field.helpText && field.type !== 'file') {
                   <div class="label">
                     <span class="label-text-alt text-base-content/60">{{ field.helpText }}</span>
                   </div>

@@ -34,6 +34,13 @@ interface UploadedFile {
         }
       </div>
 
+      <!-- Help Text -->
+      @if (helpText() && !error() && !uploadedFile()) {
+        <div class="text-sm text-base-content/60">
+          {{ helpText() }}
+        </div>
+      }
+
       <!-- Upload Progress -->
       @if (uploading()) {
         <div class="text-sm text-base-content/60">
@@ -109,6 +116,7 @@ export class FileUploadComponent implements ControlValueAccessor {
   accept = input<string>('.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif');
   folder = input<string>('purchases');
   maxSize = input<number>(10 * 1024 * 1024); // 10MB default
+  helpText = input<string>(''); // Optional help text to display
 
   // State
   uploading = signal(false);
@@ -159,9 +167,37 @@ export class FileUploadComponent implements ControlValueAccessor {
     this.error.set(null);
     this.selectedFileName.set(file.name);
 
+    // Validate file type
+    const acceptedTypes = this.accept().split(',').map(t => t.trim());
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    const isValidType = acceptedTypes.some(type => {
+      if (type.startsWith('.')) {
+        return fileExtension === type.toLowerCase();
+      }
+      // Handle MIME types like image/*
+      if (type.includes('*')) {
+        const mimePrefix = type.split('/')[0];
+        return file.type.startsWith(mimePrefix);
+      }
+      return file.type === type;
+    });
+
+    if (!isValidType) {
+      this.error.set(`Invalid file type. Accepted formats: ${acceptedTypes.join(', ')}`);
+      // Clear the file input
+      if (this.fileInput?.nativeElement) {
+        this.fileInput.nativeElement.value = '';
+      }
+      return;
+    }
+
     // Validate file size
     if (file.size > this.maxSize()) {
-      this.error.set(`File size must be less than ${this.formatFileSize(this.maxSize())}`);
+      this.error.set(`File size exceeds ${this.formatFileSize(this.maxSize())} limit`);
+      // Clear the file input
+      if (this.fileInput?.nativeElement) {
+        this.fileInput.nativeElement.value = '';
+      }
       return;
     }
 
