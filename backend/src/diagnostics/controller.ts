@@ -124,6 +124,40 @@ export class DiagnosticsController {
 		// Some databases may not hydrate these; repository can optionally join.
 		return { data: found, message: 'OK', status: 200 }
 	}
+
+	async batchMigrate(
+		records: DiagnosticUploadInput[],
+		testerId: number,
+		tenantId: number,
+		warehouseId: number
+	): Promise<response<{ success: number; failed: number; errors: Array<{ index: number; error: string }> }>> {
+		const result = {
+			success: 0,
+			failed: 0,
+			errors: [] as Array<{ index: number; error: string }>,
+		}
+
+		for (let i = 0; i < records.length; i++) {
+			try {
+				const uploadResult = await this.upload(records[i], testerId, tenantId, warehouseId)
+				if (uploadResult.status === 201) {
+					result.success++
+				} else {
+					result.failed++
+					result.errors.push({ index: i, error: uploadResult.message })
+				}
+			} catch (error) {
+				result.failed++
+				result.errors.push({ index: i, error: error instanceof Error ? error.message : String(error) })
+			}
+		}
+
+		return {
+			data: result,
+			message: `Migration complete: ${result.success} success, ${result.failed} failed`,
+			status: 200,
+		}
+	}
 }
 
 

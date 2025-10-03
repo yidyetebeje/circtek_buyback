@@ -127,7 +127,7 @@ export class PowerBIRepository {
         })
         .from(repair_items)
         .innerJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
-        .where(sql`${repair_items.repair_id} IN (${repairIds.join(',')})`);
+        
        console.log(repairItemsData, "repair items")
     }
 
