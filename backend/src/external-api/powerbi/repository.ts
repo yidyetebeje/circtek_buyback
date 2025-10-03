@@ -50,6 +50,7 @@ export class PowerBIRepository {
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    console.log(whereClause)
 
     // Get total count
     const totalResult = await this.db
@@ -110,6 +111,7 @@ export class PowerBIRepository {
     let repairItemsData: any[] = [];
     
     if (repairIds.length > 0) {
+      console.log("repairs", repairsData);
       repairItemsData = await this.db
         .select({
           repair_id: repair_items.repair_id,
@@ -125,6 +127,7 @@ export class PowerBIRepository {
         .from(repair_items)
         .innerJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
         .where(sql`${repair_items.repair_id} IN (${repairIds.join(',')})`);
+       console.log(repairItemsData, "repair items")
     }
 
     // Group repair items by repair_id
