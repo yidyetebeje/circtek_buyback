@@ -1,5 +1,5 @@
 import { MySql2Database } from "drizzle-orm/mysql2";
-import { eq, and, gte, lte, or, desc, sql } from "drizzle-orm";
+import { eq, and, gte, lte, or, desc, sql, inArray } from "drizzle-orm";
 import { repairs, repair_items, devices, repair_reasons, users, warehouses, tenants } from "../../db/circtek.schema";
 import { RepairListResponse, DeviceRepairHistoryResponse, DeviceListResponse } from "./types";
 
@@ -127,7 +127,7 @@ export class PowerBIRepository {
         })
         .from(repair_items)
         .innerJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
-        
+        .where(inArray(repair_items.repair_id, repairIds))
        console.log(repairItemsData, "repair items")
     }
 
