@@ -112,6 +112,7 @@ export class PowerBIRepository {
     
     if (repairIds.length > 0) {
       console.log("repairs", repairsData);
+      console.log("repairs id", repairIds);
       repairItemsData = await this.db
         .select({
           repair_id: repair_items.repair_id,
