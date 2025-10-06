@@ -39,10 +39,10 @@ function transformOldRecord(oldRecord: any) {
 
 	return {
 		device: {
+			device_type: 'iPhone',
 			make: oldRecord.make || 'unknown',
 			model_no: oldRecord.modelNo || '',
 			model_name: oldRecord.modelName || '',
-			device_type: oldRecord.os || 'ios',
 			serial: oldRecord.serial || '',
 			imei: oldRecord.imei || undefined,
 			imei2: oldRecord.imei2 || undefined,
@@ -86,7 +86,7 @@ export async function migrateOldDataBatch(
 	const controller = new DiagnosticsController(repo)
 
 	// Transform all records
-	const transformed = oldRecords.map(transformOldRecord)
+	const transformed = oldRecords.map(transformOldRecord).filter((record) => record.device.model_name !== null)
 
 	// Use batch migrate method
 	const response = await controller.batchMigrate(

@@ -1,4 +1,6 @@
 import { migrateOldData, migrateOldDataBatch } from './migrate-old-data'
+import * as fs from 'fs'
+import * as path from 'path'
 
 /**
  * Migration script that fetches data from the old API and migrates it
@@ -7,15 +9,19 @@ import { migrateOldData, migrateOldDataBatch } from './migrate-old-data'
  * 
  * This script:
  * 1. Fetches all data from the old API (paginated)
- * 2. Transforms and migrates it to the new system
- * 3. Tracks progress and errors
+ * 2. Appends each page of data to response.json as it's fetched
+ * 3. Transforms and migrates it to the new system
+ * 4. Tracks progress and errors
+ * 
+ * Note: Data is saved incrementally to response.json to avoid memory issues
+ * with large datasets and to provide progress persistence.
  */
 
 // Configuration
 const API_CONFIG = {
-	baseUrl: 'https://stg-rest.circtek.io/v1/user/getCloudDbDevices',
+	baseUrl: 'http://localhost:3000/v1/user/getCloudDbDevices',
 	clientId: 0,
-	pageSize: 10, // Fetch 500 records per page
+	pageSize: 100, // Fetch 500 records per page
 	searchText: '',
 	searchType: 'imei',
 }
@@ -39,6 +45,43 @@ interface ApiResponse {
 }
 
 /**
+ * Initialize the response.json file with an empty array
+ */
+function initializeResponseFile(): void {
+	const filePath = 'response.json'
+	try {
+		fs.writeFileSync(filePath, '[]')
+		console.log('📄 Initialized response.json file')
+	} catch (error) {
+		console.error('❌ Failed to initialize response.json:', error)
+	}
+}
+
+/**
+ * Append data to the response.json file
+ */
+function appendToResponseFile(data: any[]): void {
+	const filePath = 'response.json'
+	try {
+		// Read existing data
+		let existingData: any[] = []
+		if (fs.existsSync(filePath)) {
+			const fileContent = fs.readFileSync(filePath, 'utf8')
+			existingData = JSON.parse(fileContent)
+		}
+		
+		// Append new data
+		existingData.push(...data)
+		
+		// Write back to file
+		fs.writeFileSync(filePath, JSON.stringify(existingData, null, 2))
+		console.log(`💾 Appended ${data.length} records to response.json (Total: ${existingData.length})`)
+	} catch (error) {
+		console.error('❌ Failed to append to response.json:', error)
+	}
+}
+
+/**
  * Fetch a single page of data from the API
  */
 async function fetchPage(page: number): Promise<ApiResponse | null> {
@@ -55,9 +98,10 @@ async function fetchPage(page: number): Promise<ApiResponse | null> {
 		const response = await fetch(url.toString(), {
 			headers: {
 				"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjgsImZOYW1lIjoiWWlkbmVrYWNoZXciLCJsTmFtZSI6IlRlYmVqZSIsIndhcmVob3VzZUlkIjowLCJjbGllbnRJZCI6MCwidXNlck5hbWUiOiJZaWRuZWthY2hldyIsImVtYWlsIjoieWlkbmVrYWNoZXd0ZWJlamVAZ21haWwuY29tIiwicm9sZUlkIjoxLCJyb2xlTmFtZSI6IkFkbWluIiwicm9sZVNsdWciOiJhZG1pbiIsImlhdCI6MTc1OTQ4MzU2OSwiZXhwIjoxNzY4MTIzNTY5fQ.0fNaq1wLEXj0ABHUyvMuUhcOJZbwOcqtoNx4THeeQnA",
-				"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjgsImZOYW1lIjoiWWlkbmVrYWNoZXciLCJsTmFtZSI6IlRlYmVqZSIsIndhcmVob3VzZUlkIjowLCJjbGllbnRJZCI6MCwidXNlck5hbWUiOiJZaWRuZWthY2hldyIsImVtYWlsIjoieWlkbmVrYWNoZXd0ZWJlamVAZ21haWwuY29tIiwicm9sZUlkIjoxLCJyb2xlTmFtZSI6IkFkbWluIiwicm9sZVNsdWciOiJhZG1pbiIsImlhdCI6MTc1OTQ4MzU2OSwiZXhwIjoxNzY4MTIzNTY5fQ.0fNaq1wLEXj0ABHUyvMuUhcOJZbwOcqtoNx4THeeQnA"
+				"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjgsImZOYW1lIjoiWWlkbmVrYWNoZXciLCJsTmFtZSI6IlRlYmVqZSIsIndhcmVob3VzZUlkIjowLCJjbGllbnRJZCI6MCwidXNlck5hbWUiOiJZaWRuZWthY2hldyIsImVtYWlsIjoieWlkbmVrYWNoZXd0ZWJlamVAZ21haWwuY29tIiwicm9sZUlkIjoxLCJyb2xlTmFtZSI6IkFkbWluIiwicm9sZVNsdWciOiJhZG1pbiIsImlhdCI6MTc1OTQ5MTM1MSwiZXhwIjoxNzY4MTMxMzUxfQ.EvVRJ2Vo7U2gYTS0c2-ha1Iub-KEvMiIwTsL_C47ZzE"
 			}
 		})
+		console.log(response, "response")
 		
 		if (!response.ok) {
 			console.error(`❌ HTTP Error: ${response.status} ${response.statusText}`)
@@ -79,44 +123,44 @@ async function fetchPage(page: number): Promise<ApiResponse | null> {
 }
 
 /**
- * Fetch all pages from the API
+ * Fetch all pages from the API and append to response.json
  */
-async function fetchAllData(): Promise<any[]> {
-	const allData: any[] = []
+async function fetchAllData(): Promise<number> {
 	let currentPage = 0
 	let totalPages = 1
+	let totalRecords = 0
 
 	console.log('🌐 Starting data fetch from API...')
 	console.log(`📍 Endpoint: ${API_CONFIG.baseUrl}`)
 	console.log(`📦 Page Size: ${API_CONFIG.pageSize}\n`)
 
+	// Initialize the response file
+	initializeResponseFile()
+
 	while (currentPage < totalPages) {
 		const response = await fetchPage(currentPage)
-
 		if (!response) {
 			console.error(`❌ Failed to fetch page ${currentPage}. Stopping.`)
 			break
 		}
-
-
 		const pageData = response.data.data || []
-		allData.push(...pageData)
-
-		// totalPages = response.data.totalPages
+		totalPages = response.data.totalPages
+		totalRecords += pageData.length
+		
+		// Append data to file immediately
+		appendToResponseFile(pageData)
+		
 		const totalItems = response.data.totalItems
-
-		console.log(`✅ Page ${currentPage + 1}/${totalPages} - Fetched ${pageData.length} records (Total so far: ${allData.length}/${totalItems})`)
-
+		console.log(`✅ Page ${currentPage + 1}/${totalPages} - Fetched ${pageData.length} records (Total so far: ${totalRecords}/${totalItems})`)
 		currentPage++
-
+		
 		// Add a small delay to avoid overwhelming the API
 		if (currentPage < totalPages) {
-			await new Promise(resolve => setTimeout(resolve, 100))
+			await new Promise(resolve => setTimeout(resolve, 1000))
 		}
 	}
-
-	console.log(`\n✅ Fetch complete! Total records: ${allData.length}\n`)
-	return allData
+	console.log(`\n✅ Fetch complete! Total records: ${totalRecords}\n`)
+	return totalRecords
 }
 
 /**
@@ -130,15 +174,22 @@ async function runMigrationFromLiveAPI() {
 
 	const startTime = Date.now()
 
-	// Step 1: Fetch all data from API
-	const oldData = await fetchAllData()
-	// save this file in json format in oldata.json
+	// Step 1: Fetch all data from API and save to response.json
+	const totalRecords = await fetchAllData()
 
-	const fs = require('fs')
-	fs.writeFileSync('oldata.json', JSON.stringify(oldData, null, 2))
-
-	if (oldData.length === 0) {
+	if (totalRecords === 0) {
 		console.error('❌ No data fetched from API. Exiting.')
+		process.exit(1)
+	}
+
+	// Read the data from response.json for migration
+	let oldData: any[] = []
+	try {
+		const fileContent = fs.readFileSync('response.json', 'utf8')
+		oldData = JSON.parse(fileContent)
+		console.log(`📖 Loaded ${oldData.length} records from response.json`)
+	} catch (error) {
+		console.error('❌ Failed to read response.json:', error)
 		process.exit(1)
 	}
 
@@ -150,66 +201,66 @@ async function runMigrationFromLiveAPI() {
 		warehouseId: firstRecord.warehouseId || MIGRATION_CONFIG.warehouseId,
 	}
 
-	// console.log('📋 Migration Configuration:')
-	// console.log(`   Tester ID: ${config.testerId}`)
-	// console.log(`   Tenant ID: ${config.tenantId}`)
-	// console.log(`   Warehouse ID: ${config.warehouseId}`)
-	// console.log()
+	console.log('📋 Migration Configuration:')
+	console.log(`   Tester ID: ${config.testerId}`)
+	console.log(`   Tenant ID: ${config.tenantId}`)
+	console.log(`   Warehouse ID: ${config.warehouseId}`)
+	console.log()
 
-	// // Step 3: Migrate data
-	// console.log('🔄 Starting migration process...')
-	// console.log(`📊 Total records to migrate: ${oldData.length}`)
-	// console.log('⏳ This may take a while...\n')
+	// Step 3: Migrate data
+	console.log('🔄 Starting migration process...')
+	console.log(`📊 Total records to migrate: ${oldData.length}`)
+	console.log('⏳ This may take a while...\n')
 
-	// // Choose migration method based on data size
-	// const useBatch = oldData.length > 50
-	// console.log(`📦 Using ${useBatch ? 'batch' : 'detailed'} migration method\n`)
+	// Choose migration method based on data size
+	const useBatch = oldData.length > 50
+	console.log(`📦 Using ${useBatch ? 'batch' : 'detailed'} migration method\n`)
 
-	// const migrationStartTime = Date.now()
+	const migrationStartTime = Date.now()
 
-	// const result = useBatch
-	// 	? await migrateOldDataBatch(oldData, config)
-	// 	: await migrateOldData(oldData, config)
+	const result = useBatch
+		? await migrateOldDataBatch(oldData, config)
+		: await migrateOldData(oldData, config)
 
-	// const migrationDuration = ((Date.now() - migrationStartTime) / 1000).toFixed(2)
-	// const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2)
+	const migrationDuration = ((Date.now() - migrationStartTime) / 1000).toFixed(2)
+	const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2)
 
-	// // Step 4: Display results
-	// console.log('\n' + '='.repeat(60))
-	// console.log('📈 MIGRATION COMPLETE')
-	// console.log('='.repeat(60))
-	// console.log(`✅ Success: ${result.success}`)
-	// console.log(`❌ Failed: ${result.failed}`)
-	// console.log(`📊 Success Rate: ${((result.success / oldData.length) * 100).toFixed(1)}%`)
-	// console.log(`⏱️  Fetch Duration: ${((migrationStartTime - startTime) / 1000).toFixed(2)}s`)
-	// console.log(`⏱️  Migration Duration: ${migrationDuration}s`)
-	// console.log(`⏱️  Total Duration: ${totalDuration}s`)
+	// Step 4: Display results
+	console.log('\n' + '='.repeat(60))
+	console.log('📈 MIGRATION COMPLETE')
+	console.log('='.repeat(60))
+	console.log(`✅ Success: ${result.success}`)
+	console.log(`❌ Failed: ${result.failed}`)
+	console.log(`📊 Success Rate: ${((result.success / oldData.length) * 100).toFixed(1)}%`)
+	console.log(`⏱️  Fetch Duration: ${((migrationStartTime - startTime) / 1000).toFixed(2)}s`)
+	console.log(`⏱️  Migration Duration: ${migrationDuration}s`)
+	console.log(`⏱️  Total Duration: ${totalDuration}s`)
 
-	// if (result.errors.length > 0) {
-	// 	console.log('\n❌ Errors:')
-	// 	result.errors.slice(0, 10).forEach((err, idx) => {
-	// 		const identifier = err.record.imei || err.record.serial || err.record.lpn || 'unknown'
-	// 		console.log(`  ${idx + 1}. ${identifier}: ${err.error}`)
-	// 	})
+	if (result.errors.length > 0) {
+		console.log('\n❌ Errors:')
+		result.errors.slice(0, 10).forEach((err, idx) => {
+			const identifier = err.record.imei || err.record.serial || err.record.lpn || 'unknown'
+			console.log(`  ${idx + 1}. ${identifier}: ${err.error}`)
+		})
 		
-	// 	if (result.errors.length > 10) {
-	// 		console.log(`  ... and ${result.errors.length - 10} more errors`)
-	// 	}
+		if (result.errors.length > 10) {
+			console.log(`  ... and ${result.errors.length - 10} more errors`)
+		}
 
-	// 	// Save errors to file
-	// 	try {
-	// 		await Bun.write(
-	// 			'migration-errors.json',
-	// 			JSON.stringify(result.errors, null, 2)
-	// 		)
-	// 		console.log('\n💾 All errors saved to: migration-errors.json')
-	// 	} catch (error) {
-	// 		console.error('Failed to save errors to file:', error)
-	// 	}
-	// }
+		// Save errors to file
+		try {
+			await Bun.write(
+				'migration-errors.json',
+				JSON.stringify(result.errors, null, 2)
+			)
+			console.log('\n💾 All errors saved to: migration-errors.json')
+		} catch (error) {
+			console.error('Failed to save errors to file:', error)
+		}
+	}
 
-	// console.log('\n✨ Migration process finished!')
-	// console.log('='.repeat(60))
+	console.log('\n✨ Migration process finished!')
+	console.log('='.repeat(60))
 }
 
 // Run the migration
