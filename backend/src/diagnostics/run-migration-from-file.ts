@@ -63,9 +63,9 @@ async function runMigrationFromFile() {
 
 	// Configuration - UPDATE THESE VALUES
 	const config = {
-		testerId: 52,    // Replace with actual tester ID
-		tenantId: 15,    // Replace with actual tenant ID
-		warehouseId: 10, // Replace with actual warehouse ID
+		testerId: 4,    // Replace with actual tester ID
+		tenantId: 16,    // Replace with actual tenant ID
+		warehouseId: 18, // Replace with actual warehouse ID
 	}
 
 	console.log('📋 Configuration:')
