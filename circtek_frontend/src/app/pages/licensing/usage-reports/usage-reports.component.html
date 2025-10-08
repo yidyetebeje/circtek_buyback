@@ -1,0 +1,17 @@
+@if (!isSuperAdmin()) {
+  <div class="alert alert-warning">
+    <span>Only superadmins can view usage reports</span>
+  </div>
+} @else {
+  <app-generic-page
+    title=""
+    [primaryAction]="{ label: exporting() ? 'Exporting...' : 'Export CSV' }"
+    (primaryActionClick)="exportReport()"
+    [columns]="columns"
+    [data]="reportData()"
+    [loading]="loading()"
+    [facets]="facets()"
+    (filtersChange)="handleFiltersChange($event)"
+    searchPlaceholder="Search tenants or license types..."
+  />
+}

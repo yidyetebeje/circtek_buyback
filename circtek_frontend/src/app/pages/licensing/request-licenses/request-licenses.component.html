@@ -1,0 +1,113 @@
+<div class="min-h-screen bg-base-200 p-6">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+      <button class="btn btn-ghost btn-sm mb-4" (click)="onCancel()">
+        <lucide-icon [img]="ArrowLeftIcon" class="size-4"></lucide-icon>
+        Back to My Requests
+      </button>
+      <h1 class="text-3xl font-bold">Request Licenses</h1>
+      <p class="text-base-content/60 mt-2">
+        Request licenses for your testing needs. Your request will be reviewed by an administrator.
+      </p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <form [formGroup]="requestForm" (ngSubmit)="onSubmit()">
+          <!-- License Types Section -->
+          <div class="space-y-4" formArrayName="items">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-lg">License Types</h3>
+              <button type="button" class="btn btn-sm btn-accent" (click)="addLicenseRow()">
+                <lucide-icon [img]="PlusIcon" class="size-4"></lucide-icon>
+                Add License Type
+              </button>
+            </div>
+
+            @for (item of items.controls; track $index) {
+              <div [formGroupName]="$index" class="border border-base-300 rounded-lg p-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- License Type -->
+                  <div>
+                    <label class="label">
+                      <span class="label-text font-medium">License Type <span class="text-error">*</span></span>
+                    </label>
+                    <select formControlName="license_type_id" class="select select-accent w-full">
+                      <option [ngValue]="null" disabled>Select license type</option>
+                      @for (type of licenseTypes(); track type.id) {
+                        <option [ngValue]="type.id">{{ type.name }} - ${{ type.price }}</option>
+                      }
+                    </select>
+                    @if (item.get('license_type_id')?.invalid && item.get('license_type_id')?.touched) {
+                      <div class="label">
+                        <span class="label-text-alt text-error">License type is required</span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Quantity -->
+                  <div>
+                    <label class="label">
+                      <span class="label-text font-medium">Quantity <span class="text-error">*</span></span>
+                    </label>
+                    <div class="flex gap-2">
+                      <input 
+                        type="number" 
+                        formControlName="quantity" 
+                        class="input input-bordered w-full" 
+                        placeholder="e.g., 100" 
+                        min="1"
+                      />
+                      @if (items.length > 1) {
+                        <button 
+                          type="button" 
+                          class="btn btn-ghost btn-error btn-square"
+                          (click)="removeLicenseRow($index)"
+                        >
+                          <lucide-icon [img]="TrashIcon" class="size-5"></lucide-icon>
+                        </button>
+                      }
+                    </div>
+                    @if (item.get('quantity')?.invalid && item.get('quantity')?.touched) {
+                      <div class="label">
+                        <span class="label-text-alt text-error">Quantity must be at least 1</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (items.length === 0) {
+              <div class="text-center py-8 text-base-content/60">
+                <p>No license types added yet.</p>
+                <button type="button" class="btn btn-accent btn-sm mt-4" (click)="addLicenseRow()">
+                  <lucide-icon [img]="PlusIcon" class="size-4"></lucide-icon>
+                  Add Your First License Type
+                </button>
+              </div>
+            }
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-3 justify-end mt-6 pt-6 border-t border-base-300">
+            <button type="button" class="btn btn-ghost" (click)="onCancel()" [disabled]="submitting()">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-accent" [disabled]="submitting()">
+              @if (submitting()) {
+                <span class="loading loading-spinner loading-sm"></span>
+                Submitting...
+              } @else {
+                <lucide-icon [img]="SendIcon" class="size-4"></lucide-icon>
+                Submit Request
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

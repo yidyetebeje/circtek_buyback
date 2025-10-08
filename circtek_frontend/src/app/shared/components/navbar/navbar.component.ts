@@ -11,7 +11,7 @@ import {
   Users,
   Package,
   Wrench,
-  PackagePlus
+  CreditCard
 } from 'lucide-angular';
 
 @Component({
@@ -36,8 +36,8 @@ export class NavbarComponent {
   readonly History = History;
   readonly Users = Users;
   readonly Package = Package;
-  readonly PackagePlus = PackagePlus;
   readonly Wrench = Wrench;
+  readonly CreditCard = CreditCard;
 
   // Mobile menu toggle
   sidebarToggle = output<void>();

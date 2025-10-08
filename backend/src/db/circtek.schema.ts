@@ -51,6 +51,7 @@ export const tenants = mysqlTable('tenants', {
   name: varchar('name', { length: 255 }).notNull(),
   logo: text('logo'),
   description: varchar('description', { length: 255 }).notNull(),
+  account_type: mysqlEnum('account_type', ['prepaid', 'credit']).default('prepaid').notNull(),
   status: boolean('status').default(true),
   created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
@@ -416,4 +417,76 @@ export const api_key_usage_logs = mysqlTable('api_key_usage_logs', {
 ]);
 
 // buybacks tables
+
+// Licensing System Tables
+
+// License Types - defines available license products
+export const license_types = mysqlTable('license_types', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  product_category: varchar('product_category', { length: 100 }).notNull(), // e.g., "iPhone", "MacBook", "AirPods"
+  test_type: varchar('test_type', { length: 100 }).notNull(), // e.g., "Diagnostic", "Erasure"
+  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
+  description: text('description'),
+  status: boolean('status').default(true),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_license_types_category').on(table.product_category, table.test_type),
+]);
+
+// License Ledger - tracks all license transactions (purchases and usage)
+export const license_ledger = mysqlTable('license_ledger', {
+  id: serial('id').primaryKey(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  license_type_id: bigint('license_type_id', { mode: 'number', unsigned: true }).references(() => license_types.id).notNull(),
+  amount: int('amount').notNull(), // +N for purchase, -1 for usage
+  transaction_type: mysqlEnum('transaction_type', ['purchase', 'usage', 'refund', 'adjustment']).notNull(),
+  reference_type: varchar('reference_type', { length: 100 }), // e.g., "order", "test_result", "manual"
+  reference_id: bigint('reference_id', { mode: 'number', unsigned: true }), // ID of related record
+  device_identifier: varchar('device_identifier', { length: 255 }), // IMEI/Serial for usage tracking
+  notes: text('notes'),
+  created_by: bigint('created_by', { mode: 'number', unsigned: true }).references(() => users.id),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_license_ledger_tenant').on(table.tenant_id, table.license_type_id),
+  index('idx_license_ledger_device').on(table.device_identifier),
+  index('idx_license_ledger_created_at').on(table.created_at),
+]);
+
+// Device Licenses - tracks 30-day retest windows per device
+export const device_licenses = mysqlTable('device_licenses', {
+  id: serial('id').primaryKey(),
+  device_identifier: varchar('device_identifier', { length: 255 }).notNull(), // IMEI or Serial
+  license_type_id: bigint('license_type_id', { mode: 'number', unsigned: true }).references(() => license_types.id).notNull(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  license_activated_at: timestamp('license_activated_at').notNull(),
+  retest_valid_until: timestamp('retest_valid_until').notNull(),
+  ledger_entry_id: bigint('ledger_entry_id', { mode: 'number', unsigned: true }).references(() => license_ledger.id),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_device_licenses_device').on(table.device_identifier, table.license_type_id),
+  index('idx_device_licenses_tenant').on(table.tenant_id),
+  index('idx_device_licenses_validity').on(table.retest_valid_until),
+]);
+
+// License Requests - tracks license requests from tenants
+export const license_requests = mysqlTable('license_requests', {
+  id: serial('id').primaryKey(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  requested_by: bigint('requested_by', { mode: 'number', unsigned: true }).references(() => users.id).notNull(),
+  status: mysqlEnum('status', ['pending', 'approved', 'rejected']).default('pending').notNull(),
+  items: json('items').notNull(), // Array of {license_type_id, quantity, justification}
+  notes: text('notes'),
+  reviewed_by: bigint('reviewed_by', { mode: 'number', unsigned: true }).references(() => users.id),
+  reviewed_at: timestamp('reviewed_at'),
+  rejection_reason: text('rejection_reason'),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_license_requests_tenant').on(table.tenant_id),
+  index('idx_license_requests_status').on(table.status),
+  index('idx_license_requests_created_at').on(table.created_at),
+]);
 

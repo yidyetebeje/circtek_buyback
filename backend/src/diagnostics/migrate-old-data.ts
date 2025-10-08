@@ -6,6 +6,7 @@ interface MigrationConfig {
 	testerId: number
 	tenantId: number
 	warehouseId: number
+	token: string
 }
 
 interface MigrationResult {
@@ -124,21 +125,31 @@ export async function migrateOldData(
 		failed: 0,
 		errors: [],
 	}
-
+    let count = 0;
 	for (const oldRecord of oldRecords) {
+		count++
+		if (count % 10 === 0) {
+			console.log(`✅ Migrated: ${count} records`)
+			await new Promise(resolve => setTimeout(resolve, 1000))
+		}
 		try {
 			const transformed = transformOldRecord(oldRecord)
-			const response = await controller.upload(
-				transformed,
-				config.testerId,
-				config.tenantId,
-				config.warehouseId
-			)
+			const response = await fetch('https://staging-db-api.circtek.io/api/v1/diagnostics/tests/upload', {
+				method: 'POST',
+				body: JSON.stringify(transformed),
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${config.token}`,
+				},
+			})
+			console.log(response, "response")
 
-			if (response.status === 201) {
+			if (response.status >= 200 && response.status < 300) {
 				result.success++
 				console.log(`✓ Migrated: ${oldRecord.imei || oldRecord.serial}`)
 			} else {
+				const responseBody = await response.json()
+				console.log(responseBody, "responseBody")
 				result.failed++
 				result.errors.push({ record: oldRecord, error: response.message })
 				console.error(`✗ Failed: ${oldRecord.imei || oldRecord.serial} - ${response.message}`)

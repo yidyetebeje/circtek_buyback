@@ -296,6 +296,26 @@ export const routes: Routes = [
       import('./pages/document-editor/document-editor.component').then((m) => m.default),
   },
 
+  // Licensing routes
+  {
+    path: 'licensing',
+    canMatch: [authGuard],
+    loadComponent: () =>
+      import('./pages/licensing/licensing.component').then((m) => m.LicensingComponent),
+  },
+  {
+    path: 'licensing/request',
+    canMatch: [authGuard],
+    loadComponent: () =>
+      import('./pages/licensing/request-licenses/request-licenses.component').then((m) => m.RequestLicensesComponent),
+  },
+  {
+    path: 'licensing/quick-grant',
+    canMatch: [authGuard],
+    loadComponent: () =>
+      import('./pages/licensing/quick-grant/quick-grant.component').then((m) => m.QuickGrantComponent),
+  },
+
   // Fallback
   { path: '**', redirectTo: 'login' },
 ];

@@ -1,0 +1,149 @@
+<div class="min-h-screen bg-base-200 p-6">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+      <button class="btn btn-ghost btn-sm mb-4" (click)="onCancel()">
+        <lucide-icon [img]="ArrowLeftIcon" class="size-4"></lucide-icon>
+        Back to Approve Requests
+      </button>
+      <h1 class="text-3xl font-bold">Quick Grant Licenses</h1>
+      <p class="text-base-content/60 mt-2">
+        Quickly grant licenses to a tenant without going through the request process.
+      </p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <form [formGroup]="grantForm" (ngSubmit)="onSubmit()">
+          <!-- Tenant Selection -->
+          <div class="mb-6">
+            <label class="label">
+              <span class="label-text font-medium text-lg">Tenant <span class="text-error">*</span></span>
+            </label>
+            <select formControlName="tenant_id" class="select select-accent w-full">
+              <option [ngValue]="null" disabled>Select tenant</option>
+              @for (tenant of tenants(); track tenant.id) {
+                <option [ngValue]="tenant.id">{{ tenant.name }}</option>
+              }
+            </select>
+            @if (grantForm.get('tenant_id')?.invalid && grantForm.get('tenant_id')?.touched) {
+              <div class="label">
+                <span class="label-text-alt text-error">Tenant is required</span>
+              </div>
+            }
+          </div>
+
+          <!-- License Grants Section -->
+          <div class="space-y-4" formArrayName="grants">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold text-lg">License Grants</h3>
+              <button type="button" class="btn btn-sm btn-accent" (click)="addGrantRow()">
+                <lucide-icon [img]="PlusIcon" class="size-4"></lucide-icon>
+                Add License Type
+              </button>
+            </div>
+
+            @for (grant of grants.controls; track $index) {
+              <div [formGroupName]="$index" class="border border-base-300 rounded-lg p-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- License Type -->
+                  <div>
+                    <label class="label">
+                      <span class="label-text font-medium">License Type <span class="text-error">*</span></span>
+                    </label>
+                    <select formControlName="license_type_id" class="select select-accent w-full">
+                      <option [ngValue]="null" disabled>Select license type</option>
+                      @for (type of licenseTypes(); track type.id) {
+                        <option [ngValue]="type.id">{{ type.name }} - ${{ type.price }}</option>
+                      }
+                    </select>
+                    @if (grant.get('license_type_id')?.invalid && grant.get('license_type_id')?.touched) {
+                      <div class="label">
+                        <span class="label-text-alt text-error">License type is required</span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Quantity -->
+                  <div>
+                    <label class="label">
+                      <span class="label-text font-medium">Quantity <span class="text-error">*</span></span>
+                    </label>
+                    <div class="flex gap-2">
+                      <input 
+                        type="number" 
+                        formControlName="quantity" 
+                        class="input input-bordered w-full" 
+                        placeholder="e.g., 100" 
+                        min="1"
+                      />
+                      @if (grants.length > 1) {
+                        <button 
+                          type="button" 
+                          class="btn btn-ghost btn-error btn-square"
+                          (click)="removeGrantRow($index)"
+                        >
+                          <lucide-icon [img]="TrashIcon" class="size-5"></lucide-icon>
+                        </button>
+                      }
+                    </div>
+                    @if (grant.get('quantity')?.invalid && grant.get('quantity')?.touched) {
+                      <div class="label">
+                        <span class="label-text-alt text-error">Quantity must be at least 1</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (grants.length === 0) {
+              <div class="text-center py-8 text-base-content/60">
+                <p>No license types added yet.</p>
+                <button type="button" class="btn btn-accent btn-sm mt-4" (click)="addGrantRow()">
+                  <lucide-icon [img]="PlusIcon" class="size-4"></lucide-icon>
+                  Add Your First License Type
+                </button>
+              </div>
+            }
+          </div>
+
+          <!-- Notes -->
+          <div class="mt-6">
+            <label class="label">
+              <span class="label-text font-medium text-lg">Notes <span class="text-error">*</span></span>
+            </label>
+            <textarea 
+              formControlName="notes" 
+              class="textarea textarea-bordered w-full" 
+              rows="3" 
+              placeholder="Reason for granting these licenses..."
+            ></textarea>
+            @if (grantForm.get('notes')?.invalid && grantForm.get('notes')?.touched) {
+              <div class="label">
+                <span class="label-text-alt text-error">Notes are required</span>
+              </div>
+            }
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-3 justify-end mt-6 pt-6 border-t border-base-300">
+            <button type="button" class="btn btn-ghost" (click)="onCancel()" [disabled]="submitting()">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-accent" [disabled]="submitting()">
+              @if (submitting()) {
+                <span class="loading loading-spinner loading-sm"></span>
+                Granting...
+              } @else {
+                <lucide-icon [img]="ZapIcon" class="size-4"></lucide-icon>
+                Grant Licenses
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

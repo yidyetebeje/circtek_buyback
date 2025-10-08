@@ -1,0 +1,118 @@
+<app-generic-page
+  title=""
+  [primaryAction]="isSuperAdmin() ? { label: 'Manual Adjustment' } : null"
+  (primaryActionClick)="openAdjustmentModal()"
+  [columns]="columns"
+  [data]="ledgerEntries()"
+  [loading]="loading()"
+  [facets]="facets()"
+  (filtersChange)="handleFiltersChange($event)"
+  searchPlaceholder="Search transactions..."
+/>
+
+<!-- Manual Adjustment Modal -->
+@if (showAdjustmentModal()) {
+  <app-generic-modal
+    [isOpen]="showAdjustmentModal()"
+    title="Manual License Adjustment"
+    size="lg"
+    (close)="closeAdjustmentModal()"
+    [actions]="[
+      { label: 'Cancel', variant: 'ghost', action: 'cancel' },
+      { label: 'Create Adjustment', variant: 'accent', action: 'submit', loading: submitting() }
+    ]"
+    (actionClick)="$event === 'submit' ? handleAdjustmentSubmit() : closeAdjustmentModal()"
+  >
+    <form [formGroup]="adjustmentForm" class="space-y-4">
+      @if (errorMessage()) {
+        <div class="alert alert-error">
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <div class="alert alert-info">
+        <span>Use positive numbers to add licenses, negative numbers to remove them.</span>
+      </div>
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">Tenant <span class="text-error">*</span></span>
+        </label>
+        <select
+          formControlName="tenant_id"
+          class="select select-accent w-full"
+          [class.select-error]="adjustmentForm.get('tenant_id')?.invalid && adjustmentForm.get('tenant_id')?.touched"
+        >
+          <option [ngValue]="null" disabled selected>Select tenant</option>
+          @for (tenant of tenants(); track tenant.id) {
+            <option [ngValue]="tenant.id">{{ tenant.name }}</option>
+          }
+        </select>
+        @if (getFieldError('tenant_id'); as error) {
+          <div class="label">
+            <span class="label-text-alt text-error">{{ error }}</span>
+          </div>
+        }
+      </div>
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">License Type <span class="text-error">*</span></span>
+        </label>
+        <select
+          formControlName="license_type_id"
+          class="select select-accent w-full"
+          [class.select-error]="adjustmentForm.get('license_type_id')?.invalid && adjustmentForm.get('license_type_id')?.touched"
+        >
+          <option [ngValue]="null" disabled selected>Select license type</option>
+          @for (type of licenseTypes(); track type.id) {
+            <option [ngValue]="type.id">{{ type.name }} (${{ type.price }})</option>
+          }
+        </select>
+        @if (getFieldError('license_type_id'); as error) {
+          <div class="label">
+            <span class="label-text-alt text-error">{{ error }}</span>
+          </div>
+        }
+      </div>
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">Amount <span class="text-error">*</span></span>
+        </label>
+        <input
+          type="number"
+          formControlName="amount"
+          class="input input-bordered w-full"
+          [class.input-error]="adjustmentForm.get('amount')?.invalid && adjustmentForm.get('amount')?.touched"
+          placeholder="e.g., 100 or -50"
+        />
+        <div class="label">
+          <span class="label-text-alt text-base-content/60">Positive to add, negative to remove</span>
+        </div>
+        @if (getFieldError('amount'); as error) {
+          <div class="label">
+            <span class="label-text-alt text-error">{{ error }}</span>
+          </div>
+        }
+      </div>
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">Notes <span class="text-error">*</span></span>
+        </label>
+        <textarea
+          formControlName="notes"
+          class="textarea textarea-bordered w-full"
+          placeholder="Reason for adjustment..."
+          rows="3"
+        ></textarea>
+        @if (getFieldError('notes'); as error) {
+          <div class="label">
+            <span class="label-text-alt text-error">{{ error }}</span>
+          </div>
+        }
+      </div>
+    </form>
+  </app-generic-modal>
+}

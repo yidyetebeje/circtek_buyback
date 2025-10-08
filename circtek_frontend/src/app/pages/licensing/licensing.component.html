@@ -1,0 +1,441 @@
+<!-- Table View for all tabs -->
+<app-generic-page
+  [title]="'License Management'"
+  [subtitle]="'Manage your testing licenses and view usage'"
+  [loading]="loading()"
+  [tabs]="tabs()"
+  [activeTabKeyInput]="activeTab()"
+  [columns]="columns()"
+  [data]="data()"
+  [total]="total()"
+  [searchPlaceholder]="searchPlaceholder()"
+  [primaryAction]="primaryAction()"
+  [facets]="facets()"
+  (primaryActionClick)="onPrimaryActionClick()"
+  (tabChange)="onTabChange($event)"
+  (filtersChange)="onFiltersChange($event)"
+  (cellAction)="onCellAction($event)"
+/>
+
+<!-- Create License Type Modal -->
+@if (showCreateTypeModal()) {
+  <app-generic-modal
+    [isOpen]="showCreateTypeModal()"
+    title="Create License Type"
+    size="lg"
+    (close)="closeCreateTypeModal()"
+    [actions]="[
+      { label: 'Cancel', variant: 'ghost', action: 'cancel' },
+      { label: 'Create', variant: 'accent', action: 'submit', loading: submitting() }
+    ]"
+    (actionClick)="$event === 'submit' ? handleCreateTypeSubmit() : closeCreateTypeModal()"
+  >
+    <form [formGroup]="createTypeForm" class="space-y-4">
+      @if (errorMessage()) {
+        <div class="alert alert-error">
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">Name <span class="text-error">*</span></span>
+        </label>
+        <input
+          type="text"
+          formControlName="name"
+          class="input input-bordered w-full"
+          [class.input-error]="createTypeForm.get('name')?.invalid && createTypeForm.get('name')?.touched"
+          placeholder="e.g., iPhone Diagnostic License"
+        />
+        @if (createTypeForm.get('name')?.invalid && createTypeForm.get('name')?.touched) {
+          <div class="label">
+            <span class="label-text-alt text-error">Name is required</span>
+          </div>
+        }
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="label">
+            <span class="label-text font-medium">Product Category <span class="text-error">*</span></span>
+          </label>
+          <select
+            formControlName="product_category"
+            class="select select-accent w-full"
+            [class.select-error]="createTypeForm.get('product_category')?.invalid && createTypeForm.get('product_category')?.touched"
+          >
+            <option value="" disabled selected>Select category</option>
+            <option value="iPhone">iPhone</option>
+            <option value="Macbook">MacBook</option>
+            <option value="Airpods">AirPods</option>
+            <option value="Android">Android</option>
+          </select>
+          @if (createTypeForm.get('product_category')?.invalid && createTypeForm.get('product_category')?.touched) {
+            <div class="label">
+              <span class="label-text-alt text-error">Category is required</span>
+            </div>
+          }
+        </div>
+
+        <div>
+          <label class="label">
+            <span class="label-text font-medium">Test Type <span class="text-error">*</span></span>
+          </label>
+          <select
+            formControlName="test_type"
+            class="select select-accent w-full"
+            [class.select-error]="createTypeForm.get('test_type')?.invalid && createTypeForm.get('test_type')?.touched"
+          >
+            <option value="" disabled selected>Select type</option>
+            <option value="Diagnostic">Diagnostic</option>
+            <option value="Erasure">Erasure</option>
+          </select>
+          @if (createTypeForm.get('test_type')?.invalid && createTypeForm.get('test_type')?.touched) {
+            <div class="label">
+              <span class="label-text-alt text-error">Test type is required</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">Price (USD) <span class="text-error">*</span></span>
+        </label>
+        <input
+          type="number"
+          formControlName="price"
+          class="input input-bordered w-full"
+          [class.input-error]="createTypeForm.get('price')?.invalid && createTypeForm.get('price')?.touched"
+          placeholder="0.00"
+          step="0.01"
+          min="0"
+        />
+        @if (createTypeForm.get('price')?.invalid && createTypeForm.get('price')?.touched) {
+          <div class="label">
+            <span class="label-text-alt text-error">Price is required and must be positive</span>
+          </div>
+        }
+      </div>
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">Description</span>
+        </label>
+        <textarea
+          formControlName="description"
+          class="textarea textarea-bordered w-full"
+          placeholder="Optional description..."
+          rows="3"
+        ></textarea>
+      </div>
+    </form>
+  </app-generic-modal>
+}
+
+<!-- Manual Adjustment Modal -->
+@if (showAdjustmentModal()) {
+  <app-generic-modal
+    [isOpen]="showAdjustmentModal()"
+    title="Manual License Adjustment"
+    size="lg"
+    (close)="closeAdjustmentModal()"
+    [actions]="[
+      { label: 'Cancel', variant: 'ghost', action: 'cancel' },
+      { label: 'Create Adjustment', variant: 'accent', action: 'submit', loading: submitting() }
+    ]"
+    (actionClick)="$event === 'submit' ? handleAdjustmentSubmit() : closeAdjustmentModal()"
+  >
+    <form [formGroup]="adjustmentForm" class="space-y-4">
+      @if (errorMessage()) {
+        <div class="alert alert-error">
+          <span>{{ errorMessage() }}</span>
+        </div>
+      }
+
+      <div class="alert alert-info">
+        <span>Use positive numbers to add licenses, negative numbers to remove them.</span>
+      </div>
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">Tenant <span class="text-error">*</span></span>
+        </label>
+        <select
+          formControlName="tenant_id"
+          class="select select-accent w-full"
+          [class.select-error]="adjustmentForm.get('tenant_id')?.invalid && adjustmentForm.get('tenant_id')?.touched"
+        >
+          <option [ngValue]="null" disabled selected>Select tenant</option>
+          @for (tenant of tenants(); track tenant.id) {
+            <option [ngValue]="tenant.id">{{ tenant.name }}</option>
+          }
+        </select>
+        @if (adjustmentForm.get('tenant_id')?.invalid && adjustmentForm.get('tenant_id')?.touched) {
+          <div class="label">
+            <span class="label-text-alt text-error">Tenant is required</span>
+          </div>
+        }
+      </div>
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">License Type <span class="text-error">*</span></span>
+        </label>
+        <select
+          formControlName="license_type_id"
+          class="select select-accent w-full"
+          [class.select-error]="adjustmentForm.get('license_type_id')?.invalid && adjustmentForm.get('license_type_id')?.touched"
+        >
+          <option [ngValue]="null" disabled selected>Select license type</option>
+          @for (type of licenseTypes(); track type.id) {
+            <option [ngValue]="type.id">{{ type.name }} (${{ type.price }})</option>
+          }
+        </select>
+        @if (adjustmentForm.get('license_type_id')?.invalid && adjustmentForm.get('license_type_id')?.touched) {
+          <div class="label">
+            <span class="label-text-alt text-error">License type is required</span>
+          </div>
+        }
+      </div>
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">Amount <span class="text-error">*</span></span>
+        </label>
+        <input
+          type="number"
+          formControlName="amount"
+          class="input input-bordered w-full"
+          [class.input-error]="adjustmentForm.get('amount')?.invalid && adjustmentForm.get('amount')?.touched"
+          placeholder="e.g., 100 or -50"
+        />
+        <div class="label">
+          <span class="label-text-alt text-base-content/60">Positive to add, negative to remove</span>
+        </div>
+        @if (adjustmentForm.get('amount')?.invalid && adjustmentForm.get('amount')?.touched) {
+          <div class="label">
+            <span class="label-text-alt text-error">Amount is required</span>
+          </div>
+        }
+      </div>
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">Notes <span class="text-error">*</span></span>
+        </label>
+        <textarea
+          formControlName="notes"
+          class="textarea textarea-bordered w-full"
+          placeholder="Reason for adjustment..."
+          rows="3"
+        ></textarea>
+        @if (adjustmentForm.get('notes')?.invalid && adjustmentForm.get('notes')?.touched) {
+          <div class="label">
+            <span class="label-text-alt text-error">Notes are required</span>
+          </div>
+        }
+      </div>
+    </form>
+  </app-generic-modal>
+}
+
+<!-- Approve Request Modal -->
+@if (showApproveModal() && selectedRequest()) {
+  <app-generic-modal
+    [isOpen]="showApproveModal()"
+    title="Approve License Request"
+    size="md"
+    (close)="closeApproveModal()"
+    [actions]="[
+      { label: 'Cancel', variant: 'ghost', action: 'cancel' },
+      { label: 'Approve', variant: 'accent', action: 'approve', loading: submitting() }
+    ]"
+    (actionClick)="$event === 'approve' ? handleApproveConfirm() : closeApproveModal()"
+  >
+    <div class="space-y-4">
+      <div class="alert alert-info">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span>Are you sure you want to approve this license request?</span>
+      </div>
+
+      <div class="bg-base-200 rounded-lg p-4 space-y-2">
+        <div class="flex justify-between">
+          <span class="font-medium">Request ID:</span>
+          <span>#{{ selectedRequest()!.id }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-medium">Tenant:</span>
+          <span>{{ selectedRequest()!.tenant_name || 'N/A' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-medium">Requested By:</span>
+          <span>{{ selectedRequest()!.requested_by_name }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-medium">Total Items:</span>
+          <span>{{ selectedRequest()!.items.length }} type(s)</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-medium">Total Quantity:</span>
+          <span>{{ getTotalQuantity(selectedRequest()!) }}</span>
+        </div>
+      </div>
+    </div>
+  </app-generic-modal>
+}
+
+<!-- Reject Request Modal -->
+@if (showRejectModal() && selectedRequest()) {
+  <app-generic-modal
+    [isOpen]="showRejectModal()"
+    title="Reject License Request"
+    size="md"
+    (close)="closeRejectModal()"
+    [actions]="[
+      { label: 'Cancel', variant: 'ghost', action: 'cancel' },
+      { label: 'Reject', variant: 'error', action: 'reject', loading: submitting() }
+    ]"
+    (actionClick)="$event === 'reject' ? handleRejectConfirm() : closeRejectModal()"
+  >
+    <div class="space-y-4">
+      <div class="alert alert-warning">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+        <span>Please provide a reason for rejecting this request.</span>
+      </div>
+
+      <div class="bg-base-200 rounded-lg p-4 space-y-2">
+        <div class="flex justify-between">
+          <span class="font-medium">Request ID:</span>
+          <span>#{{ selectedRequest()!.id }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-medium">Tenant:</span>
+          <span>{{ selectedRequest()!.tenant_name || 'N/A' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="font-medium">Requested By:</span>
+          <span>{{ selectedRequest()!.requested_by_name }}</span>
+        </div>
+      </div>
+
+      <div>
+        <label class="label">
+          <span class="label-text font-medium">Rejection Reason <span class="text-error">*</span></span>
+        </label>
+        <textarea
+          class="textarea textarea-bordered w-full"
+          placeholder="Explain why this request is being rejected..."
+          rows="4"
+          [value]="rejectionReason()"
+          (input)="rejectionReason.set($any($event.target).value)"
+        ></textarea>
+      </div>
+    </div>
+  </app-generic-modal>
+}
+
+<!-- View Request Details Modal -->
+@if (showDetailsModal() && selectedRequest()) {
+  <app-generic-modal
+    [isOpen]="showDetailsModal()"
+    title="License Request Details"
+    size="lg"
+    (close)="closeDetailsModal()"
+    [actions]="[
+      { label: 'Close', variant: 'ghost', action: 'close' }
+    ]"
+    (actionClick)="closeDetailsModal()"
+  >
+    <div class="space-y-6">
+      <!-- Request Info -->
+      <div class="bg-base-200 rounded-lg p-4 space-y-3">
+        <h4 class="font-semibold text-lg">Request Information</h4>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <span class="text-sm text-base-content/60">Request ID</span>
+            <p class="font-medium">#{{ selectedRequest()!.id }}</p>
+          </div>
+          <div>
+            <span class="text-sm text-base-content/60">Date</span>
+            <p class="font-medium">{{ formatDate(selectedRequest()!.created_at) }}</p>
+          </div>
+          <div>
+            <span class="text-sm text-base-content/60">Tenant</span>
+            <p class="font-medium">{{ selectedRequest()!.tenant_name || 'N/A' }}</p>
+          </div>
+          <div>
+            <span class="text-sm text-base-content/60">Requested By</span>
+            <p class="font-medium">{{ selectedRequest()!.requested_by_name }}</p>
+          </div>
+          <div class="col-span-2">
+            <span class="text-sm text-base-content/60">Status</span>
+            <p>
+              <span 
+                class="badge"
+                [class.badge-warning]="selectedRequest()!.status === 'pending'"
+                [class.badge-success]="selectedRequest()!.status === 'approved'"
+                [class.badge-error]="selectedRequest()!.status === 'rejected'"
+              >
+                {{ selectedRequest()!.status.toUpperCase() }}
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Requested Licenses -->
+      <div>
+        <h4 class="font-semibold text-lg mb-3">Requested Licenses</h4>
+        <div class="space-y-2">
+          @for (item of selectedRequest()!.items; track $index) {
+            <div class="bg-base-200 rounded-lg p-3 flex justify-between items-center">
+              <div>
+                <p class="font-medium">
+                  {{ getLicenseTypeName(item.license_type_id) }}
+                </p>
+                <p class="text-sm text-base-content/60">
+                  {{ getLicenseTypeCategory(item.license_type_id) }} - 
+                  {{ getLicenseTypeTestType(item.license_type_id) }}
+                </p>
+              </div>
+              <div class="text-right">
+                <p class="font-semibold text-lg">{{ item.quantity }}</p>
+                <p class="text-sm text-base-content/60">units</p>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="mt-3 bg-accent/10 rounded-lg p-3 flex justify-between items-center">
+          <span class="font-semibold">Total Quantity</span>
+          <span class="font-bold text-lg">{{ getTotalQuantity(selectedRequest()!) }}</span>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      @if (selectedRequest()!.notes) {
+        <div>
+          <h4 class="font-semibold text-lg mb-2">Notes</h4>
+          <div class="bg-base-200 rounded-lg p-4">
+            <p class="whitespace-pre-wrap">{{ selectedRequest()!.notes }}</p>
+          </div>
+        </div>
+      }
+
+      <!-- Rejection Reason -->
+      @if (selectedRequest()!.rejection_reason) {
+        <div>
+          <h4 class="font-semibold text-lg mb-2">Rejection Reason</h4>
+          <div class="bg-error/10 border border-error/20 rounded-lg p-4">
+            <p class="whitespace-pre-wrap text-error">{{ selectedRequest()!.rejection_reason }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </app-generic-modal>
+}

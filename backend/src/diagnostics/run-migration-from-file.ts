@@ -66,6 +66,7 @@ async function runMigrationFromFile() {
 		testerId: 4,    // Replace with actual tester ID
 		tenantId: 16,    // Replace with actual tenant ID
 		warehouseId: 18, // Replace with actual warehouse ID
+		token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsInJvbGUiOiJ0ZXN0ZXIiLCJ0ZW5hbnRfaWQiOjE2LCJ3YXJlaG91c2VfaWQiOjE4LCJtYW5hZ2VkX3Nob3BfaWQiOm51bGwsImV4cCI6MTc2MjM2NDA2NywiaWF0IjoxNzU5NzcyMDY3fQ.7Xv7fUR2MmnsR27hmJ3vpCIC86_3ffd_0BsUiysDoNY'
 	}
 
 	console.log('📋 Configuration:')
@@ -77,9 +78,7 @@ async function runMigrationFromFile() {
 	const useBatch = oldData.length > 50
 	console.log(`📦 Using ${useBatch ? 'batch' : 'detailed'} migration method\n`)
 
-	const result = useBatch
-		? await migrateOldDataBatch(oldData, config)
-		: await migrateOldData(oldData, config)
+	const result = await migrateOldData(oldData, config)
 
 	const duration = ((Date.now() - startTime) / 1000).toFixed(2)
 

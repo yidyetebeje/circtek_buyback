@@ -73,7 +73,9 @@ export class StockManagementComponent {
   subtitle = 'Manage stock, purchases, transfers and SKU specifications';
   primaryAction = computed(() => {
     const tab = this.activeTab();
-    if (tab === 'purchases') {
+    if (tab === 'stock') {
+      return { label: 'Stock In' };
+    } else if (tab === 'purchases') {
       return { label: 'Add Purchase' };
     } else if (tab === 'transfers') {
       return { label: 'Add Transfer' };
@@ -491,7 +493,9 @@ export class StockManagementComponent {
   // Actions
   onPrimaryActionClick() {
     const tab = this.activeTab();
-    if (tab === 'purchases') {
+    if (tab === 'stock') {
+      this.router.navigate(['/stock-in']);
+    } else if (tab === 'purchases') {
       this.router.navigate(['/stock-management/purchases/add']);
     } else if (tab === 'transfers') {
       this.router.navigate(['/stock-management/transfers/add']);

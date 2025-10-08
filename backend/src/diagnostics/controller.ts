@@ -2,6 +2,7 @@ import type { response } from '../types/response'
 import { deviceEventsService } from '../stock/device-events'
 import { DiagnosticsRepository } from './repository'
 import { DiagnosticListQueryInput, DiagnosticPublic, DiagnosticUploadInput } from './types'
+import { licensingService } from '../licensing'
 
 export class DiagnosticsController {
 	constructor(private readonly repo: DiagnosticsRepository) {}
@@ -79,10 +80,43 @@ export class DiagnosticsController {
 	}
 
 	async upload(body: DiagnosticUploadInput, testerId: number, tenantId: number, warehouseId: number): Promise<response<DiagnosticPublic | null>> {
-	
-		// Fire TEST_COMPLETED device event if a device was associated
 		try {
 			console.log('upload', body)
+			
+			// Step 1: Authorize test with licensing system
+			const deviceIdentifier = body.device.imei || body.device.serial || body.device.guid
+			if (!deviceIdentifier) {
+				return { data: null, message: 'Device must have IMEI, Serial, or GUID', status: 400 }
+			}
+
+			// Determine license type based on device type and test type
+			const productCategory = body.device.device_type // e.g., "iPhone", "MacBook", "Airpods"
+			const testType = 'Diagnostic' // Default test type, can be customized based on test data
+			
+			const authResult = await licensingService.authorizeTest(
+				tenantId,
+				{
+					device_identifier: deviceIdentifier,
+					product_category: productCategory,
+					test_type: testType,
+				},
+				testerId
+			)
+
+			if (!authResult.authorized) {
+				console.log('Test not authorized:', authResult.reason)
+				return {
+					data: null,
+					message: authResult.reason === 'insufficient_licenses' 
+						? 'Insufficient licenses. Please purchase more licenses to continue testing.'
+						: 'Invalid license type for this device',
+					status: authResult.reason === 'insufficient_licenses' ? 402 : 400,
+				}
+			}
+
+			console.log('Test authorized:', authResult.reason, 'Balance remaining:', authResult.balance_remaining)
+
+			// Step 2: Process the test upload
 			const created = await this.repo.upload(body, testerId, tenantId, warehouseId)
 			if (created?.device_id) {
 				

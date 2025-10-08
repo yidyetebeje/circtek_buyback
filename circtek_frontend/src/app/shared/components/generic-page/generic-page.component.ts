@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { CellHostDirective } from './directives/cell-host.directive';
 import { FormsModule } from '@angular/forms';
 import { ColumnDef, createAngularTable, getCoreRowModel, SortingState } from '@tanstack/angular-table';
-import { LucideAngularModule, Edit, Trash2, UserPlus, Users, Eye, PackagePlus } from 'lucide-angular';
+import { LucideAngularModule, Edit, Trash2, UserPlus, Users, Eye, PackagePlus, Check, X } from 'lucide-angular';
 import { TruncatedTextComponent } from '../truncated-text/truncated-text.component';
 
 // Reusable Generic Page composed with Tailwind + DaisyUI
@@ -356,7 +356,12 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
   }
 
   getCellActions(cell: any): CellAction[] | undefined {
-    return cell.column.columnDef.meta?.actions;
+    const actions = cell.column.columnDef.meta?.actions;
+    // Support both static arrays and dynamic functions
+    if (typeof actions === 'function') {
+      return actions(cell.row.original);
+    }
+    return actions;
   }
 
   onCellAction(action: string, row: any) {
@@ -398,6 +403,8 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
     detail: Eye,
     receive: PackagePlus,
     'trash-2': Trash2,
+    check: Check,
+    x: X,
   };
 
   getActionIcon(a: CellAction): any {

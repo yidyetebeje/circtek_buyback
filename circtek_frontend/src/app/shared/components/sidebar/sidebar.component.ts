@@ -7,7 +7,8 @@ import {
   History,
   Users,
   Package,
-  Wrench
+  Wrench,
+  CreditCard
 } from 'lucide-angular';
 
 @Component({
@@ -27,6 +28,7 @@ export class SidebarComponent {
   readonly Users = Users;
   readonly Package = Package;
   readonly Wrench = Wrench;
+  readonly CreditCard = CreditCard;
 
   toggleSidebar() {
     this.isOpen.update(open => !open);
