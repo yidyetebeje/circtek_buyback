@@ -93,28 +93,28 @@ export class DiagnosticsController {
 			const productCategory = body.device.device_type // e.g., "iPhone", "MacBook", "Airpods"
 			const testType = 'Diagnostic' // Default test type, can be customized based on test data
 			
-			const authResult = await licensingService.authorizeTest(
-				tenantId,
-				{
-					device_identifier: deviceIdentifier,
-					product_category: productCategory,
-					test_type: testType,
-				},
-				testerId
-			)
+			// const authResult = await licensingService.authorizeTest(
+			// 	tenantId,
+			// 	{
+			// 		device_identifier: deviceIdentifier,
+			// 		product_category: productCategory,
+			// 		test_type: testType,
+			// 	},
+			// 	testerId
+			// )
 
-			if (!authResult.authorized) {
-				console.log('Test not authorized:', authResult.reason)
-				return {
-					data: null,
-					message: authResult.reason === 'insufficient_licenses' 
-						? 'Insufficient licenses. Please purchase more licenses to continue testing.'
-						: 'Invalid license type for this device',
-					status: authResult.reason === 'insufficient_licenses' ? 402 : 400,
-				}
-			}
+			// if (!authResult.authorized) {
+			// 	console.log('Test not authorized:', authResult.reason)
+			// 	return {
+			// 		data: null,
+			// 		message: authResult.reason === 'insufficient_licenses' 
+			// 			? 'Insufficient licenses. Please purchase more licenses to continue testing.'
+			// 			: 'Invalid license type for this device',
+			// 		status: authResult.reason === 'insufficient_licenses' ? 402 : 400,
+			// 	}
+			// }
 
-			console.log('Test authorized:', authResult.reason, 'Balance remaining:', authResult.balance_remaining)
+			// console.log('Test authorized:', authResult.reason, 'Balance remaining:', authResult.balance_remaining)
 
 			// Step 2: Process the test upload
 			const created = await this.repo.upload(body, testerId, tenantId, warehouseId)
