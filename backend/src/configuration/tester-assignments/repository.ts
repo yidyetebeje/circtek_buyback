@@ -1,10 +1,15 @@
 import { and, eq } from 'drizzle-orm'
 import { db } from '../../db'
-import { users, wifi_profile, workflows, label_templates, ota_update, tenants } from '../../db/circtek.schema'
+import { users, wifi_profile, workflows, label_templates, ota_update, tenants, diagnostic_question_sets } from '../../db/circtek.schema'
 import type { TesterAssignments } from './types'
+import { DiagnosticQuestionsRepository } from '../diagnostic-questions/repository'
 
 export class TesterAssignmentsRepository {
-    constructor(private readonly database: typeof db) {}
+    private diagnosticQuestionsRepo: DiagnosticQuestionsRepository
+    
+    constructor(private readonly database: typeof db) {
+        this.diagnosticQuestionsRepo = new DiagnosticQuestionsRepository(database)
+    }
 
     async getAllAssignments(testerId: number, tenantId: number): Promise<TesterAssignments | null> {
         // First check if tester exists and belongs to the tenant
@@ -14,7 +19,8 @@ export class TesterAssignmentsRepository {
                 wifi_profile_id: users.wifi_profile_id,
                 workflow_id: users.workflow_id,
                 label_template_id: users.label_template_id,
-                ota_update_id: users.ota_update_id
+                ota_update_id: users.ota_update_id,
+                diagnostic_question_set_id: users.diagnostic_question_set_id
             })
             .from(users)
             .where(and(eq(users.id, testerId), eq(users.tenant_id, tenantId)))
@@ -26,7 +32,8 @@ export class TesterAssignmentsRepository {
             wifi_profile: null,
             workflow: null,
             label_template: null,
-            ota_update: null
+            ota_update: null,
+            diagnostic_question_set: null
         }
 
         // Get WiFi Profile if assigned
@@ -118,6 +125,32 @@ export class TesterAssignmentsRepository {
                 .leftJoin(tenants, eq(ota_update.tenant_id, tenants.id))
                 .where(eq(ota_update.id, testerRow.ota_update_id))
             result.ota_update = otaUpdateRow as any
+        }
+
+        // Get Diagnostic Question Set if assigned (with questions and translations)
+        if (testerRow.diagnostic_question_set_id) {
+            const questionSetWithQuestions = await this.diagnosticQuestionsRepo.getQuestionSetWithQuestions(
+                testerRow.diagnostic_question_set_id,
+                tenantId
+            )
+            
+            if (questionSetWithQuestions) {
+                // Fetch translations for each question
+                const questionTranslations: { [questionId: number]: any } = {}
+                
+                for (const question of questionSetWithQuestions.questions) {
+                    const translations = await this.diagnosticQuestionsRepo.getQuestionTranslations(
+                        question.id,
+                        tenantId
+                    )
+                    questionTranslations[question.id] = translations
+                }
+                
+                result.diagnostic_question_set = {
+                    ...questionSetWithQuestions,
+                    question_translations: questionTranslations
+                }
+            }
         }
 
         return result
