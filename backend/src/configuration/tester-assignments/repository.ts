@@ -135,20 +135,23 @@ export class TesterAssignmentsRepository {
             )
             
             if (questionSetWithQuestions) {
-                // Fetch translations for each question
-                const questionTranslations: { [questionId: number]: any } = {}
-                
-                for (const question of questionSetWithQuestions.questions) {
-                    const translations = await this.diagnosticQuestionsRepo.getQuestionTranslations(
-                        question.id,
-                        tenantId
-                    )
-                    questionTranslations[question.id] = translations
-                }
+                // Fetch translations for each question and embed them directly
+                const questionsWithTranslations = await Promise.all(
+                    questionSetWithQuestions.questions.map(async (question) => {
+                        const translations = await this.diagnosticQuestionsRepo.getQuestionTranslations(
+                            question.id,
+                            tenantId
+                        )
+                        return {
+                            ...question,
+                            translations: translations
+                        }
+                    })
+                )
                 
                 result.diagnostic_question_set = {
                     ...questionSetWithQuestions,
-                    question_translations: questionTranslations
+                    questions: questionsWithTranslations
                 }
             }
         }

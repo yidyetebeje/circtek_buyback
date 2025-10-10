@@ -138,9 +138,19 @@ export type QuestionWithOptions = QuestionPublic & {
     options: QuestionOptionPublic[]
 }
 
+// Full question with options and translations
+export type QuestionWithOptionsAndTranslations = QuestionWithOptions & {
+    translations: QuestionTranslations
+}
+
 // Full question set with questions
 export type QuestionSetWithQuestions = QuestionSetPublic & {
     questions: QuestionWithOptions[]
+}
+
+// Full question set with questions including translations
+export type QuestionSetWithQuestionsAndTranslations = QuestionSetPublic & {
+    questions: QuestionWithOptionsAndTranslations[]
 }
 
 // Translation Types
