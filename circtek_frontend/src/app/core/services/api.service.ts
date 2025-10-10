@@ -769,6 +769,10 @@ export class ApiService {
     return this.get<ApiResponse<DiagnosticQuestionSetAssignment[]>>(`/configuration/diagnostic-questions/assignments/tester/${testerId}`, params);
   }
 
+  getDiagnosticQuestionSetTesters(questionSetId: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<User[]>> {
+    return this.get<ApiResponse<User[]>>(`/configuration/diagnostic-questions/sets/${questionSetId}/testers`, params);
+  }
+
   // Translations
   getQuestionTranslations(questionId: number): Observable<ApiResponse<any>> {
     return this.get<ApiResponse<any>>(`/configuration/diagnostic-questions/questions/${questionId}/translations`);

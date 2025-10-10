@@ -261,6 +261,7 @@ export class QuestionFormComponent {
 
   onActionClick(event: { action: string; data?: any }) {
     if (event.action === 'Cancel') {
+      console.log("navigate back pressed")
       this.navigateBack();
     }
   }
@@ -270,7 +271,7 @@ export class QuestionFormComponent {
   }
 
   private navigateBack(): void {
-    this.router.navigate(['/diagnostic-questions'], { queryParams: { tab: 'questions' } });
+    this.router.navigate(['/management'], { queryParams: { tab: 'questions' } });
   }
 
   // Option Management Methods

@@ -546,6 +546,27 @@ export class DiagnosticQuestionsRepository {
         return rows as any
     }
 
+    async getTestersByQuestionSet(questionSetId: number, tenantId: number): Promise<any[]> {
+        const rows = await this.database
+            .select({
+                id: users.id,
+                user_name: users.user_name,
+                name: users.name,
+                status: users.status,
+                tenant_id: users.tenant_id,
+            })
+            .from(users)
+            .where(
+                and(
+                    eq(users.diagnostic_question_set_id, questionSetId),
+                    eq(users.tenant_id, tenantId)
+                ) as any
+            )
+            .orderBy(users.name)
+        
+        return rows as any
+    }
+
     // ==================== ANSWERS ====================
 
     async submitAnswer(payload: SubmitAnswerInput, answeredBy: number, tenantId: number): Promise<{ success: boolean; error?: string }> {

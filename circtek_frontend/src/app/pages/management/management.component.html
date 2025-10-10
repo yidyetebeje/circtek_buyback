@@ -179,6 +179,17 @@
         </div>
       </div>
     }
+    @if (activeTab() === 'questions' && selectedDiagnosticQuestionSet(); as qs) {
+      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+        <span class="font-medium text-base-content/90 flex-shrink-0">Question Set:</span>
+        <div class="min-w-0 flex-1">
+          <app-truncated-text 
+            [text]="qs.title"
+            [maxWidth]="'300px'"
+          ></app-truncated-text>
+        </div>
+      </div>
+    }
   </div>
   @if (assignedTestersLoading()) {
     <div class="flex items-center justify-center py-8">

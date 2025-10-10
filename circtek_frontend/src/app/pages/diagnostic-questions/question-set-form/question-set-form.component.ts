@@ -167,7 +167,7 @@ export class QuestionSetFormComponent {
       error: (error) => {
         console.error('Failed to load question set:', error);
         this.loading.set(false);
-        this.router.navigate(['/diagnostic-questions']);
+        this.router.navigate(['/management'], { queryParams: { tab: 'questions' } });
       }
     });
   }
@@ -308,7 +308,7 @@ export class QuestionSetFormComponent {
       }
 
       this.toast.saveSuccess('Question Set', this.isEditMode() ? 'updated' : 'created');
-      this.router.navigate(['/diagnostic-questions']);
+      this.router.navigate(['/management'], { queryParams: { tab: 'questions' } });
     } catch (error: any) {
       console.error('Failed to save question set:', error);
       const msg = error?.error?.message || error?.message || 'Failed to save question set';
@@ -382,7 +382,7 @@ export class QuestionSetFormComponent {
   }
 
   cancel() {
-    this.router.navigate(['/diagnostic-questions']);
+    this.router.navigate(['/management'], { queryParams: { tab: 'questions' } });
   }
 
   openTranslationModal(question: Question) {

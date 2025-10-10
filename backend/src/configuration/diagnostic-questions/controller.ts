@@ -229,6 +229,11 @@ export class DiagnosticQuestionsController {
         return { data: rows, message: 'OK', status: 200 }
     }
 
+    async getTestersByQuestionSet(questionSetId: number, tenantId: number): Promise<response<any[]>> {
+        const rows = await this.repo.getTestersByQuestionSet(questionSetId, tenantId)
+        return { data: rows, message: 'OK', status: 200 }
+    }
+
     // ==================== ANSWERS ====================
 
     async submitAnswer(payload: SubmitAnswerInput, answeredBy: number, tenantId: number): Promise<response<{ success: boolean } | null>> {

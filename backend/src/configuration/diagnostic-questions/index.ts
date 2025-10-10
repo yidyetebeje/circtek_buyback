@@ -201,6 +201,14 @@ export const diagnostic_questions_routes = new Elysia({ prefix: '/diagnostic-que
         return response
     }, { detail: { tags: ['Configuration'], summary: 'Get assignments for a tester (tenant-scoped)' } })
 
+    .get('/sets/:id/testers', async (ctx) => {
+        const { params, currentTenantId, currentRole, query } = ctx as any
+        const tenantId = currentRole === 'super_admin' ? (query?.tenant_id ?? currentTenantId) : currentTenantId
+        const response = await controller.getTestersByQuestionSet(Number(params.id), Number(tenantId))
+        ctx.set.status = response.status as any
+        return response
+    }, { detail: { tags: ['Configuration'], summary: 'Get testers assigned to a question set (tenant-scoped)' } })
+
     // ==================== ANSWERS ====================
     .post('/answers', async (ctx) => {
         const { body, currentTenantId, currentUserId } = ctx as any

@@ -273,6 +273,7 @@ export class ManagementComponent {
     this.selectedDiagnosticQuestionSet.set(questionSet);
     this.selectedDiagnosticTesterId.set(null);
     this.isDiagnosticAssignModalOpen.set(true);
+    this.loadTesterOptionsForTenant();
   }
 
   closeDiagnosticAssignModal() {
@@ -699,6 +700,7 @@ export class ManagementComponent {
             meta: {
               actions: [
                 { key: 'assign', label: 'Assign', class: 'text-accent' },
+                { key: 'view-assigned', label: 'View assigned testers', class: 'text-secondary' },
                 { key: 'edit', label: 'Edit', class: 'text-primary' },
                 { key: 'delete', label: 'Delete', class: 'text-error' },
               ],
@@ -1305,9 +1307,15 @@ export class ManagementComponent {
       return;
     }
 
-    // Handle assign action for questionss
+    // Handle assign action for questions
     if (event.action === 'assign' && tab === 'questions') {
       this.openDiagnosticAssignModal(row as DiagnosticQuestionSet);
+      return;
+    }
+
+    // Handle view-assigned action for questions
+    if (event.action === 'view-assigned' && tab === 'questions') {
+      this.openAssignedModal(row as any);
       return;
     }
 
@@ -1572,7 +1580,7 @@ export class ManagementComponent {
     }
   ]);
 
-  openAssignedModal(row: WiFiProfile | LabelTemplateRecord | WorkflowRecord | OtaUpdate) {
+  openAssignedModal(row: WiFiProfile | LabelTemplateRecord | WorkflowRecord | OtaUpdate | DiagnosticQuestionSet) {
     this.isAssignedModalOpen.set(true);
     this.assignedTestersLoading.set(true);
     this.assignedTesters.set([]); // Clear previous data
@@ -1637,6 +1645,22 @@ export class ManagementComponent {
         }, 
         error: (error) => { 
           console.error('Failed to load assigned testers:', error);
+          this.assignedTesters.set([]); 
+          this.assignedTestersLoading.set(false);
+          this.toast.loadingError('assigned testers');
+        }, 
+      });
+      return;
+    }
+    if (this.activeTab() === 'questions') {
+      this.selectedDiagnosticQuestionSet.set(row as DiagnosticQuestionSet);
+      this.api.getDiagnosticQuestionSetTesters((row as DiagnosticQuestionSet).id, params).subscribe({ 
+        next: (res) => { 
+          this.assignedTesters.set(res.data ?? []); 
+          this.assignedTestersLoading.set(false);
+        }, 
+        error: (error) => { 
+          console.error('Failed to load assigned testers for question set:', error);
           this.assignedTesters.set([]); 
           this.assignedTestersLoading.set(false);
           this.toast.loadingError('assigned testers');
@@ -1755,6 +1779,33 @@ export class ManagementComponent {
           this.toast.unassignmentError('tester from OTA update');
         },
       });
+      return;
+    }
+    if (this.activeTab() === 'questions' && this.selectedDiagnosticQuestionSet()) {
+      const questionSet = this.selectedDiagnosticQuestionSet()!;
+      this.api.unassignDiagnosticQuestionSet(userId).subscribe({
+        next: () => {
+          this.assignedTestersLoading.set(true);
+          this.api.getDiagnosticQuestionSetTesters(questionSet.id, params).subscribe({ 
+            next: (res) => { 
+              this.assignedTesters.set(res.data ?? []); 
+              this.loading.set(false); 
+              this.assignedTestersLoading.set(false);
+              this.toast.unassignmentSuccess('Tester from Question Set');
+            }, 
+            error: () => { 
+              this.loading.set(false); 
+              this.assignedTestersLoading.set(false);
+              this.toast.loadingError('tester list');
+            }, 
+          });
+        },
+        error: (error) => { 
+          this.loading.set(false); 
+          console.error('Failed to unassign question set:', error);
+          this.toast.unassignmentError('tester from question set');
+        },
+      });
     }
   }
 
@@ -1762,6 +1813,11 @@ export class ManagementComponent {
     this.isAssignedModalOpen.set(false);
     this.assignedTesters.set([]);
     this.assignedTestersLoading.set(false);
+    this.selectedWifiProfile.set(null);
+    this.selectedLabelTemplate.set(null);
+    this.selectedWorkflow.set(null);
+    this.selectedOtaUpdate.set(null);
+    this.selectedDiagnosticQuestionSet.set(null);
   }
 
   onAssignedModalAction(action: string): void {

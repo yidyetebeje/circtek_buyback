@@ -318,19 +318,13 @@ export const routes: Routes = [
 
   // Diagnostic Questions routes
   {
-    path: 'diagnostic-questions',
-    canMatch: [authGuard],
-    loadComponent: () =>
-      import('./pages/diagnostic-questions/diagnostic-questions.component').then((m) => m.DiagnosticQuestionsComponent),
-  },
-  {
-    path: 'diagnostic-questions/new',
+    path: 'questions/new',
     canMatch: [authGuard],
     loadComponent: () =>
       import('./pages/diagnostic-questions/question-set-form/question-set-form.component').then((m) => m.QuestionSetFormComponent),
   },
   {
-    path: 'diagnostic-questions/:id/edit',
+    path: 'questions/:id/edit',
     canMatch: [authGuard],
     loadComponent: () =>
       import('./pages/diagnostic-questions/question-set-form/question-set-form.component').then((m) => m.QuestionSetFormComponent),
