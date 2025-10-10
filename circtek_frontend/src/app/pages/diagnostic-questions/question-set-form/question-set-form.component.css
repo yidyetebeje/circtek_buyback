@@ -1,0 +1,17 @@
+/* Question Set Form Component Styles */
+
+:host {
+  display: block;
+}
+
+/* Smooth transitions for question cards */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+/* Custom gradient for question headers */
+.bg-gradient-to-r {
+  background-image: linear-gradient(to right, var(--tw-gradient-stops));
+}

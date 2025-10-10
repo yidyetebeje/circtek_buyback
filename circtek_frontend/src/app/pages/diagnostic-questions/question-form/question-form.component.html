@@ -1,0 +1,177 @@
+<app-generic-form-page
+  [title]="title()"
+  [subtitle]="subtitle()"
+  [form]="questionForm()"
+  [fields]="fields()"
+  [actions]="actions()"
+  [loading]="loading()"
+  [submitting]="submitting()"
+  [error]="errorMessage()"
+  [showBackButton]="true"
+  [submitLabel]="submitLabel()"
+  backUrl="/diagnostic-questions"
+  (formSubmit)="onFormSubmit($event)"
+  (actionClick)="onActionClick($event)"
+  (backClick)="onBackClick()"
+></app-generic-form-page>
+
+<!-- Options Management Section (only in edit mode) -->
+@if (isEditMode()) {
+  <div class="container mx-auto px-4 py-8 max-w-4xl">
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="card-title text-lg">Question Options</h3>
+            <p class="text-sm text-base-content/70 mt-1">
+              Add multiple choice options for this question. Users will select one of these options when answering.
+            </p>
+          </div>
+          <button
+            class="btn btn-accent gap-2"
+            (click)="openTranslationModal()"
+            [disabled]="options().length === 0"
+            title="Add translations for this question"
+          >
+            <lucide-angular [img]="LanguagesIcon" class="size-4"></lucide-angular>
+            Translations
+          </button>
+        </div>
+
+        <!-- Add New Option -->
+        <div class="flex gap-2 mb-6">
+          <input
+            type="text"
+            class="input input-bordered input-accent flex-1"
+            placeholder="Enter option text (e.g., 'Pristine - No scratches')"
+            [value]="newOptionText()"
+            (input)="newOptionText.set($any($event.target).value)"
+            (keydown.enter)="addOption()"
+            [disabled]="optionsLoading()"
+          />
+          <button
+            class="btn btn-accent"
+            (click)="addOption()"
+            [disabled]="!newOptionText().trim() || optionsLoading()"
+          >
+            @if (optionsLoading()) {
+              <span class="loading loading-spinner loading-sm"></span>
+            }
+            Add Option
+          </button>
+        </div>
+
+        <!-- Options List -->
+        @if (optionsLoading() && options().length === 0) {
+          <div class="flex items-center justify-center py-8">
+            <span class="loading loading-spinner loading-md mr-2"></span>
+            <span class="text-base-content/70">Loading options...</span>
+          </div>
+        } @else if (options().length === 0) {
+          <div class="alert alert-info">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>No options added yet. Add at least 2 options for this question.</span>
+          </div>
+        } @else {
+          <div class="space-y-2">
+            @for (option of options(); track option.id; let i = $index) {
+              <div class="flex items-center gap-2 p-3 bg-base-200/30 rounded-lg border border-base-300/20">
+                <!-- Order Controls -->
+                <div class="flex flex-col gap-1">
+                  <button
+                    class="btn btn-ghost btn-xs"
+                    (click)="moveOptionUp(i)"
+                    [disabled]="i === 0 || optionsLoading()"
+                    title="Move up"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    class="btn btn-ghost btn-xs"
+                    (click)="moveOptionDown(i)"
+                    [disabled]="i === options().length - 1 || optionsLoading()"
+                    title="Move down"
+                  >
+                    ▼
+                  </button>
+                </div>
+
+                <!-- Option Number -->
+                <div class="badge badge-neutral">{{ i + 1 }}</div>
+
+                <!-- Option Text (editable or display) -->
+                @if (editingOptionId() === option.id) {
+                  <input
+                    type="text"
+                    class="input input-bordered input-sm flex-1"
+                    [value]="editingOptionText()"
+                    (input)="editingOptionText.set($any($event.target).value)"
+                    (keydown.enter)="saveEditOption()"
+                    (keydown.escape)="cancelEditOption()"
+                  />
+                } @else {
+                  <span class="flex-1">{{ option.option_text }}</span>
+                }
+
+                <!-- Action Buttons -->
+                <div class="flex gap-1">
+                  @if (editingOptionId() === option.id) {
+                    <button
+                      class="btn btn-success btn-xs"
+                      (click)="saveEditOption()"
+                      [disabled]="!editingOptionText().trim() || optionsLoading()"
+                      title="Save"
+                    >
+                      ✓
+                    </button>
+                    <button
+                      class="btn btn-ghost btn-xs"
+                      (click)="cancelEditOption()"
+                      [disabled]="optionsLoading()"
+                      title="Cancel"
+                    >
+                      ✗
+                    </button>
+                  } @else {
+                    <button
+                      class="btn btn-ghost btn-xs text-primary"
+                      (click)="startEditOption(option)"
+                      [disabled]="editingOptionId() !== null || optionsLoading()"
+                      title="Edit"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      class="btn btn-ghost btn-xs text-error"
+                      (click)="deleteOption(option.id)"
+                      [disabled]="editingOptionId() !== null || optionsLoading()"
+                      title="Delete"
+                    >
+                      Delete
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          @if (options().length < 2) {
+            <div class="alert alert-warning mt-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              <span>Please add at least 2 options for this question to be usable.</span>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Translation Modal -->
+  <app-translation-modal
+    [isOpen]="isTranslationModalOpen()"
+    [questionId]="questionId()"
+    [questionText]="questionForm().get('question_text')?.value || ''"
+    [options]="options()"
+    (closeModal)="closeTranslationModal()"
+  ></app-translation-modal>
+}

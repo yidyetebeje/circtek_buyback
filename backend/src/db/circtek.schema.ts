@@ -14,6 +14,7 @@ export const users = mysqlTable('users', {
   workflow_id: bigint('workflow_id', { mode: 'number', unsigned: true }).references(() => workflows.id),
   label_template_id: bigint('label_template_id', { mode: 'number', unsigned: true }).references(() => label_templates.id),
   ota_update_id: bigint('ota_update_id', { mode: 'number', unsigned: true }).references(() => ota_update.id),
+  diagnostic_question_set_id: bigint('diagnostic_question_set_id', { mode: 'number', unsigned: true }).references(() => diagnostic_question_sets.id),
   role_id: bigint('role_id', { mode: 'number', unsigned: true }).references(() => roles.id),
   tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
   warehouse_id: bigint('warehouse_id', { mode: 'number', unsigned: true }).references(() => warehouses.id),
@@ -488,5 +489,91 @@ export const license_requests = mysqlTable('license_requests', {
   index('idx_license_requests_tenant').on(table.tenant_id),
   index('idx_license_requests_status').on(table.status),
   index('idx_license_requests_created_at').on(table.created_at),
+]);
+
+// Diagnostic Question System Tables
+
+// Individual questions library
+export const diagnostic_questions = mysqlTable('diag_questions', {
+  id: serial('id').primaryKey(),
+  question_text: text('question_text').notNull(),
+  description: text('description'), // Optional explanation of what the question assesses
+  status: boolean('status').default(true),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_diagnostic_questions_tenant').on(table.tenant_id),
+]);
+
+// Options for each question
+export const diagnostic_question_options = mysqlTable('diagn_qn_options', {
+  id: serial('id').primaryKey(),
+  question_id: bigint('question_id', { mode: 'number', unsigned: true }).references(() => diagnostic_questions.id).notNull(),
+  option_text: varchar('option_text', { length: 255 }).notNull(),
+  display_order: int('display_order').default(0), // For ordering options
+  status: boolean('status').default(true),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_diagnostic_question_options_question').on(table.question_id),
+]);
+
+// Question sets (groups of related questions)
+export const diagnostic_question_sets = mysqlTable('diag_qn_sets', {
+  id: serial('id').primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  status: boolean('status').default(true),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_diagnostic_question_sets_tenant').on(table.tenant_id),
+]);
+
+// Many-to-many relationship between sets and questions
+export const diagnostic_question_set_questions = mysqlTable('diag_qn_set_qns', {
+  id: serial('id').primaryKey(),
+  question_set_id: bigint('question_set_id', { mode: 'number', unsigned: true }).references(() => diagnostic_question_sets.id).notNull(),
+  question_id: bigint('question_id', { mode: 'number', unsigned: true }).references(() => diagnostic_questions.id).notNull(),
+  display_order: int('display_order').default(0), // For ordering questions within a set
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_question_set_questions').on(table.question_set_id, table.question_id),
+  unique('uq_set_question').on(table.question_set_id, table.question_id),
+]);
+
+
+// Answers submitted by testers (during diagnostic upload)
+export const diagnostic_question_answers = mysqlTable('diag_answers', {
+  id: serial('id').primaryKey(),
+  question_text: varchar('question_text', { length: 500 }).notNull(),
+  answer_text: varchar('answer_text', { length: 255 }).notNull(),
+  device_id: bigint('device_id', { mode: 'number', unsigned: true }).references(() => devices.id, { onDelete: 'set null' }),
+  test_result_id: bigint('test_result_id', { mode: 'number', unsigned: true }).references(() => test_results.id, { onDelete: 'set null' }),
+  answered_by: bigint('answered_by', { mode: 'number', unsigned: true }).references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_diag_ans_device').on(table.device_id),
+  index('idx_diag_ans_test_result').on(table.test_result_id),
+  index('idx_diag_ans_tenant').on(table.tenant_id),
+]);
+
+// Translations for diagnostic questions and options
+export const diagnostic_translations = mysqlTable('diag_translations', {
+  id: serial('id').primaryKey(),
+  entity_type: mysqlEnum('entity_type', ['question', 'option']).notNull(), // What is being translated
+  entity_id: bigint('entity_id', { mode: 'number', unsigned: true }).notNull(), // ID of question or option
+  language_code: varchar('language_code', { length: 10 }).notNull(), // e.g., 'es', 'de', 'pt', 'fr'
+  translated_text: text('translated_text').notNull(), // The translation
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_diag_translations_entity').on(table.entity_type, table.entity_id),
+  index('idx_diag_translations_lang').on(table.language_code),
+  unique('uq_diag_translation').on(table.entity_type, table.entity_id, table.language_code),
 ]);
 

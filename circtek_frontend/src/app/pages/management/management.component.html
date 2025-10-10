@@ -605,6 +605,49 @@
   }
 </app-generic-modal>
 
+<!-- Diagnostic Question Set Assignment Modal -->
+<app-generic-modal
+  [isOpen]="isDiagnosticAssignModalOpen()"
+  [title]="'Assign Question Set to Tester'"
+  [actions]="diagnosticAssignModalActions()"
+  size="md"
+  (close)="closeDiagnosticAssignModal()"
+  (actionClick)="onDiagnosticAssignModalAction($event)"
+>
+  <div class="space-y-4">
+    <!-- Display selected question set (read-only) -->
+    <div class="form-control">
+      <label class="label mb-1">
+        <span class="label-text font-semibold">Question Set</span>
+      </label>
+      <div class="alert alert-info">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span class="font-medium">{{ getSelectedDiagnosticQuestionSetTitle() }}</span>
+      </div>
+    </div>
+
+    <!-- Tester selection -->
+    <div class="form-control">
+      <label class="label mb-1">
+        <span class="label-text">Select Tester <span class="text-error">*</span></span>
+      </label>
+      <select 
+        class="select select-accent select-bordered w-full" 
+        (change)="onDiagnosticTesterSelect($event)"
+        [value]="selectedDiagnosticTesterId() ?? ''"
+        [disabled]="loading()"
+      >
+        <option value="">Select a tester…</option>
+        @for (opt of testerOptions(); track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+  </div>
+</app-generic-modal>
+
 <!-- Delete Confirmation Modal -->
 <app-generic-modal
   [isOpen]="isDeleteModalOpen()"

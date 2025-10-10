@@ -24,6 +24,7 @@ import { Grade, GradeCreateRequest, GradeUpdateRequest } from '../models/grade';
 import { OtaUpdate, OtaUpdateCreateRequest, OtaUpdateUpdateRequest, OtaUpdateListResponse } from '../models/ota-update';
 import { SkuUsageAnalyticsResult, SkuUsageAnalyticsQuery } from '../models/analytics';
 import { ApiKey, ApiKeyCreated, ApiKeyCreateRequest, ApiKeyUpdateRequest, ApiKeyRevokeRequest, ApiKeyListResponse, ApiKeyUsageResponse } from '../models/api-key';
+import { DiagnosticQuestion, DiagnosticQuestionOption, DiagnosticQuestionSet, DiagnosticQuestionSetAssignment, DiagnosticQuestionWithOptions, DiagnosticQuestionSetWithQuestions } from '../models/diagnostic-question';
 
 @Injectable({
   providedIn: 'root',
@@ -671,5 +672,113 @@ export class ApiService {
 
   getApiKeyUsage(id: number, params: HttpParams = new HttpParams()): Observable<ApiKeyUsageResponse> {
     return this.get<ApiKeyUsageResponse>(`/external-api/api-keys/${id}/usage`, params);
+  }
+
+  // ===== Diagnostic Questions =====
+  getDiagnosticQuestions(params: HttpParams = new HttpParams()): Observable<ApiResponse<DiagnosticQuestion[]>> {
+    return this.get<ApiResponse<DiagnosticQuestion[]>>('/configuration/diagnostic-questions/questions', params);
+  }
+
+  getDiagnosticQuestion(id: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<DiagnosticQuestion | null>> {
+    return this.get<ApiResponse<DiagnosticQuestion | null>>(`/configuration/diagnostic-questions/questions/${id}`, params);
+  }
+
+  getDiagnosticQuestionWithOptions(id: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<DiagnosticQuestionWithOptions | null>> {
+    return this.get<ApiResponse<DiagnosticQuestionWithOptions | null>>(`/configuration/diagnostic-questions/questions/${id}/with-options`, params);
+  }
+
+  createDiagnosticQuestion(payload: any): Observable<ApiResponse<DiagnosticQuestion | null>> {
+    return this.post<ApiResponse<DiagnosticQuestion | null>>('/configuration/diagnostic-questions/questions', payload);
+  }
+
+  updateDiagnosticQuestion(id: number, payload: any): Observable<ApiResponse<DiagnosticQuestion | null>> {
+    return this.patch<ApiResponse<DiagnosticQuestion | null>>(`/configuration/diagnostic-questions/questions/${id}`, payload);
+  }
+
+  deleteDiagnosticQuestion(id: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/configuration/diagnostic-questions/questions/${id}`);
+  }
+
+  // Question Options
+  getDiagnosticQuestionOptions(questionId: number): Observable<ApiResponse<DiagnosticQuestionOption[]>> {
+    return this.get<ApiResponse<DiagnosticQuestionOption[]>>(`/configuration/diagnostic-questions/questions/${questionId}/options`);
+  }
+
+  createDiagnosticQuestionOption(payload: any): Observable<ApiResponse<DiagnosticQuestionOption | null>> {
+    return this.post<ApiResponse<DiagnosticQuestionOption | null>>('/configuration/diagnostic-questions/options', payload);
+  }
+
+  updateDiagnosticQuestionOption(id: number, payload: any): Observable<ApiResponse<DiagnosticQuestionOption | null>> {
+    return this.patch<ApiResponse<DiagnosticQuestionOption | null>>(`/configuration/diagnostic-questions/options/${id}`, payload);
+  }
+
+  deleteDiagnosticQuestionOption(id: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/configuration/diagnostic-questions/options/${id}`);
+  }
+
+  // Question Sets
+  getDiagnosticQuestionSets(params: HttpParams = new HttpParams()): Observable<ApiResponse<DiagnosticQuestionSet[]>> {
+    return this.get<ApiResponse<DiagnosticQuestionSet[]>>('/configuration/diagnostic-questions/sets', params);
+  }
+
+  getDiagnosticQuestionSet(id: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<DiagnosticQuestionSet | null>> {
+    return this.get<ApiResponse<DiagnosticQuestionSet | null>>(`/configuration/diagnostic-questions/sets/${id}`, params);
+  }
+
+  getDiagnosticQuestionSetWithQuestions(id: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<DiagnosticQuestionSetWithQuestions | null>> {
+    return this.get<ApiResponse<DiagnosticQuestionSetWithQuestions | null>>(`/configuration/diagnostic-questions/sets/${id}/with-questions`, params);
+  }
+
+  createDiagnosticQuestionSet(payload: any): Observable<ApiResponse<DiagnosticQuestionSet | null>> {
+    console.log('=== API Service createDiagnosticQuestionSet ===');
+    console.log('Payload before POST:', JSON.stringify(payload, null, 2));
+    console.log('payload.status type:', typeof payload.status, 'value:', payload.status);
+    return this.post<ApiResponse<DiagnosticQuestionSet | null>>('/configuration/diagnostic-questions/sets', payload);
+  }
+
+  updateDiagnosticQuestionSet(id: number, payload: any): Observable<ApiResponse<DiagnosticQuestionSet | null>> {
+    return this.patch<ApiResponse<DiagnosticQuestionSet | null>>(`/configuration/diagnostic-questions/sets/${id}`, payload);
+  }
+
+  deleteDiagnosticQuestionSet(id: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/configuration/diagnostic-questions/sets/${id}`);
+  }
+
+  addQuestionToSet(setId: number, payload: { question_id: number; display_order?: number }): Observable<ApiResponse<{ success: boolean } | null>> {
+    return this.post<ApiResponse<{ success: boolean } | null>>(`/configuration/diagnostic-questions/sets/${setId}/questions`, payload);
+  }
+
+  removeQuestionFromSet(setId: number, questionId: number): Observable<ApiResponse<{ success: boolean } | null>> {
+    return this.delete<ApiResponse<{ success: boolean } | null>>(`/configuration/diagnostic-questions/sets/${setId}/questions/${questionId}`);
+  }
+
+  // Assignments
+  getDiagnosticQuestionSetAssignments(params: HttpParams = new HttpParams()): Observable<ApiResponse<DiagnosticQuestionSetAssignment[]>> {
+    return this.get<ApiResponse<DiagnosticQuestionSetAssignment[]>>('/configuration/diagnostic-questions/assignments', params);
+  }
+
+  assignDiagnosticQuestionSet(payload: { question_set_id: number; tester_id: number }): Observable<ApiResponse<{ success: boolean } | null>> {
+    return this.post<ApiResponse<{ success: boolean } | null>>('/configuration/diagnostic-questions/assignments', payload);
+  }
+
+  unassignDiagnosticQuestionSet(assignmentId: number): Observable<ApiResponse<{ success: boolean } | null>> {
+    return this.delete<ApiResponse<{ success: boolean } | null>>(`/configuration/diagnostic-questions/assignments/${assignmentId}`);
+  }
+
+  getDiagnosticQuestionSetAssignmentsByTester(testerId: number, params: HttpParams = new HttpParams()): Observable<ApiResponse<DiagnosticQuestionSetAssignment[]>> {
+    return this.get<ApiResponse<DiagnosticQuestionSetAssignment[]>>(`/configuration/diagnostic-questions/assignments/tester/${testerId}`, params);
+  }
+
+  // Translations
+  getQuestionTranslations(questionId: number): Observable<ApiResponse<any>> {
+    return this.get<ApiResponse<any>>(`/configuration/diagnostic-questions/questions/${questionId}/translations`);
+  }
+
+  saveQuestionTranslations(questionId: number, payload: any): Observable<ApiResponse<{ success: boolean }>> {
+    return this.post<ApiResponse<{ success: boolean }>>(`/configuration/diagnostic-questions/questions/${questionId}/translations`, payload);
+  }
+
+  deleteTranslation(translationId: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/configuration/diagnostic-questions/translations/${translationId}`);
   }
 }

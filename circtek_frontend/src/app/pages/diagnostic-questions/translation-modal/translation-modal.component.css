@@ -1,0 +1,13 @@
+/* Translation Modal Styles */
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.tabs-boxed {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+
+.tab {
+  white-space: nowrap;
+}

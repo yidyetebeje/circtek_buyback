@@ -1,0 +1,368 @@
+<div class="min-h-screen bg-base-200/30">
+  <div class="container mx-auto px-4 py-6 max-w-6xl">
+    <!-- Header -->
+    <div class="bg-base-100 rounded-xl shadow-sm border border-base-300/50 p-6 mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-base-content">{{ pageTitle() }}</h1>
+          <p class="text-sm text-base-content/60 mt-1">Build a complete diagnostic questionnaire with multiple questions and answer options</p>
+        </div>
+        <button class="btn btn-ghost btn-sm" (click)="cancel()" [disabled]="submitting()">
+          <lucide-icon [img]="X" class="size-4"></lucide-icon>
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="flex items-center justify-center py-16">
+        <span class="loading loading-spinner loading-lg mr-3"></span>
+        <span class="text-lg">Loading question set...</span>
+      </div>
+    } @else {
+      <!-- Question Set Basic Info -->
+      <div class="bg-base-100 rounded-xl shadow-sm border border-base-300/50 p-6 mb-6">
+        <div class="flex items-center gap-2 mb-6">
+          <div class="badge badge-accent badge-lg">Step 1</div>
+          <h2 class="text-lg font-semibold">Question Set Details</h2>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          @if (isSuperAdmin() && !isEditMode()) {
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text font-semibold text-sm">Tenant <span class="text-error">*</span></span>
+              </label>
+              <select 
+                class="select select-bordered select-accent w-full"
+                [ngModel]="selectedTenantId()"
+                (ngModelChange)="selectedTenantId.set($event)"
+                [disabled]="submitting()"
+              >
+                <option [ngValue]="null">Select a tenant...</option>
+                @for (tenant of tenantOptions(); track tenant.value) {
+                  <option [ngValue]="tenant.value">{{ tenant.label }}</option>
+                }
+              </select>
+            </div>
+          }
+
+          <div class="form-control" [class.lg:col-span-2]="!isSuperAdmin() || isEditMode()">
+            <label class="label">
+              <span class="label-text font-semibold text-sm">Question Set Title <span class="text-error">*</span></span>
+            </label>
+            <input
+              type="text"
+              class="input input-bordered input-accent w-full"
+              placeholder="e.g., 'iPhone 14 Cosmetic Inspection'"
+              [ngModel]="formTitle()"
+              (ngModelChange)="formTitle.set($event)"
+              [disabled]="submitting()"
+              [class.input-error]="formTitle().length > 0 && formTitle().length < 3"
+            />
+            @if (formTitle().length > 0 && formTitle().length < 3) {
+              <label class="label">
+                <span class="label-text-alt text-error">Title must be at least 3 characters</span>
+              </label>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Questions Section -->
+      <div class="bg-base-100 rounded-xl shadow-sm border border-base-300/50 p-6 mb-6">
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-2">
+            <div class="badge badge-accent badge-lg">Step 2</div>
+            <h2 class="text-lg font-semibold">Questions ({{ questions().length }})</h2>
+          </div>
+          <button
+            class="btn btn-accent btn-sm gap-2"
+            (click)="openAddQuestionModal()"
+            [disabled]="submitting()"
+          >
+            <lucide-icon [img]="Plus" class="size-4"></lucide-icon>
+            Add Question
+          </button>
+        </div>
+
+        @if (questions().length === 0) {
+          <div class="bg-info/10 border border-info/20 rounded-lg p-8 text-center">
+            <div class="text-5xl mb-3">📝</div>
+            <h3 class="font-semibold text-base-content mb-2">No Questions Added Yet</h3>
+            <p class="text-sm text-base-content/60 mb-4">Click "Add Question" to start building your diagnostic questionnaire</p>
+            <button
+              class="btn btn-accent btn-sm gap-2"
+              (click)="openAddQuestionModal()"
+              [disabled]="submitting()"
+            >
+              <lucide-icon [img]="Plus" class="size-4"></lucide-icon>
+              Add Your First Question
+            </button>
+          </div>
+        } @else {
+          <div class="space-y-3">
+            @for (question of questions(); track question._tempId || question.id; let i = $index) {
+              <div class="border-2 border-base-300 rounded-xl p-4 hover:border-accent/50 transition-colors">
+                <div class="flex items-start gap-4">
+                  <!-- Question number -->
+                  <div class="flex items-center justify-center w-10 h-10 rounded-full bg-accent text-accent-content font-bold text-sm flex-shrink-0">
+                    {{ i + 1 }}
+                  </div>
+
+                  <!-- Question content -->
+                  <div class="flex-1 min-w-0">
+                    <div class="font-semibold text-base-content mb-2">{{ question.question_text }}</div>
+                    <div class="flex items-center gap-3 text-xs text-base-content/60">
+                      <span class="flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        {{ question.options.length }} options
+                      </span>
+                    </div>
+
+                    <!-- Options preview -->
+                    <div class="mt-3 space-y-1">
+                      @for (option of question.options; track option._tempId || option.id; let optIdx = $index) {
+                        <div class="flex items-center gap-2 text-sm text-base-content/70">
+                          <div class="w-5 h-5 rounded-full bg-base-300 flex items-center justify-center text-xs font-semibold">{{ optIdx + 1 }}</div>
+                          <span>{{ option.option_text }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Validation indicator -->
+                  <div class="flex-shrink-0">
+                    @if (question.question_text.trim().length < 5 || question.options.length < 2) {
+                      <div class="badge badge-warning gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Incomplete
+                      </div>
+                    } @else {
+                      <div class="badge badge-success gap-1">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                        Complete
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="flex items-center gap-1 flex-shrink-0">
+                    <!-- Order controls -->
+                    <div class="flex flex-col gap-0.5">
+                      <button
+                        class="btn btn-ghost btn-xs"
+                        (click)="moveQuestionUp(i)"
+                        [disabled]="i === 0 || submitting()"
+                        title="Move up"
+                      >
+                        <lucide-icon [img]="ArrowUp" class="size-3"></lucide-icon>
+                      </button>
+                      <button
+                        class="btn btn-ghost btn-xs"
+                        (click)="moveQuestionDown(i)"
+                        [disabled]="i === questions().length - 1 || submitting()"
+                        title="Move down"
+                      >
+                        <lucide-icon [img]="ArrowDown" class="size-3"></lucide-icon>
+                      </button>
+                    </div>
+
+                    <!-- Translations -->
+                    <button
+                      class="btn btn-ghost btn-sm text-accent"
+                      (click)="openTranslationModal(question)"
+                      [disabled]="!question.id || question.options.length === 0 || submitting()"
+                      title="Add translations"
+                    >
+                      <lucide-icon [img]="Languages" class="size-4"></lucide-icon>
+                    </button>
+
+                    <!-- Edit -->
+                    <button
+                      class="btn btn-ghost btn-sm"
+                      (click)="openEditQuestionModal(i)"
+                      [disabled]="submitting()"
+                      title="Edit question"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    </button>
+
+                    <!-- Delete -->
+                    <button
+                      class="btn btn-ghost btn-sm text-error"
+                      (click)="removeQuestion(i)"
+                      [disabled]="submitting()"
+                      title="Remove question"
+                    >
+                      <lucide-icon [img]="Trash2" class="size-4"></lucide-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Submit Section -->
+      <div class="bg-base-100 rounded-xl shadow-sm border border-base-300/50 p-6 sticky bottom-4">
+        <div class="flex items-center justify-between">
+          <div class="flex-1">
+            @if (!canSubmit()) {
+              <div class="flex items-start gap-3 text-sm">
+                <svg class="w-5 h-5 text-warning flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <div>
+                  <p class="font-semibold text-warning mb-1">Please complete the following:</p>
+                  <ul class="space-y-1 text-base-content/70">
+                    @if (invalidTitle()) {
+                      <li>• Title must be at least 3 characters</li>
+                    }
+                    @if (isQuestionsEmpty()) {
+                      <li>• Add at least one question</li>
+                    }
+                    @if (hasShortQuestion()) {
+                      <li>• All questions must be at least 5 characters</li>
+                    }
+                    @if (hasFewOptions()) {
+                      <li>• All questions must have at least 2 options</li>
+                    }
+                  </ul>
+                </div>
+              </div>
+            } @else {
+              <div class="flex items-center gap-2 text-success">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                <span class="font-semibold">Question set is ready to submit</span>
+              </div>
+            }
+          </div>
+          <div class="flex gap-3">
+            <button class="btn btn-ghost" (click)="cancel()" [disabled]="submitting()">
+              Cancel
+            </button>
+            <button 
+              class="btn btn-accent btn-lg gap-2 px-8"
+              (click)="onSubmit()"
+              [disabled]="!canSubmit()"
+            >
+              @if (submitting()) {
+                <span class="loading loading-spinner loading-sm"></span>
+                <span>Saving...</span>
+              } @else {
+                <lucide-icon [img]="Save" class="size-5"></lucide-icon>
+                <span>{{ isEditMode() ? 'Update' : 'Create' }} Question Set</span>
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Question Modal -->
+<app-generic-modal
+  [isOpen]="showQuestionModal()"
+  [title]="editingQuestionIndex() !== null ? 'Edit Question' : 'Add Question'"
+  [size]="'lg'"
+  [actions]="modalActions()"
+  (close)="closeQuestionModal()"
+  (actionClick)="handleModalAction($event)"
+>
+  <div class="space-y-4">
+    <!-- Question Text -->
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-semibold">Question Text <span class="text-error">*</span></span>
+        <span class="label-text-alt text-xs">{{ modalQuestionText().length }}/200</span>
+      </label>
+      <input
+        type="text"
+        class="input input-bordered input-accent w-full"
+        placeholder="e.g., 'What is the cosmetic condition of the screen?'"
+        [(ngModel)]="modalQuestionText"
+        [class.input-error]="modalQuestionText().length > 0 && modalQuestionText().length < 5"
+      />
+      @if (modalQuestionText().length > 0 && modalQuestionText().length < 5) {
+        <label class="label">
+          <span class="label-text-alt text-error">Must be at least 5 characters</span>
+        </label>
+      }
+    </div>
+
+    <!-- Options -->
+    <div class="divider my-4">
+      <span class="text-sm font-semibold">Answer Options</span>
+    </div>
+    
+    <div class="flex gap-2 mb-4">
+      <input
+        type="text"
+        class="input input-bordered flex-1"
+        placeholder="Enter option text (e.g., 'Excellent condition')"
+        [(ngModel)]="modalNewOptionText"
+        (keydown.enter)="addModalOption()"
+      />
+      <button
+        class="btn btn-accent gap-2"
+        (click)="addModalOption()"
+        [disabled]="!modalNewOptionText().trim()"
+      >
+        <lucide-icon [img]="Plus" class="size-4"></lucide-icon>
+        Add
+      </button>
+    </div>
+
+    @if (modalOptions().length === 0) {
+      <div class="bg-warning/10 border border-warning/20 rounded-lg p-4 text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current text-warning mx-auto h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+        <p class="text-sm font-medium text-warning">Add at least 2 answer options</p>
+      </div>
+    } @else {
+      <div class="space-y-2">
+        @for (option of modalOptions(); track option._tempId || option.id; let optIdx = $index) {
+          <div class="flex items-center gap-3 p-3 bg-base-200/50 rounded-lg hover:bg-base-200 transition-colors">
+            <div class="flex flex-col gap-0.5">
+              <button
+                class="btn btn-ghost btn-xs"
+                (click)="moveModalOptionUp(optIdx)"
+                [disabled]="optIdx === 0"
+                title="Move up"
+              >
+                <lucide-icon [img]="ArrowUp" class="size-3"></lucide-icon>
+              </button>
+              <button
+                class="btn btn-ghost btn-xs"
+                (click)="moveModalOptionDown(optIdx)"
+                [disabled]="optIdx === modalOptions().length - 1"
+                title="Move down"
+              >
+                <lucide-icon [img]="ArrowDown" class="size-3"></lucide-icon>
+              </button>
+            </div>
+            <div class="flex items-center justify-center w-6 h-6 rounded-full bg-neutral text-neutral-content text-xs font-semibold">{{ optIdx + 1 }}</div>
+            <span class="flex-1 text-sm">{{ option.option_text }}</span>
+            <button
+              class="btn btn-ghost btn-xs text-error"
+              (click)="removeModalOption(optIdx)"
+            >
+              <lucide-icon [img]="X" class="size-3"></lucide-icon>
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</app-generic-modal>
+
+<!-- Translation Modal -->
+@if (translatingQuestion()) {
+  <app-translation-modal
+    [isOpen]="showTranslationModal()"
+    [questionId]="translatingQuestion()!.id!"
+    [questionText]="translatingQuestion()!.question_text"
+    [options]="$any(translatingQuestion()!.options)"
+    (closeModal)="closeTranslationModal()"
+  ></app-translation-modal>
+}
