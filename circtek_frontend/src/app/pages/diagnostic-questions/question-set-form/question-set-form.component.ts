@@ -371,6 +371,7 @@ export class QuestionSetFormComponent {
 
   private async updateQuestionSet() {
     const questionSetId = this.questionSetId()!;
+    const tenantId = this.auth.currentUser()?.tenant_id!;
 
     // Update set basic info
     const setPayload = {
@@ -379,6 +380,45 @@ export class QuestionSetFormComponent {
       status: true
     };
     await this.api.updateDiagnosticQuestionSet(questionSetId, setPayload).toPromise();
+
+    // Handle new questions (questions without an id)
+    for (let displayOrder = 0; displayOrder < this.questions().length; displayOrder++) {
+      const question = this.questions()[displayOrder];
+      
+      // Skip existing questions (they already have an id)
+      if (question.id) {
+        continue;
+      }
+
+      // Create new question
+      const questionPayload = {
+        question_text: question.question_text,
+        status: question.status,
+        tenant_id: tenantId
+      };
+
+      const questionRes: any = await this.api.createDiagnosticQuestion(questionPayload).toPromise();
+      const questionId = questionRes.data?.id;
+
+      if (!questionId) throw new Error('Failed to create question');
+
+      // Create options for the new question
+      for (const option of question.options) {
+        const optionPayload = {
+          question_id: questionId,
+          option_text: option.option_text,
+          display_order: option.display_order,
+          status: option.status
+        };
+        await this.api.createDiagnosticQuestionOption(optionPayload).toPromise();
+      }
+
+      // Add question to set
+      await this.api.addQuestionToSet(questionSetId, {
+        question_id: questionId,
+        display_order: displayOrder
+      }).toPromise();
+    }
   }
 
   cancel() {
