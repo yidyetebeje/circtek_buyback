@@ -48,7 +48,7 @@ export class ManagementComponent {
   total = signal(0);
 
   // Tab & pagination
-  activeTab = signal<'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates' | 'api-keys' | 'diagnostic-questions'>('users');
+  activeTab = signal<'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates' | 'api-keys' | 'questions'>('users');
   pageIndex = signal(0);
   pageSize = signal(10);
 
@@ -97,7 +97,7 @@ export class ManagementComponent {
       { key: 'labels', label: 'Label Templates' },
       { key: 'workflows', label: 'Workflows' },
       { key: 'grades', label: 'Grades' },
-      { key: 'diagnostic-questions', label: 'Diagnostic Questions' },
+      { key: 'questions', label: 'questions' },
       { key: 'ota-updates', label: 'OTA Updates' },
     ];
     // Show Tenants and API Keys first for super_admin, Tenant Profile first for normal users
@@ -129,7 +129,7 @@ export class ManagementComponent {
                 ? 'Add Workflow'
                 : t === 'grades'
                   ? 'Add Grade'
-                  : t === 'diagnostic-questions'
+                  : t === 'questions'
                     ? 'Add Question Set'
                     : t === 'ota-updates'
                       ? 'Add OTA Update'
@@ -153,12 +153,12 @@ export class ManagementComponent {
     }
 
     // Tenant facet is irrelevant when viewing tenants, tenant-profile, or ota-updates tabs
-    if (this.isSuperAdmin() && this.activeTab() !== 'tenants' && this.activeTab() !== 'tenant-profile' && this.activeTab() !== 'ota-updates' && this.activeTab() !== 'diagnostic-questions') {
+    if (this.isSuperAdmin() && this.activeTab() !== 'tenants' && this.activeTab() !== 'tenant-profile' && this.activeTab() !== 'ota-updates' && this.activeTab() !== 'questions') {
       list.unshift({ key: 'tenant_id', label: 'Tenant', type: 'select', options: this.tenantOptions() });
     }
 
-    // Tenant facet for diagnostic questions (applied via backend filter)
-    if (this.activeTab() === 'diagnostic-questions' && this.isSuperAdmin()) {
+    // Tenant facet for questionss (applied via backend filter)
+    if (this.activeTab() === 'questions' && this.isSuperAdmin()) {
       list.unshift({ key: 'tenant_id', label: 'Tenant', type: 'select', options: this.tenantOptions() });
     }
 
@@ -181,9 +181,9 @@ export class ManagementComponent {
 
   // Delete confirmation modal state
   isDeleteModalOpen = signal(false);
-  deleteContext = signal<{ tab: 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates' | 'api-keys' | 'diagnostic-questions'; row: MgmtRow } | null>(null);
+  deleteContext = signal<{ tab: 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates' | 'api-keys' | 'questions'; row: MgmtRow } | null>(null);
 
-  // Diagnostic Question Set Assignment Modal state
+  // questions Set Assignment Modal state
   isDiagnosticAssignModalOpen = signal(false);
   selectedDiagnosticQuestionSet = signal<DiagnosticQuestionSet | null>(null);
   selectedDiagnosticTesterId = signal<number | null>(null);
@@ -264,7 +264,7 @@ export class ManagementComponent {
     ];
   });
 
-  openDeleteModal(tab: 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates' | 'api-keys' | 'diagnostic-questions', row: MgmtRow) {
+  openDeleteModal(tab: 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates' | 'api-keys' | 'questions', row: MgmtRow) {
     this.deleteContext.set({ tab, row });
     this.isDeleteModalOpen.set(true);
   }
@@ -422,7 +422,7 @@ export class ManagementComponent {
       deleteObservable = this.api.deleteOtaUpdate((ctx.row as any).id);
     } else if (ctx.tab === 'api-keys') {
       deleteObservable = this.api.deleteApiKey((ctx.row as any).id);
-    } else if (ctx.tab === 'diagnostic-questions') {
+    } else if (ctx.tab === 'questions') {
       deleteObservable = this.api.deleteDiagnosticQuestionSet((ctx.row as any).id);
     }
 
@@ -441,7 +441,7 @@ export class ManagementComponent {
                              ctx.tab === 'workflows' ? 'Workflow' :
                              ctx.tab === 'grades' ? 'Grade' :
                              ctx.tab === 'api-keys' ? 'API Key' :
-                             ctx.tab === 'diagnostic-questions' ? 'Question Set' :
+                             ctx.tab === 'questions' ? 'Question Set' :
                              'OTA Update';
           this.toast.deleteSuccess(entityName);
         },
@@ -458,7 +458,7 @@ export class ManagementComponent {
                              ctx.tab === 'workflows' ? 'Workflow' :
                              ctx.tab === 'grades' ? 'Grade' :
                              ctx.tab === 'api-keys' ? 'API Key' :
-                             ctx.tab === 'diagnostic-questions' ? 'Question Set' :
+                             ctx.tab === 'questions' ? 'Question Set' :
                              'OTA Update';
           const errorMessage = error?.error?.message || error?.message;
           if (errorMessage) {
@@ -681,7 +681,7 @@ export class ManagementComponent {
             }
           } as any,
         ];
-      case 'diagnostic-questions':
+      case 'questions':
         return [
           { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
             const idx = this.data().indexOf(r as any);
@@ -797,8 +797,8 @@ export class ManagementComponent {
         return 'Search workflows';
       case 'grades':
         return 'Search grades';
-      case 'diagnostic-questions':
-        return 'Search diagnostic question sets';
+      case 'questions':
+        return 'Search questions sets';
       case 'ota-updates':
         return 'Search OTA updates';
       case 'api-keys':
@@ -1106,7 +1106,7 @@ export class ManagementComponent {
       });
       return;
     }
-    if (tab === 'diagnostic-questions') {
+    if (tab === 'questions') {
       let params = new HttpParams()
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
@@ -1252,8 +1252,8 @@ export class ManagementComponent {
       this.router.navigate(['/workflow-editor']);
     } else if (t === 'grades') {
       this.openGradeModal();
-    } else if (t === 'diagnostic-questions') {
-      this.router.navigate(['/diagnostic-questions/new']);
+    } else if (t === 'questions') {
+      this.router.navigate(['/questions/new']);
     } else if (t === 'ota-updates') {
       this.openOtaUpdateModal();
     } else if (t === 'api-keys') {
@@ -1285,8 +1285,8 @@ export class ManagementComponent {
         this.router.navigate(['/workflow-editor', row.id]);
       } else if (tab === 'grades') {
         this.openGradeModal(row as Grade);
-      } else if (tab === 'diagnostic-questions') {
-        this.router.navigate(['/diagnostic-questions', (row as any).id, 'edit']);
+      } else if (tab === 'questions') {
+        this.router.navigate(['/questions', (row as any).id, 'edit']);
       } else if (tab === 'ota-updates') {
         this.openOtaUpdateModal(row as OtaUpdate);
       }
@@ -1305,8 +1305,8 @@ export class ManagementComponent {
       return;
     }
 
-    // Handle assign action for diagnostic questions
-    if (event.action === 'assign' && tab === 'diagnostic-questions') {
+    // Handle assign action for questionss
+    if (event.action === 'assign' && tab === 'questions') {
       this.openDiagnosticAssignModal(row as DiagnosticQuestionSet);
       return;
     }
