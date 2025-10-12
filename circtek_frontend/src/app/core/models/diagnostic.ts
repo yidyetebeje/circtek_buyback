@@ -1,5 +1,12 @@
 import { ApiResponse } from './api';
 
+export interface DiagnosticAnswer {
+  id: number;
+  question_text: string;
+  answer_text: string;
+  created_at: string | null;
+}
+
 export interface Diagnostic {
   id: number;
   created_at: string | null;
@@ -45,6 +52,7 @@ export interface Diagnostic {
   device_status: boolean | null;
   warehouse_name: string | null;
   tester_username: string | null;
+  answers?: DiagnosticAnswer[];
 }
 
 export type DiagnosticListResponse = ApiResponse<Diagnostic[]>;

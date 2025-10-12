@@ -374,6 +374,7 @@ export class DiagnosticsComponent {
   protected passedComponents = computed(() => this.parseComponents(this.selected()?.passed_components ?? null));
   protected failedComponents = computed(() => this.parseComponents(this.selected()?.failed_components ?? null));
   protected pendingComponents = computed(() => this.parseComponents(this.selected()?.pending_components ?? null));
+  protected testerAnswers = computed(() => this.selected()?.answers ?? []);
 
   protected selectedStatus = computed<'failed' | 'pending' | 'success'>(() => {
     const s = this.selected();

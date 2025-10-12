@@ -1,6 +1,6 @@
 import { and, asc, count, desc, eq, like, or, SQL } from 'drizzle-orm'
 import { db } from '../db'
-import { devices, test_results, users as usersTable, warehouses as warehousesTable } from '../db/circtek.schema'
+import { devices, test_results, users as usersTable, warehouses as warehousesTable, diagnostic_question_answers } from '../db/circtek.schema'
 import { DiagnosticFilters, DiagnosticListResult, DiagnosticPublic, DiagnosticUploadInput } from './types'
 
 const diagnosticSelection = {
@@ -119,8 +119,30 @@ export class DiagnosticsRepository {
 		const rows = await (whereCond
 			? baseFrom.where(whereCond).orderBy(orderExpr).limit(limit).offset(offset)
 			: baseFrom.orderBy(orderExpr).limit(limit).offset(offset))
-		console.log(rows, "rows from the underground");
-		return { rows: rows as unknown as DiagnosticPublic[], total: totalRow?.total ?? 0, page, limit }
+		
+		// Fetch answers for each test result
+		const rowsWithAnswers = await Promise.all(
+			rows.map(async (row) => {
+				const answers = await this.database
+					.select({
+						id: diagnostic_question_answers.id,
+						question_text: diagnostic_question_answers.question_text,
+						answer_text: diagnostic_question_answers.answer_text,
+						created_at: diagnostic_question_answers.created_at,
+					})
+					.from(diagnostic_question_answers)
+					.where(eq(diagnostic_question_answers.test_result_id, row.id))
+					.orderBy(diagnostic_question_answers.created_at)
+				
+				return {
+					...row,
+					answers: answers.length > 0 ? answers : []
+				}
+			})
+		)
+		
+		console.log(rowsWithAnswers, "rows from the underground with answers");
+		return { rows: rowsWithAnswers as unknown as DiagnosticPublic[], total: totalRow?.total ?? 0, page, limit }
 	}
 
 	async exportAll(filters: DiagnosticFilters): Promise<DiagnosticPublic[]> {

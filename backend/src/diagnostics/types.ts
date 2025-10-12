@@ -96,6 +96,12 @@ export type DiagnosticPublic = {
 	device_status: boolean | null
 	warehouse_name: string | null
 	tester_username: string | null
+	answers?: Array<{
+		id: number
+		question_text: string
+		answer_text: string
+		created_at: Date | null
+	}>
 }
 
 export type DiagnosticListResult = {
