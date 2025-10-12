@@ -3,9 +3,15 @@ import { deviceEventsService } from '../stock/device-events'
 import { DiagnosticsRepository } from './repository'
 import { DiagnosticListQueryInput, DiagnosticPublic, DiagnosticUploadInput } from './types'
 import { licensingService } from '../licensing'
+import { DiagnosticQuestionsRepository } from '../configuration/diagnostic-questions/repository'
+import { db } from '../db'
 
 export class DiagnosticsController {
-	constructor(private readonly repo: DiagnosticsRepository) {}
+	private readonly questionsRepo: DiagnosticQuestionsRepository
+
+	constructor(private readonly repo: DiagnosticsRepository) {
+		this.questionsRepo = new DiagnosticQuestionsRepository(db)
+	}
 
 	async list(query: DiagnosticListQueryInput, tenantId: number, role?: string): Promise<response<DiagnosticPublic[]>> {
 		const effectiveTenantId = role === 'super_admin' ? query.tenant_id : tenantId
@@ -116,31 +122,54 @@ export class DiagnosticsController {
 
 			// console.log('Test authorized:', authResult.reason, 'Balance remaining:', authResult.balance_remaining)
 
-			// Step 2: Process the test upload
-			const created = await this.repo.upload(body, testerId, tenantId, warehouseId)
-			if (created?.device_id) {
-				
-				await deviceEventsService.createDeviceEvent({
-					device_id: created.device_id,
-					actor_id: testerId,
-					event_type: 'TEST_COMPLETED',
-					details: {
-						make: created.make,
-						model_name: created.model_name,
-						serial_number: created.serial_number,
-						imei: created.imei,
-						lpn: created.lpn,
-						warehouse_name: created.warehouse_name,
-						tester_username: created.tester_username,
-					},
-					tenant_id: tenantId,
-				})
-			}
-			console.log('created', created)
+		// Step 2: Process the test upload
+		const created = await this.repo.upload(body, testerId, tenantId, warehouseId)
+		if (created?.device_id) {
 			
-			const returned = { data: created ?? null, message: 'Uploaded', status: 201 }
-			console.log('returned', returned)
-			return returned
+			await deviceEventsService.createDeviceEvent({
+				device_id: created.device_id,
+				actor_id: testerId,
+				event_type: 'TEST_COMPLETED',
+				details: {
+					make: created.make,
+					model_name: created.model_name,
+					serial_number: created.serial_number,
+					imei: created.imei,
+					lpn: created.lpn,
+					warehouse_name: created.warehouse_name,
+					tester_username: created.tester_username,
+				},
+				tenant_id: tenantId,
+			})
+
+			// Step 3: Process question answers if provided
+			if (body.answers && body.answers.length > 0) {
+				console.log('Processing question answers:', body.answers.length, 'answers')
+				for (const answer of body.answers) {
+					try {
+						await this.questionsRepo.submitAnswer(
+							{
+								question_text: answer.question_text,
+								answer_text: answer.answer_text,
+								device_id: created.device_id,
+								test_result_id: created.id,
+							},
+							testerId,
+							tenantId
+						)
+					} catch (answerError) {
+						console.error('Failed to submit answer:', answerError)
+						// Continue processing other answers even if one fails
+					}
+				}
+				console.log('Finished processing question answers')
+			}
+		}
+		console.log('created', created)
+		
+		const returned = { data: created ?? null, message: 'Uploaded', status: 201 }
+		console.log('returned', returned)
+		return returned
 		} catch (e) {
 			console.log('error', e)
 			if (process.env.NODE_ENV === 'test') {

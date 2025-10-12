@@ -143,6 +143,11 @@ export const DiagnosticUploadBody = t.Object({
 		serial_number: t.Optional(t.String()),
 		imei: t.Optional(t.String()),
 	}),
+	// Question answers (optional)
+	answers: t.Optional(t.Array(t.Object({
+		question_text: t.String(),
+		answer_text: t.String(),
+	}))),
 })
 
 export type DiagnosticUploadInput = Static<typeof DiagnosticUploadBody>

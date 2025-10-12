@@ -196,6 +196,11 @@ export class WorkflowEditorComponent
       color: "#009688",
       type: "yes_no_decision",
     },
+    {
+      id: "diagnostic_question",
+      label: "Diagnostic Question",
+      color: "#3F51B5",
+    },
   ];
 
   // nodeTypes will hold static nodes + dynamically loaded label nodes
