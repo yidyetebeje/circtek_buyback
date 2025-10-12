@@ -19,7 +19,7 @@
 ></app-generic-page>
 
 @if (isModalOpen()) {
-  <div class="modal modal-open">
+  <div class="modal modal-open z-[9999]">
     <div class="modal-box max-w-5xl">
       <div class="flex items-start justify-between gap-4 mb-4">
         <div class="space-y-1">
@@ -126,6 +126,6 @@
         <button class="btn" (click)="closeModal()">Close</button>
       </div>
     </div>
-    <div class="modal-backdrop" (click)="closeModal()"></div>
+    <div class="modal-backdrop z-[9998]" (click)="closeModal()"></div>
   </div>
 }

@@ -129,6 +129,7 @@ export class DiagnosticsRepository {
 						question_text: diagnostic_question_answers.question_text,
 						answer_text: diagnostic_question_answers.answer_text,
 						created_at: diagnostic_question_answers.created_at,
+						test_result_id: diagnostic_question_answers.test_result_id
 					})
 					.from(diagnostic_question_answers)
 					.where(eq(diagnostic_question_answers.test_result_id, row.id))
