@@ -266,15 +266,10 @@ export class DiagnosticsRepository {
 			imei: input.test.imei ?? deviceToInsert.imei,
 		}
 
-		await this.database.insert(test_results).values(toInsertTest as any)
-
-		const [inserted] = await this.database
-			.select(diagnosticSelection)
-			.from(test_results)
-			.leftJoin(devices, eq(test_results.device_id, devices.id))
-			.leftJoin(warehousesTable, eq(test_results.warehouse_id, warehousesTable.id))
-			.leftJoin(usersTable, eq(test_results.tester_id, usersTable.id))
-			.where(and(eq(test_results.device_id, existingDevice.id), eq(test_results.tester_id, testerId)) as any)
+		const id = await this.database.insert(test_results).values(toInsertTest as any).$returningId();
+		const insertedId = Number(id)
+		
+		const [inserted] = await this.database.select(diagnosticSelection).from(test_results).leftJoin(devices, eq(test_results.device_id, devices.id)).leftJoin(warehousesTable, eq(test_results.warehouse_id, warehousesTable.id)).leftJoin(usersTable, eq(test_results.tester_id, usersTable.id)).where(eq(test_results.id, insertedId))
 
 		return inserted as unknown as DiagnosticPublic | undefined
 	}
