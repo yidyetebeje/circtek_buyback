@@ -175,6 +175,7 @@ export class DiagnosticQuestionsRepository {
         const insertData = {
             question_id: payload.question_id,
             option_text: payload.option_text,
+            message: payload.message ?? null,
             display_order: payload.display_order ?? 0,
             status: statusValue,
         }

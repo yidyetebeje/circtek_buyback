@@ -3,11 +3,11 @@
   <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1100] flex items-center justify-center p-4">
     <!-- Modal Container -->
     <div 
-      class="bg-base-100 rounded-box shadow-xl w-full transform transition-all duration-200 ease-out scale-100"
+      class="bg-base-100 rounded-box shadow-xl w-full max-h-[90vh] flex flex-col transform transition-all duration-200 ease-out scale-100"
       [class]="getModalSizeClass()"
     >
-      <!-- Modal Header -->
-      <div class="flex items-center justify-between p-6 border-b border-base-content/10">
+      <!-- Modal Header (Fixed) -->
+      <div class="flex items-center justify-between p-6 border-b border-base-content/10 flex-shrink-0">
         <h3 class="text-lg font-semibold text-base-content">{{ title() }}</h3>
         @if (closable()) {
           <button
@@ -22,14 +22,14 @@
         }
       </div>
 
-      <!-- Modal Body -->
-      <div class="p-6">
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-6 overflow-y-auto flex-1 min-h-0">
         <ng-content></ng-content>
       </div>
 
-      <!-- Modal Actions -->
+      <!-- Modal Actions (Fixed) -->
       @if (actions().length > 0) {
-        <div class="flex justify-end gap-3 p-6 pt-0">
+        <div class="flex justify-end gap-3 p-6 pt-0 border-t border-base-content/10 flex-shrink-0">
           @for (action of actions(); track action.label) {
             <button
               type="button"

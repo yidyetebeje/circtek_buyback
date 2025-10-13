@@ -20,8 +20,9 @@
 
 @if (isModalOpen()) {
   <div class="modal modal-open z-[9999]">
-    <div class="modal-box max-w-5xl">
-      <div class="flex items-start justify-between gap-4 mb-4">
+    <div class="modal-box max-w-5xl max-h-[90vh] flex flex-col p-0">
+      <!-- Header (Fixed) -->
+      <div class="flex items-start justify-between gap-4 p-6 border-b border-base-content/10 flex-shrink-0">
         <div class="space-y-1">
           <h3 class="font-bold text-lg">Diagnostic Details</h3>
           <p class="text-sm text-base-content/60">
@@ -40,89 +41,93 @@
         </div>
       </div>
 
-      <div class="flex flex-wrap gap-2 mb-4">
-        <div class="badge badge-success badge-outline">Passed: {{ passedComponents().length }}</div>
-        <div class="badge badge-warning badge-outline">Pending: {{ pendingComponents().length }}</div>
-        <div class="badge badge-error badge-outline">Failed: {{ failedComponents().length }}</div>
-        @if (testerAnswers().length > 0) {
-          <div class="badge badge-info badge-outline">Answers: {{ testerAnswers().length }}</div>
-        }
-      </div>
+      <!-- Body (Scrollable) -->
+      <div class="overflow-y-auto flex-1 min-h-0 p-6">
+        <div class="flex flex-wrap gap-2 mb-4">
+          <div class="badge badge-success badge-outline">Passed: {{ passedComponents().length }}</div>
+          <div class="badge badge-warning badge-outline">Pending: {{ pendingComponents().length }}</div>
+          <div class="badge badge-error badge-outline">Failed: {{ failedComponents().length }}</div>
+          @if (testerAnswers().length > 0) {
+            <div class="badge badge-info badge-outline">Answers: {{ testerAnswers().length }}</div>
+          }
+        </div>
 
-      @if (testerAnswers().length > 0) {
-        <section class="p-4 rounded-box border border-base-300/50 mb-4 bg-base-100">
-          <h4 class="font-semibold mb-3 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-            Tester Responses
-            <span class="badge badge-info badge-sm ml-2">{{ testerAnswers().length }}</span>
-          </h4>
-          <div class="space-y-3">
-            @for (answer of testerAnswers(); track answer.id) {
-              <div class="p-3 rounded-lg bg-base-200/50 border border-base-300/30">
-                <div class="flex flex-col gap-2">
-                  <div class="flex items-start gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p class="font-medium text-sm text-base-content/80">{{ answer.question_text }}</p>
-                  </div>
-                  <div class="flex items-start gap-2 pl-6">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p class="text-sm">{{ answer.answer_text }}</p>
+        @if (testerAnswers().length > 0) {
+          <section class="p-4 rounded-box border border-base-300/50 mb-4 bg-base-100">
+            <h4 class="font-semibold mb-3 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
+              Tester Responses
+              <span class="badge badge-info badge-sm ml-2">{{ testerAnswers().length }}</span>
+            </h4>
+            <div class="space-y-3">
+              @for (answer of testerAnswers(); track answer.id) {
+                <div class="p-3 rounded-lg bg-base-200/50 border border-base-300/30">
+                  <div class="flex flex-col gap-2">
+                    <div class="flex items-start gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0 text-base-content/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p class="font-medium text-sm text-base-content/80">{{ answer.question_text }}</p>
+                    </div>
+                    <div class="flex items-start gap-2 pl-6">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 flex-shrink-0 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p class="text-sm">{{ answer.answer_text }}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              }
+            </div>
+          </section>
+        }
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <section class="p-4 rounded-box border border-base-300/50">
+            <h4 class="font-semibold mb-2">Passed Components <span class="badge badge-success badge-sm ml-2">{{ passedComponents().length }}</span></h4>
+            @if (passedComponents().length) {
+              <ul class="list-disc pl-5 space-y-1">
+                @for (c of passedComponents(); track c) {
+                  <li class="text-success">{{ c }}</li>
+                }
+              </ul>
+            } @else {
+              <div class="text-base-content/60">No passed components listed.</div>
             }
-          </div>
-        </section>
-      }
+          </section>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <section class="p-4 rounded-box border border-base-300/50">
-          <h4 class="font-semibold mb-2">Passed Components <span class="badge badge-success badge-sm ml-2">{{ passedComponents().length }}</span></h4>
-          @if (passedComponents().length) {
-            <ul class="list-disc pl-5 space-y-1">
-              @for (c of passedComponents(); track c) {
-                <li class="text-success">{{ c }}</li>
-              }
-            </ul>
-          } @else {
-            <div class="text-base-content/60">No passed components listed.</div>
-          }
-        </section>
+          <section class="p-4 rounded-box border border-base-300/50">
+            <h4 class="font-semibold mb-2">Pending Components <span class="badge badge-warning badge-sm ml-2">{{ pendingComponents().length }}</span></h4>
+            @if (pendingComponents().length) {
+              <ul class="list-disc pl-5 space-y-1">
+                @for (c of pendingComponents(); track c) {
+                  <li class="text-warning">{{ c }}</li>
+                }
+              </ul>
+            } @else {
+              <div class="text-base-content/60">No pending components listed.</div>
+            }
+          </section>
 
-        <section class="p-4 rounded-box border border-base-300/50">
-          <h4 class="font-semibold mb-2">Pending Components <span class="badge badge-warning badge-sm ml-2">{{ pendingComponents().length }}</span></h4>
-          @if (pendingComponents().length) {
-            <ul class="list-disc pl-5 space-y-1">
-              @for (c of pendingComponents(); track c) {
-                <li class="text-warning">{{ c }}</li>
-              }
-            </ul>
-          } @else {
-            <div class="text-base-content/60">No pending components listed.</div>
-          }
-        </section>
-
-        <section class="p-4 rounded-box border border-base-300/50">
-          <h4 class="font-semibold mb-2">Failed Components <span class="badge badge-error badge-sm ml-2">{{ failedComponents().length }}</span></h4>
-          @if (failedComponents().length) {
-            <ul class="list-disc pl-5 space-y-1">
-              @for (c of failedComponents(); track c) {
-                <li class="text-error">{{ c }}</li>
-              }
-            </ul>
-          } @else {
-            <div class="text-base-content/60">No failed components listed.</div>
-          }
-        </section>
+          <section class="p-4 rounded-box border border-base-300/50">
+            <h4 class="font-semibold mb-2">Failed Components <span class="badge badge-error badge-sm ml-2">{{ failedComponents().length }}</span></h4>
+            @if (failedComponents().length) {
+              <ul class="list-disc pl-5 space-y-1">
+                @for (c of failedComponents(); track c) {
+                  <li class="text-error">{{ c }}</li>
+                }
+              </ul>
+            } @else {
+              <div class="text-base-content/60">No failed components listed.</div>
+            }
+          </section>
+        </div>
       </div>
 
-      <div class="modal-action">
+      <!-- Footer (Fixed) -->
+      <div class="modal-action border-t border-base-content/10 p-6 pt-4 flex-shrink-0">
         <button class="btn" (click)="closeModal()">Close</button>
       </div>
     </div>

@@ -32,12 +32,14 @@ export type QuestionPublic = {
 export const QuestionOptionCreate = t.Object({
     question_id: t.Number(),
     option_text: t.String(),
+    message: t.Optional(t.String()),
     display_order: t.Optional(t.Number()),
     status: t.Optional(t.Boolean()),
 })
 
 export const QuestionOptionUpdate = t.Object({
     option_text: t.Optional(t.String()),
+    message: t.Optional(t.String()),
     display_order: t.Optional(t.Number()),
     status: t.Optional(t.Boolean()),
 })
@@ -49,6 +51,7 @@ export type QuestionOptionPublic = {
     id: number
     question_id: number
     option_text: string
+    message: string | null
     display_order: number | null
     status: boolean | null
     created_at: string | null

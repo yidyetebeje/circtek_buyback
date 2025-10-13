@@ -511,6 +511,7 @@ export const diagnostic_question_options = mysqlTable('diagn_qn_options', {
   id: serial('id').primaryKey(),
   question_id: bigint('question_id', { mode: 'number', unsigned: true }).references(() => diagnostic_questions.id).notNull(),
   option_text: varchar('option_text', { length: 255 }).notNull(),
+  message: text('message'), // Optional message/description for the option
   display_order: int('display_order').default(0), // For ordering options
   status: boolean('status').default(true),
   created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),

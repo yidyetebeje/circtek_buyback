@@ -15,6 +15,7 @@ import { TranslationModalComponent } from '../translation-modal/translation-moda
 type QuestionOption = {
   id?: number;
   option_text: string;
+  message?: string;
   display_order: number;
   status: boolean;
   _tempId?: string;
@@ -74,6 +75,7 @@ export class QuestionSetFormComponent {
   readonly editingQuestionIndex = signal<number | null>(null);
   readonly modalQuestionText = signal('');
   readonly modalNewOptionText = signal('');
+  readonly modalNewOptionMessage = signal('');
   readonly modalOptions = signal<QuestionOption[]>([]);
 
   // Translation modal state
@@ -157,6 +159,7 @@ export class QuestionSetFormComponent {
           options: (q.options ?? []).map((opt: any) => ({
             id: opt.id,
             option_text: opt.option_text ?? '',
+            message: opt.message ?? '',
             display_order: opt.display_order ?? 0,
             status: !!opt.status
           }))
@@ -177,6 +180,7 @@ export class QuestionSetFormComponent {
     this.modalQuestionText.set('');
     this.modalOptions.set([]);
     this.modalNewOptionText.set('');
+    this.modalNewOptionMessage.set('');
     this.showQuestionModal.set(true);
   }
 
@@ -186,6 +190,7 @@ export class QuestionSetFormComponent {
     this.modalQuestionText.set(question.question_text);
     this.modalOptions.set([...question.options]);
     this.modalNewOptionText.set('');
+    this.modalNewOptionMessage.set('');
     this.showQuestionModal.set(true);
   }
 
@@ -195,6 +200,7 @@ export class QuestionSetFormComponent {
     this.modalQuestionText.set('');
     this.modalOptions.set([]);
     this.modalNewOptionText.set('');
+    this.modalNewOptionMessage.set('');
   }
 
   handleModalAction(action: string) {
@@ -239,6 +245,7 @@ export class QuestionSetFormComponent {
 
     const newOption: QuestionOption = {
       option_text: optionText,
+      message: this.modalNewOptionMessage().trim() || undefined,
       display_order: this.modalOptions().length,
       status: true,
       _tempId: `temp-opt-${Date.now()}`
@@ -246,6 +253,7 @@ export class QuestionSetFormComponent {
 
     this.modalOptions.update(opts => [...opts, newOption]);
     this.modalNewOptionText.set('');
+    this.modalNewOptionMessage.set('');
   }
 
   removeModalOption(index: number) {
@@ -355,6 +363,7 @@ export class QuestionSetFormComponent {
         const optionPayload = {
           question_id: questionId,
           option_text: option.option_text,
+          message: option.message,
           display_order: option.display_order,
           status: option.status
         };
@@ -407,6 +416,7 @@ export class QuestionSetFormComponent {
         const optionPayload = {
           question_id: questionId,
           option_text: option.option_text,
+          message: option.message,
           display_order: option.display_order,
           status: option.status
         };
