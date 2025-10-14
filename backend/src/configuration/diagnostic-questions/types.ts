@@ -5,6 +5,7 @@ export const QuestionCreate = t.Object({
     question_text: t.String(),
     description: t.Optional(t.String()),
     status: t.Optional(t.Boolean()),
+    models: t.Optional(t.Array(t.String())), // Array of model names; empty/null = all models
     tenant_id: t.Optional(t.Number()),
 })
 
@@ -12,6 +13,7 @@ export const QuestionUpdate = t.Object({
     question_text: t.Optional(t.String()),
     description: t.Optional(t.String()),
     status: t.Optional(t.Boolean()),
+    models: t.Optional(t.Array(t.String())), // Array of model names; empty/null = all models
 })
 
 export type QuestionCreateInput = Static<typeof QuestionCreate> & { tenant_id?: number }
@@ -22,6 +24,7 @@ export type QuestionPublic = {
     question_text: string
     description: string | null
     status: boolean | null
+    models: string[] | null // Array of model names; null/empty = all models
     tenant_id: number
     tenant_name?: string | null
     created_at: string | null

@@ -44,6 +44,7 @@ export class DiagnosticQuestionsRepository {
                 question_text: diagnostic_questions.question_text,
                 description: diagnostic_questions.description,
                 status: diagnostic_questions.status,
+                models: diagnostic_questions.models,
                 tenant_id: diagnostic_questions.tenant_id,
                 tenant_name: tenants.name,
                 created_at: diagnostic_questions.created_at,
@@ -69,6 +70,7 @@ export class DiagnosticQuestionsRepository {
             question_text: payload.question_text,
             description: payload.description,
             status: statusValue,
+            models: payload.models ?? null,
             tenant_id: payload.tenant_id,
         }
         await this.database.insert(diagnostic_questions).values(insertData as any)
@@ -78,6 +80,7 @@ export class DiagnosticQuestionsRepository {
                 question_text: diagnostic_questions.question_text,
                 description: diagnostic_questions.description,
                 status: diagnostic_questions.status,
+                models: diagnostic_questions.models,
                 tenant_id: diagnostic_questions.tenant_id,
                 tenant_name: tenants.name,
                 created_at: diagnostic_questions.created_at,
@@ -98,6 +101,7 @@ export class DiagnosticQuestionsRepository {
                 question_text: diagnostic_questions.question_text,
                 description: diagnostic_questions.description,
                 status: diagnostic_questions.status,
+                models: diagnostic_questions.models,
                 tenant_id: diagnostic_questions.tenant_id,
                 tenant_name: tenants.name,
                 created_at: diagnostic_questions.created_at,

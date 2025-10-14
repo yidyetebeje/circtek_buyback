@@ -25,6 +25,7 @@ type Question = {
   id?: number;
   question_text: string;
   status: boolean;
+  models?: string[] | null; // Array of model names; null/empty = all models
   options: QuestionOption[];
   _tempId?: string;
 };
@@ -70,6 +71,40 @@ export class QuestionSetFormComponent {
   // Tenant options
   readonly tenantOptions = signal<Array<{ label: string; value: number }>>([]);
 
+  // iPhone models list (predefined)
+  readonly iphoneModels = [
+    'iPhone 15 Pro Max',
+    'iPhone 15 Pro',
+    'iPhone 15 Plus',
+    'iPhone 15',
+    'iPhone 14 Pro Max',
+    'iPhone 14 Pro',
+    'iPhone 14 Plus',
+    'iPhone 14',
+    'iPhone 13 Pro Max',
+    'iPhone 13 Pro',
+    'iPhone 13 mini',
+    'iPhone 13',
+    'iPhone 12 Pro Max',
+    'iPhone 12 Pro',
+    'iPhone 12 mini',
+    'iPhone 12',
+    'iPhone 11 Pro Max',
+    'iPhone 11 Pro',
+    'iPhone 11',
+    'iPhone XS Max',
+    'iPhone XS',
+    'iPhone XR',
+    'iPhone X',
+    'iPhone 8 Plus',
+    'iPhone 8',
+    'iPhone 7 Plus',
+    'iPhone 7',
+    'iPhone SE (3rd generation)',
+    'iPhone SE (2nd generation)',
+    'iPhone SE (1st generation)',
+  ];
+
   // Modal state
   readonly showQuestionModal = signal(false);
   readonly editingQuestionIndex = signal<number | null>(null);
@@ -77,6 +112,11 @@ export class QuestionSetFormComponent {
   readonly modalNewOptionText = signal('');
   readonly modalNewOptionMessage = signal('');
   readonly modalOptions = signal<QuestionOption[]>([]);
+  readonly modalModels = signal<string[]>([]); // Model names for the question
+
+  // Model selection modal state
+  readonly showModelSelectionModal = signal(false);
+  readonly tempSelectedModels = signal<string[]>([]); // Temporary selection while modal is open
 
   // Translation modal state
   readonly showTranslationModal = signal(false);
@@ -156,6 +196,7 @@ export class QuestionSetFormComponent {
           id: q.id,
           question_text: q.question_text ?? '',
           status: !!q.status,
+          models: q.models ?? null,
           options: (q.options ?? []).map((opt: any) => ({
             id: opt.id,
             option_text: opt.option_text ?? '',
@@ -181,6 +222,7 @@ export class QuestionSetFormComponent {
     this.modalOptions.set([]);
     this.modalNewOptionText.set('');
     this.modalNewOptionMessage.set('');
+    this.modalModels.set([]);
     this.showQuestionModal.set(true);
   }
 
@@ -191,6 +233,7 @@ export class QuestionSetFormComponent {
     this.modalOptions.set([...question.options]);
     this.modalNewOptionText.set('');
     this.modalNewOptionMessage.set('');
+    this.modalModels.set(question.models ?? []);
     this.showQuestionModal.set(true);
   }
 
@@ -201,6 +244,7 @@ export class QuestionSetFormComponent {
     this.modalOptions.set([]);
     this.modalNewOptionText.set('');
     this.modalNewOptionMessage.set('');
+    this.modalModels.set([]);
   }
 
   handleModalAction(action: string) {
@@ -215,6 +259,9 @@ export class QuestionSetFormComponent {
     const questionText = this.modalQuestionText().trim();
     if (questionText.length < 5 || this.modalOptions().length < 2) return;
 
+    const models = this.modalModels();
+    const modelList = models.length > 0 ? models : null; // null = all models
+
     const editIndex = this.editingQuestionIndex();
     if (editIndex !== null) {
       // Update existing question
@@ -222,6 +269,7 @@ export class QuestionSetFormComponent {
       questions[editIndex] = {
         ...questions[editIndex],
         question_text: questionText,
+        models: modelList,
         options: [...this.modalOptions()]
       };
       this.questions.set(questions);
@@ -230,6 +278,7 @@ export class QuestionSetFormComponent {
       const newQuestion: Question = {
         question_text: questionText,
         status: true,
+        models: modelList,
         options: [...this.modalOptions()],
         _tempId: `temp-${Date.now()}`
       };
@@ -272,6 +321,43 @@ export class QuestionSetFormComponent {
     const opts = [...this.modalOptions()];
     [opts[index], opts[index + 1]] = [opts[index + 1], opts[index]];
     this.modalOptions.set(opts);
+  }
+
+  // Model selection modal methods
+  openModelSelectionModal() {
+    this.tempSelectedModels.set([...this.modalModels()]);
+    this.showModelSelectionModal.set(true);
+  }
+
+  closeModelSelectionModal() {
+    this.showModelSelectionModal.set(false);
+    this.tempSelectedModels.set([]);
+  }
+
+  toggleModelSelection(model: string) {
+    const current = this.tempSelectedModels();
+    if (current.includes(model)) {
+      this.tempSelectedModels.set(current.filter(m => m !== model));
+    } else {
+      this.tempSelectedModels.set([...current, model]);
+    }
+  }
+
+  isModelSelected(model: string): boolean {
+    return this.tempSelectedModels().includes(model);
+  }
+
+  selectAllModels() {
+    this.tempSelectedModels.set([...this.iphoneModels]);
+  }
+
+  clearAllModels() {
+    this.tempSelectedModels.set([]);
+  }
+
+  applyModelSelection() {
+    this.modalModels.set([...this.tempSelectedModels()]);
+    this.closeModelSelectionModal();
   }
 
   removeQuestion(index: number) {
@@ -347,11 +433,15 @@ export class QuestionSetFormComponent {
     for (let displayOrder = 0; displayOrder < this.questions().length; displayOrder++) {
       const question = this.questions()[displayOrder];
       
-      const questionPayload = {
+      const questionPayload: any = {
         question_text: question.question_text,
         status: question.status,
         tenant_id: tenantId
       };
+      // Only include models if not null (null = all models, so omit the field)
+      if (question.models !== null) {
+        questionPayload.models = question.models;
+      }
 
       const questionRes: any = await this.api.createDiagnosticQuestion(questionPayload).toPromise();
       const questionId = questionRes.data?.id;
@@ -390,44 +480,82 @@ export class QuestionSetFormComponent {
     };
     await this.api.updateDiagnosticQuestionSet(questionSetId, setPayload).toPromise();
 
-    // Handle new questions (questions without an id)
+    // Handle all questions (both existing and new)
     for (let displayOrder = 0; displayOrder < this.questions().length; displayOrder++) {
       const question = this.questions()[displayOrder];
       
-      // Skip existing questions (they already have an id)
       if (question.id) {
-        continue;
-      }
-
-      // Create new question
-      const questionPayload = {
-        question_text: question.question_text,
-        status: question.status,
-        tenant_id: tenantId
-      };
-
-      const questionRes: any = await this.api.createDiagnosticQuestion(questionPayload).toPromise();
-      const questionId = questionRes.data?.id;
-
-      if (!questionId) throw new Error('Failed to create question');
-
-      // Create options for the new question
-      for (const option of question.options) {
-        const optionPayload = {
-          question_id: questionId,
-          option_text: option.option_text,
-          message: option.message,
-          display_order: option.display_order,
-          status: option.status
+        // Update existing question
+        const questionPayload: any = {
+          question_text: question.question_text,
+          status: question.status
         };
-        await this.api.createDiagnosticQuestionOption(optionPayload).toPromise();
-      }
+        // Only include models if not null (null = all models, so omit the field)
+        if (question.models !== null) {
+          questionPayload.models = question.models;
+        }
+        await this.api.updateDiagnosticQuestion(question.id, questionPayload).toPromise();
 
-      // Add question to set
-      await this.api.addQuestionToSet(questionSetId, {
-        question_id: questionId,
-        display_order: displayOrder
-      }).toPromise();
+        // Update existing options and create new ones
+        const existingOptionIds = question.options.filter(opt => opt.id).map(opt => opt.id!);
+        
+        for (const option of question.options) {
+          if (option.id) {
+            // Update existing option
+            const optionPayload = {
+              option_text: option.option_text,
+              message: option.message,
+              display_order: option.display_order,
+              status: option.status
+            };
+            await this.api.updateDiagnosticQuestionOption(option.id, optionPayload).toPromise();
+          } else {
+            // Create new option
+            const optionPayload = {
+              question_id: question.id,
+              option_text: option.option_text,
+              message: option.message,
+              display_order: option.display_order,
+              status: option.status
+            };
+            await this.api.createDiagnosticQuestionOption(optionPayload).toPromise();
+          }
+        }
+      } else {
+        // Create new question
+        const questionPayload: any = {
+          question_text: question.question_text,
+          status: question.status,
+          tenant_id: tenantId
+        };
+        // Only include models if not null (null = all models, so omit the field)
+        if (question.models !== null) {
+          questionPayload.models = question.models;
+        }
+
+        const questionRes: any = await this.api.createDiagnosticQuestion(questionPayload).toPromise();
+        const questionId = questionRes.data?.id;
+
+        if (!questionId) throw new Error('Failed to create question');
+
+        // Create options for the new question
+        for (const option of question.options) {
+          const optionPayload = {
+            question_id: questionId,
+            option_text: option.option_text,
+            message: option.message,
+            display_order: option.display_order,
+            status: option.status
+          };
+          await this.api.createDiagnosticQuestionOption(optionPayload).toPromise();
+        }
+
+        // Add question to set
+        await this.api.addQuestionToSet(questionSetId, {
+          question_id: questionId,
+          display_order: displayOrder
+        }).toPromise();
+      }
     }
   }
 

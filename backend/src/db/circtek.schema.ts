@@ -499,6 +499,7 @@ export const diagnostic_questions = mysqlTable('diag_questions', {
   question_text: text('question_text').notNull(),
   description: text('description'), // Optional explanation of what the question assesses
   status: boolean('status').default(true),
+  models: json('models').$type<string[]>(), // Array of model names; null/empty = all models
   tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
   created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
