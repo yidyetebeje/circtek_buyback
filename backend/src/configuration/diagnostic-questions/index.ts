@@ -143,8 +143,8 @@ export const diagnostic_questions_routes = new Elysia({ prefix: '/diagnostic-que
 
     .get('/sets/:id/with-questions', async (ctx) => {
         const { params, currentTenantId, currentRole, query } = ctx as any
-        const tenantId = currentRole === 'super_admin' ? (query?.tenant_id ?? currentTenantId) : currentTenantId
-        const response = await controller.getQuestionSetWithQuestions(Number(params.id), Number(tenantId))
+        const queryTenantId = query?.tenant_id ? Number(query.tenant_id) : undefined
+        const response = await controller.getQuestionSetWithQuestions(Number(params.id), queryTenantId, currentRole, currentTenantId)
         ctx.set.status = response.status as any
         return response
     }, { detail: { tags: ['Configuration'], summary: 'Get diagnostic question set with questions (tenant-scoped)' } })

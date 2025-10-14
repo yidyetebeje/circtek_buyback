@@ -173,8 +173,10 @@ export class DiagnosticQuestionsController {
         return { data: { id }, message: 'Question set deleted successfully', status: 200 }
     }
 
-    async getQuestionSetWithQuestions(id: number, tenantId: number): Promise<response<QuestionSetWithQuestions | null>> {
-        const found = await this.repo.getQuestionSetWithQuestions(id, tenantId)
+    async getQuestionSetWithQuestions(id: number, queryTenantId: number | null | undefined, currentRole: string | undefined, currentTenantId: number): Promise<response<QuestionSetWithQuestions | null>> {
+        const hasValidQueryTenant = typeof queryTenantId === 'number' && Number.isFinite(queryTenantId)
+        const resolvedTenantId = currentRole === 'super_admin' ? (hasValidQueryTenant ? queryTenantId! : null) : currentTenantId
+        const found = await this.repo.getQuestionSetWithQuestions(id, resolvedTenantId)
         if (!found) return { data: null, message: 'Not found', status: 404 }
         return { data: found, message: 'OK', status: 200 }
     }

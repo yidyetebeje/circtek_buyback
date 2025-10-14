@@ -94,7 +94,12 @@ export class DiagnosticQuestionsRepository {
         return created as any
     }
 
-    async getQuestion(id: number, tenantId: number): Promise<QuestionPublic | undefined> {
+    async getQuestion(id: number, tenantId: number | null): Promise<QuestionPublic | undefined> {
+        const conditions = [eq(diagnostic_questions.id, id)]
+        if (tenantId !== null) {
+            conditions.push(eq(diagnostic_questions.tenant_id, tenantId))
+        }
+        
         const [row] = await this.database
             .select({
                 id: diagnostic_questions.id,
@@ -109,7 +114,7 @@ export class DiagnosticQuestionsRepository {
             })
             .from(diagnostic_questions)
             .leftJoin(tenants, eq(diagnostic_questions.tenant_id, tenants.id))
-            .where(and(eq(diagnostic_questions.id, id), eq(diagnostic_questions.tenant_id, tenantId)) as any)
+            .where(and(...conditions) as any)
         return row as any
     }
 
@@ -228,7 +233,7 @@ export class DiagnosticQuestionsRepository {
         }
     }
 
-    async getQuestionWithOptions(questionId: number, tenantId: number): Promise<QuestionWithOptions | null> {
+    async getQuestionWithOptions(questionId: number, tenantId: number | null): Promise<QuestionWithOptions | null> {
         const question = await this.getQuestion(questionId, tenantId)
         if (!question) return null
         
@@ -306,7 +311,12 @@ export class DiagnosticQuestionsRepository {
         return created as any
     }
 
-    async getQuestionSet(id: number, tenantId: number): Promise<QuestionSetPublic | undefined> {
+    async getQuestionSet(id: number, tenantId: number | null): Promise<QuestionSetPublic | undefined> {
+        const conditions = [eq(diagnostic_question_sets.id, id)]
+        if (tenantId !== null) {
+            conditions.push(eq(diagnostic_question_sets.tenant_id, tenantId))
+        }
+        
         const [row] = await this.database
             .select({
                 id: diagnostic_question_sets.id,
@@ -320,7 +330,7 @@ export class DiagnosticQuestionsRepository {
             })
             .from(diagnostic_question_sets)
             .leftJoin(tenants, eq(diagnostic_question_sets.tenant_id, tenants.id))
-            .where(and(eq(diagnostic_question_sets.id, id), eq(diagnostic_question_sets.tenant_id, tenantId)) as any)
+            .where(and(...conditions) as any)
         return row as any
     }
 
@@ -418,7 +428,7 @@ export class DiagnosticQuestionsRepository {
         }
     }
 
-    async getQuestionSetWithQuestions(setId: number, tenantId: number): Promise<QuestionSetWithQuestions | null> {
+    async getQuestionSetWithQuestions(setId: number, tenantId: number | null): Promise<QuestionSetWithQuestions | null> {
         const set = await this.getQuestionSet(setId, tenantId)
         if (!set) return null
 
