@@ -188,7 +188,7 @@
                     <button
                       class="btn btn-ghost btn-sm text-accent"
                       (click)="openTranslationModal(question)"
-                      [disabled]="!question.id || question.options.length === 0 || submitting()"
+                      [disabled]="question.options.length === 0 || submitting()"
                       title="Add translations"
                     >
                       <lucide-icon [img]="Languages" class="size-4"></lucide-icon>
@@ -359,6 +359,7 @@
             placeholder="e.g., 'Excellent condition'"
             [(ngModel)]="modalNewOptionText"
             (keydown.enter)="addModalOption()"
+            [disabled]="editingOptionIndex() !== null"
           />
         </div>
         
@@ -372,6 +373,7 @@
             placeholder="Additional information or description for this option"
             [(ngModel)]="modalNewOptionMessage"
             (keydown.enter)="$event.preventDefault()"
+            [disabled]="editingOptionIndex() !== null"
           ></textarea>
         </div>
       </div>
@@ -379,7 +381,7 @@
       <button
         class="btn btn-accent btn-sm gap-2 w-full mt-2"
         (click)="addModalOption()"
-        [disabled]="!modalNewOptionText().trim()"
+        [disabled]="!modalNewOptionText().trim() || editingOptionIndex() !== null"
       >
         <lucide-icon [img]="Plus" class="size-4"></lucide-icon>
         Add Option
@@ -399,7 +401,7 @@
               <button
                 class="btn btn-ghost btn-xs"
                 (click)="moveModalOptionUp(optIdx)"
-                [disabled]="optIdx === 0"
+                [disabled]="optIdx === 0 || editingOptionIndex() === optIdx"
                 title="Move up"
               >
                 <lucide-icon [img]="ArrowUp" class="size-3"></lucide-icon>
@@ -407,25 +409,74 @@
               <button
                 class="btn btn-ghost btn-xs"
                 (click)="moveModalOptionDown(optIdx)"
-                [disabled]="optIdx === modalOptions().length - 1"
+                [disabled]="optIdx === modalOptions().length - 1 || editingOptionIndex() === optIdx"
                 title="Move down"
               >
                 <lucide-icon [img]="ArrowDown" class="size-3"></lucide-icon>
               </button>
             </div>
             <div class="flex items-center justify-center w-6 h-6 rounded-full bg-neutral text-neutral-content text-xs font-semibold flex-shrink-0 mt-0.5">{{ optIdx + 1 }}</div>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium text-base-content">{{ option.option_text }}</div>
-              @if (option.message) {
-                <div class="text-xs text-base-content/60 mt-1">{{ option.message }}</div>
-              }
-            </div>
-            <button
-              class="btn btn-ghost btn-xs text-error flex-shrink-0"
-              (click)="removeModalOption(optIdx)"
-            >
-              <lucide-icon [img]="X" class="size-3"></lucide-icon>
-            </button>
+            
+            @if (editingOptionIndex() === optIdx) {
+              <!-- Editing mode -->
+              <div class="flex-1 min-w-0 space-y-2">
+                <input
+                  type="text"
+                  class="input input-sm input-bordered w-full"
+                  [(ngModel)]="editOptionText"
+                  placeholder="Option text"
+                />
+                <textarea
+                  class="textarea textarea-sm textarea-bordered w-full"
+                  rows="2"
+                  [(ngModel)]="editOptionMessage"
+                  placeholder="Optional message"
+                ></textarea>
+              </div>
+              <div class="flex gap-1 flex-shrink-0">
+                <button
+                  class="btn btn-success btn-xs"
+                  (click)="saveOptionEdit()"
+                  [disabled]="!editOptionText().trim()"
+                  title="Save changes"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </button>
+                <button
+                  class="btn btn-ghost btn-xs"
+                  (click)="cancelOptionEdit()"
+                  title="Cancel editing"
+                >
+                  <lucide-icon [img]="X" class="size-3"></lucide-icon>
+                </button>
+              </div>
+            } @else {
+              <!-- Display mode -->
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-base-content">{{ option.option_text }}</div>
+                @if (option.message) {
+                  <div class="text-xs text-base-content/60 mt-1">{{ option.message }}</div>
+                }
+              </div>
+              <div class="flex gap-1 flex-shrink-0">
+                <button
+                  class="btn btn-ghost btn-xs"
+                  (click)="startEditingOption(optIdx)"
+                  [disabled]="editingOptionIndex() !== null"
+                  title="Edit option"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                </button>
+                <button
+                  class="btn btn-ghost btn-xs text-error"
+                  (click)="removeModalOption(optIdx)"
+                  [disabled]="editingOptionIndex() !== null"
+                  title="Remove option"
+                >
+                  <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
+                </button>
+              </div>
+            }
           </div>
         }
       </div>
@@ -437,10 +488,13 @@
 @if (translatingQuestion()) {
   <app-translation-modal
     [isOpen]="showTranslationModal()"
-    [questionId]="translatingQuestion()!.id!"
+    [questionId]="translatingQuestion()!.id || null"
     [questionText]="translatingQuestion()!.question_text"
     [options]="$any(translatingQuestion()!.options)"
+    [allowUnsavedQuestions]="true"
+    [existingTranslations]="translatingQuestion()!._tempTranslations"
     (closeModal)="closeTranslationModal()"
+    (translationsSaved)="onTranslationsSaved($event)"
   ></app-translation-modal>
 }
 

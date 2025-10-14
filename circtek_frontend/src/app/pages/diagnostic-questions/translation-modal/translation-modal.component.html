@@ -71,7 +71,7 @@
             <div class="divider">Options</div>
             
             <div class="space-y-3">
-              @for (option of options(); track option.id; let i = $index) {
+              @for (option of options(); track getOptionKey(option); let i = $index) {
                 <div class="form-control w-full">
                   <label class="label flex-col items-start gap-1">
                     <span class="label-text">
@@ -83,8 +83,8 @@
                     type="text"
                     class="input input-bordered input-accent w-full"
                     placeholder="Enter translated option..."
-                    [value]="getOptionText(option.id)"
-                    (input)="updateOptionTranslation(option.id, $event)"
+                    [value]="getOptionTextByKey(getOptionKey(option))"
+                    (input)="updateOptionTranslationByKey(getOptionKey(option), $event)"
                     [disabled]="saving()"
                   />
                 </div>

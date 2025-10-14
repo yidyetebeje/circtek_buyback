@@ -132,6 +132,8 @@ export class PlaceholderService {
           case 'serialbarcode': return '[Serial Barcode]'; // Placeholder indicator
           case 'lpnbarcode': return '[LPN Barcode]'; // Placeholder indicator
           case 'portnumber': return 'Port 2';
+          case 'questionsresponsehorizontal': return 'Excellent - No scratches, 95% - Good, None';
+          case 'questionsresponsevertical': return 'Excellent - No scratches\n95% - Good\nNone';
           default: return 'Device Information';
         }
       case 'test':
@@ -185,6 +187,8 @@ export class PlaceholderService {
       { id: 'Device.SerialBarcode', name: 'Device Serial Barcode', icon: 'ni-tag' }, // Consistent naming
       { id: 'Device.LPNBarcode', name: 'LPN Barcode', icon: 'ni-tag' },
       { id: 'Device.PortNumber', name: 'Port Number', icon: 'ni-pin-3' },
+      { id: 'Device.QuestionsResponseHorizontal', name: 'Questions Response (Horizontal)', icon: 'ni-bullet-list-67' },
+      { id: 'Device.QuestionsResponseVertical', name: 'Questions Response (Vertical)', icon: 'ni-list-ul' },
 
       // Client branding
       { id: 'Client.Logo', name: 'Client Logo', icon: 'ni-image' },

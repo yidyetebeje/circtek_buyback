@@ -10,7 +10,9 @@ import {
     QuestionSetUpdate,
     AddQuestionToSet,
     SubmitAnswer,
-    BulkTranslationCreate
+    BulkTranslationCreate,
+    BulkQuestionSetCreate,
+    BulkQuestionSetUpdate
 } from './types'
 import { DiagnosticQuestionsController } from './controller'
 import { DiagnosticQuestionsRepository } from './repository'
@@ -123,6 +125,14 @@ export const diagnostic_questions_routes = new Elysia({ prefix: '/diagnostic-que
         return response
     }, { body: QuestionSetCreate, detail: { tags: ['Configuration'], summary: 'Create diagnostic question set' } })
 
+    .post('/sets/bulk', async (ctx) => {
+        const { body, currentTenantId, currentRole } = ctx as any
+        const tenantId = currentRole === 'super_admin' && body.tenant_id ? Number(body.tenant_id) : Number(currentTenantId)
+        const response = await controller.bulkCreateQuestionSet(body as any, tenantId)
+        ctx.set.status = response.status as any
+        return response
+    }, { body: BulkQuestionSetCreate, detail: { tags: ['Configuration'], summary: 'Create diagnostic question set with questions, options, and translations in one call' } })
+
     .get('/sets/:id', async (ctx) => {
         const { params, currentTenantId, currentRole, query } = ctx as any
         const tenantId = currentRole === 'super_admin' ? (query?.tenant_id ?? currentTenantId) : currentTenantId
@@ -145,6 +155,13 @@ export const diagnostic_questions_routes = new Elysia({ prefix: '/diagnostic-que
         ctx.set.status = response.status as any
         return response
     }, { body: QuestionSetUpdate, detail: { tags: ['Configuration'], summary: 'Update diagnostic question set (tenant-scoped)' } })
+
+    .patch('/sets/:id/bulk', async (ctx) => {
+        const { params, body, currentTenantId } = ctx as any
+        const response = await controller.bulkUpdateQuestionSet(Number(params.id), body as any, Number(currentTenantId))
+        ctx.set.status = response.status as any
+        return response
+    }, { body: BulkQuestionSetUpdate, detail: { tags: ['Configuration'], summary: 'Update diagnostic question set with questions, options, and translations in one call (tenant-scoped)' } })
 
     .delete('/sets/:id', async (ctx) => {
         const { params, currentTenantId } = ctx as any
@@ -241,7 +258,8 @@ export const diagnostic_questions_routes = new Elysia({ prefix: '/diagnostic-que
 
     .post('/questions/:id/translations', async (ctx) => {
         const { params, body, currentTenantId } = ctx as any
-        const response = await controller.saveQuestionTranslations(body as any, Number(currentTenantId))
+        const payload = { ...body, question_id: Number(params.id) }
+        const response = await controller.saveQuestionTranslations(payload as any, Number(currentTenantId))
         ctx.set.status = response.status as any
         return response
     }, { body: BulkTranslationCreate, detail: { tags: ['Configuration'], summary: 'Save translations for a question and its options (tenant-scoped)' } })

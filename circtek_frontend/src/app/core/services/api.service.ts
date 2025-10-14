@@ -736,6 +736,16 @@ export class ApiService {
     return this.post<ApiResponse<DiagnosticQuestionSet | null>>('/configuration/diagnostic-questions/sets', payload);
   }
 
+  // Bulk create question set with all questions, options, and translations
+  bulkCreateDiagnosticQuestionSet(payload: any): Observable<ApiResponse<DiagnosticQuestionSet | null>> {
+    return this.post<ApiResponse<DiagnosticQuestionSet | null>>('/configuration/diagnostic-questions/sets/bulk', payload);
+  }
+
+  // Bulk update question set with all questions, options, and translations
+  bulkUpdateDiagnosticQuestionSet(setId: number, payload: any): Observable<ApiResponse<DiagnosticQuestionSet | null>> {
+    return this.patch<ApiResponse<DiagnosticQuestionSet | null>>(`/configuration/diagnostic-questions/sets/${setId}/bulk`, payload);
+  }
+
   updateDiagnosticQuestionSet(id: number, payload: any): Observable<ApiResponse<DiagnosticQuestionSet | null>> {
     return this.patch<ApiResponse<DiagnosticQuestionSet | null>>(`/configuration/diagnostic-questions/sets/${id}`, payload);
   }

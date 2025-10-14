@@ -21,6 +21,16 @@ type QuestionOption = {
   _tempId?: string;
 };
 
+type QuestionTranslation = {
+  language_code: string;
+  question_text: string;
+  options: Array<{
+    option_id?: number;
+    option_text: string;
+    _tempId?: string;
+  }>;
+};
+
 type Question = {
   id?: number;
   question_text: string;
@@ -28,6 +38,7 @@ type Question = {
   models?: string[] | null; // Array of model names; null/empty = all models
   options: QuestionOption[];
   _tempId?: string;
+  _tempTranslations?: QuestionTranslation[]; // Temporary translations for unsaved questions
 };
 
 @Component({
@@ -67,6 +78,9 @@ export class QuestionSetFormComponent {
 
   // Questions array
   readonly questions = signal<Question[]>([]);
+  
+  // Original questions (for tracking deletions during edit)
+  readonly originalQuestions = signal<Question[]>([]);
 
   // Tenant options
   readonly tenantOptions = signal<Array<{ label: string; value: number }>>([]);
@@ -117,6 +131,11 @@ export class QuestionSetFormComponent {
   // Model selection modal state
   readonly showModelSelectionModal = signal(false);
   readonly tempSelectedModels = signal<string[]>([]); // Temporary selection while modal is open
+
+  // Option editing state
+  readonly editingOptionIndex = signal<number | null>(null);
+  readonly editOptionText = signal('');
+  readonly editOptionMessage = signal('');
 
   // Translation modal state
   readonly showTranslationModal = signal(false);
@@ -206,6 +225,8 @@ export class QuestionSetFormComponent {
           }))
         }));
         this.questions.set(questions);
+        // Store original questions for deletion tracking (deep copy)
+        this.originalQuestions.set(JSON.parse(JSON.stringify(questions)));
         this.loading.set(false);
       },
       error: (error) => {
@@ -245,6 +266,8 @@ export class QuestionSetFormComponent {
     this.modalNewOptionText.set('');
     this.modalNewOptionMessage.set('');
     this.modalModels.set([]);
+    // Reset option editing state
+    this.cancelOptionEdit();
   }
 
   handleModalAction(action: string) {
@@ -323,6 +346,35 @@ export class QuestionSetFormComponent {
     this.modalOptions.set(opts);
   }
 
+  // Option editing methods
+  startEditingOption(index: number) {
+    const option = this.modalOptions()[index];
+    this.editingOptionIndex.set(index);
+    this.editOptionText.set(option.option_text);
+    this.editOptionMessage.set(option.message || '');
+  }
+
+  saveOptionEdit() {
+    const index = this.editingOptionIndex();
+    if (index === null || !this.editOptionText().trim()) return;
+
+    const opts = [...this.modalOptions()];
+    opts[index] = {
+      ...opts[index],
+      option_text: this.editOptionText().trim(),
+      message: this.editOptionMessage().trim() || undefined
+    };
+    
+    this.modalOptions.set(opts);
+    this.cancelOptionEdit();
+  }
+
+  cancelOptionEdit() {
+    this.editingOptionIndex.set(null);
+    this.editOptionText.set('');
+    this.editOptionMessage.set('');
+  }
+
   // Model selection modal methods
   openModelSelectionModal() {
     this.tempSelectedModels.set([...this.modalModels()]);
@@ -385,12 +437,16 @@ export class QuestionSetFormComponent {
     this.submitting.set(true);
 
     try {
+      // For super_admin creating new question sets, use selected tenant
+      // For regular users, backend will use their tenant_id automatically
+      // For edit mode, tenant is already determined
       const tenantId = this.isSuperAdmin() && !this.isEditMode() 
         ? this.selectedTenantId() 
         : this.auth.currentUser()?.tenant_id;
 
-      if (!tenantId && !this.isEditMode()) {
-        this.toastr.error('Tenant is required');
+      // Only require tenant selection for super_admin creating new question sets
+      if (this.isSuperAdmin() && !this.isEditMode() && !tenantId) {
+        this.toastr.error('Please select a tenant');
         this.submitting.set(false);
         return;
       }
@@ -398,7 +454,9 @@ export class QuestionSetFormComponent {
       if (this.isEditMode()) {
         await this.updateQuestionSet();
       } else {
-        await this.createQuestionSet(tenantId!);
+        // For regular users, pass null and let backend handle tenant_id
+        const createTenantId = this.isSuperAdmin() ? tenantId! : null;
+        await this.createQuestionSet(createTenantId);
       }
 
       this.toast.saveSuccess('Question Set', this.isEditMode() ? 'updated' : 'created');
@@ -411,151 +469,74 @@ export class QuestionSetFormComponent {
     }
   }
 
-  private async createQuestionSet(tenantId: number) {
-    // Create question set
-    const setPayload = {
+  private async createQuestionSet(tenantId: number | null) {
+    // Build complete payload with question set, questions, options, and translations
+    const payload: any = {
       title: this.formTitle(),
       description: this.formDescription(),
       status: true,
-      tenant_id: tenantId
-    };
-
-    console.log('=== Frontend createQuestionSet ===');
-    console.log('setPayload:', JSON.stringify(setPayload, null, 2));
-    console.log('setPayload.status type:', typeof setPayload.status, 'value:', setPayload.status);
-
-    const setRes: any = await this.api.createDiagnosticQuestionSet(setPayload).toPromise();
-    const questionSetId = setRes.data?.id;
-
-    if (!questionSetId) throw new Error('Failed to create question set');
-
-    // Create questions with options
-    for (let displayOrder = 0; displayOrder < this.questions().length; displayOrder++) {
-      const question = this.questions()[displayOrder];
-      
-      const questionPayload: any = {
+      questions: this.questions().map((question, displayOrder) => ({
         question_text: question.question_text,
         status: question.status,
-        tenant_id: tenantId
-      };
-      // Only include models if not null (null = all models, so omit the field)
-      if (question.models !== null) {
-        questionPayload.models = question.models;
-      }
-
-      const questionRes: any = await this.api.createDiagnosticQuestion(questionPayload).toPromise();
-      const questionId = questionRes.data?.id;
-
-      if (!questionId) throw new Error('Failed to create question');
-
-      // Create options
-      for (const option of question.options) {
-        const optionPayload = {
-          question_id: questionId,
+        models: question.models,
+        display_order: displayOrder,
+        options: question.options.map((option, optDisplayOrder) => ({
           option_text: option.option_text,
           message: option.message,
-          display_order: option.display_order,
-          status: option.status
-        };
-        await this.api.createDiagnosticQuestionOption(optionPayload).toPromise();
-      }
+          display_order: optDisplayOrder,
+          status: option.status,
+          _tempId: option._tempId
+        })),
+        translations: question._tempTranslations
+      }))
+    };
 
-      // Add question to set
-      await this.api.addQuestionToSet(questionSetId, {
-        question_id: questionId,
-        display_order: displayOrder
-      }).toPromise();
+    // Only include tenant_id if provided (for super_admin)
+    // For regular users, backend will use authenticated user's tenant_id
+    if (tenantId) {
+      payload.tenant_id = tenantId;
+    }
+
+    // Single API call creates everything
+    const response: any = await this.api.bulkCreateDiagnosticQuestionSet(payload).toPromise();
+    
+    if (!response.data?.id) {
+      throw new Error('Failed to create question set');
     }
   }
 
   private async updateQuestionSet() {
     const questionSetId = this.questionSetId()!;
-    const tenantId = this.auth.currentUser()?.tenant_id!;
-
-    // Update set basic info
-    const setPayload = {
+    
+    // Build complete payload with all updates
+    const payload: any = {
       title: this.formTitle(),
       description: this.formDescription(),
-      status: true
+      status: true,
+      questions: this.questions().map((question, displayOrder) => ({
+        id: question.id, // Include ID if exists, undefined for new questions
+        question_text: question.question_text,
+        status: question.status,
+        models: question.models,
+        display_order: displayOrder,
+        options: question.options.map((option, optDisplayOrder) => ({
+          id: option.id, // Include ID if exists, undefined for new options
+          option_text: option.option_text,
+          message: option.message,
+          display_order: optDisplayOrder,
+          status: option.status,
+          _tempId: option._tempId
+        })),
+        translations: question._tempTranslations
+      })),
+      deleted_question_ids: this.getDeletedQuestions().map(q => q.id).filter(id => id !== undefined)
     };
-    await this.api.updateDiagnosticQuestionSet(questionSetId, setPayload).toPromise();
 
-    // Handle all questions (both existing and new)
-    for (let displayOrder = 0; displayOrder < this.questions().length; displayOrder++) {
-      const question = this.questions()[displayOrder];
-      
-      if (question.id) {
-        // Update existing question
-        const questionPayload: any = {
-          question_text: question.question_text,
-          status: question.status
-        };
-        // Only include models if not null (null = all models, so omit the field)
-        if (question.models !== null) {
-          questionPayload.models = question.models;
-        }
-        await this.api.updateDiagnosticQuestion(question.id, questionPayload).toPromise();
-
-        // Update existing options and create new ones
-        const existingOptionIds = question.options.filter(opt => opt.id).map(opt => opt.id!);
-        
-        for (const option of question.options) {
-          if (option.id) {
-            // Update existing option
-            const optionPayload = {
-              option_text: option.option_text,
-              message: option.message,
-              display_order: option.display_order,
-              status: option.status
-            };
-            await this.api.updateDiagnosticQuestionOption(option.id, optionPayload).toPromise();
-          } else {
-            // Create new option
-            const optionPayload = {
-              question_id: question.id,
-              option_text: option.option_text,
-              message: option.message,
-              display_order: option.display_order,
-              status: option.status
-            };
-            await this.api.createDiagnosticQuestionOption(optionPayload).toPromise();
-          }
-        }
-      } else {
-        // Create new question
-        const questionPayload: any = {
-          question_text: question.question_text,
-          status: question.status,
-          tenant_id: tenantId
-        };
-        // Only include models if not null (null = all models, so omit the field)
-        if (question.models !== null) {
-          questionPayload.models = question.models;
-        }
-
-        const questionRes: any = await this.api.createDiagnosticQuestion(questionPayload).toPromise();
-        const questionId = questionRes.data?.id;
-
-        if (!questionId) throw new Error('Failed to create question');
-
-        // Create options for the new question
-        for (const option of question.options) {
-          const optionPayload = {
-            question_id: questionId,
-            option_text: option.option_text,
-            message: option.message,
-            display_order: option.display_order,
-            status: option.status
-          };
-          await this.api.createDiagnosticQuestionOption(optionPayload).toPromise();
-        }
-
-        // Add question to set
-        await this.api.addQuestionToSet(questionSetId, {
-          question_id: questionId,
-          display_order: displayOrder
-        }).toPromise();
-      }
+    // Single API call updates everything
+    const response: any = await this.api.bulkUpdateDiagnosticQuestionSet(questionSetId, payload).toPromise();
+    
+    if (!response.data?.id) {
+      throw new Error('Failed to update question set');
     }
   }
 
@@ -563,11 +544,17 @@ export class QuestionSetFormComponent {
     this.router.navigate(['/management'], { queryParams: { tab: 'questions' } });
   }
 
+  // Helper method for tracking deleted questions
+  private getDeletedQuestions(): Question[] {
+    if (!this.isEditMode()) return [];
+    
+    const currentQuestionIds = this.questions().map(q => q.id).filter(id => id !== undefined);
+    return this.originalQuestions().filter(original => 
+      original.id !== undefined && !currentQuestionIds.includes(original.id)
+    );
+  }
+
   openTranslationModal(question: Question) {
-    if (!question.id) {
-      this.toastr.warning('Please save the question set first before adding translations');
-      return;
-    }
     if (question.options.length === 0) {
       this.toastr.warning('Please add options to this question before adding translations');
       return;
@@ -579,5 +566,35 @@ export class QuestionSetFormComponent {
   closeTranslationModal() {
     this.showTranslationModal.set(false);
     this.translatingQuestion.set(null);
+  }
+
+  // Handle translation saves for unsaved questions
+  onTranslationsSaved(translations: QuestionTranslation[]) {
+    const question = this.translatingQuestion();
+    if (!question) return;
+
+    // Store translations temporarily (for both saved and unsaved questions)
+    // For saved questions, these will be used during bulk update
+    // For unsaved questions, these will be saved when creating the question set
+    const questionIndex = this.questions().findIndex(q => 
+      q._tempId === question._tempId || (q.id && q.id === question.id)
+    );
+    
+    if (questionIndex !== -1) {
+      const updatedQuestions = [...this.questions()];
+      updatedQuestions[questionIndex] = {
+        ...updatedQuestions[questionIndex],
+        _tempTranslations: translations
+      };
+      this.questions.set(updatedQuestions);
+      
+      if (!question.id) {
+        this.toastr.success('Translations saved temporarily. They will be saved when you create the question set.');
+      } else {
+        this.toastr.success('Translations saved temporarily. They will be updated when you save the question set.');
+      }
+    }
+    
+    this.closeTranslationModal();
   }
 }

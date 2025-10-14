@@ -853,4 +853,247 @@ export class DiagnosticQuestionsRepository {
             return this.createTranslation(payload, tenantId)
         }
     }
+
+    // ==================== BULK OPERATIONS ====================
+
+    async bulkCreateQuestionSet(payload: any, tenantId: number): Promise<QuestionSetPublic | undefined> {
+        // Create the question set first
+        const questionSet = await this.createQuestionSet({
+            title: payload.title,
+            description: payload.description,
+            status: payload.status,
+            tenant_id: tenantId
+        })
+
+        if (!questionSet) throw new Error('Failed to create question set')
+
+        // Process each question
+        for (const questionData of payload.questions) {
+            // Create question
+            const question = await this.createQuestion({
+                question_text: questionData.question_text,
+                description: questionData.description,
+                status: questionData.status ?? true,
+                models: questionData.models ?? null,
+                tenant_id: tenantId
+            })
+
+            if (!question) throw new Error('Failed to create question')
+
+            // Create options and map temp IDs to real IDs
+            const optionIdMap = new Map<string, number>()
+            for (const optionData of questionData.options) {
+                const option = await this.createQuestionOption({
+                    question_id: question.id,
+                    option_text: optionData.option_text,
+                    message: optionData.message,
+                    display_order: optionData.display_order,
+                    status: optionData.status ?? true
+                })
+
+                if (option && optionData._tempId) {
+                    optionIdMap.set(optionData._tempId, option.id)
+                }
+            }
+
+            // Create translations if provided
+            if (questionData.translations && questionData.translations.length > 0) {
+                for (const translation of questionData.translations) {
+                    // Upsert question translation
+                    await this.upsertTranslation({
+                        entity_type: 'question',
+                        entity_id: question.id,
+                        language_code: translation.language_code,
+                        translated_text: translation.question_text
+                    }, tenantId)
+
+                    // Upsert option translations
+                    for (const optionTranslation of translation.options) {
+                        // Find the real option ID using temp ID
+                        const realOptionId = optionTranslation._tempId 
+                            ? optionIdMap.get(optionTranslation._tempId) 
+                            : null
+
+                        if (realOptionId) {
+                            await this.upsertTranslation({
+                                entity_type: 'option',
+                                entity_id: realOptionId,
+                                language_code: translation.language_code,
+                                translated_text: optionTranslation.option_text
+                            }, tenantId)
+                        }
+                    }
+                }
+            }
+
+            // Add question to set
+            await this.addQuestionToSet(questionSet.id, {
+                question_id: question.id,
+                display_order: questionData.display_order
+            }, tenantId)
+        }
+
+        return this.getQuestionSet(questionSet.id, tenantId)
+    }
+
+    async bulkUpdateQuestionSet(setId: number, payload: any, tenantId: number): Promise<QuestionSetPublic | undefined> {
+        // Update question set basic info
+        if (payload.title || payload.description || payload.status !== undefined) {
+            await this.updateQuestionSet(setId, {
+                title: payload.title,
+                description: payload.description,
+                status: payload.status
+            }, tenantId)
+        }
+
+        // Remove deleted questions from set
+        if (payload.deleted_question_ids && payload.deleted_question_ids.length > 0) {
+            for (const questionId of payload.deleted_question_ids) {
+                await this.removeQuestionFromSet(setId, questionId, tenantId)
+            }
+        }
+
+        // Process each question
+        for (const questionData of payload.questions) {
+            if (questionData.id) {
+                // Update existing question
+                await this.updateQuestion(questionData.id, {
+                    question_text: questionData.question_text,
+                    description: questionData.description,
+                    status: questionData.status,
+                    models: questionData.models
+                }, tenantId)
+
+                // Get existing options
+                const existingOptions = await this.listQuestionOptions(questionData.id)
+                const existingOptionIds = new Set(existingOptions.map(o => o.id))
+                const providedOptionIds = new Set(questionData.options.filter((o: any) => o.id).map((o: any) => o.id))
+
+                // Delete options that are no longer in the list
+                for (const existingOption of existingOptions) {
+                    if (!providedOptionIds.has(existingOption.id)) {
+                        await this.deleteQuestionOption(existingOption.id)
+                    }
+                }
+
+                // Update or create options
+                const optionIdMap = new Map<string, number>()
+                for (const optionData of questionData.options) {
+                    if (optionData.id) {
+                        // Update existing option
+                        await this.updateQuestionOption(optionData.id, {
+                            option_text: optionData.option_text,
+                            message: optionData.message,
+                            display_order: optionData.display_order,
+                            status: optionData.status
+                        })
+                        if (optionData._tempId) {
+                            optionIdMap.set(optionData._tempId, optionData.id)
+                        }
+                    } else {
+                        // Create new option
+                        const newOption = await this.createQuestionOption({
+                            question_id: questionData.id,
+                            option_text: optionData.option_text,
+                            message: optionData.message,
+                            display_order: optionData.display_order,
+                            status: optionData.status ?? true
+                        })
+                        if (newOption && optionData._tempId) {
+                            optionIdMap.set(optionData._tempId, newOption.id)
+                        }
+                    }
+                }
+
+                // Update translations
+                if (questionData.translations && questionData.translations.length > 0) {
+                    for (const translation of questionData.translations) {
+                        await this.upsertTranslation({
+                            entity_type: 'question',
+                            entity_id: questionData.id,
+                            language_code: translation.language_code,
+                            translated_text: translation.question_text
+                        }, tenantId)
+
+                        for (const optionTranslation of translation.options) {
+                            const realOptionId = optionTranslation.option_id 
+                                || (optionTranslation._tempId ? optionIdMap.get(optionTranslation._tempId) : null)
+
+                            if (realOptionId) {
+                                await this.upsertTranslation({
+                                    entity_type: 'option',
+                                    entity_id: realOptionId,
+                                    language_code: translation.language_code,
+                                    translated_text: optionTranslation.option_text
+                                }, tenantId)
+                            }
+                        }
+                    }
+                }
+
+            } else {
+                // Create new question
+                const question = await this.createQuestion({
+                    question_text: questionData.question_text,
+                    description: questionData.description,
+                    status: questionData.status ?? true,
+                    models: questionData.models ?? null,
+                    tenant_id: tenantId
+                })
+
+                if (!question) throw new Error('Failed to create question')
+
+                // Create options
+                const optionIdMap = new Map<string, number>()
+                for (const optionData of questionData.options) {
+                    const option = await this.createQuestionOption({
+                        question_id: question.id,
+                        option_text: optionData.option_text,
+                        message: optionData.message,
+                        display_order: optionData.display_order,
+                        status: optionData.status ?? true
+                    })
+
+                    if (option && optionData._tempId) {
+                        optionIdMap.set(optionData._tempId, option.id)
+                    }
+                }
+
+                // Create translations
+                if (questionData.translations && questionData.translations.length > 0) {
+                    for (const translation of questionData.translations) {
+                        await this.upsertTranslation({
+                            entity_type: 'question',
+                            entity_id: question.id,
+                            language_code: translation.language_code,
+                            translated_text: translation.question_text
+                        }, tenantId)
+
+                        for (const optionTranslation of translation.options) {
+                            const realOptionId = optionTranslation._tempId 
+                                ? optionIdMap.get(optionTranslation._tempId) 
+                                : null
+
+                            if (realOptionId) {
+                                await this.upsertTranslation({
+                                    entity_type: 'option',
+                                    entity_id: realOptionId,
+                                    language_code: translation.language_code,
+                                    translated_text: optionTranslation.option_text
+                                }, tenantId)
+                            }
+                        }
+                    }
+                }
+
+                // Add question to set
+                await this.addQuestionToSet(setId, {
+                    question_id: question.id,
+                    display_order: questionData.display_order
+                }, tenantId)
+            }
+        }
+
+        return this.getQuestionSet(setId, tenantId)
+    }
 }

@@ -300,4 +300,26 @@ export class DiagnosticQuestionsController {
         if (!deleted) return { data: null, message: 'Not found or forbidden', status: 404 }
         return { data: { id }, message: 'Deleted', status: 200 }
     }
+
+    // ==================== BULK OPERATIONS ====================
+
+    async bulkCreateQuestionSet(payload: any, tenantId: number): Promise<response<QuestionSetPublic | null>> {
+        try {
+            const created = await this.repo.bulkCreateQuestionSet(payload, tenantId)
+            return { data: created ?? null, message: 'Question set created with all questions, options, and translations', status: 201 }
+        } catch (error: any) {
+            console.error('Error in bulkCreateQuestionSet:', error)
+            return { data: null, message: error.message || 'Failed to create question set', status: 500 }
+        }
+    }
+
+    async bulkUpdateQuestionSet(id: number, payload: any, tenantId: number): Promise<response<QuestionSetPublic | null>> {
+        try {
+            const updated = await this.repo.bulkUpdateQuestionSet(id, payload, tenantId)
+            return { data: updated ?? null, message: 'Question set updated with all questions, options, and translations', status: 200 }
+        } catch (error: any) {
+            console.error('Error in bulkUpdateQuestionSet:', error)
+            return { data: null, message: error.message || 'Failed to update question set', status: 500 }
+        }
+    }
 }

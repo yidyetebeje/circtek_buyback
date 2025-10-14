@@ -209,3 +209,70 @@ export type QuestionTranslations = {
         }
     }
 }
+
+// Bulk Question Set Creation Types
+export const BulkQuestionSetCreate = t.Object({
+    title: t.String(),
+    description: t.Optional(t.String()),
+    status: t.Optional(t.Boolean()),
+    tenant_id: t.Optional(t.Number()),
+    questions: t.Array(t.Object({
+        question_text: t.String(),
+        description: t.Optional(t.String()),
+        status: t.Optional(t.Boolean()),
+        models: t.Optional(t.Union([t.Array(t.String()), t.Null()])),
+        display_order: t.Number(),
+        options: t.Array(t.Object({
+            option_text: t.String(),
+            message: t.Optional(t.String()),
+            display_order: t.Number(),
+            status: t.Optional(t.Boolean()),
+            _tempId: t.Optional(t.String()), // For mapping translations
+        })),
+        translations: t.Optional(t.Array(t.Object({
+            language_code: t.String(),
+            question_text: t.String(),
+            options: t.Array(t.Object({
+                option_text: t.String(),
+                _tempId: t.Optional(t.String()), // To match with option _tempId
+            }))
+        })))
+    }))
+})
+
+export type BulkQuestionSetCreateInput = Static<typeof BulkQuestionSetCreate>
+
+// Bulk Question Set Update Types
+export const BulkQuestionSetUpdate = t.Object({
+    title: t.Optional(t.String()),
+    description: t.Optional(t.String()),
+    status: t.Optional(t.Boolean()),
+    questions: t.Array(t.Object({
+        id: t.Optional(t.Number()), // If has ID, update existing; otherwise create new
+        question_text: t.String(),
+        description: t.Optional(t.String()),
+        status: t.Optional(t.Boolean()),
+        models: t.Optional(t.Union([t.Array(t.String()), t.Null()])),
+        display_order: t.Number(),
+        options: t.Array(t.Object({
+            id: t.Optional(t.Number()), // If has ID, update existing; otherwise create new
+            option_text: t.String(),
+            message: t.Optional(t.String()),
+            display_order: t.Number(),
+            status: t.Optional(t.Boolean()),
+            _tempId: t.Optional(t.String()),
+        })),
+        translations: t.Optional(t.Array(t.Object({
+            language_code: t.String(),
+            question_text: t.String(),
+            options: t.Array(t.Object({
+                option_id: t.Optional(t.Number()),
+                option_text: t.String(),
+                _tempId: t.Optional(t.String()),
+            }))
+        })))
+    })),
+    deleted_question_ids: t.Optional(t.Array(t.Number())), // Questions to remove from set
+})
+
+export type BulkQuestionSetUpdateInput = Static<typeof BulkQuestionSetUpdate>
