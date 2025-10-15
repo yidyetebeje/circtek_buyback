@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://staging-db-api.circtek.io/api/v1' // Replace with your actual production API URL
+  apiUrl: 'https://api.circtek.io/api/v1' // Replace with your actual production API URL
 };
