@@ -276,10 +276,9 @@ async function seed_shop() {
 }
 async function seed() {
    
-    await seed_devices();
-    await seed_test_results();
-    await seed_shop(); // Detailed shop seeding
-
+    await seed_tenants();
+    await seed_roles();
+    await seed_users();
     console.log('🎉 All seeding completed successfully!');
 }
 
