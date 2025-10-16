@@ -32,11 +32,6 @@ export class PurchaseItemModalComponent {
 
     const trimmedValue = typeof value === 'string' ? value.trim() : String(value);
     
-    // Minimum character limit (3 characters)
-    if (trimmedValue.length < 3) {
-      return { minLength: { message: 'SKU must be at least 3 characters', requiredLength: 3, actualLength: trimmedValue.length } };
-    }
-
     // Check for whitespace only
     if (trimmedValue.length === 0) {
       return { whitespace: { message: 'SKU cannot be empty or spaces only' } };
@@ -159,20 +154,31 @@ export class PurchaseItemModalComponent {
         this.form.set(newForm);
         
         // Set initial validity
-        this.formValid.set(newForm.valid);
+        this.updateFormValidity();
         
-        // Subscribe to form status changes
+        // Subscribe to form changes - this will capture all value and status changes
+        newForm.valueChanges.subscribe(() => {
+          this.updateFormValidity();
+        });
+        
         newForm.statusChanges.subscribe(() => {
-          this.formValid.set(newForm.valid);
+          this.updateFormValidity();
         });
       }
     });
   }
 
+  private updateFormValidity(): void {
+    // Use setTimeout to ensure validation has completed
+    setTimeout(() => {
+      this.formValid.set(this.form().valid);
+    }, 0);
+  }
+
   private createForm(): FormGroup {
     const item = this.editingItem();
     return this.fb.group({
-      sku: [item?.sku || '', [Validators.required, Validators.minLength(3), PurchaseItemModalComponent.skuValidator]],
+      sku: [item?.sku || '', [Validators.required, PurchaseItemModalComponent.skuValidator]],
       quantity: [item?.quantity || 1, [Validators.required, PurchaseItemModalComponent.quantityValidator]],
       price: [item?.price || 0, [Validators.required, PurchaseItemModalComponent.priceValidator]],
       is_part: [item?.is_part || false]
@@ -236,14 +242,20 @@ export class PurchaseItemModalComponent {
 
   // SKU autocomplete handlers
   onSkuChange(sku: string): void {
-    this.form().patchValue({ sku });
+    this.form().patchValue({ sku }, { emitEvent: true });
+    // Mark as touched to trigger validation display
+    this.form().get('sku')?.markAsTouched();
+    this.form().get('sku')?.updateValueAndValidity();
   }
 
   onSkuSelected(option: SkuOption): void {
     this.form().patchValue({ 
       sku: option.sku,
       is_part: option.is_part || false
-    });
+    }, { emitEvent: true });
+    // Mark as touched to trigger validation display
+    this.form().get('sku')?.markAsTouched();
+    this.form().get('sku')?.updateValueAndValidity();
   }
 
   onCreateNewSku(suggestedSku: string): void {
@@ -255,7 +267,11 @@ export class PurchaseItemModalComponent {
     this.form().patchValue({ 
       sku: createdSku.sku,
       is_part: createdSku.is_part || false
-    });
+    }, { emitEvent: true });
+    // Mark as touched and update validity
+    this.form().get('sku')?.markAsTouched();
+    this.form().get('sku')?.updateValueAndValidity();
+    
     this.isSkuCreateModalOpen.set(false);
     this.skuCreationSuccess.set(`SKU "${createdSku.sku}" created successfully`);
     this.skuCreationError.set(null);

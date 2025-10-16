@@ -33,7 +33,7 @@
           <app-sku-autocomplete
             [value]="form().get('sku')?.value || ''"
             [required]="true"
-            placeholder="Search or enter SKU (min. 3 characters)..."
+            placeholder="Search or enter SKU..."
             (valueChange)="onSkuChange($event)"
             (skuSelected)="onSkuSelected($event)"
             (createNew)="onCreateNewSku($event)"
