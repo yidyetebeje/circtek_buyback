@@ -59,6 +59,10 @@ export const repair_reasons_routes = new Elysia({ prefix: '/repair-reasons' })
         pattern: '^[a-zA-ZÀ-ÿ\\s\'\-]*$',
         description: 'Description must contain only letters, spaces, apostrophes, and hyphens (max 500 characters)'
       })),
+      fixed_price: t.Optional(t.Number({
+        minimum: 0,
+        description: 'Optional fixed price for service-only repairs (must be >= 0)'
+      })),
       status: t.Optional(t.Boolean())
     }),
     detail: {
@@ -89,6 +93,10 @@ export const repair_reasons_routes = new Elysia({ prefix: '/repair-reasons' })
         maxLength: 500,
         pattern: '^[a-zA-ZÀ-ÿ\\s\'\-]*$',
         description: 'Description must contain only letters, spaces, apostrophes, and hyphens (max 500 characters)'
+      })),
+      fixed_price: t.Optional(t.Number({
+        minimum: 0,
+        description: 'Optional fixed price for service-only repairs (must be >= 0)'
       })),
       status: t.Optional(t.Boolean())
     }),

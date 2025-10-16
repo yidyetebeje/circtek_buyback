@@ -202,10 +202,46 @@ export class RepairsController {
   }
 
   private async allocateAllItems(items: RepairConsumeItemsInput['items'], tenant_id: number) {
-    type ItemAllocation = { sku: string; quantity: number; reason_id: number; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }> }
+    type ItemAllocation = { sku: string; quantity: number; reason_id: number; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }>; is_fixed_price?: boolean; fixed_price?: number }
     const allocations: ItemAllocation[] = []
 
     for (const item of items) {
+      // Handle fixed-price items (service-only repairs)
+      if (item.sku === 'fixed_price') {
+        const repairReason = await this.repo.getRepairReasonById(item.reason_id, tenant_id)
+        
+        if (!repairReason) {
+          // Rollback any successful allocations before failing
+          await this.rollbackAllocations(allocations, tenant_id)
+          return { 
+            success: false, 
+            message: `Repair reason ${item.reason_id} not found`,
+            data: null 
+          }
+        }
+
+        if (!repairReason.fixed_price) {
+          // Rollback any successful allocations before failing
+          await this.rollbackAllocations(allocations, tenant_id)
+          return { 
+            success: false, 
+            message: `Repair reason "${repairReason.name}" does not have a fixed price`,
+            data: null 
+          }
+        }
+
+        allocations.push({ 
+          sku: item.sku, 
+          quantity: item.quantity, 
+          reason_id: item.reason_id, 
+          allocations: [],
+          is_fixed_price: true,
+          fixed_price: Number(repairReason.fixed_price)
+        })
+        continue
+      }
+
+      // Handle regular parts-based items
       const allocation = await purchasesRepository.allocateSkuQuantity(item.sku, item.quantity, tenant_id)
       
       if (allocation.total_allocated !== item.quantity) {
@@ -242,6 +278,24 @@ export class RepairsController {
     let total_cost = 0
 
     for (const item of allocations) {
+      // Skip stock movements for fixed-price items (no physical inventory consumed)
+      if (item.is_fixed_price) {
+        const itemCost = item.fixed_price * item.quantity
+        
+        results.push({
+          sku: item.sku,
+          quantity: item.quantity,
+          cost: item.fixed_price,
+          success: true,
+          movement_status: 200, // No movement needed
+        })
+
+        total_quantity += item.quantity
+        total_cost += itemCost
+        continue
+      }
+
+      // Handle regular parts-based items with stock movements
       const movementResult = await movementsController.create({
         sku: item.sku,
         warehouse_id,
@@ -282,8 +336,25 @@ export class RepairsController {
   }
 
   private async persistRepairItems(allocations: any[], repair_id: number, tenant_id: number) {
-    const repairItems = allocations.flatMap(item => 
-      item.allocations.map((allocation: any) => ({
+    const repairItems = allocations.flatMap(item => {
+      // Handle fixed-price items (no purchase allocations)
+      if (item.is_fixed_price) {
+        return [{
+          repair_id,
+          sku: item.sku,
+          quantity: item.quantity,
+          cost: item.fixed_price,
+          reason_id: item.reason_id,
+          purchase_items_id: null,
+          status: true,
+          tenant_id,
+          created_at: null,
+          updated_at: null,
+        }]
+      }
+      
+      // Handle regular parts-based items (with purchase allocations)
+      return item.allocations.map((allocation: any) => ({
         repair_id,
         sku: item.sku,
         quantity: allocation.quantity,
@@ -295,7 +366,7 @@ export class RepairsController {
         created_at: null,
         updated_at: null,
       }))
-    )
+    })
 
     try {
       await this.repo.addRepairItems(repair_id, repairItems, tenant_id)
@@ -306,10 +377,16 @@ export class RepairsController {
   }
 
   private async rollbackAllocations(allocations: any[], tenant_id: number) {
-    const allAllocations = allocations.flatMap(a => 
-      a.allocations.map((x: any) => ({ purchase_item_id: x.purchase_item_id, quantity: x.quantity }))
-    )
-    await purchasesRepository.deallocateAllocations(allAllocations, tenant_id)
+    // Filter out fixed-price items as they don't have allocations to rollback
+    const allAllocations = allocations
+      .filter(a => !a.is_fixed_price)
+      .flatMap(a => 
+        a.allocations.map((x: any) => ({ purchase_item_id: x.purchase_item_id, quantity: x.quantity }))
+      )
+    
+    if (allAllocations.length > 0) {
+      await purchasesRepository.deallocateAllocations(allAllocations, tenant_id)
+    }
   }
 
   private async rollbackPurchaseAllocations(allocations: Array<{ purchase_item_id: number; quantity: number }>, tenant_id: number) {

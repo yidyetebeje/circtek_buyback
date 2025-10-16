@@ -2,6 +2,7 @@ export interface RepairReasonRecord {
   id: number
   name: string
   description: string | null
+  fixed_price: string | null
   status: boolean
   tenant_id: number
 }
@@ -9,12 +10,14 @@ export interface RepairReasonRecord {
 export interface RepairReasonCreateInput {
   name: string
   description?: string
+  fixed_price?: number | null
   status?: boolean
 }
 
 export interface RepairReasonUpdateInput {
   name?: string
   description?: string
+  fixed_price?: number | null
   status?: boolean
 }
 

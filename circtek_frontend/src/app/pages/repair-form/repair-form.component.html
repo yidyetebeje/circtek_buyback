@@ -64,16 +64,17 @@
         }
       </div>
 
-      <h3 class="text-sm font-semibold text-base-content/80 mb-4">Consumed Parts</h3>
+      <h3 class="text-sm font-semibold text-base-content/80 mb-4">Repair Items (Parts & Services)</h3>
 
       <!-- Grid header -->
       <div class="" (focusin)="disableImeiScanner()" (focusout)="enableImeiScanner()">
         <div class="grid grid-cols-12 gap-0 border border-base-300/40 rounded-lg">
           <div class="col-span-12 grid grid-cols-12 gap-0 text-xs text-base-content/60 px-3 py-2 border-b border-base-300/40">
-            <div class="col-span-3">PART SKU</div>
-            <div class="col-span-2">QUANTITY</div>
+            <div class="col-span-2">TYPE</div>
+            <div class="col-span-3">PART SKU / SERVICE</div>
+            <div class="col-span-1">QTY</div>
             <div class="col-span-3">REASON</div>
-            <div class="col-span-3">DESCRIPTION</div>
+            <div class="col-span-2">DESCRIPTION</div>
             <div class="col-span-1"></div>
           </div>
 
@@ -82,14 +83,34 @@
             @for (partGroup of parts.controls; track $index) {
 
               <div [formGroupName]="$index" class="grid grid-cols-12 items-start px-3 py-2 relative" [style.z-index]="parts.length - $index">
-                <div class="col-span-3 pr-3">
-                  <app-sku-autocomplete 
-                    [isPart]="true"
-                    [placeholder]="'Search for part SKU...'"
-                    (valueChange)="onSkuSelected($event, $index)"
-                  ></app-sku-autocomplete>
-                </div>
+                <!-- Item Type Selector -->
                 <div class="col-span-2 pr-3">
+                  <select 
+                    class="select select-bordered w-full text-xs" 
+                    [value]="isFixedPriceItem($index) ? 'fixed_price' : 'part'"
+                    (change)="onItemTypeChange($index, $any($event.target).value === 'fixed_price')"
+                  >
+                    <option value="fixed_price">💰 Fixed Price</option>
+                    <option value="part">🔧 Part</option>
+                  </select>
+                </div>
+
+                <!-- SKU/Service field -->
+                <div class="col-span-3 pr-3">
+                  @if (isFixedPriceItem($index)) {
+                    <div class="input input-bordered w-full flex items-center text-sm bg-base-200">
+                      <span class="text-base-content/60">Service (no parts)</span>
+                    </div>
+                  } @else {
+                    <app-sku-autocomplete 
+                      [isPart]="true"
+                      [placeholder]="'Search for part SKU...'"
+                      (valueChange)="onSkuSelected($event, $index)"
+                    ></app-sku-autocomplete>
+                  }
+                </div>
+
+                <div class="col-span-1 pr-3">
                   <input 
                     type="number" 
                     class="input input-bordered w-full" 
@@ -101,13 +122,13 @@
                 <div class="col-span-3 pr-3">
                   <select class="select select-accent w-full" formControlName="reason_id">
                     <option [ngValue]="null">Select Reason</option>
-                    @for (reason of repairReasonOptions(); track reason.value) {
+                    @for (reason of getRepairReasonsForItem($index); track reason.value) {
                       <option [ngValue]="reason.value">{{ reason.label }}</option>
                     }
                   </select>
                 </div>
-                <div class="col-span-3 pr-3">
-                  <input class="input input-bordered w-full" formControlName="remarks" placeholder="Description" />
+                <div class="col-span-2 pr-3">
+                  <input class="input input-bordered w-full" formControlName="remarks" placeholder="Notes" />
                 </div>
                 <div class="col-span-1 flex justify-end items-center">
                   <button type="button" class="btn btn-error btn-xs" (click)="removePart($index)">Remove</button>
@@ -119,7 +140,7 @@
       </div>
 
       <div class="mt-4 flex justify-end">
-        <button type="button" class="btn btn-sm btn-primary" (click)="addPart()">Add Part</button>
+        <button type="button" class="btn btn-sm btn-primary" (click)="addPart()">+ Add Item</button>
       </div>
     }
     

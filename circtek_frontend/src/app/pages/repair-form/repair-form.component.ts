@@ -77,7 +77,19 @@ export class RepairFormComponent implements OnInit {
     
     // If device is found, validate parts as well
     const hasParts = this.parts.length > 0;
-    const allPartsValid = this.parts.controls.every(partGroup => partGroup.valid);
+    const allPartsValid = this.parts.controls.every(partGroup => {
+      const isFixedPrice = partGroup.get('is_fixed_price')?.value === true;
+      const hasQuantity = partGroup.get('quantity')?.value > 0;
+      const hasReason = partGroup.get('reason_id')?.value;
+      
+      if (isFixedPrice) {
+        // For fixed-price: just need quantity and reason
+        return hasQuantity && hasReason && partGroup.get('sku')?.value === 'fixed_price';
+      } else {
+        // For regular parts: need sku, quantity, and reason
+        return partGroup.get('sku')?.value?.trim() && hasQuantity && hasReason;
+      }
+    });
     
     console.log({
       hasIdentifier,
@@ -137,7 +149,8 @@ export class RepairFormComponent implements OnInit {
       sku: ['', Validators.required],
       quantity: [1, [Validators.required, Validators.min(1)]],
       reason_id: [null as number | null, [Validators.required, Validators.min(1)]],
-      remarks: ['']
+      remarks: [''],
+      is_fixed_price: [false] // Track if this is a fixed-price service
     });
     this.parts.push(partForm);
   }
@@ -267,6 +280,38 @@ export class RepairFormComponent implements OnInit {
     this.parts.at(index)?.get('sku')?.setValue(sku);
   }
 
+  onItemTypeChange(index: number, isFixedPrice: boolean) {
+    const partGroup = this.parts.at(index);
+    if (!partGroup) return;
+
+    partGroup.get('is_fixed_price')?.setValue(isFixedPrice);
+    
+    if (isFixedPrice) {
+      // For fixed-price services, set SKU to the constant
+      partGroup.get('sku')?.setValue('fixed_price');
+    } else {
+      // For parts, clear the SKU so user can select
+      partGroup.get('sku')?.setValue('');
+    }
+  }
+
+  isFixedPriceItem(index: number): boolean {
+    return this.parts.at(index)?.get('is_fixed_price')?.value === true;
+  }
+
+  // Filter repair reasons that have fixed_price for fixed-price items
+  getRepairReasonsForItem(index: number) {
+    const isFixedPrice = this.isFixedPriceItem(index);
+    if (isFixedPrice) {
+      // Only show repair reasons that have a fixed_price
+      return this.repairReasons()
+        .filter(r => r.fixed_price != null && r.fixed_price > 0)
+        .map(r => ({ label: `${r.name} ($${r.fixed_price})`, value: r.id }));
+    }
+    // Show all repair reasons for regular parts
+    return this.repairReasonOptions();
+  }
+
   onSubmit() {
     console.log(this.form().value, "submitting");
     if (!this.isFormValid()) {
@@ -370,13 +415,22 @@ export class RepairFormComponent implements OnInit {
     // Check parts validation only if device is found
     const partsErrors: string[] = [];
     if (this.parts.length === 0) {
-      partsErrors.push('at least one part');
+      partsErrors.push('at least one part or service');
     } else {
       this.parts.controls.forEach((partGroup, index) => {
         const partErrors: string[] = [];
-        if (!partGroup.get('sku')?.value?.trim()) {
+        const isFixedPrice = partGroup.get('is_fixed_price')?.value === true;
+        
+        // For regular parts, validate SKU
+        if (!isFixedPrice && !partGroup.get('sku')?.value?.trim()) {
           partErrors.push('SKU');
         }
+        
+        // For fixed-price items, validate that sku is set to 'fixed_price'
+        if (isFixedPrice && partGroup.get('sku')?.value !== 'fixed_price') {
+          partErrors.push('fixed price service not properly configured');
+        }
+        
         if (!partGroup.get('quantity')?.value || partGroup.get('quantity')?.value < 1) {
           partErrors.push('quantity');
         }
@@ -385,7 +439,8 @@ export class RepairFormComponent implements OnInit {
         }
         
         if (partErrors.length > 0) {
-          partsErrors.push(`Part ${index + 1}: ${partErrors.join(', ')}`);
+          const itemType = isFixedPrice ? 'Service' : 'Part';
+          partsErrors.push(`${itemType} ${index + 1}: ${partErrors.join(', ')}`);
         }
       });
     }

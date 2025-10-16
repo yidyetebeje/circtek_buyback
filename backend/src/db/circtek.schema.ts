@@ -268,6 +268,7 @@ export const repair_reasons = mysqlTable('repair_reasons', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
+  fixed_price: decimal('fixed_price', { precision: 10, scale: 2 }),
   status: boolean('status').default(true),
   tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
 });

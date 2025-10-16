@@ -129,6 +129,14 @@ export class RepairReasonsFormComponent {
       description: 'Additional details about this repair reason (max 500 characters, letters and spaces allowed)'
     },
     {
+      key: 'fixed_price',
+      label: 'Fixed Price',
+      type: 'number',
+      required: false,
+      placeholder: 'Enter fixed price (fill if no parts are needed and the repair is service-only)',
+      description: "Fill this only if the repair doesn't require any part (service-only)."
+    },
+    {
       key: 'status',
       label: 'Status',
       type: 'select',
@@ -163,6 +171,7 @@ export class RepairReasonsFormComponent {
         this.lettersOnlyValidator.bind(this), // Allow empty for optional field
         this.trimWhitespaceValidator.bind(this)
       ]],
+      fixed_price: [null, [Validators.min(0)]], // Optional fixed price, must be >= 0 if provided
       status: [true, [Validators.required]]
     });
 
@@ -185,6 +194,7 @@ export class RepairReasonsFormComponent {
           this.form.patchValue({
             name: response.data.name,
             description: response.data.description || '',
+            fixed_price: response.data.fixed_price ? Number(response.data.fixed_price) : null,
             status: response.data.status
           });
         } else {
@@ -213,6 +223,7 @@ export class RepairReasonsFormComponent {
     const formData = {
       name: this.form.value.name?.toString().trim() || '',
       description: this.form.value.description?.toString().trim() || '',
+      fixed_price: this.form.value.fixed_price ? Number(this.form.value.fixed_price) : null,
       status: this.form.value.status
     };
     const request = this.isEditMode() 

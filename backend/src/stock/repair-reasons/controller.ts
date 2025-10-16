@@ -11,6 +11,7 @@ export class RepairReasonsController {
       const sanitizedPayload: RepairReasonCreateInput = {
         name: payload.name?.toString().trim(),
         description: payload.description?.toString().trim() || undefined,
+        fixed_price: payload.fixed_price ?? undefined,
         status: payload.status
       };
       
@@ -21,6 +22,13 @@ export class RepairReasonsController {
       
       if (sanitizedPayload.description && /\s{3,}/.test(sanitizedPayload.description)) {
         return { data: null, message: 'Description cannot contain more than two consecutive spaces', status: 400 };
+      }
+
+      // Validate fixed_price if provided
+      if (sanitizedPayload.fixed_price !== undefined && sanitizedPayload.fixed_price !== null) {
+        if (sanitizedPayload.fixed_price < 0) {
+          return { data: null, message: 'Fixed price must be greater than or equal to 0', status: 400 };
+        }
       }
       
       const created = await this.repo.create({ ...sanitizedPayload, tenant_id })
@@ -69,6 +77,13 @@ export class RepairReasonsController {
         // Check for excessive spacing
         if (sanitizedPayload.description && /\s{3,}/.test(sanitizedPayload.description)) {
           return { data: null, message: 'Description cannot contain more than two consecutive spaces', status: 400 };
+        }
+      }
+      if (payload.fixed_price !== undefined) {
+        sanitizedPayload.fixed_price = payload.fixed_price;
+        // Validate fixed_price if provided
+        if (sanitizedPayload.fixed_price !== null && sanitizedPayload.fixed_price < 0) {
+          return { data: null, message: 'Fixed price must be greater than or equal to 0', status: 400 };
         }
       }
       if (payload.status !== undefined) {

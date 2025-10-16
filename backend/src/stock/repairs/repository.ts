@@ -231,6 +231,19 @@ export class RepairsRepository {
   async deleteRepair(id: number, tenant_id: number): Promise<void> {
     await this.database.delete(repairs).where(and(eq(repairs.id, id), eq(repairs.tenant_id, tenant_id)))
   }
+
+  async getRepairReasonById(id: number, tenant_id: number): Promise<{ id: number; name: string; fixed_price: string | null } | undefined> {
+    const [row] = await this.database
+      .select({
+        id: repair_reasons.id,
+        name: repair_reasons.name,
+        fixed_price: repair_reasons.fixed_price,
+      })
+      .from(repair_reasons)
+      .where(and(eq(repair_reasons.id, id), eq(repair_reasons.tenant_id, tenant_id)))
+    
+    return row
+  }
 }
 
 

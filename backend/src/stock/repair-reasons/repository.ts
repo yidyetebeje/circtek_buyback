@@ -9,6 +9,7 @@ export class RepairReasonsRepository {
       const [result] = await db.insert(repair_reasons).values({
         name: payload.name,
         description: payload.description || null,
+        fixed_price: payload.fixed_price !== undefined && payload.fixed_price !== null ? payload.fixed_price.toString() : null,
         status: payload.status ?? true,
         tenant_id: payload.tenant_id,
       })
@@ -90,6 +91,9 @@ export class RepairReasonsRepository {
       const updateData: any = {}
       if (payload.name !== undefined) updateData.name = payload.name
       if (payload.description !== undefined) updateData.description = payload.description
+      if (payload.fixed_price !== undefined) {
+        updateData.fixed_price = payload.fixed_price !== null ? payload.fixed_price.toString() : null
+      }
       if (payload.status !== undefined) updateData.status = payload.status
 
       const [result] = await db.update(repair_reasons)

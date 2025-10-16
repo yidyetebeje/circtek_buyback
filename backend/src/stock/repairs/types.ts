@@ -19,7 +19,7 @@ export const RepairQuery = t.Object({
 export const RepairConsumeItems = t.Object({
   warehouse_id: t.Number(),
   items: t.Array(t.Object({
-    sku: t.String(),
+    sku: t.String(), // Can be actual SKU or "fixed_price" for service-only repairs
     quantity: t.Number(),
     reason_id: t.Number(),
   })),
@@ -99,7 +99,7 @@ export const RepairCreateWithConsume = t.Object({
   // Consumption information
   warehouse_id: t.Number(),
   items: t.Array(t.Object({
-    sku: t.String(),
+    sku: t.String(), // Can be actual SKU or "fixed_price" for service-only repairs
     quantity: t.Number(),
     reason_id: t.Number(),
   })),
