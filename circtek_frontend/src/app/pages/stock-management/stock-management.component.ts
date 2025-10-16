@@ -134,7 +134,7 @@ export class StockManagementComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'PO No.', accessorKey: 'purchase_order_no' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
+          { header: 'Supplier Order No.', accessorKey: 'supplier_order_no' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Supplier', accessorKey: 'supplier_name' as any, meta: { truncateText: true, truncateMaxWidth: '180px' } },
           { header: 'Expected', id: 'expected_delivery_date', accessorFn: (r: any) => {
             if (!r.expected_delivery_date) return '-';
@@ -212,7 +212,7 @@ export class StockManagementComponent {
   searchPlaceholder = computed(() => {
     switch (this.activeTab()) {
       case 'stock': return 'SKU';
-      case 'purchases': return 'PO,supplier,tracking';
+      case 'purchases': return 'Supplier order,supplier,tracking';
       case 'transfers': return 'transfers';
       case 'sku-specs': return 'SKU,make,model';
       default: return 'Search';

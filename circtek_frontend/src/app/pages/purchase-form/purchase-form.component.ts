@@ -10,7 +10,6 @@ import { PurchaseItemModalComponent, type PurchaseItem } from './purchase-item-m
 
 
 interface PurchaseFormData {
-  purchase_order_no: string;
   supplier_name: string;
   supplier_order_no: string;
   expected_delivery_date: string;
@@ -67,21 +66,10 @@ export class PurchaseFormComponent implements OnInit {
 
   // Form configuration
   title = signal('Create Purchase Order');
-  subtitle = signal('Add a new purchase order with items');
+  subtitle = signal('Add a new purchase order with items (PO number will be auto-generated)');
   submitLabel = signal('Create Purchase');
 
   fields = computed<FormField[]>(() => [
-    {
-      key: 'purchase_order_no',
-      label: 'Purchase Order Number',
-      type: 'text',
-      required: true,
-      placeholder: 'Enter purchase order number (min. 3 characters)',
-      validation: {
-        minlength: 3,
-        maxlength: 50
-      }
-    },
     {
       key: 'supplier_name',
       label: 'Supplier Name',
@@ -346,12 +334,6 @@ export class PurchaseFormComponent implements OnInit {
 
   private createForm(): FormGroup {
     return this.fb.group({
-      purchase_order_no: ['', [
-        Validators.required,
-        Validators.minLength(3),
-        PurchaseFormComponent.whitespaceValidator,
-        PurchaseFormComponent.maxLengthWithTrim(50)
-      ]],
       supplier_name: ['', [
         Validators.required,
         Validators.minLength(3),
@@ -407,10 +389,9 @@ export class PurchaseFormComponent implements OnInit {
 
     const formValue = this.form().value as PurchaseFormData;
     
-    // Prepare payload for API
+    // Prepare payload for API (purchase_order_no will be auto-generated on backend)
     const payload = {
       purchase: {
-        purchase_order_no: formValue.purchase_order_no,
         supplier_name: formValue.supplier_name,
         supplier_order_no: formValue.supplier_order_no,
         expected_delivery_date: formValue.expected_delivery_date,

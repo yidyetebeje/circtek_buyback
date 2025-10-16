@@ -25,7 +25,7 @@ export class PurchaseDetailComponent {
   // Computed
   title = computed(() => {
     const p = this.purchase();
-    return p ? `Purchase Order - ${p.purchase.purchase_order_no}` : 'Purchase Order Details';
+    return p ? `Purchase Order - ${p.purchase.supplier_order_no}` : 'Purchase Order Details';
   });
 
   totalItems = computed(() => {

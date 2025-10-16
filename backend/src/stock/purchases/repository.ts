@@ -1,5 +1,5 @@
 import { and, count, eq, like, or, SQL, gte, lte, desc, asc, sum, sql } from "drizzle-orm";
-import { purchases, purchase_items, received_items, warehouses, devices, sku_specs, stock } from "../../db/circtek.schema";
+import { purchases, purchase_items, received_items, warehouses, devices, sku_specs, stock, tenants } from "../../db/circtek.schema";
 import { 
   PurchaseCreateInput, 
   PurchaseItemCreateInput, 
@@ -18,6 +18,34 @@ import { db } from "../../db/index";
 export class PurchasesRepository {
   constructor(private readonly database: typeof db) {}
 
+  /**
+   * Generate a unique purchase order number in format: po_{tenant_name}_{timestamp}_{random}
+   */
+  private async generatePurchaseOrderNumber(tenant_id: number): Promise<string> {
+    // Get tenant name
+    const [tenant] = await this.database
+      .select({ name: tenants.name })
+      .from(tenants)
+      .where(eq(tenants.id, tenant_id));
+    
+    if (!tenant) {
+      throw new Error(`Tenant with ID ${tenant_id} not found`);
+    }
+
+    // Sanitize tenant name: remove spaces, special characters, convert to lowercase
+    const sanitizedTenantName = tenant.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '_')
+      .replace(/_+/g, '_') // Replace multiple underscores with single
+      .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+
+    // Generate unique identifier: timestamp + random string
+    const timestamp = Date.now();
+    const randomPart = Math.random().toString(36).substring(2, 8); // 6 random characters
+    
+    return `po_${sanitizedTenantName}_${timestamp}_${randomPart}`;
+  }
+
   async createPurchase(purchaseData: PurchaseCreateInput & { tenant_id: number }): Promise<PurchaseRecord | undefined> {
     // Convert the datetime string to a proper Date object, ensuring it's valid
     const deliveryDate = new Date(purchaseData.expected_delivery_date);
@@ -27,8 +55,13 @@ export class PurchasesRepository {
       throw new Error(`Invalid expected_delivery_date: ${purchaseData.expected_delivery_date}`);
     }
     
+    // Generate purchase order number if not provided
+    const purchase_order_no = purchaseData.purchase_order_no || 
+                              await this.generatePurchaseOrderNumber(purchaseData.tenant_id);
+    
     const [result] = await this.database.insert(purchases).values({
       ...purchaseData,
+      purchase_order_no,
       expected_delivery_date: deliveryDate,
     });
 
@@ -153,9 +186,9 @@ export class PurchasesRepository {
     const limit = Math.max(1, Math.min(100, filters.limit ?? 10));
     const offset = (page - 1) * limit;
 
-    // Determine sorting
+    // Determine sorting - default to created_at desc (newest first)
     const sortColumn = this.getSortColumn(filters.sort_by);
-    const sortDirection = filters.sort_dir === 'desc' ? desc : asc;
+    const sortDirection = filters.sort_dir === 'asc' ? asc : desc; // Default to desc
 
     // Get total count
     let totalRow: { total: number } | undefined;
@@ -225,9 +258,9 @@ export class PurchasesRepository {
     const limit = Math.max(1, Math.min(100, filters.limit ?? 10));
     const offset = (page - 1) * limit;
 
-    // Determine sorting
+    // Determine sorting - default to created_at desc (newest first)
     const sortColumn = this.getSortColumn(filters.sort_by);
-    const sortDirection = filters.sort_dir === 'desc' ? desc : asc;
+    const sortDirection = filters.sort_dir === 'asc' ? asc : desc; // Default to desc
 
     // Get total count
     let totalRow: { total: number } | undefined;

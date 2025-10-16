@@ -2,7 +2,7 @@ import { t, type Static } from "elysia"
 
 // Purchase-related stock management types
 export const PurchaseCreate = t.Object({
-  purchase_order_no: t.String(),
+  purchase_order_no: t.Optional(t.String()), // Now optional - will be auto-generated if not provided
   supplier_name: t.String(),
   supplier_order_no: t.String(),
   expected_delivery_date: t.String(),

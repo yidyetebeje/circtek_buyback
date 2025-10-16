@@ -104,7 +104,7 @@ export class ProductReceiveComponent {
     });
     
     return filteredPurchases.map(p => ({
-      label: `${p.purchase.purchase_order_no} - ${p.purchase.supplier_name}`,
+      label: `${p.purchase.supplier_order_no} - ${p.purchase.supplier_name}`,
       value: p.purchase.id
     }));
   });
@@ -132,7 +132,7 @@ export class ProductReceiveComponent {
     const selectedPurchase = this.selectedPurchase();
     
     if (autoSelectedId && selectedPurchase && selectedPurchase.purchase.id === autoSelectedId) {
-      return `Automatically selected Purchase Order: ${selectedPurchase.purchase.purchase_order_no} - ${selectedPurchase.purchase.supplier_name}`;
+      return `Automatically selected Purchase Order: ${selectedPurchase.purchase.supplier_order_no} - ${selectedPurchase.purchase.supplier_name}`;
     }
     
     return null;
@@ -201,10 +201,10 @@ export class ProductReceiveComponent {
           this.form.patchValue({ purchase_id: String(purchaseId) });
           this.selectedPurchase.set(targetPurchase);
           
-          console.log(`Auto-selected Purchase Order: ${targetPurchase.purchase.purchase_order_no}`);
+          console.log(`Auto-selected Purchase Order: ${targetPurchase.purchase.supplier_order_no}`);
         } else {
           // Purchase is fully received
-          this.error.set(`Purchase Order ${targetPurchase.purchase.purchase_order_no} has been fully received and cannot receive more items.`);
+          this.error.set(`Purchase Order ${targetPurchase.purchase.supplier_order_no} has been fully received and cannot receive more items.`);
           this.loadingMessage.set('Loading available purchases...');
           // Still load the paginated list for manual selection
           await this.loadPaginatedPurchases();
