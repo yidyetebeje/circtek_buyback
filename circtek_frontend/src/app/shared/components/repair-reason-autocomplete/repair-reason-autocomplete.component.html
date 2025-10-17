@@ -1,0 +1,40 @@
+<div class="relative w-full">
+  <input
+    class="input input-bordered w-full"
+    [attr.placeholder]="placeholder()"
+    [disabled]="disabled()"
+    [required]="required()"
+    [formControl]="searchControl"
+    (focus)="onFocus()"
+    (blur)="onBlur()"
+    (input)="onInput($event)"
+    (keydown)="onKeyDown($event)"
+    role="combobox"
+    [attr.aria-expanded]="showDropdown()"
+    [attr.aria-activedescendant]="activeOptionId()"
+    autocomplete="off"
+  />
+
+  @if (showDropdown()) {
+    <ul class="dropdown-list" role="listbox">
+      @for (option of options(); track option.id; let i = $index) {
+        <li
+          role="option"
+          [id]="'reason-option-' + i"
+          class="dropdown-item"
+          [class.active]="highlightedIndex() === i"
+          (mousedown)="$event.preventDefault()"
+          (click)="selectOption(option)"
+        >
+          <div class="flex justify-between w-full">
+            <span class="truncate">{{ option.name }}</span>
+            @if ((option.fixed_price ?? 0) > 0) { <span class="text-xs text-success ml-2">${{ option.fixed_price }}</span> }
+          </div>
+          @if (option.description) { <div class="text-xs opacity-70 truncate">{{ option.description }}</div> }
+        </li>
+      }
+    </ul>
+  }
+</div>
+
+
