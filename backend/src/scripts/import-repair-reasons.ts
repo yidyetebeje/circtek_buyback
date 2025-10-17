@@ -6,7 +6,7 @@ import { db } from '../db'
 import { repair_reasons } from '../db/circtek.schema'
 
 function parseTenantId(argv: string[]): number {
-  return 1
+  return 2
 }
 
 async function readReasons(filePath: string): Promise<string[]> {
