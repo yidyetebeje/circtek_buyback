@@ -79,17 +79,16 @@ export class RepairFormComponent implements OnInit {
     // If device is found, validate parts as well
     const hasParts = this.parts.length > 0;
     const allPartsValid = this.parts.controls.every(partGroup => {
-      const isFixedPrice = partGroup.get('is_fixed_price')?.value === true;
-      const hasQuantity = partGroup.get('quantity')?.value > 0;
-      const hasReason = partGroup.get('reason_id')?.value;
-      
-      if (isFixedPrice) {
-        // For fixed-price: just need quantity and reason
-        return hasQuantity && hasReason && partGroup.get('sku')?.value === 'fixed_price';
-      } else {
-        // For regular parts: need sku, quantity, and reason
-        return partGroup.get('sku')?.value?.trim() && hasQuantity && hasReason;
-      }
+      const sku: string = (partGroup.get('sku')?.value || '').toString().trim();
+      const quantityValid = Number(partGroup.get('quantity')?.value) > 0;
+      const reasonId: number | null | undefined = partGroup.get('reason_id')?.value;
+      const hasReason = !!reasonId;
+
+      if (!quantityValid || !hasReason) return false;
+      if (sku) return true; // part with SKU is valid
+
+      // No SKU provided: require fixed-price reason
+      return this.isReasonFixedPrice(reasonId ?? null);
     });
     
     console.log({
@@ -147,11 +146,10 @@ export class RepairFormComponent implements OnInit {
 
   addPart() {
     const partForm = this.fb.group({
-      sku: ['', Validators.required],
+      sku: [''],
       quantity: [1, [Validators.required, Validators.min(1)]],
       reason_id: [null as number | null, [Validators.required, Validators.min(1)]],
-      remarks: [''],
-      is_fixed_price: [false] // Track if this is a fixed-price service
+      remarks: ['']
     });
     this.parts.push(partForm);
   }
@@ -332,11 +330,15 @@ export class RepairFormComponent implements OnInit {
       device_id: formValue.device_id!,
       remarks: formValue.remarks || undefined,
       warehouse_id: formValue.warehouse_id!,
-      items: parts.map((part: any) => ({
-        sku: part.sku,
-        quantity: part.quantity,
-        reason_id: part.reason_id
-      })),
+      items: parts.map((part: any) => {
+        const trimmedSku = (part.sku || '').toString().trim();
+        const reasonIsFixed = this.isReasonFixedPrice(part.reason_id);
+        return {
+          sku: trimmedSku ? trimmedSku : (reasonIsFixed ? 'fixed_price' : ''),
+          quantity: part.quantity,
+          reason_id: part.reason_id
+        };
+      }),
       notes: undefined // Optional field
     };
 
@@ -421,28 +423,22 @@ export class RepairFormComponent implements OnInit {
     } else {
       this.parts.controls.forEach((partGroup, index) => {
         const partErrors: string[] = [];
-        const isFixedPrice = partGroup.get('is_fixed_price')?.value === true;
-        
-        // For regular parts, validate SKU
-        if (!isFixedPrice && !partGroup.get('sku')?.value?.trim()) {
-          partErrors.push('SKU');
-        }
-        
-        // For fixed-price items, validate that sku is set to 'fixed_price'
-        if (isFixedPrice && partGroup.get('sku')?.value !== 'fixed_price') {
-          partErrors.push('fixed price service not properly configured');
-        }
-        
+        const sku: string = (partGroup.get('sku')?.value || '').toString().trim();
         if (!partGroup.get('quantity')?.value || partGroup.get('quantity')?.value < 1) {
           partErrors.push('quantity');
         }
         if (!partGroup.get('reason_id')?.value) {
           partErrors.push('reason');
         }
-        
+        if (!sku) {
+          const reasonId = partGroup.get('reason_id')?.value as number | null | undefined;
+          if (!this.isReasonFixedPrice(reasonId)) {
+            partErrors.push('reason must be fixed price when no SKU');
+          }
+        }
+
         if (partErrors.length > 0) {
-          const itemType = isFixedPrice ? 'Service' : 'Part';
-          partsErrors.push(`${itemType} ${index + 1}: ${partErrors.join(', ')}`);
+          partsErrors.push(`Item ${index + 1}: ${partErrors.join(', ')}`);
         }
       });
     }
@@ -457,5 +453,11 @@ export class RepairFormComponent implements OnInit {
     }
     
     return errorMessage || 'Please fill in all required fields';
+  }
+
+  private isReasonFixedPrice(reasonId: number | null | undefined): boolean {
+    if (!reasonId) return false;
+    const reason = this.repairReasons().find(r => r.id === reasonId);
+    return !!reason && reason.fixed_price != null && Number(reason.fixed_price) > 0;
   }
 }

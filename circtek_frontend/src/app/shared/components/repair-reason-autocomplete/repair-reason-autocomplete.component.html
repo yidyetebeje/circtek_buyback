@@ -27,7 +27,10 @@
           (click)="selectOption(option)"
         >
           <div class="flex justify-between w-full">
-            <span class="truncate">{{ option.name }}</span>
+            <span class="truncate">
+              {{ option.name }}
+              @if ((option.fixed_price ?? 0) > 0) { <span class="opacity-70">(fixed price)</span> }
+            </span>
             @if ((option.fixed_price ?? 0) > 0) { <span class="text-xs text-success ml-2">${{ option.fixed_price }}</span> }
           </div>
           @if (option.description) { <div class="text-xs opacity-70 truncate">{{ option.description }}</div> }
