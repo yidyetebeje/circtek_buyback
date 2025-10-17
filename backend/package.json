@@ -8,7 +8,8 @@
     "studio:dev": "bunx drizzle-kit studio",
     "studio:test": "NODE_ENV=test bunx drizzle-kit studio",
     "dev": "bun run --watch src/index.ts",
-    "seed": "bun run src/db/seed.ts"
+    "seed": "bun run src/db/seed.ts",
+    "import:repair-reasons": "bun run src/scripts/import-repair-reasons.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.16",
