@@ -120,12 +120,11 @@
                   />
                 </div>
                 <div class="col-span-3 pr-3">
-                  <select class="select select-accent w-full" formControlName="reason_id">
-                    <option [ngValue]="null">Select Reason</option>
-                    @for (reason of getRepairReasonsForItem($index); track reason.value) {
-                      <option [ngValue]="reason.value">{{ reason.label }}</option>
-                    }
-                  </select>
+                  <app-repair-reason-autocomplete
+                    [placeholder]="'Search reason...'"
+                    [onlyFixedPrice]="isFixedPriceItem($index)"
+                    (valueChange)="parts.at($index)?.get('reason_id')?.setValue($event)"
+                  ></app-repair-reason-autocomplete>
                 </div>
                 <div class="col-span-2 pr-3">
                   <input class="input input-bordered w-full" formControlName="remarks" placeholder="Notes" />

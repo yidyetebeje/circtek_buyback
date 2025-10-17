@@ -11,11 +11,12 @@ import { ToastService } from '../../core/services/toast.service';
 import { RepairCreateInput, RepairConsumeItemsInput, RepairCreateWithConsumeInput } from '../../core/models/repair';
 import { BarcodeScannerComponent, ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 import { SkuAutocompleteComponent } from '../../shared/components/sku-autocomplete/sku-autocomplete.component';
+import { RepairReasonAutocompleteComponent } from '../../shared/components/repair-reason-autocomplete/repair-reason-autocomplete.component';
 import { RepairReasonRecord } from '../../core/models/repair-reason';
 
 @Component({
   selector: 'app-repair-form',
-  imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent, BarcodeScannerComponent, SkuAutocompleteComponent],
+  imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent, BarcodeScannerComponent, SkuAutocompleteComponent, RepairReasonAutocompleteComponent],
   templateUrl: './repair-form.component.html',
   styleUrls: ['./repair-form.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -171,7 +172,8 @@ export class RepairFormComponent implements OnInit {
   }
 
   loadRepairReasons() {
-    this.api.getRepairReasons().subscribe({ 
+    const params = new HttpParams().set('limit', '500');
+    this.api.getRepairReasons(params).subscribe({ 
       next: (res) => { this.repairReasons.set(res.data ?? []); },
       error: () => { this.repairReasons.set([]); }
     });
