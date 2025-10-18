@@ -1,7 +1,7 @@
 import { eq, and, like, desc, count } from 'drizzle-orm'
 import { db } from '../../db'
-import { repair_reasons } from '../../db/circtek.schema'
-import { RepairReasonRecord, RepairReasonCreateInput, RepairReasonUpdateInput, RepairReasonQueryInput } from './types'
+import { repair_reasons, repair_reason_model_prices } from '../../db/circtek.schema'
+import { RepairReasonRecord, RepairReasonCreateInput, RepairReasonUpdateInput, RepairReasonQueryInput, RepairReasonModelPriceRecord, RepairReasonModelPriceCreateInput, RepairReasonModelPriceUpdateInput, RepairReasonWithModelPrices } from './types'
 
 export class RepairReasonsRepository {
   async create(payload: RepairReasonCreateInput & { tenant_id: number }): Promise<RepairReasonRecord | null> {
@@ -121,6 +121,118 @@ export class RepairReasonsRepository {
       return (result.affectedRows || 0) > 0
     } catch (error) {
       console.error('Error deleting repair reason:', error)
+      return false
+    }
+  }
+
+  // Model-specific pricing methods
+  async findByIdWithModelPrices(id: number, tenant_id?: number): Promise<RepairReasonWithModelPrices | null> {
+    try {
+      const reason = await this.findById(id, tenant_id)
+      if (!reason) return null
+
+      const modelPrices = await this.getModelPrices(id, tenant_id)
+      return { ...reason, model_prices: modelPrices }
+    } catch (error) {
+      console.error('Error finding repair reason with model prices:', error)
+      return null
+    }
+  }
+
+  async getModelPrices(repair_reason_id: number, tenant_id?: number): Promise<RepairReasonModelPriceRecord[]> {
+    try {
+      const conditions = [eq(repair_reason_model_prices.repair_reason_id, repair_reason_id)]
+      if (typeof tenant_id === 'number') {
+        conditions.push(eq(repair_reason_model_prices.tenant_id, tenant_id))
+      }
+
+      const rows = await db.select().from(repair_reason_model_prices).where(and(...conditions))
+      return rows as RepairReasonModelPriceRecord[]
+    } catch (error) {
+      console.error('Error getting model prices:', error)
+      return []
+    }
+  }
+
+  async getModelPrice(repair_reason_id: number, model_name: string, tenant_id: number): Promise<RepairReasonModelPriceRecord | null> {
+    try {
+      const [row] = await db.select()
+        .from(repair_reason_model_prices)
+        .where(and(
+          eq(repair_reason_model_prices.repair_reason_id, repair_reason_id),
+          eq(repair_reason_model_prices.model_name, model_name),
+          eq(repair_reason_model_prices.tenant_id, tenant_id)
+        ))
+      return row as RepairReasonModelPriceRecord || null
+    } catch (error) {
+      console.error('Error getting model price:', error)
+      return null
+    }
+  }
+
+  async createModelPrice(payload: RepairReasonModelPriceCreateInput & { tenant_id: number }): Promise<RepairReasonModelPriceRecord | null> {
+    try {
+      const [result] = await db.insert(repair_reason_model_prices).values({
+        repair_reason_id: payload.repair_reason_id,
+        model_name: payload.model_name,
+        fixed_price: payload.fixed_price.toString(),
+        status: payload.status ?? true,
+        tenant_id: payload.tenant_id,
+      })
+
+      if (result.insertId) {
+        const [created] = await db.select()
+          .from(repair_reason_model_prices)
+          .where(eq(repair_reason_model_prices.id, Number(result.insertId)))
+        return created as RepairReasonModelPriceRecord || null
+      }
+      return null
+    } catch (error) {
+      console.error('Error creating model price:', error)
+      return null
+    }
+  }
+
+  async updateModelPrice(id: number, payload: RepairReasonModelPriceUpdateInput, tenant_id?: number): Promise<RepairReasonModelPriceRecord | null> {
+    try {
+      const conditions = [eq(repair_reason_model_prices.id, id)]
+      if (typeof tenant_id === 'number') {
+        conditions.push(eq(repair_reason_model_prices.tenant_id, tenant_id))
+      }
+
+      const updateData: any = {}
+      if (payload.model_name !== undefined) updateData.model_name = payload.model_name
+      if (payload.fixed_price !== undefined) updateData.fixed_price = payload.fixed_price.toString()
+      if (payload.status !== undefined) updateData.status = payload.status
+
+      const [result] = await db.update(repair_reason_model_prices)
+        .set(updateData)
+        .where(and(...conditions))
+
+      if (result.affectedRows && result.affectedRows > 0) {
+        const [updated] = await db.select()
+          .from(repair_reason_model_prices)
+          .where(eq(repair_reason_model_prices.id, id))
+        return updated as RepairReasonModelPriceRecord || null
+      }
+      return null
+    } catch (error) {
+      console.error('Error updating model price:', error)
+      return null
+    }
+  }
+
+  async deleteModelPrice(id: number, tenant_id?: number): Promise<boolean> {
+    try {
+      const conditions = [eq(repair_reason_model_prices.id, id)]
+      if (typeof tenant_id === 'number') {
+        conditions.push(eq(repair_reason_model_prices.tenant_id, tenant_id))
+      }
+
+      const [result] = await db.delete(repair_reason_model_prices).where(and(...conditions))
+      return (result.affectedRows || 0) > 0
+    } catch (error) {
+      console.error('Error deleting model price:', error)
       return false
     }
   }

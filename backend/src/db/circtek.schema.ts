@@ -273,6 +273,21 @@ export const repair_reasons = mysqlTable('repair_reasons', {
   tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
 });
 
+export const repair_reason_model_prices = mysqlTable('repair_reason_model_prices', {
+  id: serial('id').primaryKey(),
+  repair_reason_id: bigint('repair_reason_id', { mode: 'number', unsigned: true }).references(() => repair_reasons.id).notNull(),
+  model_name: varchar('model_name', { length: 255 }).notNull(),
+  fixed_price: decimal('fixed_price', { precision: 10, scale: 2 }).notNull(),
+  status: boolean('status').default(true),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_repair_reason_model_prices_tenant').on(table.tenant_id),
+  index('idx_repair_reason_model_prices_reason').on(table.repair_reason_id),
+  unique('uq_repair_reason_model').on(table.repair_reason_id, table.model_name, table.tenant_id),
+]);
+
 export const repairs = mysqlTable('repairs', {
   id: serial('id').primaryKey(),
   device_id: bigint('device_id', { mode: 'number', unsigned: true }).references(() => devices.id).notNull(),

@@ -15,7 +15,7 @@ import { PurchaseRecord, PurchaseWithItems, ReceiveItemsRequest, ReceivingResult
 import { TransferWithDetails, TransferCompletionResult, TransferSummary } from '../models/transfer';
 import { RepairRecord, RepairWithItems, RepairCreateInput, RepairQueryInput, RepairConsumeItemsInput, RepairConsumeResult, RepairCreateWithConsumeInput, RepairCreateWithConsumeResult } from '../models/repair';
 import { SkuSpecsRecord, SkuSpecsCreateInput, SkuSpecsUpdateInput, SkuSpecsQueryInput, SkuSpecsListResponse } from '../models/sku-specs';
-import { RepairReasonRecord, RepairReasonCreateInput, RepairReasonUpdateInput, RepairReasonQueryInput, RepairReasonListResponse } from '../models/repair-reason';
+import { RepairReasonRecord, RepairReasonCreateInput, RepairReasonUpdateInput, RepairReasonQueryInput, RepairReasonListResponse, RepairReasonWithModelPrices, RepairReasonModelPriceRecord, RepairReasonModelPriceCreateInput, RepairReasonModelPriceUpdateInput } from '../models/repair-reason';
 import { LabelTemplateRecord, LabelTemplateCreateInput, LabelTemplateUpdateInput, LabelTemplateListResponse } from '../models/label-template';
 import { WorkflowRecord, WorkflowCreateInput, WorkflowUpdateInput, WorkflowListResponse } from '../models/workflow';
 import { DashboardOverviewStats, WarehouseStats, RecentActivity, MonthlyTrend } from '../models/dashboard';
@@ -580,6 +580,27 @@ export class ApiService {
 
   deleteRepairReason(id: number): Observable<ApiResponse<null>> {
     return this.delete<ApiResponse<null>>(`/stock/repair-reasons/${id}`);
+  }
+
+  // Model-specific pricing API methods
+  getRepairReasonWithModelPrices(id: number): Observable<ApiResponse<RepairReasonWithModelPrices | null>> {
+    return this.get<ApiResponse<RepairReasonWithModelPrices | null>>(`/stock/repair-reasons/${id}/with-model-prices`);
+  }
+
+  getModelPrices(repairReasonId: number): Observable<ApiResponse<RepairReasonModelPriceRecord[]>> {
+    return this.get<ApiResponse<RepairReasonModelPriceRecord[]>>(`/stock/repair-reasons/${repairReasonId}/model-prices`);
+  }
+
+  createModelPrice(repairReasonId: number, data: RepairReasonModelPriceCreateInput): Observable<ApiResponse<RepairReasonModelPriceRecord | null>> {
+    return this.post<ApiResponse<RepairReasonModelPriceRecord | null>>(`/stock/repair-reasons/${repairReasonId}/model-prices`, data);
+  }
+
+  updateModelPrice(priceId: number, data: RepairReasonModelPriceUpdateInput): Observable<ApiResponse<RepairReasonModelPriceRecord | null>> {
+    return this.put<ApiResponse<RepairReasonModelPriceRecord | null>>(`/stock/repair-reasons/model-prices/${priceId}`, data);
+  }
+
+  deleteModelPrice(priceId: number): Observable<ApiResponse<null>> {
+    return this.delete<ApiResponse<null>>(`/stock/repair-reasons/model-prices/${priceId}`);
   }
 
   // ===== Dashboard Stats =====

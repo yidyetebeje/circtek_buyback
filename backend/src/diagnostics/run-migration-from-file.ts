@@ -57,7 +57,8 @@ async function runMigrationFromFile() {
 
 	console.log(`✅ Loaded ${oldData.length} records`)
 	console.log('🚀 Starting migration...')
-	console.log('⏳ This may take a while...\n')
+	console.log('⏳ This may take a while...')
+	console.log('📅 Timestamps will be preserved from original testing time\n')
 
 	const startTime = Date.now()
 

@@ -84,11 +84,8 @@ export class RepairFormComponent implements OnInit {
       const reasonId: number | null | undefined = partGroup.get('reason_id')?.value;
       const hasReason = !!reasonId;
 
-      if (!quantityValid || !hasReason) return false;
-      if (sku) return true; // part with SKU is valid
-
-      // No SKU provided: require fixed-price reason
-      return this.isReasonFixedPrice(reasonId ?? null);
+      // Valid if has quantity and reason (SKU is now optional for all reasons)
+      return quantityValid && hasReason;
     });
     
     console.log({
@@ -334,7 +331,7 @@ export class RepairFormComponent implements OnInit {
         const trimmedSku = (part.sku || '').toString().trim();
         const reasonIsFixed = this.isReasonFixedPrice(part.reason_id);
         return {
-          sku: trimmedSku ? trimmedSku : (reasonIsFixed ? 'fixed_price' : ''),
+          sku: trimmedSku || (reasonIsFixed ? 'fixed_price' : ''),
           quantity: part.quantity,
           reason_id: part.reason_id
         };
@@ -429,12 +426,6 @@ export class RepairFormComponent implements OnInit {
         }
         if (!partGroup.get('reason_id')?.value) {
           partErrors.push('reason');
-        }
-        if (!sku) {
-          const reasonId = partGroup.get('reason_id')?.value as number | null | undefined;
-          if (!this.isReasonFixedPrice(reasonId)) {
-            partErrors.push('reason must be fixed price when no SKU');
-          }
         }
 
         if (partErrors.length > 0) {

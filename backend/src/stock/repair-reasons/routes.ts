@@ -123,3 +123,117 @@ export const repair_reasons_routes = new Elysia({ prefix: '/repair-reasons' })
       description: 'Delete a repair reason by ID'
     }
   })
+
+  // Model-specific pricing routes
+  .get('/:id/with-model-prices', async (ctx) => {
+    const { currentRole, currentTenantId, params } = ctx as any
+    const tenantScoped = currentRole === 'super_admin' ? undefined : currentTenantId
+    
+    const result = await repairReasonsController.getByIdWithModelPrices(parseInt(params.id), tenantScoped)
+    return result
+  }, {
+    params: t.Object({
+      id: t.String()
+    }),
+    detail: {
+      tags: ['Repair Reasons'],
+      summary: 'Get repair reason with model prices',
+      description: 'Get a repair reason by ID including all model-specific prices'
+    }
+  })
+
+  .get('/:id/model-prices', async (ctx) => {
+    const { currentRole, currentTenantId, params } = ctx as any
+    const tenantScoped = currentRole === 'super_admin' ? undefined : currentTenantId
+    
+    const result = await repairReasonsController.getModelPrices(parseInt(params.id), tenantScoped)
+    return result
+  }, {
+    params: t.Object({
+      id: t.String()
+    }),
+    detail: {
+      tags: ['Repair Reasons'],
+      summary: 'Get model-specific prices',
+      description: 'Get all model-specific prices for a repair reason'
+    }
+  })
+
+  .post('/:id/model-prices', async (ctx) => {
+    const { currentTenantId, params, body } = ctx as any
+    
+    const payload = {
+      ...body,
+      repair_reason_id: parseInt(params.id)
+    }
+    
+    const result = await repairReasonsController.createModelPrice(payload, currentTenantId)
+    return result
+  }, {
+    params: t.Object({
+      id: t.String()
+    }),
+    body: t.Object({
+      model_name: t.String({
+        minLength: 1,
+        maxLength: 255,
+        description: 'Device model name (e.g., iPhone 14 Pro, iPhone 15)'
+      }),
+      fixed_price: t.Number({
+        minimum: 0,
+        description: 'Fixed price for this model (must be >= 0)'
+      }),
+      status: t.Optional(t.Boolean())
+    }),
+    detail: {
+      tags: ['Repair Reasons'],
+      summary: 'Create model-specific price',
+      description: 'Create a model-specific price for a repair reason'
+    }
+  })
+
+  .put('/model-prices/:priceId', async (ctx) => {
+    const { currentRole, currentTenantId, params, body } = ctx as any
+    const tenantScoped = currentRole === 'super_admin' ? undefined : currentTenantId
+    
+    const result = await repairReasonsController.updateModelPrice(parseInt(params.priceId), body, tenantScoped)
+    return result
+  }, {
+    params: t.Object({
+      priceId: t.String()
+    }),
+    body: t.Object({
+      model_name: t.Optional(t.String({
+        minLength: 1,
+        maxLength: 255,
+        description: 'Device model name'
+      })),
+      fixed_price: t.Optional(t.Number({
+        minimum: 0,
+        description: 'Fixed price for this model (must be >= 0)'
+      })),
+      status: t.Optional(t.Boolean())
+    }),
+    detail: {
+      tags: ['Repair Reasons'],
+      summary: 'Update model-specific price',
+      description: 'Update a model-specific price'
+    }
+  })
+
+  .delete('/model-prices/:priceId', async (ctx) => {
+    const { currentRole, currentTenantId, params } = ctx as any
+    const tenantScoped = currentRole === 'super_admin' ? undefined : currentTenantId
+    
+    const result = await repairReasonsController.deleteModelPrice(parseInt(params.priceId), tenantScoped)
+    return result
+  }, {
+    params: t.Object({
+      priceId: t.String()
+    }),
+    detail: {
+      tags: ['Repair Reasons'],
+      summary: 'Delete model-specific price',
+      description: 'Delete a model-specific price by ID'
+    }
+  })

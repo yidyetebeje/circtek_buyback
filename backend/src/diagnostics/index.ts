@@ -32,7 +32,9 @@ export const diagnostic_routes = new Elysia({ prefix: '/diagnostics' })
 	// Upload test results from desktop app
 	.post('/tests/upload', async (ctx) => {
 		const { body, currentUserId, currentTenantId,warehouseId} = ctx as any
-		return controller.upload(body, Number(currentUserId), Number(currentTenantId), warehouseId)
+		// Extract custom timestamps if present
+		const { customTimestamps, ...uploadBody } = body as any
+		return controller.upload(uploadBody, Number(currentUserId), Number(currentTenantId), warehouseId, customTimestamps)
 	}, { body: DiagnosticUploadBody, detail: { tags: ['Diagnostics'], summary: 'Upload test result' } })
 	.use(diagnostics_stats_routes)
 

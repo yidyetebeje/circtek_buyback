@@ -191,7 +191,7 @@ export class DiagnosticsRepository {
 		return rows as unknown as DiagnosticPublic[]
 	}
 
-	async upload(input: DiagnosticUploadInput, testerId: number, tenantId: number, warehouseId: number): Promise<DiagnosticPublic | undefined> {
+	async upload(input: DiagnosticUploadInput, testerId: number, tenantId: number, warehouseId: number, customTimestamps?: { created_at?: string | Date; updated_at?: string | Date }): Promise<DiagnosticPublic | undefined> {
 		// Ensure device exists or create it
 		const deviceToInsert = {
 			make: input.device.make,
@@ -264,6 +264,9 @@ export class DiagnosticsRepository {
 			eSIM_erasure: input.test.eSIM_erasure as any,
 			serial_number: input.test.serial_number ?? deviceToInsert.serial,
 			imei: input.test.imei ?? deviceToInsert.imei,
+			// Use custom timestamps if provided, otherwise let database use defaults
+			...(customTimestamps?.created_at && { created_at: new Date(customTimestamps.created_at) }),
+			...(customTimestamps?.updated_at && { updated_at: new Date(customTimestamps.updated_at) }),
 		}
 
 		const id = await this.database.insert(test_results).values(toInsertTest as any).$returningId();

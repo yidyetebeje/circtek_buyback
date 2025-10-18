@@ -1,6 +1,6 @@
 import { and, count, desc, eq, gte, lte, like, or, sql } from "drizzle-orm"
 import { db } from "../../db"
-import { repair_items, repairs, devices, repair_reasons, warehouses, users } from "../../db/circtek.schema"
+import { repair_items, repairs, devices, repair_reasons, warehouses, users, repair_reason_model_prices } from "../../db/circtek.schema"
 import { purchase_items } from "../../db/circtek.schema"
 import { RepairConsumeItemsInput, RepairListResult, RepairRecord, RepairWithItems, RepairCreateInput, RepairItemRecord, RepairQueryInput } from "./types"
 
@@ -241,6 +241,46 @@ export class RepairsRepository {
       })
       .from(repair_reasons)
       .where(and(eq(repair_reasons.id, id), eq(repair_reasons.tenant_id, tenant_id)))
+    
+    return row
+  }
+
+  async getRepairReasonPrice(reason_id: number, model_name: string, tenant_id: number): Promise<{ fixed_price: string | null; is_model_specific: boolean } | undefined> {
+    // First, try to get model-specific price
+    const [modelPrice] = await this.database
+      .select({
+        fixed_price: repair_reason_model_prices.fixed_price,
+      })
+      .from(repair_reason_model_prices)
+      .where(and(
+        eq(repair_reason_model_prices.repair_reason_id, reason_id),
+        eq(repair_reason_model_prices.model_name, model_name),
+        eq(repair_reason_model_prices.tenant_id, tenant_id),
+        eq(repair_reason_model_prices.status, true)
+      ))
+    
+    if (modelPrice?.fixed_price) {
+      return { fixed_price: modelPrice.fixed_price, is_model_specific: true }
+    }
+
+    // If no model-specific price, fall back to default price
+    const reason = await this.getRepairReasonById(reason_id, tenant_id)
+    if (reason) {
+      return { fixed_price: reason.fixed_price, is_model_specific: false }
+    }
+
+    return undefined
+  }
+
+  async getDeviceById(device_id: number, tenant_id: number): Promise<{ id: number; model_name: string | null; sku: string | null } | undefined> {
+    const [row] = await this.database
+      .select({
+        id: devices.id,
+        model_name: devices.model_name,
+        sku: devices.sku,
+      })
+      .from(devices)
+      .where(and(eq(devices.id, device_id), eq(devices.tenant_id, tenant_id)))
     
     return row
   }

@@ -38,3 +38,37 @@ export interface RepairReasonListResponse {
     limit: number;
   };
 }
+
+// Model-specific pricing interfaces
+export interface RepairReasonModelPriceRecord {
+  id: number;
+  repair_reason_id: number;
+  model_name: string;
+  fixed_price: number;
+  status: boolean;
+  tenant_id: number;
+  created_at: Date | null;
+  updated_at: Date | null;
+}
+
+export interface RepairReasonModelPriceCreateInput {
+  model_name: string;
+  fixed_price: number;
+  status?: boolean;
+}
+
+export interface RepairReasonModelPriceUpdateInput {
+  model_name?: string;
+  fixed_price?: number;
+  status?: boolean;
+}
+
+export interface RepairReasonWithModelPrices extends RepairReasonRecord {
+  model_prices: RepairReasonModelPriceRecord[];
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  message: string;
+  status: number;
+}

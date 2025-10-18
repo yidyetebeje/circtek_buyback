@@ -138,7 +138,7 @@ export class RepairsController {
       if (!repair) return { data: null, message: 'Repair not found', status: 404 }
 
       // Step 1: Allocate all items from purchases (fail fast if insufficient)
-      const allocationsResult = await this.allocateAllItems(payload.items, tenant_id)
+      const allocationsResult = await this.allocateAllItems(payload.items, repair.device_id, tenant_id)
       if (!allocationsResult.success || !allocationsResult.data) {
         return { data: null, message: allocationsResult.message, status: 400 }
       }
@@ -201,16 +201,28 @@ export class RepairsController {
     }
   }
 
-  private async allocateAllItems(items: RepairConsumeItemsInput['items'], tenant_id: number) {
+  private async allocateAllItems(items: RepairConsumeItemsInput['items'], device_id: number, tenant_id: number) {
     type ItemAllocation = { sku: string; quantity: number; reason_id: number; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }>; is_fixed_price?: boolean; fixed_price?: number }
     const allocations: ItemAllocation[] = []
 
+    // Get device information to determine model-specific pricing
+    const device = await this.repo.getDeviceById(device_id, tenant_id)
+    console.log("device information", device)
+    if (!device) {
+      return { 
+        success: false, 
+        message: 'Device not found',
+        data: null 
+      }
+    }
+
     for (const item of items) {
       // Handle fixed-price items (service-only repairs)
-      if (item.sku === 'fixed_price') {
-        const repairReason = await this.repo.getRepairReasonById(item.reason_id, tenant_id)
+      if (item.sku === 'fixed_price' || item.sku === '') {
+        // Get model-specific or default price
+        const priceInfo = await this.repo.getRepairReasonPrice(item.reason_id, device.model_name || '', tenant_id)
         
-        if (!repairReason) {
+        if (!priceInfo) {
           // Rollback any successful allocations before failing
           await this.rollbackAllocations(allocations, tenant_id)
           return { 
@@ -220,12 +232,17 @@ export class RepairsController {
           }
         }
 
-        if (!repairReason.fixed_price) {
+        if (!priceInfo.fixed_price) {
           // Rollback any successful allocations before failing
           await this.rollbackAllocations(allocations, tenant_id)
+          
+          // Get the repair reason name for a better error message
+          const repairReason = await this.repo.getRepairReasonById(item.reason_id, tenant_id)
+          const reasonName = repairReason?.name || 'Unknown'
+          
           return { 
             success: false, 
-            message: `Repair reason "${repairReason.name}" does not have a fixed price`,
+            message: `Repair reason "${reasonName}" does not have a fixed price${device.model_name ? ` for model ${device.model_name}` : ''}`,
             data: null 
           }
         }
@@ -236,7 +253,7 @@ export class RepairsController {
           reason_id: item.reason_id, 
           allocations: [],
           is_fixed_price: true,
-          fixed_price: Number(repairReason.fixed_price)
+          fixed_price: Number(priceInfo.fixed_price)
         })
         continue
       }

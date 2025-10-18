@@ -28,3 +28,31 @@ export interface RepairReasonQueryInput {
   status?: boolean
   tenant_id?: number
 }
+
+export interface RepairReasonModelPriceRecord {
+  id: number
+  repair_reason_id: number
+  model_name: string
+  fixed_price: string
+  status: boolean
+  tenant_id: number
+  created_at: Date | null
+  updated_at: Date | null
+}
+
+export interface RepairReasonModelPriceCreateInput {
+  repair_reason_id: number
+  model_name: string
+  fixed_price: number
+  status?: boolean
+}
+
+export interface RepairReasonModelPriceUpdateInput {
+  model_name?: string
+  fixed_price?: number
+  status?: boolean
+}
+
+export interface RepairReasonWithModelPrices extends RepairReasonRecord {
+  model_prices: RepairReasonModelPriceRecord[]
+}

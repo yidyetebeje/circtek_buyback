@@ -85,7 +85,7 @@ export class DiagnosticsController {
 		}
 	}
 
-	async upload(body: DiagnosticUploadInput, testerId: number, tenantId: number, warehouseId: number): Promise<response<DiagnosticPublic | null>> {
+	async upload(body: DiagnosticUploadInput, testerId: number, tenantId: number, warehouseId: number, customTimestamps?: { created_at?: string | Date; updated_at?: string | Date }): Promise<response<DiagnosticPublic | null>> {
 		try {
 			console.log('upload', body)
 			
@@ -123,7 +123,7 @@ export class DiagnosticsController {
 			// console.log('Test authorized:', authResult.reason, 'Balance remaining:', authResult.balance_remaining)
 
 		// Step 2: Process the test upload
-		const created = await this.repo.upload(body, testerId, tenantId, warehouseId)
+		const created = await this.repo.upload(body, testerId, tenantId, warehouseId, customTimestamps)
 		if (created?.device_id) {
 			
 			await deviceEventsService.createDeviceEvent({
@@ -189,7 +189,7 @@ export class DiagnosticsController {
 	}
 
 	async batchMigrate(
-		records: DiagnosticUploadInput[],
+		records: (DiagnosticUploadInput & { customTimestamps?: { created_at?: string | Date; updated_at?: string | Date } })[],
 		testerId: number,
 		tenantId: number,
 		warehouseId: number
@@ -202,7 +202,8 @@ export class DiagnosticsController {
 
 		for (let i = 0; i < records.length; i++) {
 			try {
-				const uploadResult = await this.upload(records[i], testerId, tenantId, warehouseId)
+				const { customTimestamps, ...record } = records[i]
+				const uploadResult = await this.upload(record, testerId, tenantId, warehouseId, customTimestamps)
 				if (uploadResult.status === 201) {
 					result.success++
 				} else {

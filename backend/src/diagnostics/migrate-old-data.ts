@@ -34,9 +34,13 @@ function safeJsonParse(value: any): any {
 /**
  * Transform old data record to new format
  */
-function transformOldRecord(oldRecord: any) {
+export function transformOldRecord(oldRecord: any) {
 	const batteryInfo = safeJsonParse(oldRecord.batteryInfo)
 	const testInfo = oldRecord.testInfo || { passedResult: '', failedResult: '', pendingResult: '' }
+
+	// Extract original timestamps from old data
+	const originalCreatedAt = oldRecord.transCreatedAt || oldRecord.createdAt || null
+	const originalUpdatedAt = oldRecord.transUpdatedAt || oldRecord.updatedAt || null
 
 	return {
 		device: {
@@ -73,6 +77,11 @@ function transformOldRecord(oldRecord: any) {
 			serial_number: oldRecord.serial || undefined,
 			imei: oldRecord.imei || undefined,
 		},
+		// Include original timestamps to preserve testing time
+		timestamps: {
+			created_at: originalCreatedAt,
+			updated_at: originalUpdatedAt,
+		},
 	}
 }
 
@@ -89,9 +98,15 @@ export async function migrateOldDataBatch(
 	// Transform all records
 	const transformed = oldRecords.map(transformOldRecord).filter((record) => record.device.model_name !== null)
 
+	// Extract timestamps and separate them from the main data
+	const transformedData = transformed.map(({ timestamps, ...data }) => ({
+		...data,
+		customTimestamps: timestamps,
+	}))
+
 	// Use batch migrate method
 	const response = await controller.batchMigrate(
-		transformed,
+		transformedData,
 		config.testerId,
 		config.tenantId,
 		config.warehouseId
@@ -134,9 +149,17 @@ export async function migrateOldData(
 		}
 		try {
 			const transformed = transformOldRecord(oldRecord)
+			
+			// Extract timestamps from the transformed data
+			const { timestamps, ...uploadData } = transformed
+			
 			const response = await fetch('https://staging-db-api.circtek.io/api/v1/diagnostics/tests/upload', {
 				method: 'POST',
-				body: JSON.stringify(transformed),
+				body: JSON.stringify({
+					...uploadData,
+					// Include custom timestamps in the request body
+					customTimestamps: timestamps,
+				}),
 				headers: {
 					'Content-Type': 'application/json',
 					'Authorization': `Bearer ${config.token}`,
@@ -146,13 +169,14 @@ export async function migrateOldData(
 
 			if (response.status >= 200 && response.status < 300) {
 				result.success++
-				console.log(`✓ Migrated: ${oldRecord.imei || oldRecord.serial}`)
+				console.log(`✓ Migrated: ${oldRecord.imei || oldRecord.serial}${timestamps?.created_at ? ` (preserved timestamp: ${timestamps.created_at})` : ''}`)
 			} else {
 				const responseBody = await response.json()
 				console.log(responseBody, "responseBody")
 				result.failed++
-				result.errors.push({ record: oldRecord, error: response.message })
-				console.error(`✗ Failed: ${oldRecord.imei || oldRecord.serial} - ${response.message}`)
+				const errorMessage = responseBody.message || `HTTP ${response.status}: ${response.statusText}`
+				result.errors.push({ record: oldRecord, error: errorMessage })
+				console.error(`✗ Failed: ${oldRecord.imei || oldRecord.serial} - ${errorMessage}`)
 			}
 		} catch (error) {
 			result.failed++
