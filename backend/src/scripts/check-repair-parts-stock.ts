@@ -210,6 +210,39 @@ async function checkStockAvailability(
 }
 
 /**
+ * Generate CSV for purchase orders
+ */
+function generatePurchaseCSV(items: StockCheck[], title: string): string {
+  const lines: string[] = []
+  
+  // Title row (as comment)
+  lines.push(`# ${title}`)
+  lines.push(`# Generated: ${new Date().toISOString()}`)
+  lines.push('')
+  
+  // Header row
+  lines.push('SKU,Required Quantity,Current Stock,Shortage,Status,Priority')
+  
+  // Data rows
+  for (const item of items) {
+    const shortage = item.required - item.available
+    const status = item.available === 0 ? 'NOT_IN_STOCK' : 'INSUFFICIENT'
+    const priority = item.available === 0 ? 'HIGH' : 'MEDIUM'
+    
+    lines.push([
+      item.sku,
+      item.required,
+      item.available,
+      shortage,
+      status,
+      priority,
+    ].join(','))
+  }
+  
+  return lines.join('\n')
+}
+
+/**
  * Main execution
  */
 async function main() {
@@ -372,7 +405,7 @@ async function main() {
       console.log('\n   Alternative: Import repairs without consuming stock (modify import script)')
     }
 
-    // Save detailed report
+    // Save detailed JSON report
     const reportPath = path.join(path.dirname(csvPath), 'stock-check-report.json')
     const report = {
       timestamp: new Date().toISOString(),
@@ -399,6 +432,31 @@ async function main() {
     
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2))
     console.log(`\n💾 Detailed report saved to: ${reportPath}`)
+
+    // Generate CSV for missing SKUs (to purchase)
+    if (notFound.length > 0) {
+      const missingCsvPath = path.join(path.dirname(csvPath), 'parts-to-purchase-missing.csv')
+      const missingCsvContent = generatePurchaseCSV(notFound, 'Missing SKUs - Not in Stock')
+      fs.writeFileSync(missingCsvPath, missingCsvContent)
+      console.log(`📄 Missing SKUs CSV saved to: ${missingCsvPath}`)
+    }
+
+    // Generate CSV for insufficient SKUs (to increase stock)
+    if (partialStock.length > 0) {
+      const insufficientCsvPath = path.join(path.dirname(csvPath), 'parts-to-purchase-insufficient.csv')
+      const insufficientCsvContent = generatePurchaseCSV(partialStock, 'Insufficient SKUs - Need More Stock')
+      fs.writeFileSync(insufficientCsvPath, insufficientCsvContent)
+      console.log(`📄 Insufficient SKUs CSV saved to: ${insufficientCsvPath}`)
+    }
+
+    // Generate combined CSV for all items to purchase
+    if (insufficient.length > 0) {
+      const allToPurchasePath = path.join(path.dirname(csvPath), 'parts-to-purchase-all.csv')
+      const allToPurchaseContent = generatePurchaseCSV(insufficient, 'All SKUs Needing Stock')
+      fs.writeFileSync(allToPurchasePath, allToPurchaseContent)
+      console.log(`📄 Combined purchase list saved to: ${allToPurchasePath}`)
+      console.log(`   💡 Use this file to create purchase orders`)
+    }
 
     console.log('\n✨ Check completed!')
     process.exit(insufficient.length > 0 ? 1 : 0)
