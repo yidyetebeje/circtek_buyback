@@ -1,6 +1,6 @@
 import { db } from '../db'
-import { devices, users, repair_reasons } from '../db/circtek.schema'
-import { eq, and } from 'drizzle-orm'
+import { devices, users, repair_reasons, repairs, repair_items, device_events } from '../db/circtek.schema'
+import { eq, and, gte } from 'drizzle-orm'
 import { RepairsRepository } from '../stock/repairs/repository'
 import { RepairsController } from '../stock/repairs/controller'
 import * as fs from 'fs'
@@ -185,6 +185,68 @@ async function repairExists(
 }
 
 /**
+ * Parse repair date from CSV
+ */
+function parseRepairDate(dateString: string): Date | null {
+  if (!dateString || dateString.trim() === '') return null
+  
+  try {
+    const date = new Date(dateString)
+    // Check if date is valid
+    if (isNaN(date.getTime())) return null
+    return date
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Update timestamps for repair and its related entities
+ */
+async function updateRepairTimestamps(
+  repairId: number,
+  deviceId: number,
+  customDate: Date,
+  tenantId: number,
+  creationTime: Date
+): Promise<void> {
+  // Update repair timestamps
+  await db
+    .update(repairs)
+    .set({
+      created_at: customDate,
+      updated_at: customDate,
+    })
+    .where(and(eq(repairs.id, repairId), eq(repairs.tenant_id, tenantId)))
+  
+  // Update repair items timestamps
+  await db
+    .update(repair_items)
+    .set({
+      created_at: customDate,
+      updated_at: customDate,
+    })
+    .where(and(eq(repair_items.repair_id, repairId), eq(repair_items.tenant_id, tenantId)))
+  
+  // Update device events timestamps (REPAIR_STARTED and REPAIR_COMPLETED events)
+  // These were created by the controller just now (within the last few seconds)
+  const recentThreshold = new Date(creationTime.getTime() - 5000) // 5 seconds before creation
+  
+  await db
+    .update(device_events)
+    .set({
+      created_at: customDate,
+    })
+    .where(
+      and(
+        eq(device_events.device_id, deviceId),
+        eq(device_events.tenant_id, tenantId),
+        gte(device_events.created_at, recentThreshold)
+      )
+    )
+}
+
+/**
  * Create repair using the controller (with proper business logic)
  */
 async function createRepairWithConsume(
@@ -196,7 +258,7 @@ async function createRepairWithConsume(
   reasonId: number,
   tenantId: number
 ): Promise<{ success: boolean; repairId?: number; error?: string }> {
-  const remarks = `Repair #${record.repair_number}${record.description ? ` - ${record.description}` : ''}`
+  const remarks = `Repair #${record.repair_number}`
   
   // Prepare repair payload
   const payload = {
@@ -214,10 +276,24 @@ async function createRepairWithConsume(
   }
   
   // Create repair with consume
+  const creationTime = new Date() // Capture the time before creation
   const result = await controller.createWithConsume(payload, tenantId, actorId)
   
   if (result.status === 201 && result.data) {
-    return { success: true, repairId: result.data.repair.id }
+    const repairId = result.data.repair.id
+    
+    // Update timestamps if repair_dates exists in CSV
+    const repairDate = parseRepairDate(record.repair_dates)
+    if (repairDate) {
+      try {
+        await updateRepairTimestamps(repairId, deviceId, repairDate, tenantId, creationTime)
+      } catch (error) {
+        console.warn(`⚠️  Warning: Failed to update timestamps for repair ${repairId}:`, error)
+        // Don't fail the import, just warn
+      }
+    }
+    
+    return { success: true, repairId }
   } else {
     return { success: false, error: result.message }
   }
@@ -257,6 +333,14 @@ async function importRepairs(
     rowNum++
     
     try {
+       if(record.partcode.toLowerCase() === 'cameracleaning'){
+           record.partcode = '';
+           record.reason = 'Ultrasonic Camera Cleaning'
+       }
+       if(record.reason.toLowerCase() === 'screen' && (record.partcode.toLowerCase() === 'rfb' || record.description.toLowerCase() === 'rfb')){
+           record.reason = 'GLASS REFURBISHMENT';
+           record.partcode = '';
+       }
       // Skip records without IMEI
       if (!record.imei || record.imei.trim() === '') {
         stats.skipped++
@@ -355,8 +439,11 @@ async function importRepairs(
       }
 
       stats.created++
+      const dateInfo = parseRepairDate(record.repair_dates) 
+        ? ` (Date: ${record.repair_dates})` 
+        : ''
       console.log(
-        `✅ Row ${rowNum}: Created repair #${record.repair_number} for IMEI ${record.imei}, Reason: ${record.reason}, Part: ${record.partcode || 'Service'}`
+        `✅ Row ${rowNum}: Created repair #${record.repair_number} for IMEI ${record.imei}, Reason: ${record.reason}, Part: ${record.partcode || 'Service'}${dateInfo}`
       )
     } catch (error) {
       stats.errors.push({
