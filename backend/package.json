@@ -12,7 +12,8 @@
     "import:repair-reasons": "bun run src/scripts/import-repair-reasons.ts",
     "import:devices": "bun run src/scripts/import-devices-from-repairs.ts",
     "import:users": "bun run src/scripts/import-users-from-repairs.ts",
-    "import:repairs": "bun run src/scripts/import-repairs-from-csv.ts"
+    "import:repairs": "bun run src/scripts/import-repairs-from-csv.ts",
+    "check:stock": "bun run src/scripts/check-repair-parts-stock.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.16",
