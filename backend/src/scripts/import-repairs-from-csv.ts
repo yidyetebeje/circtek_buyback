@@ -43,7 +43,7 @@ interface ImportStats {
   total: number
   skipped: number
   created: number
-  errors: Array<{ row: number; imei: string; reason: string; error: string }>
+  errors: Array<{ row: number; imei: string; reason: string; id: string; error: string }>
   failedRows: RepairCSVRecord[]
 }
 
@@ -362,6 +362,7 @@ async function importRepairs(
           row: rowNum,
           imei: record.imei,
           reason: record.reason,
+          id: record.id,
           error: 'Device not found - run import-devices script first',
         })
         stats.failedRows.push(record)
@@ -376,6 +377,7 @@ async function importRepairs(
         if (!actorId) {
           stats.errors.push({
             row: rowNum,
+            id: record.id,
             imei: record.imei,
             reason: record.reason,
             error: `User "${record.user}" not found - run import-users script first`,
@@ -398,6 +400,7 @@ async function importRepairs(
           row: rowNum,
           imei: record.imei,
           reason: record.reason,
+          id: record.id,
           error: 'Failed to create repair reason',
         })
         stats.failedRows.push(record)
@@ -406,14 +409,7 @@ async function importRepairs(
       }
 
       // Check if repair already exists (prevent duplicates)
-      if (record.repair_number) {
-        const exists = await repairExists(repo, deviceId, record.repair_number, tenantId)
-        if (exists) {
-          stats.skipped++
-          console.log(`⏭️  Row ${rowNum}: Repair #${record.repair_number} already exists for device ${deviceId}`)
-          continue
-        }
-      }
+     
 
       // Create repair using controller
       const createResult = await createRepairWithConsume(
@@ -431,6 +427,7 @@ async function importRepairs(
           row: rowNum,
           imei: record.imei,
           reason: record.reason,
+          id: record.id,
           error: createResult.error || 'Failed to create repair',
         })
         stats.failedRows.push(record)
@@ -450,6 +447,7 @@ async function importRepairs(
         row: rowNum,
         imei: record.imei,
         reason: record.reason,
+        id: record.id,
         error: error instanceof Error ? error.message : String(error),
       })
       stats.failedRows.push(record)
