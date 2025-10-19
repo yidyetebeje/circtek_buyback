@@ -154,6 +154,10 @@ export const DiagnosticUploadBody = t.Object({
 		question_text: t.String(),
 		answer_text: t.String(),
 	}))),
+	customTimestamps: t.Optional(t.Object({
+		created_at: t.Optional(t.String()),
+		updated_at: t.Optional(t.String()),
+	}))
 })
 
 export type DiagnosticUploadInput = Static<typeof DiagnosticUploadBody>
