@@ -9,7 +9,10 @@
     "studio:test": "NODE_ENV=test bunx drizzle-kit studio",
     "dev": "bun run --watch src/index.ts",
     "seed": "bun run src/db/seed.ts",
-    "import:repair-reasons": "bun run src/scripts/import-repair-reasons.ts"
+    "import:repair-reasons": "bun run src/scripts/import-repair-reasons.ts",
+    "import:devices": "bun run src/scripts/import-devices-from-repairs.ts",
+    "import:users": "bun run src/scripts/import-users-from-repairs.ts",
+    "import:repairs": "bun run src/scripts/import-repairs-from-csv.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.16",

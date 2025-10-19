@@ -21,15 +21,15 @@ import * as path from 'path'
 const API_CONFIG = {
 	baseUrl: 'http://localhost:3000/v1/user/getCloudDbDevices',
 	clientId: 0,
-	pageSize: 100, // Fetch 500 records per page
+	pageSize: 1000, // Fetch 500 records per page
 	searchText: '',
 	searchType: 'imei',
 }
 
 // Migration Configuration
 const MIGRATION_CONFIG = {
-	testerId: 9,    // Update if needed
-	tenantId: 10,    // Update if needed
+	testerId: 5,    // Update if needed
+	tenantId: 2,    // Update if needed
 	warehouseId: 1, // Update if needed
 }
 
@@ -183,84 +183,84 @@ async function runMigrationFromLiveAPI() {
 	}
 
 	// Read the data from response.json for migration
-	let oldData: any[] = []
-	try {
-		const fileContent = fs.readFileSync('response.json', 'utf8')
-		oldData = JSON.parse(fileContent)
-		console.log(`📖 Loaded ${oldData.length} records from response.json`)
-	} catch (error) {
-		console.error('❌ Failed to read response.json:', error)
-		process.exit(1)
-	}
+	// let oldData: any[] = []
+	// try {
+	// 	const fileContent = fs.readFileSync('response.json', 'utf8')
+	// 	oldData = JSON.parse(fileContent)
+	// 	console.log(`📖 Loaded ${oldData.length} records from response.json`)
+	// } catch (error) {
+	// 	console.error('❌ Failed to read response.json:', error)
+	// 	process.exit(1)
+	// }
 
 	
-	const firstRecord = oldData[0]
-	const config = {
-		testerId: firstRecord.testerId || MIGRATION_CONFIG.testerId,
-		tenantId: firstRecord.clientId || MIGRATION_CONFIG.tenantId,
-		warehouseId: firstRecord.warehouseId || MIGRATION_CONFIG.warehouseId,
-	}
+	// const firstRecord = oldData[0]
+	// const config = {
+	// 	testerId: firstRecord.testerId || MIGRATION_CONFIG.testerId,
+	// 	tenantId: firstRecord.clientId || MIGRATION_CONFIG.tenantId,
+	// 	warehouseId: firstRecord.warehouseId || MIGRATION_CONFIG.warehouseId,
+	// }
 
-	console.log('📋 Migration Configuration:')
-	console.log(`   Tester ID: ${config.testerId}`)
-	console.log(`   Tenant ID: ${config.tenantId}`)
-	console.log(`   Warehouse ID: ${config.warehouseId}`)
-	console.log()
+	// console.log('📋 Migration Configuration:')
+	// console.log(`   Tester ID: ${config.testerId}`)
+	// console.log(`   Tenant ID: ${config.tenantId}`)
+	// console.log(`   Warehouse ID: ${config.warehouseId}`)
+	// console.log()
 
-	// Step 3: Migrate data
-	console.log('🔄 Starting migration process...')
-	console.log(`📊 Total records to migrate: ${oldData.length}`)
-	console.log('⏳ This may take a while...\n')
+	// // Step 3: Migrate data
+	// console.log('🔄 Starting migration process...')
+	// console.log(`📊 Total records to migrate: ${oldData.length}`)
+	// console.log('⏳ This may take a while...\n')
 
-	// Choose migration method based on data size
-	const useBatch = oldData.length > 50
-	console.log(`📦 Using ${useBatch ? 'batch' : 'detailed'} migration method\n`)
+	// // Choose migration method based on data size
+	// const useBatch = oldData.length > 50
+	// console.log(`📦 Using ${useBatch ? 'batch' : 'detailed'} migration method\n`)
 
-	const migrationStartTime = Date.now()
+	// const migrationStartTime = Date.now()
 
-	const result = useBatch
-		? await migrateOldDataBatch(oldData, config)
-		: await migrateOldData(oldData, config)
+	// const result = useBatch
+	// 	? await migrateOldDataBatch(oldData, config)
+	// 	: await migrateOldData(oldData, config)
 
-	const migrationDuration = ((Date.now() - migrationStartTime) / 1000).toFixed(2)
-	const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2)
+	// const migrationDuration = ((Date.now() - migrationStartTime) / 1000).toFixed(2)
+	// const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2)
 
-	// Step 4: Display results
-	console.log('\n' + '='.repeat(60))
-	console.log('📈 MIGRATION COMPLETE')
-	console.log('='.repeat(60))
-	console.log(`✅ Success: ${result.success}`)
-	console.log(`❌ Failed: ${result.failed}`)
-	console.log(`📊 Success Rate: ${((result.success / oldData.length) * 100).toFixed(1)}%`)
-	console.log(`⏱️  Fetch Duration: ${((migrationStartTime - startTime) / 1000).toFixed(2)}s`)
-	console.log(`⏱️  Migration Duration: ${migrationDuration}s`)
-	console.log(`⏱️  Total Duration: ${totalDuration}s`)
+	// // Step 4: Display results
+	// console.log('\n' + '='.repeat(60))
+	// console.log('📈 MIGRATION COMPLETE')
+	// console.log('='.repeat(60))
+	// console.log(`✅ Success: ${result.success}`)
+	// console.log(`❌ Failed: ${result.failed}`)
+	// console.log(`📊 Success Rate: ${((result.success / oldData.length) * 100).toFixed(1)}%`)
+	// console.log(`⏱️  Fetch Duration: ${((migrationStartTime - startTime) / 1000).toFixed(2)}s`)
+	// console.log(`⏱️  Migration Duration: ${migrationDuration}s`)
+	// console.log(`⏱️  Total Duration: ${totalDuration}s`)
 
-	if (result.errors.length > 0) {
-		console.log('\n❌ Errors:')
-		result.errors.slice(0, 10).forEach((err, idx) => {
-			const identifier = err.record.imei || err.record.serial || err.record.lpn || 'unknown'
-			console.log(`  ${idx + 1}. ${identifier}: ${err.error}`)
-		})
+	// if (result.errors.length > 0) {
+	// 	console.log('\n❌ Errors:')
+	// 	result.errors.slice(0, 10).forEach((err, idx) => {
+	// 		const identifier = err.record.imei || err.record.serial || err.record.lpn || 'unknown'
+	// 		console.log(`  ${idx + 1}. ${identifier}: ${err.error}`)
+	// 	})
 		
-		if (result.errors.length > 10) {
-			console.log(`  ... and ${result.errors.length - 10} more errors`)
-		}
+	// 	if (result.errors.length > 10) {
+	// 		console.log(`  ... and ${result.errors.length - 10} more errors`)
+	// 	}
 
-		// Save errors to file
-		try {
-			await Bun.write(
-				'migration-errors.json',
-				JSON.stringify(result.errors, null, 2)
-			)
-			console.log('\n💾 All errors saved to: migration-errors.json')
-		} catch (error) {
-			console.error('Failed to save errors to file:', error)
-		}
-	}
+	// 	// Save errors to file
+	// 	try {
+	// 		await Bun.write(
+	// 			'migration-errors.json',
+	// 			JSON.stringify(result.errors, null, 2)
+	// 		)
+	// 		console.log('\n💾 All errors saved to: migration-errors.json')
+	// 	} catch (error) {
+	// 		console.error('Failed to save errors to file:', error)
+	// 	}
+	// }
 
-	console.log('\n✨ Migration process finished!')
-	console.log('='.repeat(60))
+	// console.log('\n✨ Migration process finished!')
+	// console.log('='.repeat(60))
 }
 
 // Run the migration

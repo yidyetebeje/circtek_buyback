@@ -64,11 +64,11 @@ async function runMigrationFromFile() {
 
 	// Configuration - UPDATE THESE VALUES
 	const config = {
-		testerId: 4,    // Replace with actual tester ID
-		tenantId: 16,    // Replace with actual tenant ID
-		warehouseId: 18, // Replace with actual warehouse ID
-		token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjQsInJvbGUiOiJ0ZXN0ZXIiLCJ0ZW5hbnRfaWQiOjE2LCJ3YXJlaG91c2VfaWQiOjE4LCJtYW5hZ2VkX3Nob3BfaWQiOm51bGwsImV4cCI6MTc2MjM2NDA2NywiaWF0IjoxNzU5NzcyMDY3fQ.7Xv7fUR2MmnsR27hmJ3vpCIC86_3ffd_0BsUiysDoNY'
-	}
+		testerId: 5,    // Replace with actual tester ID
+		tenantId: 2,    // Replace with actual tenant ID
+		warehouseId: 1, // Replace with actual warehouse ID
+		token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjUsInJvbGUiOiJ0ZXN0ZXIiLCJ0ZW5hbnRfaWQiOjIsIndhcmVob3VzZV9pZCI6MSwibWFuYWdlZF9zaG9wX2lkIjpudWxsLCJleHAiOjE3NjM0NTE0MTYsImlhdCI6MTc2MDg1OTQxNn0.xcXoC2FI9KTFjdLqRIdEwWuzJRn-XDLmDm-5UcP2DNM"
+ 	}
 
 	console.log('📋 Configuration:')
 	console.log(`   Tester ID: ${config.testerId}`)

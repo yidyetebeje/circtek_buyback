@@ -132,8 +132,7 @@ export async function migrateOldData(
 	oldRecords: any[],
 	config: MigrationConfig
 ): Promise<MigrationResult> {
-	const repo = new DiagnosticsRepository(db)
-	const controller = new DiagnosticsController(repo)
+	
 
 	const result: MigrationResult = {
 		success: 0,
@@ -147,13 +146,21 @@ export async function migrateOldData(
 			console.log(`✅ Migrated: ${count} records`)
 			await new Promise(resolve => setTimeout(resolve, 1000))
 		}
+		if (oldRecord.clientId !== 15){
+			console.log(oldRecord.clientId, "oldRecord.clientId")
+			continue;
+		}
 		try {
 			const transformed = transformOldRecord(oldRecord)
+			
+			if(transformed.device.make === null || transformed.device.model_name == null){
+				continue;
+			}
 			
 			// Extract timestamps from the transformed data
 			const { timestamps, ...uploadData } = transformed
 			
-			const response = await fetch('https://staging-db-api.circtek.io/api/v1/diagnostics/tests/upload', {
+			const response = await fetch('https://api.circtek.io/api/v1/diagnostics/tests/upload', {
 				method: 'POST',
 				body: JSON.stringify({
 					...uploadData,

@@ -344,7 +344,7 @@ export class PurchasesRepository {
         if (identifiers && identifiers.length > 0) {
           for (const identifier of identifiers) {
             try {
-              await this.ensureStockExistsForSku(item.sku, tenant_id, receiveData.warehouse_id)
+              await this.ensureStockExistsForSku(item.sku, tenant_id, receiveData.warehouse_id, false)
               const deviceId = await this.ensureDeviceForIdentifier(item.sku, identifier, tenant_id, receiveData.warehouse_id)
               
               if (!deviceId) {
@@ -379,7 +379,7 @@ export class PurchasesRepository {
         } else {
           try {
             // Ensure stock exists for this SKU before inserting received_items
-            await this.ensureStockExistsForSku(item.sku, tenant_id, receiveData.warehouse_id)
+            await this.ensureStockExistsForSku(item.sku, tenant_id, receiveData.warehouse_id, true)
             
             const [result] = await this.database.insert(received_items).values({
               purchase_id: receiveData.purchase_id,
@@ -636,7 +636,7 @@ export class PurchasesRepository {
     return created.id
   }
 
-  private async ensureStockExistsForSku(skuValue: string, tenant_id: number, warehouse_id: number): Promise<void> {
+  private async ensureStockExistsForSku(skuValue: string, tenant_id: number, warehouse_id: number, is_part: boolean): Promise<void> {
     const [existing] = await this.database
       .select({ id: stock.id })
       .from(stock)
@@ -653,7 +653,7 @@ export class PurchasesRepository {
         warehouse_id,
         quantity: 0,
         tenant_id,
-        is_part: false,
+        is_part,
       })
     } catch (error: any) {
       // If SKU already exists globally but not for this warehouse, that's a schema issue
