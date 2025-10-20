@@ -365,7 +365,8 @@ export class RepairsRepository {
         if (r.warehouse_id) partsConditions.push(eq(repairs.warehouse_id, r.warehouse_id))
         if (filters.reason_id) partsConditions.push(eq(repair_items.reason_id, filters.reason_id))
 
-        const parts = await this.database
+        // Get regular parts (non-fixed_price)
+        const regularParts = await this.database
           .select({
             sku: repair_items.sku,
             usage_count: sql<number>`COUNT(${repair_items.id})`,
@@ -375,10 +376,46 @@ export class RepairsRepository {
           .from(repairs)
           .innerJoin(repair_items, eq(repairs.id, repair_items.repair_id))
           .innerJoin(devices, eq(repairs.device_id, devices.id))
-          .where(and(...partsConditions))
+          .where(and(...partsConditions, sql`${repair_items.sku} != 'fixed_price'`))
           .groupBy(repair_items.sku)
           .orderBy(desc(sql<number>`COUNT(${repair_items.id})`))
           .limit(5)
+
+        // Get fixed_price entries grouped by reason
+        const fixedPriceParts = await this.database
+          .select({
+            sku: sql<string>`CONCAT('fixed_price (', ${repair_reasons.name}, ')')`.as('sku'),
+            usage_count: sql<number>`COUNT(${repair_items.id})`,
+            total_quantity: sql<number>`SUM(${repair_items.quantity})`,
+            total_cost: sql<string>`SUM(${repair_items.cost} * ${repair_items.quantity})`,
+          })
+          .from(repairs)
+          .innerJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+          .innerJoin(devices, eq(repairs.device_id, devices.id))
+          .innerJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
+          .where(and(...partsConditions, eq(repair_items.sku, 'fixed_price')))
+          .groupBy(repair_reasons.id, repair_reasons.name)
+          .orderBy(desc(sql<number>`COUNT(${repair_items.id})`))
+          .limit(5)
+
+        // Combine both lists and take top 5
+        const allParts = [
+          ...regularParts.map(p => ({
+            sku: p.sku as string,
+            usage_count: Number(p.usage_count),
+            total_quantity: Number(p.total_quantity),
+            total_cost: Number(p.total_cost),
+          })),
+          ...fixedPriceParts.map(p => ({
+            sku: p.sku as string,
+            usage_count: Number(p.usage_count),
+            total_quantity: Number(p.total_quantity),
+            total_cost: Number(p.total_cost),
+          }))
+        ]
+          .filter(p => p.sku !== null)
+          .sort((a, b) => b.usage_count - a.usage_count)
+          .slice(0, 5)
 
         return {
           model_name: r.model_name || 'Unknown',
@@ -389,14 +426,7 @@ export class RepairsRepository {
           total_quantity_consumed: Number(r.total_quantity_consumed),
           total_cost: Number(r.total_cost),
           average_cost_per_repair: Number(r.total_repairs) > 0 ? Number(r.total_cost) / Number(r.total_repairs) : 0,
-          most_common_parts: parts
-            .filter(p => p.sku !== null) // Filter out null SKUs
-            .map(p => ({
-              sku: p.sku as string,
-              usage_count: Number(p.usage_count),
-              total_quantity: Number(p.total_quantity),
-              total_cost: Number(p.total_cost),
-            })),
+          most_common_parts: allParts,
         }
       })
     )
