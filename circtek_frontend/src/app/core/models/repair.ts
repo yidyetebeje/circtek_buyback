@@ -142,6 +142,7 @@ export interface ModelAnalytics {
   warehouse_id: number | null;
   warehouse_name: string | null;
   total_repairs: number;
+  unique_devices: number;
   total_parts_used: number;
   total_quantity_consumed: number;
   total_cost: number;

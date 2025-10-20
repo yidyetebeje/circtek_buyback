@@ -286,6 +286,7 @@
                   <th>Phone Model</th>
                   <th>Warehouse</th>
                   <th class="text-right">Repairs</th>
+                  <th class="text-right">Unique Devices</th>
                   <th class="text-right">Parts</th>
                   <th class="text-right">Quantity</th>
                   <th class="text-right">Total Spend</th>
@@ -299,6 +300,7 @@
                     <td class="font-semibold">{{ model.model_name }}</td>
                     <td>{{ model.warehouse_name || 'All' }}</td>
                     <td class="text-right">{{ formatNumber(model.total_repairs) }}</td>
+                    <td class="text-right">{{ formatNumber(model.unique_devices) }}</td>
                     <td class="text-right">{{ formatNumber(model.total_parts_used) }}</td>
                     <td class="text-right">{{ formatNumber(model.total_quantity_consumed) }}</td>
                     <td class="text-right font-semibold">{{ formatCurrency(model.total_cost) }}</td>
@@ -319,7 +321,7 @@
                   
                   @if (isModelExpanded(model.model_name + (model.warehouse_id || ''))) {
                     <tr>
-                      <td colspan="8" class="bg-base-200">
+                      <td colspan="9" class="bg-base-200">
                         <div class="p-4">
                           <h4 class="font-semibold mb-3">Most Common Parts for {{ model.model_name }}</h4>
                           <div class="overflow-x-auto">

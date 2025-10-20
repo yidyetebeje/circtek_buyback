@@ -424,6 +424,7 @@ export class RepairsRepository {
           warehouse_id: r.warehouse_id,
           warehouse_name: r.warehouse_name,
           total_repairs: Number(r.total_repairs),
+          unique_devices: Number(r.unique_devices),
           total_parts_used: Number(r.total_parts_used),
           total_quantity_consumed: Number(r.total_quantity_consumed),
           total_cost: Number(r.total_cost),
