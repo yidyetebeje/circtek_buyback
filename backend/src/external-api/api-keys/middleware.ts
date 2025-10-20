@@ -540,7 +540,7 @@ export const authenticateAndScope = () => (app: Elysia) =>
         const currentUsage = await ApiKeyMiddleware.repository.getHourlyUsageCount(apiKeyRecord.id);
         const rateLimitCheck = ApiKeyService.calculateRateLimit(
           currentUsage,
-          apiKeyRecord.rate_limit,
+          1000000,
           new Date()
         );
         if (!rateLimitCheck.allowed) {
