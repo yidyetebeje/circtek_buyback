@@ -92,6 +92,8 @@ export class RepairComponent {
       return { label: 'Add Repair Reason' };
     } else if (tab === 'dead-imei') {
       return { label: 'Add Dead IMEI' };
+    } else if (tab === 'analytics') {
+      return { label: 'View Detailed Analytics' };
     }
     return null;
   });
@@ -615,8 +617,9 @@ export class RepairComponent {
       this.router.navigate(['/repair/repair-reasons/add']);
     } else if (tab === 'dead-imei') {
       this.router.navigate(['/repair/dead-imei/add']);
+    } else if (tab === 'analytics') {
+      this.router.navigate(['/repair/analytics']);
     }
-    // analytics tab has no primary action
   }
 
   onCellAction(event: { action: string; row: RepairRow }) {
