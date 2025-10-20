@@ -180,3 +180,39 @@ export type RepairAnalytics = {
   by_model: ModelAnalytics[]
   by_reason: ReasonAnalytics[]
 }
+
+// IMEI analytics query
+export const IMEIAnalyticsQuery = t.Object({
+  date_from: t.Optional(t.String()),
+  date_to: t.Optional(t.String()),
+  warehouse_id: t.Optional(t.Number()),
+  model_name: t.Optional(t.String()),
+  reason_id: t.Optional(t.Number()),
+  search: t.Optional(t.String()),
+  page: t.Optional(t.Number({ default: 1 })),
+  limit: t.Optional(t.Number({ default: 10 })),
+})
+
+export type IMEIAnalyticsQueryInput = Static<typeof IMEIAnalyticsQuery>
+
+// IMEI-level analytics
+export type IMEIAnalytics = {
+  device_id: number
+  device_imei: string
+  device_serial: string | null
+  device_sku: string
+  model_name: string | null
+  warehouse_name: string | null
+  total_repairs: number
+  total_parts_used: number
+  total_quantity_consumed: number
+  total_cost: number
+  parts_breakdown: SkuUsage[]
+}
+
+export type IMEIAnalyticsResult = {
+  items: IMEIAnalytics[]
+  total: number
+  page: number
+  limit: number
+}

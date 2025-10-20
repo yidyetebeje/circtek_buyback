@@ -488,6 +488,140 @@ export class RepairsRepository {
     }))
   }
 
+  async getIMEIAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number; search?: string; page: number; limit: number }) {
+    const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
+    
+    if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
+    if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
+    if (filters.reason_id) conditions.push(eq(repair_items.reason_id, filters.reason_id))
+    if (filters.search) {
+      conditions.push(
+        or(
+          like(devices.imei, `%${filters.search}%`),
+          like(devices.serial, `%${filters.search}%`)
+        )
+      )
+    }
+
+    // Get total count
+    const [countResult] = await this.database
+      .select({ count: sql<number>`COUNT(DISTINCT ${repairs.device_id})` })
+      .from(repairs)
+      .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+      .leftJoin(devices, eq(repairs.device_id, devices.id))
+      .where(and(...conditions))
+
+    const total = Number(countResult?.count || 0)
+
+    // Get paginated device list with aggregated stats
+    const offset = (filters.page - 1) * filters.limit
+    const results = await this.database
+      .select({
+        device_id: devices.id,
+        device_imei: devices.imei,
+        device_serial: devices.serial,
+        device_sku: devices.sku,
+        model_name: devices.model_name,
+        warehouse_name: warehouses.name,
+        total_repairs: sql<number>`COUNT(DISTINCT ${repairs.id})`,
+        total_parts_used: sql<number>`COUNT(${repair_items.id})`,
+        total_quantity_consumed: sql<number>`COALESCE(SUM(${repair_items.quantity}), 0)`,
+        total_cost: sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`,
+      })
+      .from(repairs)
+      .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+      .innerJoin(devices, eq(repairs.device_id, devices.id))
+      .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+      .where(and(...conditions))
+      .groupBy(devices.id, devices.imei, devices.serial, devices.sku, devices.model_name, warehouses.name)
+      .orderBy(desc(sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`))
+      .limit(filters.limit)
+      .offset(offset)
+
+    // For each device, get parts breakdown
+    const resultsWithParts = await Promise.all(
+      results.map(async (r) => {
+        const partsConditions: any[] = [
+          eq(repairs.tenant_id, filters.tenant_id),
+          eq(repairs.device_id, r.device_id),
+        ]
+        
+        if (filters.date_from) partsConditions.push(gte(repairs.created_at, new Date(filters.date_from)))
+        if (filters.date_to) partsConditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+        if (filters.reason_id) partsConditions.push(eq(repair_items.reason_id, filters.reason_id))
+
+        // Get regular parts
+        const regularParts = await this.database
+          .select({
+            sku: repair_items.sku,
+            usage_count: sql<number>`COUNT(${repair_items.id})`,
+            total_quantity: sql<number>`SUM(${repair_items.quantity})`,
+            total_cost: sql<string>`SUM(${repair_items.cost} * ${repair_items.quantity})`,
+          })
+          .from(repairs)
+          .innerJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+          .where(and(...partsConditions, sql`${repair_items.sku} != 'fixed_price'`))
+          .groupBy(repair_items.sku)
+          .orderBy(desc(sql<number>`COUNT(${repair_items.id})`))
+
+        // Get fixed_price entries grouped by reason
+        const fixedPriceParts = await this.database
+          .select({
+            sku: repair_reasons.name,
+            usage_count: sql<number>`COUNT(${repair_items.id})`,
+            total_quantity: sql<number>`SUM(${repair_items.quantity})`,
+            total_cost: sql<string>`SUM(${repair_items.cost} * ${repair_items.quantity})`,
+          })
+          .from(repairs)
+          .innerJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+          .innerJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
+          .where(and(...partsConditions, eq(repair_items.sku, 'fixed_price')))
+          .groupBy(repair_reasons.id, repair_reasons.name)
+          .orderBy(desc(sql<number>`COUNT(${repair_items.id})`))
+
+        const allParts = [
+          ...regularParts.map(p => ({
+            sku: p.sku as string,
+            usage_count: Number(p.usage_count),
+            total_quantity: Number(p.total_quantity),
+            total_cost: Number(p.total_cost),
+          })),
+          ...fixedPriceParts.map(p => ({
+            sku: p.sku as string,
+            usage_count: Number(p.usage_count),
+            total_quantity: Number(p.total_quantity),
+            total_cost: Number(p.total_cost),
+          }))
+        ]
+          .filter(p => p.sku !== null)
+          .sort((a, b) => b.usage_count - a.usage_count)
+
+        return {
+          device_id: r.device_id,
+          device_imei: r.device_imei,
+          device_serial: r.device_serial,
+          device_sku: r.device_sku,
+          model_name: r.model_name,
+          warehouse_name: r.warehouse_name,
+          total_repairs: Number(r.total_repairs),
+          total_parts_used: Number(r.total_parts_used),
+          total_quantity_consumed: Number(r.total_quantity_consumed),
+          total_cost: Number(r.total_cost),
+          parts_breakdown: allParts,
+        }
+      })
+    )
+
+    return {
+      items: resultsWithParts,
+      total,
+      page: filters.page,
+      limit: filters.limit,
+    }
+  }
+
   async getRepairAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number }) {
     // Get summary statistics
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]

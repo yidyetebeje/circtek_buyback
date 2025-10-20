@@ -1,7 +1,7 @@
 import Elysia from "elysia";
 import { RepairsRepository } from "./repository";
 import { RepairsController } from "./controller";
-import { RepairCreate, RepairQuery, RepairConsumeItems, RepairCreateWithConsume, RepairAnalyticsQuery } from "./types";
+import { RepairCreate, RepairQuery, RepairConsumeItems, RepairCreateWithConsume, RepairAnalyticsQuery, IMEIAnalyticsQuery } from "./types";
 import { db } from "../../db";
 import { requireRole } from "../../auth";
 
@@ -33,6 +33,19 @@ export const repairs_routes = new Elysia({ prefix: '/repairs' })
       tags: ['Repairs'],
       summary: 'Get device models',
       description: 'Get unique device models from devices table for filter dropdown'
+    }
+  })
+
+  // Get IMEI analytics
+  .get('/imei-analytics', async (ctx) => {
+    const { query, currentTenantId } = ctx as any
+    return controller.getIMEIAnalytics(query as any, currentTenantId)
+  }, {
+    query: IMEIAnalyticsQuery,
+    detail: {
+      tags: ['Repairs'],
+      summary: 'Get IMEI analytics',
+      description: 'Get paginated device-level analytics with parts breakdown and search'
     }
   })
 

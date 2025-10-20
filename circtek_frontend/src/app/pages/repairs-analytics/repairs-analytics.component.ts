@@ -44,7 +44,15 @@ export class RepairsAnalyticsComponent {
   protected readonly selectedReason = signal<number | null>(null);
 
   // Tabs
-  protected readonly activeTab = signal<'overview' | 'by-model' | 'by-reason'>('overview');
+  protected readonly activeTab = signal<'overview' | 'by-model' | 'by-reason' | 'by-imei'>('overview');
+  
+  // IMEI analytics state
+  protected readonly imeiData = signal<any[]>([]);
+  protected readonly imeiTotal = signal(0);
+  protected readonly imeiPage = signal(1);
+  protected readonly imeiPageSize = signal(10);
+  protected readonly imeiSearch = signal('');
+  protected readonly expandedIMEIs = signal<Set<number>>(new Set());
 
   // Computed
   protected readonly summary = computed(() => this.analytics()?.summary);
@@ -54,6 +62,9 @@ export class RepairsAnalyticsComponent {
 
   // Expanded state for model details
   protected readonly expandedModels = signal<Set<string>>(new Set());
+
+  // Expose Math for template
+  protected readonly Math = Math;
 
   constructor() {
     // Load filters data
@@ -140,6 +151,63 @@ export class RepairsAnalyticsComponent {
     this.loadAnalytics();
   }
 
+  protected loadIMEIAnalytics() {
+    this.loading.set(true);
+
+    const filters: any = {
+      page: this.imeiPage(),
+      limit: this.imeiPageSize(),
+    };
+    if (this.dateFrom()) filters.date_from = this.dateFrom();
+    if (this.dateTo()) filters.date_to = this.dateTo();
+    if (this.selectedWarehouse()) filters.warehouse_id = this.selectedWarehouse();
+    if (this.selectedModel()) filters.model_name = this.selectedModel();
+    if (this.selectedReason()) filters.reason_id = this.selectedReason();
+    if (this.imeiSearch()) filters.search = this.imeiSearch();
+
+    this.api.getIMEIAnalytics(filters).subscribe({
+      next: (response) => {
+        this.loading.set(false);
+        if (response.data) {
+          this.imeiData.set(response.data.items || []);
+          this.imeiTotal.set(response.data.total || 0);
+        }
+      },
+      error: (error) => {
+        this.loading.set(false);
+        this.toast.error('Failed to load IMEI analytics');
+        console.error('IMEI analytics error:', error);
+      }
+    });
+  }
+
+  protected onIMEIPageChange(page: number) {
+    this.imeiPage.set(page);
+    this.loadIMEIAnalytics();
+  }
+
+  protected onIMEISearch() {
+    this.imeiPage.set(1);
+    this.loadIMEIAnalytics();
+  }
+
+  protected toggleIMEIExpansion(deviceId: number) {
+    const expanded = this.expandedIMEIs();
+    const newExpanded = new Set(expanded);
+    
+    if (newExpanded.has(deviceId)) {
+      newExpanded.delete(deviceId);
+    } else {
+      newExpanded.add(deviceId);
+    }
+    
+    this.expandedIMEIs.set(newExpanded);
+  }
+
+  protected isIMEIExpanded(deviceId: number): boolean {
+    return this.expandedIMEIs().has(deviceId);
+  }
+
   protected toggleModelExpansion(modelName: string) {
     const expanded = this.expandedModels();
     const newExpanded = new Set(expanded);
@@ -158,11 +226,7 @@ export class RepairsAnalyticsComponent {
   }
 
   protected formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-    }).format(value);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   }
 
   protected formatNumber(value: number): string {

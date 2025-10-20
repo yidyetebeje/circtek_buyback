@@ -460,6 +460,27 @@ export class RepairsController {
       return { data: [], message: 'Failed to retrieve device models', status: 500, error: (error as Error).message }
     }
   }
+
+  async getIMEIAnalytics(query: any, tenant_id: number): Promise<response<any>> {
+    try {
+      const filters = {
+        tenant_id,
+        date_from: query.date_from,
+        date_to: query.date_to,
+        warehouse_id: query.warehouse_id,
+        model_name: query.model_name,
+        reason_id: query.reason_id,
+        search: query.search,
+        page: query.page || 1,
+        limit: query.limit || 10,
+      }
+
+      const result = await this.repo.getIMEIAnalytics(filters)
+      return { data: result, message: 'IMEI analytics retrieved successfully', status: 200 }
+    } catch (error) {
+      return { data: null, message: 'Failed to retrieve IMEI analytics', status: 500, error: (error as Error).message }
+    }
+  }
 }
 
 

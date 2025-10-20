@@ -161,3 +161,35 @@ export interface RepairAnalytics {
   by_model: ModelAnalytics[];
   by_reason: ReasonAnalytics[];
 }
+
+export interface IMEIAnalyticsQueryInput {
+  date_from?: string;
+  date_to?: string;
+  warehouse_id?: number;
+  model_name?: string;
+  reason_id?: number;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface IMEIAnalytics {
+  device_id: number;
+  device_imei: string;
+  device_serial: string | null;
+  device_sku: string;
+  model_name: string | null;
+  warehouse_name: string | null;
+  total_repairs: number;
+  total_parts_used: number;
+  total_quantity_consumed: number;
+  total_cost: number;
+  parts_breakdown: SkuUsage[];
+}
+
+export interface IMEIAnalyticsResult {
+  items: IMEIAnalytics[];
+  total: number;
+  page: number;
+  limit: number;
+}

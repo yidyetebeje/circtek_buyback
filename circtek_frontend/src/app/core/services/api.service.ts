@@ -499,6 +499,19 @@ export class ApiService {
     return this.get<ApiResponse<string[]>>('/stock/repairs/device-models');
   }
 
+  getIMEIAnalytics(filters?: any): Observable<ApiResponse<any>> {
+    let params = new HttpParams();
+    if (filters?.date_from) params = params.set('date_from', filters.date_from);
+    if (filters?.date_to) params = params.set('date_to', filters.date_to);
+    if (filters?.warehouse_id) params = params.set('warehouse_id', filters.warehouse_id.toString());
+    if (filters?.model_name) params = params.set('model_name', filters.model_name);
+    if (filters?.reason_id) params = params.set('reason_id', filters.reason_id.toString());
+    if (filters?.search) params = params.set('search', filters.search);
+    if (filters?.page) params = params.set('page', filters.page.toString());
+    if (filters?.limit) params = params.set('limit', filters.limit.toString());
+    return this.get<ApiResponse<any>>('/stock/repairs/imei-analytics', params);
+  }
+
   // ===== Dead IMEI =====
   getDeadIMEIHistory(params: HttpParams = new HttpParams()): Observable<ApiResponse<DeadIMEIRecord[]>> {
     return this.get<ApiResponse<DeadIMEIRecord[]>>('/stock/adjustments/dead-imei', params);
