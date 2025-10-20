@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpParams } from '@angular/common/http';
 import { LucideAngularModule, TrendingUp, Package, DollarSign, Activity, Calendar, Warehouse, Search } from 'lucide-angular';
 
 import { ApiService } from '../../core/services/api.service';
@@ -42,6 +43,9 @@ export class RepairsAnalyticsComponent {
   protected readonly selectedModel = signal<string>('');
   protected readonly selectedReason = signal<number | null>(null);
 
+  // Tabs
+  protected readonly activeTab = signal<'overview' | 'by-model' | 'by-reason'>('overview');
+
   // Computed
   protected readonly summary = computed(() => this.analytics()?.summary);
   protected readonly warehouseData = computed(() => this.analytics()?.by_warehouse || []);
@@ -62,7 +66,8 @@ export class RepairsAnalyticsComponent {
   }
 
   private loadWarehouses() {
-    this.api.getWarehouses().subscribe({
+    const params = new HttpParams().set('limit', '1000');
+    this.api.getWarehouses(params).subscribe({
       next: (response) => {
         if (response.data) {
           this.warehouses.set(response.data.map(w => ({ id: w.id, name: w.name })));
@@ -88,7 +93,8 @@ export class RepairsAnalyticsComponent {
   }
 
   private loadRepairReasons() {
-    this.api.getRepairReasons().subscribe({
+    const params = new HttpParams().set('limit', '1000');
+    this.api.getRepairReasons(params).subscribe({
       next: (response) => {
         if (response.data) {
           this.reasons.set(response.data.map(r => ({ id: r.id, name: r.name })));

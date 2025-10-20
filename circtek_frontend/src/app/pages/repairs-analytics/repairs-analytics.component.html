@@ -170,8 +170,48 @@
       </div>
     </div>
 
-    <!-- Warehouse Analytics -->
-    <div class="card bg-base-100 shadow-sm">
+    <!-- Tabs Navigation -->
+    <nav class="mb-6 overflow-x-auto">
+      <div role="tablist" class="tabs tabs-boxed bg-base-100 p-1 rounded-xl w-fit">
+        <button
+          role="tab"
+          class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
+          [class.bg-primary]="activeTab() === 'overview'"
+          [class.text-white]="activeTab() === 'overview'"
+          [class.text-base-content]="activeTab() !== 'overview'"
+          [class.hover:bg-primary/10]="activeTab() !== 'overview'"
+          (click)="activeTab.set('overview')"
+        >
+          <span>Overview & Warehouses</span>
+        </button>
+        <button
+          role="tab"
+          class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
+          [class.bg-primary]="activeTab() === 'by-model'"
+          [class.text-white]="activeTab() === 'by-model'"
+          [class.text-base-content]="activeTab() !== 'by-model'"
+          [class.hover:bg-primary/10]="activeTab() !== 'by-model'"
+          (click)="activeTab.set('by-model')"
+        >
+          <span>By Phone Model</span>
+        </button>
+        <button
+          role="tab"
+          class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
+          [class.bg-primary]="activeTab() === 'by-reason'"
+          [class.text-white]="activeTab() === 'by-reason'"
+          [class.text-base-content]="activeTab() !== 'by-reason'"
+          [class.hover:bg-primary/10]="activeTab() !== 'by-reason'"
+          (click)="activeTab.set('by-reason')"
+        >
+          <span>By Repair Reason</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Overview Tab: Warehouse Analytics -->
+    @if (activeTab() === 'overview') {
+      <div class="card bg-base-100 shadow-sm">
       <div class="card-body">
         <h2 class="card-title">
           <lucide-icon [img]="WarehouseIcon" class="size-5"></lucide-icon>
@@ -211,15 +251,17 @@
           </div>
         }
       </div>
-    </div>
+      </div>
+    }
 
-    <!-- Model Analytics -->
-    <div class="card bg-base-100 shadow-sm">
-      <div class="card-body">
-        <h2 class="card-title">
-          <lucide-icon [img]="PackageIcon" class="size-5"></lucide-icon>
-          Per Phone Model Statistics
-        </h2>
+    <!-- By Model Tab: Model Analytics -->
+    @if (activeTab() === 'by-model') {
+      <div class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title">
+            <lucide-icon [img]="PackageIcon" class="size-5"></lucide-icon>
+            Per Phone Model Statistics
+          </h2>
         
         @if (modelData().length === 0) {
           <div class="alert alert-info">
@@ -300,16 +342,18 @@
             </table>
           </div>
         }
+        </div>
       </div>
-    </div>
+    }
 
-    <!-- Repair Reason Analytics -->
-    <div class="card bg-base-100 shadow-sm">
-      <div class="card-body">
-        <h2 class="card-title">
-          <lucide-icon [img]="ActivityIcon" class="size-5"></lucide-icon>
-          Per Repair Reason Statistics
-        </h2>
+    <!-- By Reason Tab: Repair Reason Analytics -->
+    @if (activeTab() === 'by-reason') {
+      <div class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title">
+            <lucide-icon [img]="ActivityIcon" class="size-5"></lucide-icon>
+            Per Repair Reason Statistics
+          </h2>
         
         @if (reasonData().length === 0) {
           <div class="alert alert-info">
@@ -343,8 +387,9 @@
             </table>
           </div>
         }
+        </div>
       </div>
-    </div>
+    }
   } @else {
     <!-- Empty State -->
     <div class="card bg-base-100 shadow-sm">
