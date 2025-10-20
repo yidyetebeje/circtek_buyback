@@ -300,6 +300,7 @@ export class RepairsRepository {
         warehouse_id: warehouses.id,
         warehouse_name: warehouses.name,
         total_repairs: sql<number>`COUNT(DISTINCT ${repairs.id})`,
+        unique_devices: sql<number>`COUNT(DISTINCT ${repairs.device_id})`,
         total_parts_used: sql<number>`COUNT(${repair_items.id})`,
         total_quantity_consumed: sql<number>`COALESCE(SUM(${repair_items.quantity}), 0)`,
         total_cost: sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`,
@@ -321,7 +322,7 @@ export class RepairsRepository {
         total_parts_used: Number(r.total_parts_used),
         total_quantity_consumed: Number(r.total_quantity_consumed),
         total_cost: Number(r.total_cost),
-        average_cost_per_repair: Number(r.total_repairs) > 0 ? Number(r.total_cost) / Number(r.total_repairs) : 0,
+        average_cost_per_repair: Number(r.unique_devices) > 0 ? Number(r.total_cost) / Number(r.unique_devices) : 0,
       }))
   }
 
@@ -340,6 +341,7 @@ export class RepairsRepository {
         warehouse_id: warehouses.id,
         warehouse_name: warehouses.name,
         total_repairs: sql<number>`COUNT(DISTINCT ${repairs.id})`,
+        unique_devices: sql<number>`COUNT(DISTINCT ${repairs.device_id})`,
         total_parts_used: sql<number>`COUNT(${repair_items.id})`,
         total_quantity_consumed: sql<number>`COALESCE(SUM(${repair_items.quantity}), 0)`,
         total_cost: sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`,
@@ -384,7 +386,7 @@ export class RepairsRepository {
         // Get fixed_price entries grouped by reason
         const fixedPriceParts = await this.database
           .select({
-            sku: sql<string>`CONCAT('fixed_price (', ${repair_reasons.name}, ')')`.as('sku'),
+            sku: repair_reasons.name,
             usage_count: sql<number>`COUNT(${repair_items.id})`,
             total_quantity: sql<number>`SUM(${repair_items.quantity})`,
             total_cost: sql<string>`SUM(${repair_items.cost} * ${repair_items.quantity})`,
@@ -425,7 +427,7 @@ export class RepairsRepository {
           total_parts_used: Number(r.total_parts_used),
           total_quantity_consumed: Number(r.total_quantity_consumed),
           total_cost: Number(r.total_cost),
-          average_cost_per_repair: Number(r.total_repairs) > 0 ? Number(r.total_cost) / Number(r.total_repairs) : 0,
+          average_cost_per_repair: Number(r.unique_devices) > 0 ? Number(r.total_cost) / Number(r.unique_devices) : 0,
           most_common_parts: allParts,
         }
       })
@@ -462,6 +464,7 @@ export class RepairsRepository {
         reason_id: repair_reasons.id,
         reason_name: repair_reasons.name,
         total_repairs: sql<number>`COUNT(DISTINCT ${repairs.id})`,
+        unique_devices: sql<number>`COUNT(DISTINCT ${repairs.device_id})`,
         total_parts_used: sql<number>`COUNT(${repair_items.id})`,
         total_quantity_consumed: sql<number>`COALESCE(SUM(${repair_items.quantity}), 0)`,
         total_cost: sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`,
@@ -481,7 +484,7 @@ export class RepairsRepository {
       total_parts_used: Number(r.total_parts_used),
       total_quantity_consumed: Number(r.total_quantity_consumed),
       total_cost: Number(r.total_cost),
-      average_cost_per_repair: Number(r.total_repairs) > 0 ? Number(r.total_cost) / Number(r.total_repairs) : 0,
+      average_cost_per_repair: Number(r.unique_devices) > 0 ? Number(r.total_cost) / Number(r.unique_devices) : 0,
     }))
   }
 
@@ -498,6 +501,7 @@ export class RepairsRepository {
     const [summaryResult] = await this.database
       .select({
         total_repairs: sql<number>`COUNT(DISTINCT ${repairs.id})`,
+        unique_devices: sql<number>`COUNT(DISTINCT ${repairs.device_id})`,
         total_parts_used: sql<number>`COUNT(${repair_items.id})`,
         total_quantity_consumed: sql<number>`COALESCE(SUM(${repair_items.quantity}), 0)`,
         total_cost: sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`,
@@ -512,8 +516,8 @@ export class RepairsRepository {
       total_parts_used: Number(summaryResult?.total_parts_used || 0),
       total_quantity_consumed: Number(summaryResult?.total_quantity_consumed || 0),
       total_cost: Number(summaryResult?.total_cost || 0),
-      average_cost_per_repair: Number(summaryResult?.total_repairs || 0) > 0 
-        ? Number(summaryResult?.total_cost || 0) / Number(summaryResult?.total_repairs || 0) 
+      average_cost_per_repair: Number(summaryResult?.unique_devices || 0) > 0 
+        ? Number(summaryResult?.total_cost || 0) / Number(summaryResult?.unique_devices || 0) 
         : 0,
     }
 

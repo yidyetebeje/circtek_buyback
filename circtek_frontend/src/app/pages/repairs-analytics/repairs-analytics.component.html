@@ -164,9 +164,9 @@
         <div class="stat-figure text-warning">
           <lucide-icon [img]="DollarSignIcon" class="size-8"></lucide-icon>
         </div>
-        <div class="stat-title">Avg Cost/Repair</div>
+        <div class="stat-title">Avg Cost/Device</div>
         <div class="stat-value text-warning text-2xl">{{ formatCurrency(summary()!.average_cost_per_repair) }}</div>
-        <div class="stat-desc">Per repair</div>
+        <div class="stat-desc">Per unique device</div>
       </div>
     </div>
 
@@ -232,7 +232,7 @@
                   <th class="text-right">Parts Used</th>
                   <th class="text-right">Quantity</th>
                   <th class="text-right">Total Cost</th>
-                  <th class="text-right">Avg Cost/Repair</th>
+                  <th class="text-right">Avg Cost/Device</th>
                 </tr>
               </thead>
               <tbody>
@@ -278,7 +278,7 @@
                   <th class="text-right">Parts</th>
                   <th class="text-right">Quantity</th>
                   <th class="text-right">Total Spend</th>
-                  <th class="text-right">Avg Spend/Repair</th>
+                  <th class="text-right">Avg Spend/Device</th>
                   <th class="text-center">Details</th>
                 </tr>
               </thead>
@@ -369,7 +369,7 @@
                   <th class="text-right">Parts Used</th>
                   <th class="text-right">Quantity</th>
                   <th class="text-right">Total Spend</th>
-                  <th class="text-right">Avg Spend/Repair</th>
+                  <th class="text-right">Avg Spend/Device</th>
                 </tr>
               </thead>
               <tbody>
