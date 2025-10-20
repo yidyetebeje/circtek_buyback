@@ -286,12 +286,14 @@ export class RepairsRepository {
   }
 
   // Analytics methods
-  async getWarehouseAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number }) {
+  async getWarehouseAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number }) {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
     
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
     if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
+    if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
+    if (filters.reason_id) conditions.push(eq(repair_items.reason_id, filters.reason_id))
 
     const results = await this.database
       .select({
@@ -305,6 +307,7 @@ export class RepairsRepository {
       .from(repairs)
       .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
       .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+      .leftJoin(devices, eq(repairs.device_id, devices.id))
       .where(and(...conditions))
       .groupBy(warehouses.id, warehouses.name)
       .orderBy(desc(sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`))
@@ -322,13 +325,14 @@ export class RepairsRepository {
       }))
   }
 
-  async getModelAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string }) {
+  async getModelAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number }) {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
     
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
     if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
     if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
+    if (filters.reason_id) conditions.push(eq(repair_items.reason_id, filters.reason_id))
 
     const results = await this.database
       .select({
@@ -359,6 +363,7 @@ export class RepairsRepository {
         if (filters.date_from) partsConditions.push(gte(repairs.created_at, new Date(filters.date_from)))
         if (filters.date_to) partsConditions.push(lte(repairs.created_at, new Date(filters.date_to)))
         if (r.warehouse_id) partsConditions.push(eq(repairs.warehouse_id, r.warehouse_id))
+        if (filters.reason_id) partsConditions.push(eq(repair_items.reason_id, filters.reason_id))
 
         const parts = await this.database
           .select({
@@ -413,7 +418,44 @@ export class RepairsRepository {
       .filter((name): name is string => name !== null && name !== '')
   }
 
-  async getRepairAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string }) {
+  async getReasonAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number }) {
+    const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
+    
+    if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
+    if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
+    if (filters.reason_id) conditions.push(eq(repair_items.reason_id, filters.reason_id))
+
+    const results = await this.database
+      .select({
+        reason_id: repair_reasons.id,
+        reason_name: repair_reasons.name,
+        total_repairs: sql<number>`COUNT(DISTINCT ${repairs.id})`,
+        total_parts_used: sql<number>`COUNT(${repair_items.id})`,
+        total_quantity_consumed: sql<number>`COALESCE(SUM(${repair_items.quantity}), 0)`,
+        total_cost: sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`,
+      })
+      .from(repairs)
+      .innerJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+      .innerJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
+      .leftJoin(devices, eq(repairs.device_id, devices.id))
+      .where(and(...conditions))
+      .groupBy(repair_reasons.id, repair_reasons.name)
+      .orderBy(desc(sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`))
+
+    return results.map(r => ({
+      reason_id: r.reason_id,
+      reason_name: r.reason_name,
+      total_repairs: Number(r.total_repairs),
+      total_parts_used: Number(r.total_parts_used),
+      total_quantity_consumed: Number(r.total_quantity_consumed),
+      total_cost: Number(r.total_cost),
+      average_cost_per_repair: Number(r.total_repairs) > 0 ? Number(r.total_cost) / Number(r.total_repairs) : 0,
+    }))
+  }
+
+  async getRepairAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number }) {
     // Get summary statistics
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
     
@@ -421,6 +463,7 @@ export class RepairsRepository {
     if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
     if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
+    if (filters.reason_id) conditions.push(eq(repair_items.reason_id, filters.reason_id))
 
     const [summaryResult] = await this.database
       .select({
@@ -444,16 +487,18 @@ export class RepairsRepository {
         : 0,
     }
 
-    // Get warehouse and model analytics
-    const [by_warehouse, by_model] = await Promise.all([
+    // Get warehouse, model, and reason analytics
+    const [by_warehouse, by_model, by_reason] = await Promise.all([
       this.getWarehouseAnalytics(filters),
       this.getModelAnalytics(filters),
+      this.getReasonAnalytics(filters),
     ])
 
     return {
       summary,
       by_warehouse,
       by_model,
+      by_reason,
     }
   }
 }

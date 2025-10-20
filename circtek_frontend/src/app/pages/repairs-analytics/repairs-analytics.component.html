@@ -11,7 +11,7 @@
   <div class="card bg-base-100 shadow-sm">
     <div class="card-body">
       <h2 class="card-title text-lg">Filters</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <!-- Date From -->
         <div class="form-control">
           <label class="label">
@@ -77,6 +77,23 @@
             <option value="">All Models</option>
             @for (model of models(); track model) {
               <option [value]="model">{{ model }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Repair Reason Filter -->
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text">Repair Reason</span>
+          </label>
+          <select 
+            class="select select-bordered" 
+            [(ngModel)]="selectedReason"
+            (change)="loadAnalytics()"
+          >
+            <option [ngValue]="null">All Reasons</option>
+            @for (reason of reasons(); track reason.id) {
+              <option [ngValue]="reason.id">{{ reason.name }}</option>
             }
           </select>
         </div>
@@ -278,6 +295,49 @@
                       </td>
                     </tr>
                   }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Repair Reason Analytics -->
+    <div class="card bg-base-100 shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title">
+          <lucide-icon [img]="ActivityIcon" class="size-5"></lucide-icon>
+          Per Repair Reason Statistics
+        </h2>
+        
+        @if (reasonData().length === 0) {
+          <div class="alert alert-info">
+            <span>No reason data available for the selected filters.</span>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="table table-zebra">
+              <thead>
+                <tr>
+                  <th>Repair Reason</th>
+                  <th class="text-right">Total Repairs</th>
+                  <th class="text-right">Parts Used</th>
+                  <th class="text-right">Quantity</th>
+                  <th class="text-right">Total Spend</th>
+                  <th class="text-right">Avg Spend/Repair</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (reason of reasonData(); track reason.reason_id) {
+                  <tr class="hover">
+                    <td class="font-semibold">{{ reason.reason_name }}</td>
+                    <td class="text-right">{{ formatNumber(reason.total_repairs) }}</td>
+                    <td class="text-right">{{ formatNumber(reason.total_parts_used) }}</td>
+                    <td class="text-right">{{ formatNumber(reason.total_quantity_consumed) }}</td>
+                    <td class="text-right font-semibold">{{ formatCurrency(reason.total_cost) }}</td>
+                    <td class="text-right">{{ formatCurrency(reason.average_cost_per_repair) }}</td>
+                  </tr>
                 }
               </tbody>
             </table>

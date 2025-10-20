@@ -119,6 +119,7 @@ export const RepairAnalyticsQuery = t.Object({
   date_to: t.Optional(t.String()),
   warehouse_id: t.Optional(t.Number()),
   model_name: t.Optional(t.String()),
+  reason_id: t.Optional(t.Number()),
 })
 
 export type RepairAnalyticsQueryInput = Static<typeof RepairAnalyticsQuery>
@@ -127,6 +128,17 @@ export type RepairAnalyticsQueryInput = Static<typeof RepairAnalyticsQuery>
 export type WarehouseAnalytics = {
   warehouse_id: number
   warehouse_name: string
+  total_repairs: number
+  total_parts_used: number
+  total_quantity_consumed: number
+  total_cost: number
+  average_cost_per_repair: number
+}
+
+// Reason-level analytics
+export type ReasonAnalytics = {
+  reason_id: number
+  reason_name: string
   total_repairs: number
   total_parts_used: number
   total_quantity_consumed: number
@@ -166,4 +178,5 @@ export type RepairAnalytics = {
   }
   by_warehouse: WarehouseAnalytics[]
   by_model: ModelAnalytics[]
+  by_reason: ReasonAnalytics[]
 }

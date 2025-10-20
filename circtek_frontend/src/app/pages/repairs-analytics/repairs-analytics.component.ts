@@ -33,25 +33,29 @@ export class RepairsAnalyticsComponent {
   protected readonly analytics = signal<RepairAnalytics | null>(null);
   protected readonly warehouses = signal<Array<{ id: number; name: string }>>([]);
   protected readonly models = signal<string[]>([]);
+  protected readonly reasons = signal<Array<{ id: number; name: string }>>([]);
 
   // Filters
   protected readonly dateFrom = signal<string>('');
   protected readonly dateTo = signal<string>('');
   protected readonly selectedWarehouse = signal<number | null>(null);
   protected readonly selectedModel = signal<string>('');
+  protected readonly selectedReason = signal<number | null>(null);
 
   // Computed
   protected readonly summary = computed(() => this.analytics()?.summary);
   protected readonly warehouseData = computed(() => this.analytics()?.by_warehouse || []);
   protected readonly modelData = computed(() => this.analytics()?.by_model || []);
+  protected readonly reasonData = computed(() => this.analytics()?.by_reason || []);
 
   // Expanded state for model details
   protected readonly expandedModels = signal<Set<string>>(new Set());
 
   constructor() {
-    // Load warehouses and models for filters
+    // Load filters data
     this.loadWarehouses();
     this.loadDeviceModels();
+    this.loadRepairReasons();
     
     // Load initial analytics
     this.loadAnalytics();
@@ -83,6 +87,19 @@ export class RepairsAnalyticsComponent {
     });
   }
 
+  private loadRepairReasons() {
+    this.api.getRepairReasons().subscribe({
+      next: (response) => {
+        if (response.data) {
+          this.reasons.set(response.data.map(r => ({ id: r.id, name: r.name })));
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load repair reasons:', error);
+      }
+    });
+  }
+
   protected loadAnalytics() {
     this.loading.set(true);
 
@@ -91,6 +108,7 @@ export class RepairsAnalyticsComponent {
     if (this.dateTo()) filters.date_to = this.dateTo();
     if (this.selectedWarehouse()) filters.warehouse_id = this.selectedWarehouse();
     if (this.selectedModel()) filters.model_name = this.selectedModel();
+    if (this.selectedReason()) filters.reason_id = this.selectedReason();
 
     this.api.getRepairAnalytics(filters).subscribe({
       next: (response) => {
@@ -112,6 +130,7 @@ export class RepairsAnalyticsComponent {
     this.dateTo.set('');
     this.selectedWarehouse.set(null);
     this.selectedModel.set('');
+    this.selectedReason.set(null);
     this.loadAnalytics();
   }
 

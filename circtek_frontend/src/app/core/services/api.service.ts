@@ -13,7 +13,7 @@ import { WiFiProfile } from '../models/wifi-profile';
 import { StockWithWarehouse, StockSummary } from '../models/stock';
 import { PurchaseRecord, PurchaseWithItems, ReceiveItemsRequest, ReceivingResult } from '../models/purchase';
 import { TransferWithDetails, TransferCompletionResult, TransferSummary } from '../models/transfer';
-import { RepairRecord, RepairWithItems, RepairCreateInput, RepairQueryInput, RepairConsumeItemsInput, RepairConsumeResult, RepairCreateWithConsumeInput, RepairCreateWithConsumeResult, RepairAnalytics, RepairAnalyticsQueryInput } from '../models/repair';
+import { RepairRecord, RepairWithItems, RepairCreateInput, RepairQueryInput, RepairConsumeItemsInput, RepairConsumeResult, RepairCreateWithConsumeInput, RepairCreateWithConsumeResult, RepairAnalytics, RepairAnalyticsQueryInput, ReasonAnalytics } from '../models/repair';
 import { SkuSpecsRecord, SkuSpecsCreateInput, SkuSpecsUpdateInput, SkuSpecsQueryInput, SkuSpecsListResponse } from '../models/sku-specs';
 import { RepairReasonRecord, RepairReasonCreateInput, RepairReasonUpdateInput, RepairReasonQueryInput, RepairReasonListResponse, RepairReasonWithModelPrices, RepairReasonModelPriceRecord, RepairReasonModelPriceCreateInput, RepairReasonModelPriceUpdateInput } from '../models/repair-reason';
 import { LabelTemplateRecord, LabelTemplateCreateInput, LabelTemplateUpdateInput, LabelTemplateListResponse } from '../models/label-template';
@@ -491,6 +491,7 @@ export class ApiService {
     if (filters?.date_to) params = params.set('date_to', filters.date_to);
     if (filters?.warehouse_id) params = params.set('warehouse_id', filters.warehouse_id.toString());
     if (filters?.model_name) params = params.set('model_name', filters.model_name);
+    if (filters?.reason_id) params = params.set('reason_id', filters.reason_id.toString());
     return this.get<ApiResponse<RepairAnalytics | null>>('/stock/repairs/analytics', params);
   }
 

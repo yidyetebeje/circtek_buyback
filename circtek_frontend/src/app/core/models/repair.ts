@@ -107,11 +107,22 @@ export interface RepairAnalyticsQueryInput {
   date_to?: string;
   warehouse_id?: number;
   model_name?: string;
+  reason_id?: number;
 }
 
 export interface WarehouseAnalytics {
   warehouse_id: number;
   warehouse_name: string;
+  total_repairs: number;
+  total_parts_used: number;
+  total_quantity_consumed: number;
+  total_cost: number;
+  average_cost_per_repair: number;
+}
+
+export interface ReasonAnalytics {
+  reason_id: number;
+  reason_name: string;
   total_repairs: number;
   total_parts_used: number;
   total_quantity_consumed: number;
@@ -148,4 +159,5 @@ export interface RepairAnalytics {
   };
   by_warehouse: WarehouseAnalytics[];
   by_model: ModelAnalytics[];
+  by_reason: ReasonAnalytics[];
 }

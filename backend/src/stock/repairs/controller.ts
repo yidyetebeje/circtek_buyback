@@ -442,6 +442,7 @@ export class RepairsController {
         date_to: query.date_to,
         warehouse_id: query.warehouse_id,
         model_name: query.model_name,
+        reason_id: query.reason_id,
       }
 
       const analytics = await this.repo.getRepairAnalytics(filters)
