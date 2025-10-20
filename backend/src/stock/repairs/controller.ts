@@ -47,20 +47,7 @@ export class RepairsController {
       if (!created) return { data: null, message: 'Failed to create repair', status: 500 }
 
       // Fire device event for repair started
-      try {
-        await deviceEventsService.createDeviceEvent({
-          device_id: created.device_id,
-          actor_id,
-          event_type: 'REPAIR_STARTED',
-          details: { repair_id: created.id, remarks: created.remarks },
-          tenant_id,
-        })
-      } catch (e) {
-        // Non-blocking: log in tests
-        if (process.env.NODE_ENV === 'test') {
-          console.error('Failed to create REPAIR_STARTED device event', e)
-        }
-      }
+      
 
       // 2) If no items to consume, return early
       if (!payload.items || payload.items.length === 0) {
