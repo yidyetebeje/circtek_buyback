@@ -51,7 +51,7 @@ export class ApiKeyController {
         key_prefix: prefix,
         tenant_id: tenantId,
         created_by: createdBy,
-        rate_limit: data.rate_limit || 1000,
+        rate_limit: data.rate_limit || 10000000,
         expires_at: expiresAt,
       });
 

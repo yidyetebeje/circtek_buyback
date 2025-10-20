@@ -2,7 +2,7 @@ import { t } from "elysia";
 
 export const RepairListQuery = t.Object({
   page: t.Optional(t.Numeric({ minimum: 1, default: 1 })),
-  limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, default: 50 })),
+  limit: t.Optional(t.Numeric({ minimum: 1, maximum: 1000, default: 100 })),
   start_date: t.Optional(t.String({ format: 'date' })),
   end_date: t.Optional(t.String({ format: 'date' })),
   warehouse_id: t.Optional(t.Numeric()),
