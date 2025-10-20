@@ -284,6 +284,178 @@ export class RepairsRepository {
     
     return row
   }
+
+  // Analytics methods
+  async getWarehouseAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number }) {
+    const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
+    
+    if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
+
+    const results = await this.database
+      .select({
+        warehouse_id: warehouses.id,
+        warehouse_name: warehouses.name,
+        total_repairs: sql<number>`COUNT(DISTINCT ${repairs.id})`,
+        total_parts_used: sql<number>`COUNT(${repair_items.id})`,
+        total_quantity_consumed: sql<number>`COALESCE(SUM(${repair_items.quantity}), 0)`,
+        total_cost: sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`,
+      })
+      .from(repairs)
+      .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+      .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+      .where(and(...conditions))
+      .groupBy(warehouses.id, warehouses.name)
+      .orderBy(desc(sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`))
+
+    return results
+      .filter(r => r.warehouse_id !== null) // Filter out any null warehouse_ids
+      .map(r => ({
+        warehouse_id: r.warehouse_id as number,
+        warehouse_name: r.warehouse_name || 'Unknown',
+        total_repairs: Number(r.total_repairs),
+        total_parts_used: Number(r.total_parts_used),
+        total_quantity_consumed: Number(r.total_quantity_consumed),
+        total_cost: Number(r.total_cost),
+        average_cost_per_repair: Number(r.total_repairs) > 0 ? Number(r.total_cost) / Number(r.total_repairs) : 0,
+      }))
+  }
+
+  async getModelAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string }) {
+    const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
+    
+    if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
+    if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
+
+    const results = await this.database
+      .select({
+        model_name: devices.model_name,
+        warehouse_id: warehouses.id,
+        warehouse_name: warehouses.name,
+        total_repairs: sql<number>`COUNT(DISTINCT ${repairs.id})`,
+        total_parts_used: sql<number>`COUNT(${repair_items.id})`,
+        total_quantity_consumed: sql<number>`COALESCE(SUM(${repair_items.quantity}), 0)`,
+        total_cost: sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`,
+      })
+      .from(repairs)
+      .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+      .leftJoin(devices, eq(repairs.device_id, devices.id))
+      .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+      .where(and(...conditions))
+      .groupBy(devices.model_name, warehouses.id, warehouses.name)
+      .orderBy(desc(sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`))
+
+    // For each model, get the most common parts
+    const resultsWithParts = await Promise.all(
+      results.map(async (r) => {
+        const partsConditions: any[] = [
+          eq(repairs.tenant_id, filters.tenant_id),
+          eq(devices.model_name, r.model_name || ''),
+        ]
+        
+        if (filters.date_from) partsConditions.push(gte(repairs.created_at, new Date(filters.date_from)))
+        if (filters.date_to) partsConditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+        if (r.warehouse_id) partsConditions.push(eq(repairs.warehouse_id, r.warehouse_id))
+
+        const parts = await this.database
+          .select({
+            sku: repair_items.sku,
+            usage_count: sql<number>`COUNT(${repair_items.id})`,
+            total_quantity: sql<number>`SUM(${repair_items.quantity})`,
+            total_cost: sql<string>`SUM(${repair_items.cost} * ${repair_items.quantity})`,
+          })
+          .from(repairs)
+          .innerJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+          .innerJoin(devices, eq(repairs.device_id, devices.id))
+          .where(and(...partsConditions))
+          .groupBy(repair_items.sku)
+          .orderBy(desc(sql<number>`COUNT(${repair_items.id})`))
+          .limit(5)
+
+        return {
+          model_name: r.model_name || 'Unknown',
+          warehouse_id: r.warehouse_id,
+          warehouse_name: r.warehouse_name,
+          total_repairs: Number(r.total_repairs),
+          total_parts_used: Number(r.total_parts_used),
+          total_quantity_consumed: Number(r.total_quantity_consumed),
+          total_cost: Number(r.total_cost),
+          average_cost_per_repair: Number(r.total_repairs) > 0 ? Number(r.total_cost) / Number(r.total_repairs) : 0,
+          most_common_parts: parts
+            .filter(p => p.sku !== null) // Filter out null SKUs
+            .map(p => ({
+              sku: p.sku as string,
+              usage_count: Number(p.usage_count),
+              total_quantity: Number(p.total_quantity),
+              total_cost: Number(p.total_cost),
+            })),
+        }
+      })
+    )
+
+    return resultsWithParts
+  }
+
+  async getUniqueDeviceModels(tenant_id: number): Promise<string[]> {
+    const results = await this.database
+      .selectDistinct({
+        model_name: devices.model_name,
+      })
+      .from(devices)
+      .where(and(eq(devices.tenant_id, tenant_id), sql`${devices.model_name} IS NOT NULL AND ${devices.model_name} != ''`))
+      .orderBy(devices.model_name)
+
+    return results
+      .map(r => r.model_name)
+      .filter((name): name is string => name !== null && name !== '')
+  }
+
+  async getRepairAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string }) {
+    // Get summary statistics
+    const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
+    
+    if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
+    if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
+
+    const [summaryResult] = await this.database
+      .select({
+        total_repairs: sql<number>`COUNT(DISTINCT ${repairs.id})`,
+        total_parts_used: sql<number>`COUNT(${repair_items.id})`,
+        total_quantity_consumed: sql<number>`COALESCE(SUM(${repair_items.quantity}), 0)`,
+        total_cost: sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`,
+      })
+      .from(repairs)
+      .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+      .leftJoin(devices, eq(repairs.device_id, devices.id))
+      .where(and(...conditions))
+
+    const summary = {
+      total_repairs: Number(summaryResult?.total_repairs || 0),
+      total_parts_used: Number(summaryResult?.total_parts_used || 0),
+      total_quantity_consumed: Number(summaryResult?.total_quantity_consumed || 0),
+      total_cost: Number(summaryResult?.total_cost || 0),
+      average_cost_per_repair: Number(summaryResult?.total_repairs || 0) > 0 
+        ? Number(summaryResult?.total_cost || 0) / Number(summaryResult?.total_repairs || 0) 
+        : 0,
+    }
+
+    // Get warehouse and model analytics
+    const [by_warehouse, by_model] = await Promise.all([
+      this.getWarehouseAnalytics(filters),
+      this.getModelAnalytics(filters),
+    ])
+
+    return {
+      summary,
+      by_warehouse,
+      by_model,
+    }
+  }
 }
 
 

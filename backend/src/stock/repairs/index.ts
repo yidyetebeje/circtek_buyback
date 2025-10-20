@@ -1,7 +1,7 @@
 import Elysia from "elysia";
 import { RepairsRepository } from "./repository";
 import { RepairsController } from "./controller";
-import { RepairCreate, RepairQuery, RepairConsumeItems, RepairCreateWithConsume } from "./types";
+import { RepairCreate, RepairQuery, RepairConsumeItems, RepairCreateWithConsume, RepairAnalyticsQuery } from "./types";
 import { db } from "../../db";
 import { requireRole } from "../../auth";
 
@@ -10,6 +10,31 @@ const controller = new RepairsController(repo);
 
 export const repairs_routes = new Elysia({ prefix: '/repairs' })
   .use(requireRole([]))
+
+  // Get repair analytics
+  .get('/analytics', async (ctx) => {
+    const { query, currentTenantId } = ctx as any
+    return controller.getAnalytics(query as any, currentTenantId)
+  }, {
+    query: RepairAnalyticsQuery,
+    detail: {
+      tags: ['Repairs'],
+      summary: 'Get repair analytics',
+      description: 'Get aggregated analytics for repairs by warehouse and model with date filtering'
+    }
+  })
+
+  // Get unique device models
+  .get('/device-models', async (ctx) => {
+    const { currentTenantId } = ctx as any
+    return controller.getDeviceModels(currentTenantId)
+  }, {
+    detail: {
+      tags: ['Repairs'],
+      summary: 'Get device models',
+      description: 'Get unique device models from devices table for filter dropdown'
+    }
+  })
 
   // List repairs
   .get('/', async (ctx) => {

@@ -112,3 +112,58 @@ export type RepairCreateWithConsumeResult = {
   repair: RepairRecord
   consume_result: RepairConsumeResult
 }
+
+// Analytics types
+export const RepairAnalyticsQuery = t.Object({
+  date_from: t.Optional(t.String()),
+  date_to: t.Optional(t.String()),
+  warehouse_id: t.Optional(t.Number()),
+  model_name: t.Optional(t.String()),
+})
+
+export type RepairAnalyticsQueryInput = Static<typeof RepairAnalyticsQuery>
+
+// Warehouse-level analytics
+export type WarehouseAnalytics = {
+  warehouse_id: number
+  warehouse_name: string
+  total_repairs: number
+  total_parts_used: number
+  total_quantity_consumed: number
+  total_cost: number
+  average_cost_per_repair: number
+}
+
+// SKU usage details
+export type SkuUsage = {
+  sku: string
+  usage_count: number
+  total_quantity: number
+  total_cost: number
+}
+
+// Model-level analytics (per warehouse or overall)
+export type ModelAnalytics = {
+  model_name: string
+  warehouse_id: number | null
+  warehouse_name: string | null
+  total_repairs: number
+  total_parts_used: number
+  total_quantity_consumed: number
+  total_cost: number
+  average_cost_per_repair: number
+  most_common_parts: SkuUsage[]
+}
+
+// Combined analytics response
+export type RepairAnalytics = {
+  summary: {
+    total_repairs: number
+    total_parts_used: number
+    total_quantity_consumed: number
+    total_cost: number
+    average_cost_per_repair: number
+  }
+  by_warehouse: WarehouseAnalytics[]
+  by_model: ModelAnalytics[]
+}

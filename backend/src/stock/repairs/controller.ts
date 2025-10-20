@@ -1,5 +1,5 @@
 import { RepairsRepository } from './repository'
-import { RepairConsumeItemsInput, RepairCreateInput, RepairQueryInput, RepairWithItems, RepairRecord, RepairConsumeResult, ConsumeResultItem, RepairCreateWithConsumeInput, RepairCreateWithConsumeResult } from './types'
+import { RepairConsumeItemsInput, RepairCreateInput, RepairQueryInput, RepairWithItems, RepairRecord, RepairConsumeResult, ConsumeResultItem, RepairCreateWithConsumeInput, RepairCreateWithConsumeResult, RepairAnalyticsQueryInput, RepairAnalytics } from './types'
 import type { response } from '../../types/response'
 import { movementsController } from '../movements'
 import { purchasesRepository } from '../purchases'
@@ -432,6 +432,32 @@ export class RepairsController {
 
   private calculateTotalItemCost(allocations: Array<{ unit_price: number; quantity: number }>): number {
     return allocations.reduce((sum, alloc) => sum + alloc.unit_price * alloc.quantity, 0)
+  }
+
+  async getAnalytics(query: RepairAnalyticsQueryInput, tenant_id: number): Promise<response<RepairAnalytics | null>> {
+    try {
+      const filters = {
+        tenant_id,
+        date_from: query.date_from,
+        date_to: query.date_to,
+        warehouse_id: query.warehouse_id,
+        model_name: query.model_name,
+      }
+
+      const analytics = await this.repo.getRepairAnalytics(filters)
+      return { data: analytics, message: 'Analytics retrieved successfully', status: 200 }
+    } catch (error) {
+      return { data: null, message: 'Failed to retrieve analytics', status: 500, error: (error as Error).message }
+    }
+  }
+
+  async getDeviceModels(tenant_id: number): Promise<response<string[]>> {
+    try {
+      const models = await this.repo.getUniqueDeviceModels(tenant_id)
+      return { data: models, message: 'Device models retrieved successfully', status: 200 }
+    } catch (error) {
+      return { data: [], message: 'Failed to retrieve device models', status: 500, error: (error as Error).message }
+    }
   }
 }
 

@@ -211,6 +211,13 @@ export const routes: Routes = [
       import('./pages/repair-detail/repair-detail.component').then((m) => m.RepairDetailComponent),
   },
 
+  // Repairs Analytics page route
+  {
+    path: 'repair/analytics',
+    canMatch: [authGuard],
+    loadComponent: () =>
+      import('./pages/repairs-analytics/repairs-analytics.component').then((m) => m.RepairsAnalyticsComponent),
+  },
 
   // Device History page route
   {

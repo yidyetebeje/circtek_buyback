@@ -100,3 +100,52 @@ export interface RepairListResult {
   page: number;
   limit: number;
 }
+
+// Analytics types
+export interface RepairAnalyticsQueryInput {
+  date_from?: string;
+  date_to?: string;
+  warehouse_id?: number;
+  model_name?: string;
+}
+
+export interface WarehouseAnalytics {
+  warehouse_id: number;
+  warehouse_name: string;
+  total_repairs: number;
+  total_parts_used: number;
+  total_quantity_consumed: number;
+  total_cost: number;
+  average_cost_per_repair: number;
+}
+
+export interface SkuUsage {
+  sku: string;
+  usage_count: number;
+  total_quantity: number;
+  total_cost: number;
+}
+
+export interface ModelAnalytics {
+  model_name: string;
+  warehouse_id: number | null;
+  warehouse_name: string | null;
+  total_repairs: number;
+  total_parts_used: number;
+  total_quantity_consumed: number;
+  total_cost: number;
+  average_cost_per_repair: number;
+  most_common_parts: SkuUsage[];
+}
+
+export interface RepairAnalytics {
+  summary: {
+    total_repairs: number;
+    total_parts_used: number;
+    total_quantity_consumed: number;
+    total_cost: number;
+    average_cost_per_repair: number;
+  };
+  by_warehouse: WarehouseAnalytics[];
+  by_model: ModelAnalytics[];
+}

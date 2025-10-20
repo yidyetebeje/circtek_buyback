@@ -1,0 +1,46 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--fallback-b1, oklch(var(--b1)));
+}
+
+.container {
+  max-width: 1400px;
+}
+
+/* Stat cards responsive sizing */
+.stat-value {
+  @apply text-3xl;
+}
+
+@media (max-width: 768px) {
+  .stat-value {
+    @apply text-2xl;
+  }
+}
+
+/* Table responsive improvements */
+.table {
+  @apply w-full;
+}
+
+.table th,
+.table td {
+  @apply px-4 py-3;
+}
+
+/* Ensure cards have consistent shadow */
+.card {
+  @apply border border-base-300;
+}
+
+/* Improved hover effects */
+.table tr.hover:hover {
+  @apply bg-base-200;
+}
+
+/* Nested table styling */
+.table-sm th,
+.table-sm td {
+  @apply px-3 py-2;
+}
