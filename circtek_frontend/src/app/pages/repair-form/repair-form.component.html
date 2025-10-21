@@ -64,6 +64,60 @@
         }
       </div>
 
+      <!-- Repair History -->
+      @if (repairHistory().length > 0) {
+        <div class="border border-base-300/40 rounded-lg p-3 mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-medium">Repair History</span>
+            <span class="badge badge-sm">{{ repairHistory().length }} repair(s)</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th class="text-xs">Date</th>
+                  <th class="text-xs">SKUs Used</th>
+                  <th class="text-xs">Reason</th>
+                  <th class="text-xs">Actor</th>
+                  <th class="text-xs">Warehouse</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (repair of repairHistory(); track repair.id) {
+                  <tr class="hover">
+                    <td class="text-xs">{{ repair.created_at ? (repair.created_at | date: 'short') : 'N/A' }}</td>
+                    <td class="text-xs">
+                      @if (repair.consumed_parts && repair.consumed_parts.length > 0) {
+                        <div class="flex flex-wrap gap-1">
+                          @for (sku of repair.consumed_parts; track sku) {
+                            <span class="badge badge-sm badge-ghost">{{ sku === 'fixed_price' ? 'Service' : sku }}</span>
+                          }
+                        </div>
+                      } @else {
+                        <span class="text-base-content/40">No parts consumed</span>
+                      }
+                    </td>
+                    <td class="text-xs">
+                      @if (repair.repair_reasons && repair.repair_reasons.length > 0) {
+                        <div class="flex flex-wrap gap-1">
+                          @for (reason of repair.repair_reasons; track reason) {
+                            <span class="badge badge-sm badge-outline">{{ reason }}</span>
+                          }
+                        </div>
+                      } @else {
+                        <span class="text-base-content/40">N/A</span>
+                      }
+                    </td>
+                    <td class="text-xs">{{ repair.repairer_username || 'Unknown' }}</td>
+                    <td class="text-xs">{{ repair.warehouse_name || 'Unknown' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
       <h3 class="text-sm font-semibold text-base-content/80 mb-4">Repair Items (Parts & Services)</h3>
 
       <!-- Grid header -->

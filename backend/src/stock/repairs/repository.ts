@@ -137,18 +137,25 @@ export class RepairsRepository {
         .offset(offset)
     }
 
-    // Get consumed parts for each repair
+    // Get consumed parts and reasons for each repair
     const normalizedRows = await Promise.all(
       rows.map(async (r) => {
         const normalized = this.normalizeRepair(r) as any;
         if (normalized) {
-          // Get consumed parts SKUs for this repair
-          const consumedParts = await this.database
-            .select({ sku: repair_items.sku })
+          // Get consumed parts SKUs and reasons for this repair
+          const consumedItems = await this.database
+            .select({ 
+              sku: repair_items.sku,
+              reason_name: repair_reasons.name
+            })
             .from(repair_items)
+            .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
             .where(and(eq(repair_items.repair_id, normalized.id), eq(repair_items.tenant_id, normalized.tenant_id)));
           
-          normalized.consumed_parts = consumedParts.map(p => p.sku);
+          normalized.consumed_parts = consumedItems.map(p => p.sku);
+          // Get unique reason names
+          const uniqueReasons = [...new Set(consumedItems.map(p => p.reason_name).filter(Boolean))];
+          normalized.repair_reasons = uniqueReasons;
         }
         return normalized;
       })

@@ -1,11 +1,19 @@
 export interface RepairRecord {
   id: number;
   device_id: number;
-  reason_id: number;
+  reason_id?: number;
   remarks: string | null;
   status: boolean;
   actor_id: number;
   tenant_id: number;
+  warehouse_id: number;
+  warehouse_name?: string;
+  repairer_username?: string;
+  device_sku?: string;
+  device_imei?: string;
+  device_serial?: string;
+  consumed_parts?: string[];
+  repair_reasons?: string[];
   created_at: string | null;
   updated_at: string | null;
 }

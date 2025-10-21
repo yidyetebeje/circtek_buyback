@@ -8,7 +8,7 @@ import { GenericFormPageComponent, type FormField, type FormAction } from '../..
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
-import { RepairCreateInput, RepairConsumeItemsInput, RepairCreateWithConsumeInput } from '../../core/models/repair';
+import { RepairCreateInput, RepairConsumeItemsInput, RepairCreateWithConsumeInput, RepairRecord } from '../../core/models/repair';
 import { BarcodeScannerComponent, ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 import { SkuAutocompleteComponent } from '../../shared/components/sku-autocomplete/sku-autocomplete.component';
 import { RepairReasonAutocompleteComponent } from '../../shared/components/repair-reason-autocomplete/repair-reason-autocomplete.component';
@@ -118,6 +118,7 @@ export class RepairFormComponent implements OnInit {
       if (!identifier || identifier.trim().length === 0) {
         this.deviceFound.set(false);
         this.form().get('device_id')?.setValue(null);
+        this.repairHistory.set([]);
       }
     });
   }
@@ -135,6 +136,7 @@ export class RepairFormComponent implements OnInit {
     this.deviceDetails.set(null);
     this.testResultsText.set('');
     this.failedComponents.set([]);
+    this.repairHistory.set([]);
     this.error.set(null);
     this.isImeiScannerDisabled.set(false);
     
@@ -158,6 +160,7 @@ export class RepairFormComponent implements OnInit {
   deviceDetails = signal<any | null>(null);
   testResultsText = signal<string>('');
   failedComponents = signal<string[]>([]);
+  repairHistory = signal<RepairRecord[]>([]);
   now = signal<Date>(new Date());
 
   repairReasonOptions = computed(() => this.repairReasons().map(r => ({ label: r.name, value: r.id })));
@@ -211,6 +214,21 @@ export class RepairFormComponent implements OnInit {
     });
   }
 
+  fetchRepairHistory(deviceId: number) {
+    const params = new HttpParams()
+      .set('device_id', deviceId.toString())
+      .set('limit', '50');
+    
+    this.api.getRepairs(params).subscribe({
+      next: (res) => {
+        this.repairHistory.set(res.data ?? []);
+      },
+      error: () => {
+        this.repairHistory.set([]);
+      }
+    });
+  }
+
   fetchDeviceDetails() {
     const identifier = this.form().get('identifier')?.value?.toString().trim();
     if (!identifier) return;
@@ -230,6 +248,10 @@ export class RepairFormComponent implements OnInit {
           console.log("device id", deviceId);
           if (deviceId > 0) this.form().get('device_id')?.setValue(deviceId);
           console.log(this.form().value);
+          
+          // Fetch repair history for this device
+          this.fetchRepairHistory(deviceId);
+          
           const params = new HttpParams()
             .set('identifier', identifier)
             .set('page', '1')
