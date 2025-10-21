@@ -89,7 +89,9 @@ export const devices_routes = new Elysia({ prefix: '/devices' })
           make: devices.make,
           model_name: devices.model_name,
           device_type: devices.device_type,
-          warehouse_id: devices.warehouse_id
+          warehouse_id: devices.warehouse_id,
+          color: devices.color,
+          storage: devices.storage
         })
         .from(devices)
         .where(and(...conditions))

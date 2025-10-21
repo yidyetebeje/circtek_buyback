@@ -100,6 +100,10 @@ import { BarcodeScannerComponent, ScanResult } from '../../shared/components/bar
                       <p class="text-xs font-medium text-base-content/70 mb-1">Make</p>
                       <p class="text-sm text-base-content font-medium">{{ selectedDevice()?.make }}</p>
                     </div>
+                    <div>
+                      <p class="text-xs font-medium text-base-content/70 mb-1">Storage</p>
+                      <p class="text-sm text-base-content font-medium">{{ selectedDevice()?.storage || 'N/A' }}</p>
+                    </div>
                   </div>
                   <div class="space-y-3">
                     <div>
@@ -109,6 +113,10 @@ import { BarcodeScannerComponent, ScanResult } from '../../shared/components/bar
                     <div>
                       <p class="text-xs font-medium text-base-content/70 mb-1">Device Type</p>
                       <p class="text-sm text-base-content">{{ selectedDevice()?.device_type }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs font-medium text-base-content/70 mb-1">Color</p>
+                      <p class="text-sm text-base-content font-medium">{{ selectedDevice()?.color || 'N/A' }}</p>
                     </div>
                   </div>
                 </div>

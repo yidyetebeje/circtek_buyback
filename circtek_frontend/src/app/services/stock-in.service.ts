@@ -12,6 +12,8 @@ export interface Device {
   model_name: string;
   device_type: string;
   warehouse_id: number;
+  color?: string | null;
+  storage?: string | null;
 }
 
 export interface Grade {
