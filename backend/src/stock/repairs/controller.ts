@@ -235,7 +235,7 @@ export class RepairsController {
         }
 
         allocations.push({ 
-          sku: item.sku, 
+          sku: 'fixed_price', 
           quantity: item.quantity, 
           reason_id: item.reason_id, 
           allocations: [],
