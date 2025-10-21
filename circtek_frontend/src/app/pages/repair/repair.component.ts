@@ -181,7 +181,19 @@ export class RepairComponent {
           { header: 'Parts Used', id: 'parts_used', accessorFn: (r: any) => {
             // Check for consumed parts from repair items
             if (r.consumed_parts && r.consumed_parts.length > 0) {
-              return r.consumed_parts.map((part: string) => part).join(', ');
+              const parts: string[] = [];
+              
+              // Add regular parts (non-fixed_price)
+              const regularParts = r.consumed_parts.filter((part: string) => part !== 'fixed_price');
+              parts.push(...regularParts);
+              
+              // If there's fixed_price, add reason names instead
+              const hasFixedPrice = r.consumed_parts.includes('fixed_price');
+              if (hasFixedPrice && r.repair_reasons && r.repair_reasons.length > 0) {
+                parts.push(...r.repair_reasons);
+              }
+              
+              return parts.length > 0 ? parts.join(', ') : 'No parts used';
             }
             return 'No parts used';
           }},
