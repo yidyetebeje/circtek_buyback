@@ -508,4 +508,18 @@ export class RepairFormComponent implements OnInit {
     const reason = this.repairReasons().find(r => r.id === reasonId);
     return !!reason && reason.fixed_price != null && Number(reason.fixed_price) > 0;
   }
+
+  getFormattedSkus(consumedParts: string[] | undefined): string {
+    if (!consumedParts || consumedParts.length === 0) {
+      return '';
+    }
+    return consumedParts.map(sku => sku === 'fixed_price' ? 'Service' : sku).join(', ');
+  }
+
+  getFormattedReasons(repairReasons: string[] | undefined): string {
+    if (!repairReasons || repairReasons.length === 0) {
+      return '';
+    }
+    return repairReasons.join(', ');
+  }
 }
