@@ -2,11 +2,70 @@ import 'dotenv/config';
 import { db } from '../src/db/index';
 import { purchase_items, purchases, tenants } from '../src/db/circtek.schema';
 import { eq } from 'drizzle-orm';
+import { writeFileSync } from 'fs';
+import { join } from 'path';
 
 /**
- * Script to list all purchase_items in the database
+ * Script to list all purchase_items in the database and export to CSV
  * Usage: npx tsx scripts/list-purchase-items.ts
  */
+
+function convertToCSV(items: any[]): string {
+  if (items.length === 0) return '';
+
+  // Define CSV headers
+  const headers = [
+    'ID',
+    'Purchase Order No',
+    'Purchase ID',
+    'Supplier Name',
+    'Tenant Name',
+    'Tenant ID',
+    'SKU',
+    'Type',
+    'Quantity Ordered',
+    'Quantity Used',
+    'Quantity Available',
+    'Unit Price',
+    'Total Value',
+    'Status',
+    'Created At'
+  ];
+
+  // Create CSV rows
+  const rows = items.map(item => {
+    const availableQuantity = item.quantity - (item.quantity_used_for_repair || 0);
+    const totalValue = Number(item.price) * item.quantity;
+    
+    return [
+      item.id,
+      item.purchase_order_no || 'N/A',
+      item.purchase_id,
+      item.supplier_name || 'N/A',
+      item.tenant_name || 'N/A',
+      item.tenant_id,
+      item.sku || 'N/A',
+      item.is_part ? 'Part' : 'Device',
+      item.quantity,
+      item.quantity_used_for_repair || 0,
+      availableQuantity,
+      Number(item.price).toFixed(2),
+      totalValue.toFixed(2),
+      item.status ? 'Active' : 'Inactive',
+      item.created_at ? new Date(item.created_at).toISOString() : 'N/A'
+    ].map(field => {
+      // Escape fields containing commas or quotes
+      const fieldStr = String(field);
+      if (fieldStr.includes(',') || fieldStr.includes('"') || fieldStr.includes('\n')) {
+        return `"${fieldStr.replace(/"/g, '""')}"`;
+      }
+      return fieldStr;
+    }).join(',');
+  });
+
+  // Combine headers and rows
+  return [headers.join(','), ...rows].join('\n');
+}
 
 async function listPurchaseItems() {
   try {
@@ -86,6 +145,25 @@ async function listPurchaseItems() {
     console.log(`  Total Quantity Available:  ${totalQuantity - totalUsed}`);
     console.log(`  Total Inventory Value:     $${totalValue.toFixed(2)}`);
     console.log('═'.repeat(120) + '\n');
+
+    // Export to CSV
+    const csvContent = convertToCSV(items);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+    const filename = `purchase-items-${timestamp}.csv`;
+    const filepath = join(process.cwd(), 'exports', filename);
+    
+    // Create exports directory if it doesn't exist
+    const exportsDir = join(process.cwd(), 'exports');
+    try {
+      const { mkdirSync } = await import('fs');
+      mkdirSync(exportsDir, { recursive: true });
+    } catch (err) {
+      // Directory might already exist, that's fine
+    }
+    
+    writeFileSync(filepath, csvContent, 'utf8');
+    console.log(`📄 CSV file saved to: ${filepath}`);
+    console.log(`📊 Total records exported: ${items.length}\n`);
 
   } catch (error) {
     console.error('❌ Error fetching purchase items:', error);
