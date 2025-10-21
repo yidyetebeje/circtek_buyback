@@ -79,7 +79,7 @@ export class SkuSpecsCreateModalComponent {
   private createForm(): FormGroup {
     const suggested = this.suggestedSku();
     return this.fb.group({
-      sku: [suggested || '', [Validators.required, noWhitespaceValidator()]],
+      sku: [suggested || '', [Validators.required, Validators.maxLength(21), noWhitespaceValidator()]],
       make: ['', [noWhitespaceValidator()]],
       model_no: ['', [noWhitespaceValidator()]],
       model_name: ['', [noWhitespaceValidator()]],
@@ -186,6 +186,7 @@ export class SkuSpecsCreateModalComponent {
     const field = this.form().get(fieldName);
     if (field && field.invalid && field.touched) {
       if (field.errors?.['required']) return `${fieldName} is required`;
+      if (field.errors?.['maxlength']) return `${fieldName} cannot exceed ${field.errors['maxlength'].requiredLength} characters (barcode limitation)`;
       if (field.errors?.['whitespace']) return `${fieldName} cannot contain only spaces`;
     }
     return null;

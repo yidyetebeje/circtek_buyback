@@ -27,11 +27,16 @@
             formControlName="sku"
             class="input input-bordered w-full placeholder:text-base-content/50 placeholder:font-normal"
             [class.input-error]="isFieldInvalid('sku')"
-            placeholder="Enter SKU code"
+            placeholder="Enter SKU code (max 21 characters)"
+            maxlength="21"
           />
           @if (isFieldInvalid('sku')) {
             <div class="label">
               <span class="label-text-alt text-error">{{ getFieldError('sku') }}</span>
+            </div>
+          } @else {
+            <div class="label">
+              <span class="label-text-alt text-base-content/60">Maximum 21 characters due to barcode limitations</span>
             </div>
           }
         </div>

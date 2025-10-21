@@ -46,7 +46,7 @@ export class SkuSpecsFormComponent implements OnInit {
 
   // Form
   form = this.fb.group({
-    sku: ['', [Validators.required, Validators.minLength(2), Validators.pattern(/^[A-Za-z0-9-_]+$/), noWhitespaceValidator()]],
+    sku: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(21), Validators.pattern(/^[A-Za-z0-9-_]+$/), noWhitespaceValidator()]],
     make: ['', [noWhitespaceValidator()]],
     model_no: ['', [noWhitespaceValidator()]],
     model_name: ['', [noWhitespaceValidator()]],
@@ -68,12 +68,14 @@ export class SkuSpecsFormComponent implements OnInit {
       label: 'SKU',
       type: 'text',
       required: true,
-      placeholder: 'Enter SKU code (letters, numbers, hyphens, underscores only)',
+      placeholder: 'Enter SKU code (max 21 chars - barcode limitation)',
       disabled: this.isEditMode(), // SKU cannot be changed in edit mode
       validation: {
         minLength: 2,
+        maxLength: 21,
         pattern: '^[A-Za-z0-9-_]+$'
-      }
+      },
+      helpText: 'Maximum 21 characters due to barcode limitations'
     },
     {
       key: 'make',

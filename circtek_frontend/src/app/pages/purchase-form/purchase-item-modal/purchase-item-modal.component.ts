@@ -37,6 +37,11 @@ export class PurchaseItemModalComponent {
       return { whitespace: { message: 'SKU cannot be empty or spaces only' } };
     }
 
+    // Check max length (21 characters due to barcode limitations)
+    if (trimmedValue.length > 21) {
+      return { maxlength: { message: 'SKU cannot exceed 21 characters (barcode limitation)', requiredLength: 21, actualLength: trimmedValue.length } };
+    }
+
     // Validate alphanumeric format (no special characters except hyphen and underscore)
     const validSkuPattern = /^[A-Za-z0-9_-]+$/;
     if (!validSkuPattern.test(trimmedValue)) {
@@ -227,6 +232,7 @@ export class PurchaseItemModalComponent {
       if (errors?.['required']) return `${fieldName} is required`;
       if (errors?.['minLength']) return errors['minLength'].message || `${fieldName} must be at least ${errors['minLength'].requiredLength} characters`;
       if (errors?.['minlength']) return `${fieldName} must be at least ${errors['minlength'].requiredLength} characters`;
+      if (errors?.['maxlength']) return errors['maxlength'].message || `${fieldName} cannot exceed ${errors['maxlength'].requiredLength} characters`;
       if (errors?.['whitespace']) return errors['whitespace'].message;
       if (errors?.['invalidFormat']) return errors['invalidFormat'].message;
       if (errors?.['min']) return `${fieldName} must be greater than ${errors['min'].min}`;
