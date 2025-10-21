@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit, viewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormArray, FormControl, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -27,6 +27,9 @@ export class RepairFormComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+
+  // View references
+  private readonly imeiScanner = viewChild<BarcodeScannerComponent>('imeiScanner');
 
   // State
   loading = signal(false);
@@ -105,7 +108,11 @@ export class RepairFormComponent implements OnInit {
   ngOnInit() {
     this.loadWarehouses();
     this.loadRepairReasons();
-    
+    this.setUserWarehouse();
+    this.setupIdentifierSubscription();
+  }
+
+  setupIdentifierSubscription() {
     // Reset device found state when identifier is cleared
     this.form().get('identifier')?.valueChanges.subscribe((identifier: string) => {
       if (!identifier || identifier.trim().length === 0) {
@@ -113,6 +120,36 @@ export class RepairFormComponent implements OnInit {
         this.form().get('device_id')?.setValue(null);
       }
     });
+  }
+
+  setUserWarehouse() {
+    const currentUser = this.auth.currentUser();
+    if (currentUser?.warehouse_id) {
+      this.form().get('warehouse_id')?.setValue(currentUser.warehouse_id);
+    }
+  }
+
+  resetForm() {
+    // Reset all state signals
+    this.deviceFound.set(false);
+    this.deviceDetails.set(null);
+    this.testResultsText.set('');
+    this.failedComponents.set([]);
+    this.error.set(null);
+    this.isImeiScannerDisabled.set(false);
+    
+    // Create a new form instance
+    this.form.set(this.createForm());
+    
+    // Clear the IMEI scanner component
+    const scanner = this.imeiScanner();
+    if (scanner) {
+      scanner.clear();
+    }
+    
+    // Re-apply user's warehouse and setup subscriptions
+    this.setUserWarehouse();
+    this.setupIdentifierSubscription();
   }
 
   // Data for dropdowns
@@ -344,10 +381,8 @@ export class RepairFormComponent implements OnInit {
         this.submitting.set(false);
         if (response.status === 201) {
           this.toast.saveSuccess('Repair', 'created');
-          // Success - navigate back to repairs list
-          this.router.navigate(['/repair'], { 
-            queryParams: { tab: 'repairs' } 
-          });
+          // Reset form and stay on page for next repair
+          this.resetForm();
         } else {
           this.error.set(response.message || 'Failed to create repair');
         }
