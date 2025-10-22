@@ -45,3 +45,4 @@ response.json
 
 # Script exports (ignore CSV files but keep directory structure)
 /exports/*.csv
+*.csv
