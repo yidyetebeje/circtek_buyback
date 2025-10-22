@@ -307,6 +307,7 @@ export const repair_items = mysqlTable('repair_items', {
   sku: varchar('sku', { length: 255 }),
   quantity: int('quantity').notNull(),
   reason_id: bigint('reason_id', { mode: 'number', unsigned: true }).references(() => repair_reasons.id).notNull(),
+  description: text('description'),
   cost: decimal('cost', { precision: 10, scale: 2 }).notNull(),
   purchase_items_id: bigint('purchase_items_id', { mode: 'number', unsigned: true }).references(() => purchase_items.id),
   status: boolean('status').default(true),

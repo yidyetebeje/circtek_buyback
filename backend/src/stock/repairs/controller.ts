@@ -189,7 +189,7 @@ export class RepairsController {
   }
 
   private async allocateAllItems(items: RepairConsumeItemsInput['items'], device_id: number, tenant_id: number) {
-    type ItemAllocation = { sku: string; quantity: number; reason_id: number; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }>; is_fixed_price?: boolean; fixed_price?: number }
+    type ItemAllocation = { sku: string; quantity: number; reason_id: number; description?: string; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }>; is_fixed_price?: boolean; fixed_price?: number}
     const allocations: ItemAllocation[] = []
 
     // Get device information to determine model-specific pricing
@@ -204,11 +204,53 @@ export class RepairsController {
     }
 
     for (const item of items) {
+      const just_fixed_mapping = [{
+        reason: 'Back glass',
+        price: '6.00'
+      },
+      {
+        reason: 'Chargin flex',
+        price: '7',
+      },
+      {
+        reason: 'Earspeaker',
+        price: '2',
+      },
+      {
+        reason: 'Face ID',
+        price: '5',
+      },
+      {
+        reason: 'Front Camera',
+        price: '5',
+      },
+      {
+        reason: 'Front Mic',
+        price: '8'
+      },
+      {
+        reason: 'Macbook Paint',
+        price: '2'
+      }, 
+      {
+        reason: 'Proximity',
+        price: '6'
+      },
+      {
+        reason: 'Screen',
+        price: '0'
+      },
+      {
+        reason: 'Battery',
+        price: '0'
+      },
+
+    ]
       // Handle fixed-price items (service-only repairs)
       if (item.sku === 'fixed_price' || item.sku === '') {
         // Get model-specific or default price
         const priceInfo = await this.repo.getRepairReasonPrice(item.reason_id, device.model_name || '', tenant_id)
-        
+        const reason = await this.repo.getRepairReasonById(item.reason_id, tenant_id)
         if (!priceInfo) {
           // Rollback any successful allocations before failing
           await this.rollbackAllocations(allocations, tenant_id)
@@ -218,7 +260,31 @@ export class RepairsController {
             data: null 
           }
         }
-
+        if (just_fixed_mapping.find((r) => r.reason === reason?.name)) {
+          allocations.push({ 
+            sku: 'fixed_price', 
+            quantity: item.quantity, 
+            reason_id: item.reason_id, 
+            description: item.description,
+            allocations: [],
+            is_fixed_price: true,
+            fixed_price: Number(just_fixed_mapping.find((r) => r.reason === reason?.name)?.price)
+          })
+          continue
+        }
+        if(reason?.name !== 'GLASS REFURBISHMENT' && reason?.name !== 'Housing') {
+          allocations.push({ 
+            sku: 'fixed_price', 
+            quantity: item.quantity, 
+            reason_id: item.reason_id, 
+            allocations: [],
+            description: item.description,
+            is_fixed_price: true,
+            fixed_price: 0
+          })
+          continue
+        }
+        
         if (!priceInfo.fixed_price) {
           // Rollback any successful allocations before failing
           await this.rollbackAllocations(allocations, tenant_id)
@@ -233,11 +299,12 @@ export class RepairsController {
             data: null 
           }
         }
-
+      
         allocations.push({ 
           sku: 'fixed_price', 
           quantity: item.quantity, 
           reason_id: item.reason_id, 
+          description: item.description,
           allocations: [],
           is_fixed_price: true,
           fixed_price: Number(priceInfo.fixed_price)
@@ -268,6 +335,7 @@ export class RepairsController {
         sku: item.sku, 
         quantity: item.quantity, 
         reason_id: item.reason_id, 
+        description: item.description,
         allocations: allocation.allocations 
       })
     }
@@ -347,6 +415,7 @@ export class RepairsController {
           repair_id,
           sku: item.sku,
           quantity: item.quantity,
+          description: item.description,
           cost: item.fixed_price,
           reason_id: item.reason_id,
           purchase_items_id: null,
@@ -362,6 +431,7 @@ export class RepairsController {
         repair_id,
         sku: item.sku,
         quantity: allocation.quantity,
+        description: item.description,
         cost: Number(allocation.unit_price),
         reason_id: item.reason_id,
         purchase_items_id: allocation.purchase_item_id,

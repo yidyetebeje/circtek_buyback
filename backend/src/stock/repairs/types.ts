@@ -22,6 +22,7 @@ export const RepairConsumeItems = t.Object({
     sku: t.String(), // Can be actual SKU or "fixed_price" for service-only repairs
     quantity: t.Number(),
     reason_id: t.Number(),
+    description: t.Optional(t.String()),
   })),
   notes: t.Optional(t.String()),
 })
@@ -55,6 +56,7 @@ export type RepairItemRecord = {
   cost: number
   reason_id: number
   reason_name?: string
+  description?: string
   purchase_items_id: number | null
   status: boolean
   tenant_id: number
@@ -104,6 +106,7 @@ export const RepairCreateWithConsume = t.Object({
     sku: t.String(), // Can be actual SKU or "fixed_price" for service-only repairs
     quantity: t.Number(),
     reason_id: t.Number(),
+    description: t.Optional(t.String()),
   })),
   notes: t.Optional(t.String()),
 })

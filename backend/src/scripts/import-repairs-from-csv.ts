@@ -270,6 +270,7 @@ async function createRepairWithConsume(
         sku: record.partcode || 'fixed_price', // Use fixed_price for service-only repairs
         quantity: 1,
         reason_id: reasonId,
+        description: record.description,
       }
     ],
     notes: record.description || undefined,
@@ -327,7 +328,7 @@ async function importRepairs(
   stats.total = records.length
 
   let rowNum = 1 // Start from 1 (header is row 0)
-  
+  const no_part_description = ['cleaned rear camera', 'rear camera cleaning','cleaned camera','camera glass cleaned','clean camera']
   // Process each record
   for (const record of records) {
     rowNum++
@@ -340,7 +341,17 @@ async function importRepairs(
        if(record.reason.toLowerCase() === 'screen' && (record.partcode.toLowerCase() === 'rfb' || record.description.toLowerCase() === 'rfb')){
            record.reason = 'GLASS REFURBISHMENT';
            record.partcode = '';
+       } 
+       if(record.reason.toLocaleLowerCase() === 'rear camera' && record.partcode == '') {
+          record.reason = 'Ultrasonic Camera Cleaning';
+          record.partcode = '';
        }
+       if(record.reason.toLocaleLowerCase() == 'no parts' && no_part_description.includes(record.description.toLowerCase())) {
+          record.reason = 'Ultrasonic Camera Cleaning';
+          record.partcode = '';
+       }
+       
+       
       // Skip records without IMEI
       if (!record.imei || record.imei.trim() === '') {
         stats.skipped++
