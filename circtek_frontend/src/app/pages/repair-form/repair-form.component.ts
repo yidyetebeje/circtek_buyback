@@ -392,7 +392,8 @@ export class RepairFormComponent implements OnInit {
         return {
           sku: trimmedSku || (reasonIsFixed ? 'fixed_price' : ''),
           quantity: part.quantity,
-          reason_id: part.reason_id
+          reason_id: part.reason_id,
+          description: part.remarks || undefined
         };
       }),
       notes: undefined // Optional field

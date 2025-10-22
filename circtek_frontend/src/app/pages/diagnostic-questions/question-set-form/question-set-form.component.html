@@ -370,7 +370,7 @@
           <textarea
             class="textarea textarea-bordered w-full"
             rows="2"
-            placeholder="Additional information or description for this option"
+            placeholder="This message shown to the tester if the tester choose this option"
             [(ngModel)]="modalNewOptionMessage"
             (keydown.enter)="$event.preventDefault()"
             [disabled]="editingOptionIndex() !== null"
