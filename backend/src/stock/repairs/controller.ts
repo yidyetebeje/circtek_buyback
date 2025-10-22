@@ -204,48 +204,7 @@ export class RepairsController {
     }
 
     for (const item of items) {
-      const just_fixed_mapping = [{
-        reason: 'Back glass',
-        price: '6.00'
-      },
-      {
-        reason: 'Chargin flex',
-        price: '7',
-      },
-      {
-        reason: 'Earspeaker',
-        price: '2',
-      },
-      {
-        reason: 'Face ID',
-        price: '5',
-      },
-      {
-        reason: 'Front Camera',
-        price: '5',
-      },
-      {
-        reason: 'Front Mic',
-        price: '8'
-      },
-      {
-        reason: 'Macbook Paint',
-        price: '2'
-      }, 
-      {
-        reason: 'Proximity',
-        price: '6'
-      },
-      {
-        reason: 'Screen',
-        price: '0'
-      },
-      {
-        reason: 'Battery',
-        price: '0'
-      },
-
-    ]
+     
       // Handle fixed-price items (service-only repairs)
       if (item.sku === 'fixed_price' || item.sku === '') {
         // Get model-specific or default price
@@ -260,30 +219,7 @@ export class RepairsController {
             data: null 
           }
         }
-        if (just_fixed_mapping.find((r) => r.reason === reason?.name)) {
-          allocations.push({ 
-            sku: 'fixed_price', 
-            quantity: item.quantity, 
-            reason_id: item.reason_id, 
-            description: item.description,
-            allocations: [],
-            is_fixed_price: true,
-            fixed_price: Number(just_fixed_mapping.find((r) => r.reason === reason?.name)?.price)
-          })
-          continue
-        }
-        if(reason?.name !== 'GLASS REFURBISHMENT' && reason?.name !== 'Housing') {
-          allocations.push({ 
-            sku: 'fixed_price', 
-            quantity: item.quantity, 
-            reason_id: item.reason_id, 
-            allocations: [],
-            description: item.description,
-            is_fixed_price: true,
-            fixed_price: 0
-          })
-          continue
-        }
+        
         
         if (!priceInfo.fixed_price) {
           // Rollback any successful allocations before failing
