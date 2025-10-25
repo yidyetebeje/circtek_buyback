@@ -153,7 +153,7 @@ export class DeviceHistoryComponent {
         // Handle battery_info object
         let displayValue = value;
         if (key === 'battery_info' && typeof value === 'object' && value !== null) {
-          displayValue = (value as any).health_percentage ? `${(value as any).health_percentage}%` : value;
+          displayValue = (value as any).health_percentage ? `${(value as any).health_percentage}%` : (value as any).healthPercentage;
         }
         
         return {
