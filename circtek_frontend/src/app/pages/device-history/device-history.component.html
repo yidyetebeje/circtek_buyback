@@ -376,6 +376,25 @@
                             @if (getStockInRemarks(event)) {
                               <div class="text-xs text-base-content/60 mt-1 italic">{{ getStockInRemarks(event) }}</div>
                             }
+                          } @else if (event.event_type === 'TEST_COMPLETED') {
+                            <div class="space-y-1">
+                              @if (hasFailedComponents(event)) {
+                                <div class="flex flex-wrap gap-1">
+                                  @for (component of getFailedComponents(event); track component) {
+                                    <span class="badge badge-error badge-sm gap-1">
+                                      <lucide-icon [img]="XCircleIcon" class="size-3"></lucide-icon>
+                                      {{ component }}
+                                    </span>
+                                  }
+                                </div>
+                              }
+                              @if (formatDetails(event.details)) {
+                                <div class="text-base-content/70 text-xs">{{ formatDetails(event.details) }}</div>
+                              }
+                              @if (!hasFailedComponents(event) && !formatDetails(event.details)) {
+                                <span class="text-base-content/30 italic">No failures</span>
+                              }
+                            </div>
                           } @else if (event.event_type === 'REPAIR_COMPLETED' && hasConsumedItems(event)) {
                             <div class="space-y-1">
                               @for (item of getConsumedItems(event); track $index) {
