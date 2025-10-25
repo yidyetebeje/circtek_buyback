@@ -34,6 +34,7 @@
                 <span class="loading loading-spinner loading-sm"></span>
                 Searching...
               } @else {
+                <lucide-icon [img]="SearchIcon" class="size-4"></lucide-icon>
                 Search
               }
             </button>
@@ -78,16 +79,19 @@
                   class="btn btn-outline btn-sm flex items-center gap-2"
                 >
                   @if (viewMode() === 'timeline') {
-                    📊 Table View
+                    <lucide-icon [img]="Table2Icon" class="size-4"></lucide-icon>
+                    Table View
                   } @else {
-                    📅 Timeline View
+                    <lucide-icon [img]="CalendarIcon" class="size-4"></lucide-icon>
+                    Timeline View
                   }
                 </button>
                 <button
                   type="button"
                   (click)="clearSearch()"
-                  class="btn btn-outline btn-sm"
+                  class="btn btn-ghost btn-sm flex items-center gap-2"
                 >
+                  <lucide-icon [img]="RotateCcwIcon" class="size-4"></lucide-icon>
                   Clear
                 </button>
               </div>
@@ -100,98 +104,195 @@
           <div class="p-6">
             <!-- Timeline View -->
             @if (viewMode() === 'timeline') {
-              <div class="space-y-6">
-                @for (event of events(); track event.id) {
-                  <div class="relative flex items-start space-x-4">
-                    <!-- Timeline Line -->
-                    @if (!$last) {
-                      <div class="absolute left-6 top-12 w-0.5 h-full bg-base-300"></div>
-                    }
-                    
-                    <!-- Event Icon -->
-                    <div class="flex-shrink-0 w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-xl">
-                      {{ getStockInEventConfig(event).icon }}
+              <div class="relative space-y-4">
+                <!-- Timeline connector line -->
+                <div class="absolute left-5 top-5 bottom-0 w-0.5 bg-base-300"></div>
+                
+                @for (event of events(); track event.id; let idx = $index) {
+                  <div class="relative pl-14 group">
+                    <!-- Event icon -->
+                    <div class="absolute left-0 top-0 z-10">
+                      <div class="w-10 h-10 rounded-full {{ getStockInEventConfig(event).bgColor }} flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                        <lucide-icon 
+                          [img]="getStockInEventConfig(event).icon" 
+                          class="size-5 text-white"
+                        ></lucide-icon>
+                      </div>
                     </div>
                     
-                    <!-- Event Content -->
-                    <div class="flex-1 min-w-0">
-                      <div class="bg-base-100 rounded-lg p-4 border border-base-300">
-                        <div class="flex flex-col sm:flex-row justify-between items-start gap-2">
-                          <div>
-                            <h3 class="text-lg font-medium text-primary">
+                    <!-- Event card -->
+                    <div class="bg-base-100 rounded-lg border border-base-300 hover:border-primary/40 hover:shadow-md transition-all overflow-hidden">
+                      <!-- Card header -->
+                      <div class="px-4 py-3 border-b border-base-300 bg-base-200/30">
+                        <div class="flex items-center justify-between gap-3">
+                          <div class="flex items-center gap-2 min-w-0 flex-1">
+                            <h3 class="text-base font-bold {{ getStockInEventConfig(event).color }} truncate">
                               {{ getStockInEventConfig(event).label }}
                             </h3>
-                            <p class="text-sm text-base-content/70 mt-1">
-                              {{ formatDate(event.created_at) }}
-                            </p>
+                            <span class="badge badge-xs {{ getStockInEventConfig(event).color }}/10 border-0 flex-shrink-0">
+                              #{{ idx + 1 }}
+                            </span>
                           </div>
-                          <span class="badge badge-outline badge-sm">
-                            ID: {{ event.id }}
-                          </span>
+                          <div class="flex items-center gap-1.5 text-xs text-base-content/50 flex-shrink-0">
+                            <lucide-icon [img]="CalendarIcon" class="size-3.5"></lucide-icon>
+                            <time>{{ formatDate(event.created_at) }}</time>
+                          </div>
                         </div>
-                        
+                      </div>
+                      
+                      <!-- Card body with details -->
+                      <div class="p-4">
                         @if (isStockInEvent(event)) {
                           <!-- Stock In Event Details -->
-                          <div class="mt-3 space-y-2">
-                            <!-- Grade and Warehouse Info -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <div class="bg-base-200 rounded border border-base-300 p-2">
-                                <p class="text-xs font-medium text-base-content/70 mb-1">Grade</p>
+                          <div class="space-y-2">
+                            <!-- Grade, Warehouse, Actor in single row -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                              <div class="flex flex-col">
+                                <span class="text-xs text-base-content/50 font-medium mb-1">Grade</span>
                                 <div class="flex items-center gap-2">
                                   <div 
-                                    class="w-4 h-4 rounded-full border border-base-300" 
+                                    class="w-4 h-4 rounded shadow-sm border border-white/50" 
                                     [style.background-color]="getGradeColor(event)"
                                   ></div>
-                                  <p class="text-sm text-base-content font-medium">{{ getGradeName(event) }}</p>
+                                  <span class="font-semibold text-base-content">{{ getGradeName(event) }}</span>
                                 </div>
                               </div>
-                              <div class="bg-base-200 rounded border border-base-300 p-2">
-                                <p class="text-xs font-medium text-base-content/70 mb-1">Warehouse</p>
-                                <p class="text-sm text-base-content font-medium">{{ getWarehouseName(event) }}</p>
+                              
+                              <div class="flex flex-col">
+                                <span class="text-xs text-base-content/50 font-medium mb-1">Warehouse</span>
+                                <span class="font-semibold text-base-content">{{ getWarehouseName(event) }}</span>
+                              </div>
+                              
+                              <div class="flex flex-col">
+                                <span class="text-xs text-base-content/50 font-medium mb-1">Processed By</span>
+                                <span class="font-semibold text-base-content">{{ getActorName(event) }}</span>
                               </div>
                             </div>
-                            <!-- Actor and Remarks -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <div class="bg-base-200 rounded border border-base-300 p-2">
-                                <p class="text-xs font-medium text-base-content/70 mb-1">Processed By</p>
-                                <p class="text-sm text-base-content font-medium">{{ getActorName(event) }}</p>
+                            
+                            <!-- Remarks -->
+                            @if (getStockInRemarks(event)) {
+                              <div class="bg-base-200/50 rounded-md px-3 py-2 border-l-2 border-amber-500">
+                                <div class="text-xs text-base-content/50 mb-0.5">Remarks</div>
+                                <p class="text-sm text-base-content/80">{{ getStockInRemarks(event) }}</p>
                               </div>
-                              @if (getStockInRemarks(event)) {
-                                <div class="bg-base-200 rounded border border-base-300 p-2">
-                                  <p class="text-xs font-medium text-base-content/70 mb-1">Remarks</p>
-                                  <p class="text-sm text-base-content">{{ getStockInRemarks(event) }}</p>
-                                </div>
-                              }
-                            </div>
+                            }
                           </div>
                         } @else if (event.event_type === 'TEST_COMPLETED') {
                           <!-- Regular Test Completed Event -->
-                          <div class="mt-3 space-y-2">
-                            <!-- Warehouse and Tester Info -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              <div class="bg-base-200 rounded border border-base-300 p-2">
-                                <p class="text-xs font-medium text-base-content/70 mb-1">Warehouse</p>
-                                <p class="text-sm text-base-content font-medium">{{ getWarehouseName(event) }}</p>
+                          <div class="space-y-2">
+                            <!-- Warehouse and Tester -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                              <div class="flex flex-col">
+                                <span class="text-xs text-base-content/50 font-medium mb-1">Warehouse</span>
+                                <span class="font-semibold text-base-content">{{ getWarehouseName(event) }}</span>
                               </div>
-                              <div class="bg-base-200 rounded border border-base-300 p-2">
-                                <p class="text-xs font-medium text-base-content/70 mb-1">Tester</p>
-                                <p class="text-sm text-base-content font-medium">{{ getTesterName(event) }}</p>
+                              
+                              <div class="flex flex-col">
+                                <span class="text-xs text-base-content/50 font-medium mb-1">Tester</span>
+                                <span class="font-semibold text-base-content">{{ getTesterName(event) }}</span>
                               </div>
                             </div>
-                            <!-- Other Details -->
-                            @if (formatDetails(event.details)) {
-                              <div class="bg-base-200 rounded border border-base-300 p-2">
-                                <p class="text-xs font-medium text-base-content/70 mb-1">Device Details</p>
-                                <p class="text-sm text-base-content">{{ formatDetails(event.details) }}</p>
+                            
+                            <!-- Failed Components -->
+                            @if (hasFailedComponents(event)) {
+                              <div class="bg-red-50/50 dark:bg-red-900/10 rounded-md px-3 py-2 border-l-2 border-red-500">
+                                <div class="text-xs text-red-700 dark:text-red-400 mb-1 font-medium">Failed Components</div>
+                                <div class="flex flex-wrap gap-1.5">
+                                  @for (component of getFailedComponents(event); track component) {
+                                    <span class="badge badge-error badge-sm gap-1">
+                                      <lucide-icon [img]="XCircleIcon" class="size-3"></lucide-icon>
+                                      {{ component }}
+                                    </span>
+                                  }
+                                </div>
+                              </div>
+                            }
+                            
+                            <!-- Test Results -->
+                            @if (getDetailsList(event.details).length > 0) {
+                              <div class="bg-base-200/50 rounded-md px-3 py-2">
+                                <div class="text-xs text-base-content/50 mb-1.5">Test Results</div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                                  @for (detail of getDetailsList(event.details); track detail.key) {
+                                    <div class="flex justify-between gap-2">
+                                      <span class="text-base-content/60">{{ detail.key }}:</span>
+                                      <span class="font-semibold text-base-content">{{ detail.value }}</span>
+                                    </div>
+                                  }
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        } @else if (event.event_type === 'REPAIR_COMPLETED') {
+                          <!-- Repair Completed Event -->
+                          <div class="space-y-2">
+                            <!-- Warehouse and Repairer -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                              <div class="flex flex-col">
+                                <span class="text-xs text-base-content/50 font-medium mb-1">Warehouse</span>
+                                <span class="font-semibold text-base-content">{{ getWarehouseName(event) }}</span>
+                              </div>
+                              
+                              <div class="flex flex-col">
+                                <span class="text-xs text-base-content/50 font-medium mb-1">Repairer</span>
+                                <span class="font-semibold text-base-content">{{ getRepairerName(event) }}</span>
+                              </div>
+                            </div>
+                            
+                            <!-- Parts Consumed -->
+                            @if (hasConsumedItems(event)) {
+                              <div class="bg-green-50/50 dark:bg-green-900/10 rounded-md px-3 py-2 border-l-2 border-green-500">
+                                <div class="text-xs text-green-700 dark:text-green-400 mb-2 font-medium">Parts Consumed</div>
+                                <div class="space-y-1.5">
+                                  @for (item of getConsumedItems(event); track $index) {
+                                    <div class="flex items-center justify-between gap-3 text-sm">
+                                      <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-1.5 mb-0.5">
+                                          <span class="font-semibold text-base-content truncate">{{ item.sku === 'fixed_price' ? '💰 Fixed Price' : '🔧 ' + item.sku }}</span>
+                                          <span class="badge badge-xs badge-outline flex-shrink-0">×{{ item.quantity }}</span>
+                                        </div>
+                                        <div class="text-xs text-green-700 dark:text-green-400">{{ item.reason }}</div>
+                                        @if (item.description) {
+                                          <div class="text-xs text-base-content/50 italic">{{ item.description }}</div>
+                                        }
+                                      </div>
+                                      <div class="text-right flex-shrink-0">
+                                        <div class="font-semibold text-base-content">${{ item.cost }}</div>
+                                      </div>
+                                    </div>
+                                  }
+                                </div>
+                              </div>
+                            }
+                            
+                            <!-- Additional Details -->
+                            @if (getDetailsList(event.details).length > 0) {
+                              <div class="bg-base-200/50 rounded-md px-3 py-2">
+                                <div class="text-xs text-base-content/50 mb-1.5">Additional Details</div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                                  @for (detail of getDetailsList(event.details); track detail.key) {
+                                    <div class="flex justify-between gap-2">
+                                      <span class="text-base-content/60">{{ detail.key }}:</span>
+                                      <span class="font-semibold text-base-content">{{ detail.value }}</span>
+                                    </div>
+                                  }
+                                </div>
                               </div>
                             }
                           </div>
                         } @else {
-                          @if (formatDetails(event.details)) {
-                            <div class="mt-3 p-3 bg-base-200 rounded border border-base-300">
-                              <p class="text-sm text-base-content">
-                                <strong>Details:</strong> {{ formatDetails(event.details) }}
-                              </p>
+                          <!-- Other Event Types -->
+                          @if (getDetailsList(event.details).length > 0) {
+                            <div class="bg-base-200/50 rounded-md px-3 py-2">
+                              <div class="text-xs text-base-content/50 mb-1.5">Event Details</div>
+                              <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                                @for (detail of getDetailsList(event.details); track detail.key) {
+                                  <div class="flex justify-between gap-2">
+                                    <span class="text-base-content/60">{{ detail.key }}:</span>
+                                    <span class="font-semibold text-base-content">{{ detail.value }}</span>
+                                  </div>
+                                }
+                              </div>
                             </div>
                           }
                         }
@@ -208,76 +309,90 @@
                 <table class="table table-zebra">
                   <thead>
                     <tr>
-                      <th class="text-base-content/70">
-                        Event
-                      </th>
-                      <th class="text-base-content/70">
-                        Date
-                      </th>
-                      <th class="text-base-content/70">
-                        Warehouse
-                      </th>
-                      <th class="text-base-content/70">
-                        Actor/Tester
-                      </th>
-                      <th class="text-base-content/70">
-                        Grade/Details
-                      </th>
-                      <th class="text-base-content/70">
-                        ID
-                      </th>
+                      <th class="text-base-content/70 font-semibold">Event Type</th>
+                      <th class="text-base-content/70 font-semibold">Date & Time</th>
+                      <th class="text-base-content/70 font-semibold">Location</th>
+                      <th class="text-base-content/70 font-semibold">Performed By</th>
+                      <th class="text-base-content/70 font-semibold">Key Information</th>
                     </tr>
                   </thead>
                   <tbody>
-                    @for (event of events(); track event.id) {
-                      <tr class="hover">
+                    @for (event of events(); track event.id; let idx = $index) {
+                      <tr class="hover:bg-base-200/50 transition-colors">
                         <td>
-                          <div class="flex items-center">
-                            <span class="text-xl mr-3">{{ getStockInEventConfig(event).icon }}</span>
+                          <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg {{ getStockInEventConfig(event).bgColor }} flex items-center justify-center shadow-sm">
+                              <lucide-icon 
+                                [img]="getStockInEventConfig(event).icon" 
+                                class="size-5 text-white"
+                              ></lucide-icon>
+                            </div>
                             <div>
-                              <div class="text-sm font-medium text-primary">
+                              <div class="text-sm font-semibold {{ getStockInEventConfig(event).color }}">
                                 {{ getStockInEventConfig(event).label }}
                               </div>
-                              <div class="text-sm text-base-content/70">{{ event.event_type }}</div>
+                              <div class="text-xs text-base-content/40">Event #{{ idx + 1 }}</div>
                             </div>
                           </div>
                         </td>
                         <td class="text-sm text-base-content">
-                          {{ formatDate(event.created_at) }}
+                          <div class="flex items-center gap-2">
+                            <lucide-icon [img]="CalendarIcon" class="size-3.5 text-base-content/40"></lucide-icon>
+                            <span class="font-medium">{{ formatDate(event.created_at) }}</span>
+                          </div>
                         </td>
-                        <td class="text-sm text-base-content">
-                          @if (isStockInEvent(event) || event.event_type === 'TEST_COMPLETED') {
-                            <span class="font-medium">{{ getWarehouseName(event) }}</span>
+                        <td class="text-sm">
+                          @if (isStockInEvent(event) || event.event_type === 'TEST_COMPLETED' || event.event_type === 'REPAIR_COMPLETED') {
+                            <span class="font-semibold text-base-content">{{ getWarehouseName(event) }}</span>
                           } @else {
-                            <span class="text-base-content/50">-</span>
+                            <span class="text-base-content/30 italic">Not specified</span>
                           }
                         </td>
-                        <td class="text-sm text-base-content">
+                        <td class="text-sm">
                           @if (isStockInEvent(event)) {
-                            <span class="font-medium">{{ getActorName(event) }}</span>
+                            <div class="font-semibold text-base-content">{{ getActorName(event) }}</div>
+                            <div class="text-xs text-base-content/50">Stock Handler</div>
                           } @else if (event.event_type === 'TEST_COMPLETED') {
-                            <span class="font-medium">{{ getTesterName(event) }}</span>
+                            <div class="font-semibold text-base-content">{{ getTesterName(event) }}</div>
+                            <div class="text-xs text-base-content/50">Tester</div>
+                          } @else if (event.event_type === 'REPAIR_COMPLETED') {
+                            <div class="font-semibold text-base-content">{{ getRepairerName(event) }}</div>
+                            <div class="text-xs text-base-content/50">Repairer</div>
                           } @else {
-                            <span class="text-base-content/50">-</span>
+                            <span class="text-base-content/30 italic">N/A</span>
                           }
                         </td>
-                        <td class="text-sm text-base-content">
+                        <td class="text-sm">
                           @if (isStockInEvent(event)) {
-                            <div class="flex items-center gap-2 max-w-xs">
-                              <div 
-                                class="w-3 h-3 rounded-full border border-base-300 flex-shrink-0" 
-                                [style.background-color]="getGradeColor(event)"
-                              ></div>
-                              <span class="font-medium truncate">{{ getGradeName(event) }}</span>
+                            <div class="flex items-center gap-2">
+                              <div class="flex items-center gap-2 px-3 py-1.5 bg-base-200 rounded-lg border border-base-300">
+                                <div 
+                                  class="w-3 h-3 rounded shadow-sm border border-white flex-shrink-0" 
+                                  [style.background-color]="getGradeColor(event)"
+                                ></div>
+                                <span class="font-semibold text-base-content">{{ getGradeName(event) }}</span>
+                              </div>
                             </div>
+                            @if (getStockInRemarks(event)) {
+                              <div class="text-xs text-base-content/60 mt-1 italic">{{ getStockInRemarks(event) }}</div>
+                            }
+                          } @else if (event.event_type === 'REPAIR_COMPLETED' && hasConsumedItems(event)) {
+                            <div class="space-y-1">
+                              @for (item of getConsumedItems(event); track $index) {
+                                <div class="flex items-center gap-2 text-xs">
+                                  <span class="font-semibold">{{ item.sku === 'fixed_price' ? '💰 Fixed Price' : item.sku }}</span>
+                                  <span class="text-base-content/50">•</span>
+                                  <span class="text-green-600 dark:text-green-400">{{ item.reason }}</span>
+                                  <span class="text-base-content/50">•</span>
+                                  <span class="font-semibold">${{ item.cost }}</span>
+                                </div>
+                              }
+                            </div>
+                          } @else if (formatDetails(event.details)) {
+                            <div class="text-base-content/80 max-w-md">{{ formatDetails(event.details) }}</div>
                           } @else {
-                            <div class="max-w-xs truncate">
-                              {{ formatDetails(event.details) || 'No details' }}
-                            </div>
+                            <span class="text-base-content/30 italic">No additional details</span>
                           }
-                        </td>
-                        <td class="text-sm text-base-content/70">
-                          {{ event.id }}
                         </td>
                       </tr>
                     }

@@ -83,11 +83,128 @@ export class DeviceEventsService {
       conditions.push(eq(device_events.tenant_id, tenant_id));
     }
 
-    return this.database
+    const events = await this.database
       .select()
       .from(device_events)
       .where(and(...conditions))
       .orderBy(device_events.created_at);
+
+    // Enhance events with additional details
+    const enhancedEvents = await Promise.all(
+      events.map(async (event) => {
+        const enrichedEvent = { ...event };
+
+        // For TEST_COMPLETED events (excluding stock_in), fetch test result details
+        if (event.event_type === 'TEST_COMPLETED' && event.details) {
+          const details = event.details as any;
+          
+          // Only fetch test results for non-stock-in events
+          if (details.action !== 'stock_in' && details.test_result_id) {
+            const testResult = await this.getTestResultDetails(details.test_result_id);
+            if (testResult) {
+              enrichedEvent.details = {
+                ...details,
+                failed_components: testResult.failed_components,
+                passed_components: testResult.passed_components,
+                pending_components: testResult.pending_components,
+                battery_info: testResult.battery_info,
+              };
+            }
+          }
+        }
+
+        // For REPAIR_COMPLETED events, fetch consumed items with reasons
+        if (event.event_type === 'REPAIR_COMPLETED' && event.details) {
+          const details = event.details as any;
+          
+          // Check if consumed_skus is already in the new format (array of objects with part_sku and reason)
+          if (details.consumed_skus && Array.isArray(details.consumed_skus) && details.consumed_skus.length > 0) {
+            const firstItem = details.consumed_skus[0];
+            if (typeof firstItem === 'object' && firstItem.part_sku !== undefined) {
+              // Already in new format, just rename to consumed_items
+              enrichedEvent.details = {
+                ...details,
+                consumed_items: details.consumed_skus,
+              };
+            } else if (details.repair_id) {
+              // Old format (array of strings), fetch from database
+              const repairItems = await this.getRepairItemsWithReasons(details.repair_id);
+              if (repairItems.length > 0) {
+                enrichedEvent.details = {
+                  ...details,
+                  consumed_items: repairItems,
+                };
+              }
+            }
+          } else if (details.repair_id) {
+            // No consumed_skus, fetch from database
+            const repairItems = await this.getRepairItemsWithReasons(details.repair_id);
+            if (repairItems.length > 0) {
+              enrichedEvent.details = {
+                ...details,
+                consumed_items: repairItems,
+              };
+            }
+          }
+        }
+
+        return enrichedEvent;
+      })
+    );
+
+    return enhancedEvents;
+  }
+
+  private async getTestResultDetails(test_result_id: number) {
+    try {
+      const { test_results } = await import('../db/circtek.schema');
+      const [result] = await this.database
+        .select({
+          failed_components: test_results.failed_components,
+          passed_components: test_results.passed_components,
+          pending_components: test_results.pending_components,
+          battery_info: test_results.battery_info,
+        })
+        .from(test_results)
+        .where(eq(test_results.id, test_result_id))
+        .limit(1);
+
+      return result || null;
+    } catch (error) {
+      console.error('Failed to fetch test result details:', error);
+      return null;
+    }
+  }
+
+  private async getRepairItemsWithReasons(repair_id: number) {
+    try {
+      const { repair_items, repair_reasons } = await import('../db/circtek.schema');
+      const items = await this.database
+        .select({
+          sku: repair_items.sku,
+          quantity: repair_items.quantity,
+          cost: repair_items.cost,
+          description: repair_items.description,
+          reason_id: repair_items.reason_id,
+          reason_name: repair_reasons.name,
+          reason_description: repair_reasons.description,
+        })
+        .from(repair_items)
+        .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
+        .where(eq(repair_items.repair_id, repair_id));
+
+      return items.map(item => ({
+        sku: item.sku || 'fixed_price',
+        quantity: item.quantity,
+        cost: item.cost,
+        description: item.description,
+        reason: item.reason_name,
+        reason_description: item.reason_description,
+      }));
+    } catch (error) {
+      console.error('Failed to fetch repair items with reasons:', error);
+      return [];
+    }
   }
 }
 

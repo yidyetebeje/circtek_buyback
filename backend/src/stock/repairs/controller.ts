@@ -159,6 +159,17 @@ export class RepairsController {
 
       // Fire device event for repair completed when items are consumed
       try {
+        // Get repair items with reasons for the event
+        const consumedItemsWithReasons = await Promise.all(
+          allocations.map(async (alloc: any) => {
+            const reason = await this.repo.getRepairReasonById(alloc.reason_id, tenant_id);
+            return {
+              part_sku: alloc.sku || 'fixed_price',
+              reason: reason?.name || 'Unknown'
+            };
+          })
+        );
+
         await deviceEventsService.createDeviceEvent({
           device_id: repair.device_id,
           actor_id,
@@ -171,7 +182,7 @@ export class RepairsController {
             items_count: payload.items.length,
             total_quantity_consumed: totals.quantity,
             total_cost: totals.cost,
-            consumed_skus: results.filter(r => r.success).map(r => r.sku),
+            consumed_skus: consumedItemsWithReasons,
           },
           tenant_id,
         })

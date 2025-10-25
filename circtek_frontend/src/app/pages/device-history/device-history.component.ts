@@ -2,19 +2,35 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpParams } from '@angular/common/http';
+import { LucideAngularModule, Skull, Wrench, CheckCircle, Download, Upload, Scale, FlaskConical, Package, Table2, Calendar, XCircle, Search, RotateCcw } from 'lucide-angular';
 import { ApiService } from '../../core/services/api.service';
 import { DeviceEvent } from '../../core/models/device-event';
 import { BarcodeScannerComponent, ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 
 @Component({
   selector: 'app-device-history',
-  imports: [CommonModule, FormsModule, BarcodeScannerComponent],
+  imports: [CommonModule, FormsModule, BarcodeScannerComponent, LucideAngularModule],
   templateUrl: './device-history.component.html',
   styleUrl: './device-history.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DeviceHistoryComponent {
   private readonly apiService = inject(ApiService);
+
+  // Lucide icons
+  protected readonly SkullIcon = Skull;
+  protected readonly WrenchIcon = Wrench;
+  protected readonly CheckCircleIcon = CheckCircle;
+  protected readonly DownloadIcon = Download;
+  protected readonly UploadIcon = Upload;
+  protected readonly ScaleIcon = Scale;
+  protected readonly FlaskConicalIcon = FlaskConical;
+  protected readonly PackageIcon = Package;
+  protected readonly Table2Icon = Table2;
+  protected readonly CalendarIcon = Calendar;
+  protected readonly XCircleIcon = XCircle;
+  protected readonly SearchIcon = Search;
+  protected readonly RotateCcwIcon = RotateCcw;
 
   // State signals
   protected readonly loading = signal<boolean>(false);
@@ -29,13 +45,13 @@ export class DeviceHistoryComponent {
 
   // Event type labels and icons
   protected readonly eventTypeConfig = {
-    'DEAD_IMEI': { label: 'Dead IMEI', icon: '💀', color: 'text-red-600', bgColor: 'bg-red-50' },
-    'REPAIR_STARTED': { label: 'Repair Started', icon: '🔧', color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    'REPAIR_COMPLETED': { label: 'Repair Completed', icon: '✅', color: 'text-green-600', bgColor: 'bg-green-50' },
-    'TRANSFER_IN': { label: 'Transfer In', icon: '📥', color: 'text-purple-600', bgColor: 'bg-purple-50' },
-    'TRANSFER_OUT': { label: 'Transfer Out', icon: '📤', color: 'text-orange-600', bgColor: 'bg-orange-50' },
-    'ADJUSTMENT': { label: 'Adjustment', icon: '⚖️', color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
-    'TEST_COMPLETED': { label: 'Test Completed', icon: '🧪', color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
+    'DEAD_IMEI': { label: 'Dead IMEI', icon: Skull, color: 'text-red-600', bgColor: 'bg-gradient-to-br from-red-500 to-red-600', ringColor: 'ring-red-200' },
+    'REPAIR_STARTED': { label: 'Repair Started', icon: Wrench, color: 'text-blue-600', bgColor: 'bg-gradient-to-br from-blue-500 to-blue-600', ringColor: 'ring-blue-200' },
+    'REPAIR_COMPLETED': { label: 'Repair Completed', icon: CheckCircle, color: 'text-green-600', bgColor: 'bg-gradient-to-br from-green-500 to-green-600', ringColor: 'ring-green-200' },
+    'TRANSFER_IN': { label: 'Transfer In', icon: Download, color: 'text-purple-600', bgColor: 'bg-gradient-to-br from-purple-500 to-purple-600', ringColor: 'ring-purple-200' },
+    'TRANSFER_OUT': { label: 'Transfer Out', icon: Upload, color: 'text-orange-600', bgColor: 'bg-gradient-to-br from-orange-500 to-orange-600', ringColor: 'ring-orange-200' },
+    'ADJUSTMENT': { label: 'Adjustment', icon: Scale, color: 'text-yellow-600', bgColor: 'bg-gradient-to-br from-yellow-500 to-yellow-600', ringColor: 'ring-yellow-200' },
+    'TEST_COMPLETED': { label: 'Test Completed', icon: FlaskConical, color: 'text-indigo-600', bgColor: 'bg-gradient-to-br from-indigo-500 to-indigo-600', ringColor: 'ring-indigo-200' },
   };
 
   protected onSearchSubmit() {
@@ -69,9 +85,10 @@ export class DeviceHistoryComponent {
   protected getEventConfig(eventType: string) {
     return this.eventTypeConfig[eventType as keyof typeof this.eventTypeConfig] || {
       label: eventType,
-      icon: '📋',
+      icon: Calendar,
       color: 'text-gray-600',
-      bgColor: 'bg-gray-50'
+      bgColor: 'bg-gradient-to-br from-gray-500 to-gray-600',
+      ringColor: 'ring-gray-200'
     };
   }
 
@@ -84,11 +101,47 @@ export class DeviceHistoryComponent {
     if (!details) return '';
     if (typeof details === 'string') return details;
     if (typeof details === 'object') {
-      return Object.entries(details)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(', ');
+      // Filter out technical fields that users don't need to see
+      const excludedKeys = ['id', 'action', 'warehouse_id', 'warehouse_name', 'tester_username', 
+                            'actor_name', 'grade_name', 'grade_color', 'grade_id', 'repair_id', 
+                            'repair_items_count', 'consumed_skus', 'consumed_items', 
+                            'total_quantity_consumed', 'items_quantity', 'repairer_username'];
+      
+      const filteredEntries = Object.entries(details)
+        .filter(([key]) => !excludedKeys.includes(key))
+        .filter(([_, value]) => value !== null && value !== undefined && value !== '');
+      
+      if (filteredEntries.length === 0) return '';
+      
+      return filteredEntries
+        .map(([key, value]) => {
+          // Format the key to be more readable
+          const formattedKey = key
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+          return `${formattedKey}: ${value}`;
+        })
+        .join(' • ');
     }
     return String(details);
+  }
+  
+  protected getDetailsList(details: any): Array<{key: string, value: string}> {
+    if (!details || typeof details !== 'object') return [];
+    
+    const excludedKeys = ['id', 'action', 'warehouse_id', 'warehouse_name', 'tester_username', 
+                          'actor_name', 'grade_name', 'grade_color', 'grade_id', 'remarks', 
+                          'repair_id', 'repair_items_count', 'consumed_skus', 'consumed_items', 
+                          'total_quantity_consumed', 'items_quantity', 'repairer_username'];
+    
+    return Object.entries(details)
+      .filter(([key]) => !excludedKeys.includes(key))
+      .filter(([_, value]) => value !== null && value !== undefined && value !== '')
+      .map(([key, value]) => ({
+        key: key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+        value: String(value)
+      }));
   }
 
   protected formatTestCompletedDetails(event: DeviceEvent): string {
@@ -107,7 +160,7 @@ export class DeviceHistoryComponent {
   }
 
   protected getWarehouseName(event: DeviceEvent): string {
-    if (event.event_type === 'TEST_COMPLETED' && event.details && (event.details as any).warehouse_name) {
+    if (event.details && (event.details as any).warehouse_name) {
       return (event.details as any).warehouse_name;
     }
     return 'N/A';
@@ -130,9 +183,10 @@ export class DeviceHistoryComponent {
     if (this.isStockInEvent(event)) {
       return {
         label: 'Stock In',
-        icon: '📦',
+        icon: Package,
         color: 'text-emerald-600',
-        bgColor: 'bg-emerald-50'
+        bgColor: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
+        ringColor: 'ring-emerald-200'
       };
     }
     return this.getEventConfig(event.event_type);
@@ -164,6 +218,56 @@ export class DeviceHistoryComponent {
       return (event.details as any).remarks;
     }
     return '';
+  }
+
+  protected getConsumedItems(event: DeviceEvent): Array<{sku: string, quantity: number, reason: string, cost: string, description?: string}> {
+    if (event.event_type === 'REPAIR_COMPLETED' && event.details && (event.details as any).consumed_items) {
+      const items = (event.details as any).consumed_items;
+      // Handle both formats: {sku, ...} and {part_sku, ...}
+      return items.map((item: any) => ({
+        sku: item.sku || item.part_sku || 'fixed_price',
+        quantity: item.quantity || 1,
+        reason: item.reason || 'Unknown',
+        cost: item.cost || '0',
+        description: item.description
+      }));
+    }
+    return [];
+  }
+
+  protected hasConsumedItems(event: DeviceEvent): boolean {
+    return this.getConsumedItems(event).length > 0;
+  }
+
+  protected getFailedComponents(event: DeviceEvent): string[] {
+    if (event.event_type === 'TEST_COMPLETED' && event.details && (event.details as any).failed_components) {
+      const failed = (event.details as any).failed_components;
+      if (typeof failed === 'string') {
+        return failed.split(',').map(c => c.trim()).filter(c => c.length > 0);
+      }
+      if (Array.isArray(failed)) {
+        return failed;
+      }
+    }
+    return [];
+  }
+
+  protected hasFailedComponents(event: DeviceEvent): boolean {
+    return this.getFailedComponents(event).length > 0;
+  }
+
+  protected getBatteryInfo(event: DeviceEvent): any {
+    if (event.event_type === 'TEST_COMPLETED' && event.details && (event.details as any).battery_info) {
+      return (event.details as any).battery_info;
+    }
+    return null;
+  }
+
+  protected getRepairerName(event: DeviceEvent): string {
+    if (event.event_type === 'REPAIR_COMPLETED' && event.details && (event.details as any).repairer_username) {
+      return (event.details as any).repairer_username;
+    }
+    return 'N/A';
   }
 
   private searchDeviceHistory(identifier: string) {
