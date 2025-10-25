@@ -215,6 +215,21 @@
                                 </div>
                               </div>
                             }
+                            
+                            <!-- Device Information -->
+                            @if (getDetailsList(event.details).length > 0) {
+                              <div class="bg-base-200/50 rounded-md px-3 py-2">
+                                <div class="text-xs text-base-content/50 mb-1.5">Device Information</div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                                  @for (detail of getDetailsList(event.details); track detail.key) {
+                                    <div class="flex justify-between gap-2">
+                                      <span class="text-base-content/60">{{ detail.key }}:</span>
+                                      <span class="font-semibold text-base-content">{{ detail.value }}</span>
+                                    </div>
+                                  }
+                                </div>
+                              </div>
+                            }
                           </div>
                         } @else if (event.event_type === 'REPAIR_COMPLETED') {
                           <!-- Repair Completed Event -->
