@@ -105,8 +105,7 @@ export class DeviceHistoryComponent {
       const excludedKeys = ['id', 'action', 'warehouse_id', 'warehouse_name', 'tester_username', 
                             'actor_name', 'grade_name', 'grade_color', 'grade_id', 'repair_id', 
                             'repair_items_count', 'consumed_skus', 'consumed_items', 
-                            'total_quantity_consumed', 'items_quantity', 'repairer_username',
-                            'battery_info', 'failed_components', 'passed_components', 'pending_components'];
+                            'total_quantity_consumed', 'items_quantity', 'repairer_username'];
       
       const filteredEntries = Object.entries(details)
         .filter(([key]) => !excludedKeys.includes(key))
@@ -121,7 +120,14 @@ export class DeviceHistoryComponent {
             .split('_')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
-          return `${formattedKey}: ${value}`;
+          
+          // Handle battery_info object
+          let displayValue = value;
+          if (key === 'battery_info' && typeof value === 'object' && value !== null) {
+            displayValue = (value as any).health_percentage ? `${(value as any).health_percentage}%` : value;
+          }
+          
+          return `${formattedKey}: ${displayValue}`;
         })
         .join(' • ');
     }
@@ -134,16 +140,23 @@ export class DeviceHistoryComponent {
     const excludedKeys = ['id', 'action', 'warehouse_id', 'warehouse_name', 'tester_username', 
                           'actor_name', 'grade_name', 'grade_color', 'grade_id', 'remarks', 
                           'repair_id', 'repair_items_count', 'consumed_skus', 'consumed_items', 
-                          'total_quantity_consumed', 'items_quantity', 'repairer_username',
-                          'battery_info', 'failed_components', 'passed_components', 'pending_components'];
+                          'total_quantity_consumed', 'items_quantity', 'repairer_username'];
     
     return Object.entries(details)
       .filter(([key]) => !excludedKeys.includes(key))
       .filter(([_, value]) => value !== null && value !== undefined && value !== '')
-      .map(([key, value]) => ({
-        key: key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-        value: String(value)
-      }));
+      .map(([key, value]) => {
+        // Handle battery_info object
+        let displayValue = value;
+        if (key === 'battery_info' && typeof value === 'object' && value !== null) {
+          displayValue = (value as any).health_percentage ? `${(value as any).health_percentage}%` : value;
+        }
+        
+        return {
+          key: key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+          value: String(displayValue)
+        };
+      });
   }
 
   protected formatTestCompletedDetails(event: DeviceEvent): string {
