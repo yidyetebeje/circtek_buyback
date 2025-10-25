@@ -170,13 +170,9 @@ export class RepairComponent {
     switch (this.activeTab()) {
       case 'repairs':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
-          { header: 'IMEI', accessorKey: 'device_imei' as any, meta: { truncateText: true, truncateMaxWidth: '130px' } },
-          { header: 'Serial', accessorKey: 'device_serial' as any, meta: { truncateText: true, truncateMaxWidth: '130px' } },
+          { header: 'IMEI/Serial', id: 'device_identifier' as any, accessorFn: (r: any) => {
+            return r.device_imei || r.device_serial || 'N/A';
+          }, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Parts Used', id: 'parts_used', accessorFn: (r: any) => {
             // Check for consumed items from repair
             if (r.consumed_items && r.consumed_items.length > 0) {
