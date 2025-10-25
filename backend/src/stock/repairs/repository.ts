@@ -169,7 +169,7 @@ export class RepairsRepository {
       rows.map(async (r) => {
         const normalized = this.normalizeRepair(r) as any;
         if (normalized) {
-          // Get consumed parts SKUs and reasons for this repair
+          // Get consumed items with parts and reasons for this repair
           const consumedItems = await this.database
             .select({ 
               sku: repair_items.sku,
@@ -179,10 +179,11 @@ export class RepairsRepository {
             .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
             .where(and(eq(repair_items.repair_id, normalized.id), eq(repair_items.tenant_id, normalized.tenant_id)));
           
-          normalized.consumed_parts = consumedItems.map(p => p.sku);
-          // Get unique reason names
-          const uniqueReasons = [...new Set(consumedItems.map(p => p.reason_name).filter(Boolean))];
-          normalized.repair_reasons = uniqueReasons;
+          // Return consumed items as array of objects with part_sku and reason
+          normalized.consumed_items = consumedItems.map(item => ({
+            part_sku: item.sku,
+            reason: item.reason_name || null
+          }));
         }
         return normalized;
       })

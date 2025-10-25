@@ -178,21 +178,22 @@ export class RepairComponent {
           { header: 'IMEI', accessorKey: 'device_imei' as any, meta: { truncateText: true, truncateMaxWidth: '130px' } },
           { header: 'Serial', accessorKey: 'device_serial' as any, meta: { truncateText: true, truncateMaxWidth: '130px' } },
           { header: 'Parts Used', id: 'parts_used', accessorFn: (r: any) => {
-            // Check for consumed parts from repair items
-            if (r.consumed_parts && r.consumed_parts.length > 0) {
-              const parts: string[] = [];
+            // Check for consumed items from repair
+            if (r.consumed_items && r.consumed_items.length > 0) {
+              const displayParts: string[] = [];
               
-              // Add regular parts (non-fixed_price) - SKU only
-              const regularParts = r.consumed_parts.filter((part: string) => part !== 'fixed_price');
-              parts.push(...regularParts);
-              
-              // If there's fixed_price, add reason names only
-              const hasFixedPrice = r.consumed_parts.includes('fixed_price');
-              if (hasFixedPrice && r.repair_reasons && r.repair_reasons.length > 0) {
-                parts.push(...r.repair_reasons);
+              for (const item of r.consumed_items) {
+                // For fixed_price items, show the reason
+                if (item.part_sku === 'fixed_price' && item.reason) {
+                  displayParts.push(item.reason);
+                } 
+                // For regular parts, show the part SKU
+                else if (item.part_sku && item.part_sku !== 'fixed_price') {
+                  displayParts.push(item.part_sku);
+                }
               }
               
-              return parts.length > 0 ? parts.join(', ') : 'No parts used';
+              return displayParts.length > 0 ? displayParts.join(', ') : 'No parts used';
             }
             return 'No parts used';
           }, meta: { wrapText: true } },

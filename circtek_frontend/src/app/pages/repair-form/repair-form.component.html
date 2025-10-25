@@ -145,15 +145,15 @@
                   <tr class="hover">
                     <td class="text-xs">{{ repair.created_at ? (repair.created_at | date: 'short') : 'N/A' }}</td>
                     <td class="text-xs">
-                      @if (getFormattedSkus(repair.consumed_parts)) {
-                        {{ getFormattedSkus(repair.consumed_parts) }}
+                      @if (getFormattedSkus(repair.consumed_items)) {
+                        {{ getFormattedSkus(repair.consumed_items) }}
                       } @else {
                         <span class="text-base-content/40">No parts consumed</span>
                       }
                     </td>
                     <td class="text-xs">
-                      @if (getFormattedReasons(repair.repair_reasons)) {
-                        {{ getFormattedReasons(repair.repair_reasons) }}
+                      @if (getFormattedReasons(repair.consumed_items)) {
+                        {{ getFormattedReasons(repair.consumed_items) }}
                       } @else {
                         <span class="text-base-content/40">N/A</span>
                       }

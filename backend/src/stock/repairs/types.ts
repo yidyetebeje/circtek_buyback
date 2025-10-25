@@ -42,8 +42,10 @@ export type RepairRecord = {
   warehouse_id: number
   warehouse_name?: string
   repairer_username?: string
-  consumed_parts?: string[]
-  repair_reasons?: string[]
+  consumed_items?: Array<{
+    part_sku: string
+    reason: string | null
+  }>
   created_at: Date | null
   updated_at: Date | null
 }

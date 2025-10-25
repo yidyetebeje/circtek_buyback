@@ -510,17 +510,22 @@ export class RepairFormComponent implements OnInit {
     return !!reason && reason.fixed_price != null && Number(reason.fixed_price) > 0;
   }
 
-  getFormattedSkus(consumedParts: string[] | undefined): string {
-    if (!consumedParts || consumedParts.length === 0) {
+  getFormattedSkus(consumedItems: Array<{ part_sku: string; reason: string | null }> | undefined): string {
+    if (!consumedItems || consumedItems.length === 0) {
       return '';
     }
-    return consumedParts.map(sku => sku === 'fixed_price' ? 'Service' : sku).join(', ');
+    return consumedItems
+      .map(item => item.part_sku === 'fixed_price' ? 'Service' : item.part_sku)
+      .join(', ');
   }
 
-  getFormattedReasons(repairReasons: string[] | undefined): string {
-    if (!repairReasons || repairReasons.length === 0) {
+  getFormattedReasons(consumedItems: Array<{ part_sku: string; reason: string | null }> | undefined): string {
+    if (!consumedItems || consumedItems.length === 0) {
       return '';
     }
-    return repairReasons.join(', ');
+    return consumedItems
+      .map(item => item.reason)
+      .filter((reason): reason is string => !!reason)
+      .join(', ');
   }
 }
