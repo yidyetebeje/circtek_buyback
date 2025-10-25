@@ -175,7 +175,6 @@ export class RepairComponent {
             const base = this.pageIndex() * this.pageSize();
             return base + (idx >= 0 ? idx : 0) + 1;
           } },
-          { header: 'Device SKU', accessorKey: 'device_sku' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'IMEI', accessorKey: 'device_imei' as any, meta: { truncateText: true, truncateMaxWidth: '130px' } },
           { header: 'Serial', accessorKey: 'device_serial' as any, meta: { truncateText: true, truncateMaxWidth: '130px' } },
           { header: 'Parts Used', id: 'parts_used', accessorFn: (r: any) => {
@@ -183,11 +182,11 @@ export class RepairComponent {
             if (r.consumed_parts && r.consumed_parts.length > 0) {
               const parts: string[] = [];
               
-              // Add regular parts (non-fixed_price)
+              // Add regular parts (non-fixed_price) - SKU only
               const regularParts = r.consumed_parts.filter((part: string) => part !== 'fixed_price');
               parts.push(...regularParts);
               
-              // If there's fixed_price, add reason names instead
+              // If there's fixed_price, add reason names only
               const hasFixedPrice = r.consumed_parts.includes('fixed_price');
               if (hasFixedPrice && r.repair_reasons && r.repair_reasons.length > 0) {
                 parts.push(...r.repair_reasons);
@@ -196,7 +195,8 @@ export class RepairComponent {
               return parts.length > 0 ? parts.join(', ') : 'No parts used';
             }
             return 'No parts used';
-          }},
+          }, meta: { wrapText: true } },
+          { header: 'Repairer', accessorKey: 'repairer_username' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
@@ -280,7 +280,7 @@ export class RepairComponent {
   // Search placeholder per tab
   searchPlaceholder = computed(() => {
     switch (this.activeTab()) {
-      case 'repairs': return 'SKU, IMEI, serial';
+      case 'repairs': return 'IMEI, serial, repairer, parts, reasons';
       case 'repair-reasons': return 'Name, description';
       case 'dead-imei': return 'Device ID, SKU, IMEI, serial';
       case 'analytics': return 'Part SKU';

@@ -58,12 +58,15 @@ export class RepairsRepository {
     if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
     if (filters.search) {
       const pattern = `%${filters.search}%`
-      // Search on remarks, device_sku, device_imei, device_serial
+      // Search on remarks, device_sku, device_imei, device_serial, repairer_username, consumed_parts, repair_reasons
       conditions.push(or(
         like(repairs.remarks, pattern),
         like(devices.sku, pattern),
         like(devices.imei, pattern),
-        like(devices.serial, pattern)
+        like(devices.serial, pattern),
+        like(users.user_name, pattern),
+        like(repair_items.sku, pattern),
+        like(repair_reasons.name, pattern)
       ))
     }
 
@@ -74,9 +77,12 @@ export class RepairsRepository {
     let totalRow: { total: number } | undefined
     if (conditions.length) {
       const final = and(...conditions)
-      ;[totalRow] = await this.database.select({ total: count() })
+      ;[totalRow] = await this.database.select({ total: sql<number>`COUNT(DISTINCT ${repairs.id})` })
         .from(repairs)
         .leftJoin(devices, eq(repairs.device_id, devices.id))
+        .leftJoin(users, eq(repairs.actor_id, users.id))
+        .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+        .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
         .where(final as any)
     } else {
       ;[totalRow] = await this.database.select({ total: count() })
@@ -87,30 +93,51 @@ export class RepairsRepository {
     let rows
     if (conditions.length) {
       const final = and(...conditions)
-      rows = await this.database.select({
-        id: repairs.id,
-        device_id: repairs.device_id,
-        remarks: repairs.remarks,
-        status: repairs.status,
-        tenant_id: repairs.tenant_id,
-        actor_id: repairs.actor_id,
-        warehouse_id: repairs.warehouse_id,
-        warehouse_name: warehouses.name,
-        repairer_username: users.user_name,
-        created_at: repairs.created_at,
-        updated_at: repairs.updated_at,
-        device_sku: devices.sku,
-        device_imei: devices.imei,
-        device_serial: devices.serial
-      })
+      // Use subquery to get distinct repair IDs first, then join for full data
+      const distinctRepairIds = await this.database
+        .selectDistinct({ 
+          id: repairs.id,
+          created_at: repairs.created_at 
+        })
         .from(repairs)
         .leftJoin(devices, eq(repairs.device_id, devices.id))
         .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
         .leftJoin(users, eq(repairs.actor_id, users.id))
+        .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+        .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
         .where(final as any)
         .orderBy(desc(repairs.created_at))
         .limit(limit)
         .offset(offset)
+      
+      // Get full data for the distinct IDs
+      if (distinctRepairIds.length === 0) {
+        rows = []
+      } else {
+        const repairIds = distinctRepairIds.map(r => r.id)
+        rows = await this.database.select({
+          id: repairs.id,
+          device_id: repairs.device_id,
+          remarks: repairs.remarks,
+          status: repairs.status,
+          tenant_id: repairs.tenant_id,
+          actor_id: repairs.actor_id,
+          warehouse_id: repairs.warehouse_id,
+          warehouse_name: warehouses.name,
+          repairer_username: users.user_name,
+          created_at: repairs.created_at,
+          updated_at: repairs.updated_at,
+          device_sku: devices.sku,
+          device_imei: devices.imei,
+          device_serial: devices.serial
+        })
+          .from(repairs)
+          .leftJoin(devices, eq(repairs.device_id, devices.id))
+          .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+          .leftJoin(users, eq(repairs.actor_id, users.id))
+          .where(sql`${repairs.id} IN (${sql.join(repairIds.map(id => sql`${id}`), sql`, `)})`)
+          .orderBy(desc(repairs.created_at))
+      }
     } else {
       rows = await this.database.select({
         id: repairs.id,

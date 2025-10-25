@@ -21,3 +21,54 @@
   (cellAction)="onCellAction($event)"
 ></app-generic-page>
 
+@if (adjustModalOpen()) {
+  <div class="modal modal-open">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg">Adjust Stock</h3>
+      <div class="mt-4 space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="label"><span class="label-text">SKU</span></label>
+            <input class="input input-bordered w-full" [value]="adjustSku()" readonly />
+          </div>
+          <div>
+            <label class="label"><span class="label-text">Warehouse</span></label>
+            <input class="input input-bordered w-full" [value]="adjustWarehouseName()" readonly />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="label"><span class="label-text">Quantity Adjustment</span></label>
+            <input type="number" class="input input-bordered w-full" [value]="adjustQty()" (input)="onAdjustQtyInput($event)"/>
+            <div class="text-xs text-base-content/60 mt-1">Use positive to add, negative to subtract</div>
+          </div>
+          <div>
+            <label class="label"><span class="label-text">Reason</span></label>
+            <select class="select select-bordered w-full" [value]="adjustReason()" (change)="onAdjustReasonChange($event)">
+              <option value="manual_correction">Manual correction</option>
+              <option value="inventory_loss">Inventory loss</option>
+              <option value="damage">Damage</option>
+              <option value="theft">Theft</option>
+              <option value="expired">Expired</option>
+              <option value="return_to_supplier">Return to supplier</option>
+              <option value="dead_imei">Dead IMEI</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="label"><span class="label-text">Notes</span></label>
+          <textarea class="textarea textarea-bordered w-full" rows="3" [value]="adjustNotes()" (input)="onAdjustNotesInput($event)"></textarea>
+        </div>
+        @if (adjustError()) {
+          <div class="alert alert-error text-sm">{{ adjustError() }}</div>
+        }
+      </div>
+      <div class="modal-action">
+        <button class="btn btn-ghost" (click)="closeAdjustModal()" [disabled]="submitting()">Cancel</button>
+        <button class="btn btn-accent" (click)="submitAdjustment()" [disabled]="submitting() || adjustQty() === 0">
+          @if (submitting()) {<span class="loading loading-spinner loading-sm"></span>} Adjust
+        </button>
+      </div>
+    </div>
+  </div>
+}

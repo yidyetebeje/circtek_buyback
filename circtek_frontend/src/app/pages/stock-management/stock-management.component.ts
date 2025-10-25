@@ -53,6 +53,20 @@ export class StockManagementComponent {
 
   // Options
   warehouseOptions = signal<Array<{ label: string; value: string }>>([]);
+  adjustModalOpen = signal(false);
+  submitting = signal(false);
+  adjustSku = signal<string>('');
+  adjustWarehouseId = signal<number | null>(null);
+  adjustWarehouseName = computed(() => {
+    const id = this.adjustWarehouseId();
+    if (id == null) return '';
+    const opt = this.warehouseOptions().find(o => Number(o.value) === id);
+    return opt?.label ?? String(id);
+  });
+  adjustQty = signal<number>(0);
+  adjustReason = signal<'dead_imei' | 'inventory_loss' | 'manual_correction' | 'damage' | 'theft' | 'expired' | 'return_to_supplier'>('manual_correction');
+  adjustNotes = signal<string>('');
+  adjustError = signal<string>('');
 
   // Guards
   private initialized = signal(false);
@@ -85,6 +99,61 @@ export class StockManagementComponent {
     return null;
   });
 
+  closeAdjustModal() {
+    this.adjustModalOpen.set(false);
+  }
+
+  submitAdjustment() {
+    if (this.submitting()) return;
+    const sku = this.adjustSku();
+    const wid = this.adjustWarehouseId();
+    const qty = this.adjustQty();
+    if (!sku || wid == null || qty === 0) return;
+    this.submitting.set(true);
+    this.adjustError.set('');
+    this.api.createStockAdjustment({
+      sku,
+      warehouse_id: wid,
+      quantity_adjustment: qty,
+      reason: this.adjustReason(),
+      notes: this.adjustNotes() || undefined,
+      actor_id: 1,
+    }).subscribe({
+      next: (res: any) => {
+        this.submitting.set(false);
+        if (res && res.status >= 200 && res.status < 300) {
+          this.adjustModalOpen.set(false);
+          this.fetchData();
+        } else {
+          this.adjustError.set(res?.message || 'Failed to create adjustment');
+        }
+      },
+      error: () => {
+        this.submitting.set(false);
+        this.adjustError.set('Failed to create adjustment');
+      }
+    });
+  }
+
+  onAdjustQtyInput(event: Event) {
+    const input = event.target as HTMLInputElement | null;
+    if (!input) return;
+    // valueAsNumber can be NaN when empty
+    const val = input.valueAsNumber;
+    this.adjustQty.set(Number.isFinite(val) ? val : 0);
+  }
+
+  onAdjustReasonChange(event: Event) {
+    const select = event.target as HTMLSelectElement | null;
+    if (!select) return;
+    this.adjustReason.set(select.value as any);
+  }
+
+  onAdjustNotesInput(event: Event) {
+    const textarea = event.target as HTMLTextAreaElement | null;
+    if (!textarea) return;
+    this.adjustNotes.set(textarea.value);
+  }
 
   // Facets per tab
   facets = computed<Facet[]>(() => {
@@ -126,6 +195,15 @@ export class StockManagementComponent {
           { header: 'Warehouse', accessorKey: 'warehouse_name' as any },
           { header: 'Quantity', accessorKey: 'quantity' as any },
           { header: 'Type', id: 'is_part', accessorFn: (r: any) => (r.is_part ? 'Part' : 'Device') },
+          {
+            header: 'Actions', id: 'actions' as any, enableSorting: false as any,
+            meta: {
+              actions: [
+                { key: 'adjust', label: 'Adjust', class: 'text-primary' },
+              ],
+              cellClass: () => 'text-right'
+            }
+          } as any,
         ];
       case 'purchases':
         return [
@@ -508,6 +586,17 @@ export class StockManagementComponent {
     const tab = this.activeTab();
     const row = event.row as any;
 
+    if (tab === 'stock' && event.action === 'adjust') {
+      const r = row as StockWithWarehouse;
+      this.adjustSku.set(r.sku);
+      this.adjustWarehouseId.set(r.warehouse_id);
+      this.adjustQty.set(0);
+      this.adjustReason.set('manual_correction');
+      this.adjustNotes.set('');
+      this.adjustError.set('');
+      this.adjustModalOpen.set(true);
+      return;
+    }
 
     if (tab === 'purchases' && event.action === 'detail') {
       this.router.navigate(['/stock-management/purchases', row.id]);

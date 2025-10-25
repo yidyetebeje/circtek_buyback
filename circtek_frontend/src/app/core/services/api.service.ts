@@ -521,6 +521,19 @@ export class ApiService {
     return this.post<ApiResponse<DeadIMEIResult | null>>('/stock/adjustments/dead-imei', payload);
   }
 
+  // ===== Stock Adjustments =====
+  createStockAdjustment(payload: {
+    sku: string;
+    warehouse_id: number;
+    quantity_adjustment: number;
+    reason: 'dead_imei' | 'inventory_loss' | 'manual_correction' | 'damage' | 'theft' | 'expired' | 'return_to_supplier';
+    notes?: string;
+    device_id?: number;
+    actor_id: number;
+  }): Observable<ApiResponse<any>> {
+    return this.post<ApiResponse<any>>('/stock/adjustments', payload as any);
+  }
+
   // File Upload Methods
   uploadFile(file: File, folder?: string): Observable<ApiResponse<{ url: string; fileName: string; originalName: string; size: number; type: string } | null>> {
     const formData = new FormData();
