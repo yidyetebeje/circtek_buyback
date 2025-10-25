@@ -131,6 +131,7 @@ export class DiagnosticsController {
 				actor_id: testerId,
 				event_type: 'TEST_COMPLETED',
 				details: {
+					test_result_id: created.id,
 					make: created.make,
 					model_name: created.model_name,
 					serial_number: created.serial_number,
@@ -138,6 +139,9 @@ export class DiagnosticsController {
 					lpn: created.lpn,
 					warehouse_name: created.warehouse_name,
 					tester_username: created.tester_username,
+					failed_components: created.failed_components,
+					passed_components: created.passed_components,
+					battery_info: created.battery_info,
 				},
 				tenant_id: tenantId,
 			})
