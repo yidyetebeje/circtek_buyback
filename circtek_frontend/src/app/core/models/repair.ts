@@ -12,8 +12,10 @@ export interface RepairRecord {
   device_sku?: string;
   device_imei?: string;
   device_serial?: string;
-  consumed_parts?: string[];
-  repair_reasons?: string[];
+  consumed_items?: Array<{
+    part_sku: string;
+    reason: string | null;
+  }>;
   created_at: string | null;
   updated_at: string | null;
 }
