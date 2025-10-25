@@ -18,7 +18,7 @@ const PaginationQuerySchema = t.Object({
 
 // Create and export the language routes
 export const languageRoutes = new Elysia({ prefix: '/languages' })
-  .use(requireRole([])) // Add centralized authentication middleware
+   // Add centralized authentication middleware
   // GET all languages
   .get('/', 
     async ({ query }) => {

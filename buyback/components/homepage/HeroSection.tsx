@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAtomValue } from 'jotai';
 import { currentLanguageObjectAtom } from '@/store/atoms';
 import { HeroVariants } from "./hero-variants";
+import { defaultShopConfig } from "@/config/defaultShopConfig";
 
 interface HeroSectionProps {
   heroSection: HeroSectionType;
@@ -24,8 +25,10 @@ export function HeroSection({ heroSection, primaryColor, shopId }: HeroSectionPr
       console.warn(`Hero Search: Model ${model.id} does not have a sef_url. Cannot navigate.`);
     }
   };
+  heroSection = heroSection || defaultShopConfig.heroSection;
   
-  const variant = heroSection.variant || 'default';
+  
+  const variant = heroSection?.variant || 'default';
   const HeroComponent = HeroVariants[variant as keyof typeof HeroVariants] || HeroVariants.default;
   
   return (

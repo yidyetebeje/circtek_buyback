@@ -13,8 +13,10 @@
     "import:devices": "bun run src/scripts/import-devices-from-repairs.ts",
     "import:users": "bun run src/scripts/import-users-from-repairs.ts",
     "import:repairs": "bun run src/scripts/import-repairs-from-csv.ts",
+    "import:purchases": "bun run src/scripts/import-purchases-from-csv.ts",
     "check:stock": "bun run src/scripts/check-repair-parts-stock.ts",
-    "list:purchase-items": "bun run scripts/list-purchase-items.ts"
+    "list:purchase-items": "bun run scripts/list-purchase-items.ts",
+    "repopulate:test-events": "bun run scripts/repopulate-test-events.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.16",

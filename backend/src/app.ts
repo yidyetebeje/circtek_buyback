@@ -28,7 +28,7 @@ import { licensing_routes } from "./licensing";
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
         .use(cors({
-            origin: ["http://localhost:4200", "https://circtek-aws.vercel.app", "https://staging-db.circtek.io", "https://db.circtek.io"],
+            origin: ["http://localhost:4200", "http://localhost:3000","https://circtek-aws.vercel.app", "https://staging-db.circtek.io", "https://db.circtek.io"],
             methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
             allowedHeaders: ["Content-Type", "Authorization", "Accept", "Cookie"],
             credentials: true,

@@ -6,7 +6,7 @@ import { getSession, signOut } from 'next-auth/react'; // Import getSession and 
 import { auth } from '@/auth'; // Import the auth helper from NextAuth config
 
 // Define API URL - can be overridden via environment variables
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3020/api/v1';
 
 export interface ApiError {
   status: number;

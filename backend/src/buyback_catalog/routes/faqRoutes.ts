@@ -238,7 +238,7 @@ export const faqRoutes = new Elysia({ prefix: '/faqs' })
 
 // Shop-specific FAQ routes
 export const shopFAQRoutes = new Elysia({ prefix: '/shops' })
-  .use(requireRole([])) // Add centralized authentication middleware
+  // Add centralized authentication middleware
   // GET FAQs by shop ID
   .get('/:shopId/faqs', 
     async ({ params, query }) => {

@@ -77,7 +77,7 @@ export class ModelService {
     if (priceDrops && priceDrops.length > 0) {
       const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
       await db.insert(model_test_price_drops).values(priceDrops.map(pd => ({
-        model_id: newModel.models.id,
+        model_id: newModel.id,
         test_name: pd.test_name,
         price_drop: pd.price_drop,
         created_at: now,
@@ -90,13 +90,13 @@ export class ModelService {
       for (const transData of translations) {
         await modelRepository.createTranslation({
           ...transData,
-          model_id: newModel.models.id
+          model_id: newModel.id
         });
       }
     }
 
     // Return the newly created model with its translations
-    return modelRepository.findById(newModel.models.id);
+    return modelRepository.findById(newModel.id);
   }
 
   /**
@@ -192,9 +192,9 @@ export class ModelService {
     }
 
     // Delete the model image from S3 if it exists
-    if (model.models.model_image) {
+    if (model.model_image) {
       try {
-        await s3Service.deleteFile(model.models.model_image);
+        await s3Service.deleteFile(model.model_image);
       } catch (error) {
         console.error(`Failed to delete image for model ${id}:`, error);
         // Continue with deletion even if image deletion fails
@@ -424,9 +424,9 @@ export class ModelService {
     }
 
     // Delete old image if it exists
-    if (model.models.model_image) {
+    if (model.model_image) {
       try {
-        await s3Service.deleteFile(model.models.model_image);
+        await s3Service.deleteFile(model.model_image);
       } catch (error) {
         console.error(`Failed to delete old image for model ${id}:`, error);
         // Continue with upload even if old image deletion fails
