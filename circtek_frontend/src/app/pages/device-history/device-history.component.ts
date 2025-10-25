@@ -105,7 +105,9 @@ export class DeviceHistoryComponent {
       const excludedKeys = ['id', 'action', 'warehouse_id', 'warehouse_name', 'tester_username', 
                             'actor_name', 'grade_name', 'grade_color', 'grade_id', 'repair_id', 
                             'repair_items_count', 'consumed_skus', 'consumed_items', 
-                            'total_quantity_consumed', 'items_quantity', 'repairer_username'];
+                            'total_quantity_consumed', 'items_quantity', 'repairer_username',
+                            'failed_components', 'passed_components', 'pending_components',
+                            'test_result_id', 'imei', 'serial_number'];
       
       const filteredEntries = Object.entries(details)
         .filter(([key]) => !excludedKeys.includes(key))
@@ -140,7 +142,9 @@ export class DeviceHistoryComponent {
     const excludedKeys = ['id', 'action', 'warehouse_id', 'warehouse_name', 'tester_username', 
                           'actor_name', 'grade_name', 'grade_color', 'grade_id', 'remarks', 
                           'repair_id', 'repair_items_count', 'consumed_skus', 'consumed_items', 
-                          'total_quantity_consumed', 'items_quantity', 'repairer_username'];
+                          'total_quantity_consumed', 'items_quantity', 'repairer_username',
+                          'failed_components', 'passed_components', 'pending_components',
+                          'test_result_id', 'imei', 'serial_number'];
     
     return Object.entries(details)
       .filter(([key]) => !excludedKeys.includes(key))
