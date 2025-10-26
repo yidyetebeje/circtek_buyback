@@ -315,12 +315,13 @@ async function main() {
     
     if (stats.success) {
       console.log('\n✓ Script completed successfully')
-      process.exit(0)
+     
     } else {
       console.error('\n✗ Script completed with errors')
-      process.exit(1)
+     
     }
     }
+    process.exit(0);
   } catch (error) {
     console.error('\n✗ Script failed:', error)
     process.exit(1)
