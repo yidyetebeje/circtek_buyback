@@ -310,7 +310,7 @@ async function main() {
   }
 
   try {
-    for(let id = 63; id < 119; id++){
+    for(let id = 64; id < 119; id++){
       const stats = await deletePurchase(id, tenantId, dryRun)
     
     if (stats.success) {
