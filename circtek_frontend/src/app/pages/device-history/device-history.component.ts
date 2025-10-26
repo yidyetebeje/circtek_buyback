@@ -105,7 +105,7 @@ export class DeviceHistoryComponent {
       const excludedKeys = ['id', 'action', 'warehouse_id', 'warehouse_name', 'tester_username', 
                             'actor_name', 'grade_name', 'grade_color', 'grade_id', 'repair_id', 
                             'repair_items_count', 'consumed_skus', 'consumed_items', 
-                            'total_quantity_consumed', 'items_quantity', 'repairer_username',
+                            'total_quantity_consumed', 'items_quantity', 'repairer_name',
                             'failed_components', 'passed_components', 'pending_components',
                             'test_result_id', 'imei', 'serial_number'];
       
@@ -142,7 +142,7 @@ export class DeviceHistoryComponent {
     const excludedKeys = ['id', 'action', 'warehouse_id', 'warehouse_name', 'tester_username', 
                           'actor_name', 'grade_name', 'grade_color', 'grade_id', 'remarks', 
                           'repair_id', 'repair_items_count', 'consumed_skus', 'consumed_items', 
-                          'total_quantity_consumed', 'items_quantity', 'repairer_username',
+                          'total_quantity_consumed', 'items_quantity', 'repairer_name',
                           'failed_components', 'passed_components', 'pending_components',
                           'test_result_id', 'imei', 'serial_number'];
     
@@ -283,8 +283,8 @@ export class DeviceHistoryComponent {
   }
 
   protected getRepairerName(event: DeviceEvent): string {
-    if (event.event_type === 'REPAIR_COMPLETED' && event.details && (event.details as any).repairer_username) {
-      return (event.details as any).repairer_username;
+    if (event.event_type === 'REPAIR_COMPLETED' && event.details && (event.details as any).repairer_name) {
+      return (event.details as any).repairer_name;
     }
     return 'N/A';
   }

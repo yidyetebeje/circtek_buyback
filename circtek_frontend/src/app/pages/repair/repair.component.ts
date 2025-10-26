@@ -193,7 +193,7 @@ export class RepairComponent {
             }
             return 'No parts used';
           }, meta: { wrapText: true } },
-          { header: 'Repairer', accessorKey: 'repairer_username' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
+          { header: 'Repairer', accessorKey: 'repairer_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {

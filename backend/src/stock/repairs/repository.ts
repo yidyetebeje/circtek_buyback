@@ -35,7 +35,7 @@ export class RepairsRepository {
       tenant_id: repairs.tenant_id,
       warehouse_id: repairs.warehouse_id,
       warehouse_name: warehouses.name,
-      repairer_username: users.user_name,
+      repairer_name: users.name,
       created_at: repairs.created_at,
       updated_at: repairs.updated_at,
       device_sku: devices.sku,
@@ -58,13 +58,13 @@ export class RepairsRepository {
     if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
     if (filters.search) {
       const pattern = `%${filters.search}%`
-      // Search on remarks, device_sku, device_imei, device_serial, repairer_username, consumed_parts, repair_reasons
+      // Search on remarks, device_sku, device_imei, device_serial, repairer_name, consumed_parts, repair_reasons
       conditions.push(or(
         like(repairs.remarks, pattern),
         like(devices.sku, pattern),
         like(devices.imei, pattern),
         like(devices.serial, pattern),
-        like(users.user_name, pattern),
+        like(users.name, pattern),
         like(repair_items.sku, pattern),
         like(repair_reasons.name, pattern)
       ))
@@ -124,7 +124,7 @@ export class RepairsRepository {
           actor_id: repairs.actor_id,
           warehouse_id: repairs.warehouse_id,
           warehouse_name: warehouses.name,
-          repairer_username: users.user_name,
+          repairer_name: users.name,
           created_at: repairs.created_at,
           updated_at: repairs.updated_at,
           device_sku: devices.sku,
@@ -148,7 +148,7 @@ export class RepairsRepository {
         actor_id: repairs.actor_id,
         warehouse_id: repairs.warehouse_id,
         warehouse_name: warehouses.name,
-        repairer_username: users.user_name,
+        repairer_name: users.name,
         created_at: repairs.created_at,
         updated_at: repairs.updated_at,
         device_sku: devices.sku,
@@ -206,7 +206,7 @@ export class RepairsRepository {
       actor_id: repairs.actor_id,
       warehouse_id: repairs.warehouse_id,
       warehouse_name: warehouses.name,
-      repairer_username: users.user_name,
+      repairer_name: users.name,
       created_at: repairs.created_at,
       updated_at: repairs.updated_at,
       device_sku: devices.sku,

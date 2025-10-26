@@ -8,7 +8,7 @@ export interface RepairRecord {
   tenant_id: number;
   warehouse_id: number;
   warehouse_name?: string;
-  repairer_username?: string;
+  repairer_name?: string;
   device_sku?: string;
   device_imei?: string;
   device_serial?: string;

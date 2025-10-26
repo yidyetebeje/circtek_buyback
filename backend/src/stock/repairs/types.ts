@@ -41,7 +41,7 @@ export type RepairRecord = {
   tenant_id: number
   warehouse_id: number
   warehouse_name?: string
-  repairer_username?: string
+  repairer_name?: string
   consumed_items?: Array<{
     part_sku: string
     reason: string | null

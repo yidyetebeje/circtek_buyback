@@ -178,7 +178,7 @@ export class RepairsController {
             repair_id: repair.id,
             warehouse_id: payload.warehouse_id,
             warehouse_name: repair.warehouse_name || 'Unknown',
-            repairer_username: repair.repairer_username || 'Unknown',
+            repairer_name: repair.repairer_name || 'Unknown',
             items_count: payload.items.length,
             total_quantity_consumed: totals.quantity,
             total_cost: totals.cost,
