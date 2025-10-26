@@ -310,7 +310,8 @@ async function main() {
   }
 
   try {
-    const stats = await deletePurchase(purchaseId, tenantId, dryRun)
+    for(let id = 63; id < 119; id++){
+      const stats = await deletePurchase(id, tenantId, dryRun)
     
     if (stats.success) {
       console.log('\n✓ Script completed successfully')
@@ -318,6 +319,7 @@ async function main() {
     } else {
       console.error('\n✗ Script completed with errors')
       process.exit(1)
+    }
     }
   } catch (error) {
     console.error('\n✗ Script failed:', error)
