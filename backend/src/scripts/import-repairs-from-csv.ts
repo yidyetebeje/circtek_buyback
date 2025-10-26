@@ -342,6 +342,10 @@ async function importRepairs(
            record.reason = 'GLASS REFURBISHMENT';
            record.partcode = '';
        } 
+       if(record.reason.toLowerCase() == 'housing'){
+          record.partcode = '';
+          record.phonecheck_model = 'iPhone 11'
+       }
        if(record.reason.toLocaleLowerCase() === 'rear camera' && record.partcode == '') {
           record.reason = 'Ultrasonic Camera Cleaning';
           record.partcode = '';
@@ -426,7 +430,7 @@ async function importRepairs(
       const createResult = await createRepairWithConsume(
         controller,
         record,
-        deviceId,
+        deviceId,   
         actorId,
         warehouseId,
         reasonId,

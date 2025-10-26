@@ -272,7 +272,7 @@ async function main() {
   
   const csvPath = path.resolve(process.cwd(), args[0])
   const tenantId = 2
-  const warehouseId = 5
+  const warehouseId = 1
   
   // Parse optional flags
   let apiUrl = 'https://api.circtek.io'
