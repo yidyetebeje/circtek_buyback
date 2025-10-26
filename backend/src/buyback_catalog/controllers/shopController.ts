@@ -4,6 +4,7 @@ import { TShopCreate, TShopUpdate, TShopConfigUpdate } from "../types/shopTypes"
 import { NotFoundError, BadRequestError, ForbiddenError } from "../utils/errors";
 import { userShopAccessController } from "./userShopAccessController";
 import { AuthContext } from "../types/authTypes";
+import { defaultShopConfig } from "./default_config";
 
 export class ShopController {
   async getAll(ctx: AuthContext) {
@@ -148,6 +149,7 @@ export class ShopController {
       }
       data.owner_id = currentTenantId;
       data.tenant_id = currentTenantId;
+      data.config = defaultShopConfig;
     
      
 
