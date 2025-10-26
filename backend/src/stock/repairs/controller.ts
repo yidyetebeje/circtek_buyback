@@ -221,30 +221,7 @@ export class RepairsController {
         // Get model-specific or default price
         const priceInfo = await this.repo.getRepairReasonPrice(item.reason_id, device.model_name || '', tenant_id)
         const reason = await this.repo.getRepairReasonById(item.reason_id, tenant_id)
-        if (reason?.name == "GLASS REFURBISHMENT") {
-           allocations.push({ 
-          sku: 'fixed_price', 
-          quantity: item.quantity, 
-          reason_id: item.reason_id, 
-          description: item.description,
-          allocations: [],
-          is_fixed_price: true,
-          fixed_price: Number(4.28)
-        })
-        continue
-        }
-        if (reason?.name == 'Housing'){
-          allocations.push({ 
-          sku: 'fixed_price', 
-          quantity: item.quantity, 
-          reason_id: item.reason_id, 
-          description: item.description,
-          allocations: [],
-          is_fixed_price: true,
-          fixed_price: Number(3.22)
-        })
-        continue
-        }
+        
         if (!priceInfo) {
           // Rollback any successful allocations before failing
           await this.rollbackAllocations(allocations, tenant_id)
