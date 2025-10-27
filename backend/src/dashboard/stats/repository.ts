@@ -8,6 +8,8 @@ import {
   tenants,
   stock,
   purchases,
+  purchase_items,
+  received_items,
   transfers,
   repairs
 } from '../../db/circtek.schema'
@@ -142,13 +144,33 @@ export class DashboardStatsRepository {
       .from(purchases)
       .where(purchaseCondition)
 
-    const [pendingPurchases] = await this.db
-      .select({ count: count() })
+    // Count purchases where at least one item is not fully received
+    // A purchase is complete only when ALL items are fully received
+    const pendingPurchasesQuery = await this.db
+      .select({
+        purchase_id: purchases.id
+      })
       .from(purchases)
+      .leftJoin(purchase_items, eq(purchase_items.purchase_id, purchases.id))
+      .leftJoin(
+        received_items, 
+        and(
+          eq(received_items.purchase_id, purchases.id),
+          eq(received_items.purchase_item_id, purchase_items.id)
+        )
+      )
       .where(and(
         purchaseCondition,
         eq(purchases.status, true)
       ))
+      .groupBy(purchases.id, purchase_items.id, purchase_items.quantity)
+      .having(
+        sql`COALESCE(SUM(${received_items.quantity}), 0) < ${purchase_items.quantity}`
+      )
+
+    // Get distinct purchase IDs that have at least one incomplete item
+    const uniquePendingPurchases = new Set(pendingPurchasesQuery.map(p => p.purchase_id))
+    const pendingPurchases = { count: uniquePendingPurchases.size }
 
     // Transfer stats
     const transferCondition = tenantId ? eq(transfers.tenant_id, tenantId) : undefined
