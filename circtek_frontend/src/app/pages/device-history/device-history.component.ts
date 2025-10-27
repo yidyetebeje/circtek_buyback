@@ -44,9 +44,9 @@ export class DeviceHistoryComponent {
   protected readonly hasEvents = computed(() => this.events().length > 0);
   protected readonly hasSearched = computed(() => this.searchValue().trim().length > 0);
   protected readonly timelineEvents = computed(() => {
-    // Timeline should show latest events at the top (descending order by time)
-    // Reverse the array so newest events appear first
-    return [...this.events()].reverse();
+    // Timeline should show latest events at the top
+    // Backend returns events in desc order (latest first), so we use as-is
+    return this.events();
   });
 
   // Event type labels and icons
