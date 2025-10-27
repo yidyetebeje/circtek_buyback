@@ -27,6 +27,7 @@ export class SkuAutocompleteComponent {
   disabled = input<boolean>(false);
   required = input<boolean>(false);
   isPart = input<boolean | undefined>();
+  showAddButton = input<boolean>(true);
 
   // Outputs
   valueChange = output<string>();
@@ -60,6 +61,7 @@ export class SkuAutocompleteComponent {
 
   hasResults = computed(() => this.filteredOptions().length > 0);
   showCreateOption = computed(() => {
+    if (!this.showAddButton()) return false;
     const query = (this.searchControl.value?.trim() || '').toLowerCase();
     const hasExactSku = this.filteredOptions().some(option => option.sku.toLowerCase() === query);
     return query.length > 0 && !this.loading() && !hasExactSku;
