@@ -139,6 +139,7 @@
                   <th class="text-xs">Reason</th>
                   <th class="text-xs">User</th>
                   <th class="text-xs">Warehouse</th>
+                  <th class="text-xs">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,6 +162,16 @@
                     </td>
                     <td class="text-xs">{{ repair.repairer_name || 'Unknown' }}</td>
                     <td class="text-xs">{{ repair.warehouse_name || 'Unknown' }}</td>
+                    <td class="text-xs">
+                      <button 
+                        type="button"
+                        class="btn btn-ghost btn-xs text-error"
+                        (click)="deleteRepair(repair.id)"
+                        title="Delete repair"
+                      >
+                        <lucide-icon [img]="Trash2Icon" class="size-4"></lucide-icon>
+                      </button>
+                    </td>
                   </tr>
                 }
               </tbody>

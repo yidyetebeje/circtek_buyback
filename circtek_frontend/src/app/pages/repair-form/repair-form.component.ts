@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators, FormArray, FormControl, F
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HttpParams } from '@angular/common/http';
+import { LucideAngularModule, Trash2 } from 'lucide-angular';
 
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
@@ -16,7 +17,7 @@ import { RepairReasonRecord } from '../../core/models/repair-reason';
 
 @Component({
   selector: 'app-repair-form',
-  imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent, BarcodeScannerComponent, SkuAutocompleteComponent, RepairReasonAutocompleteComponent],
+  imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent, BarcodeScannerComponent, SkuAutocompleteComponent, RepairReasonAutocompleteComponent, LucideAngularModule],
   templateUrl: './repair-form.component.html',
   styleUrls: ['./repair-form.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,6 +28,9 @@ export class RepairFormComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+
+  // Lucide icons
+  protected readonly Trash2Icon = Trash2;
 
   // View references
   private readonly imeiScanner = viewChild<BarcodeScannerComponent>('imeiScanner');
@@ -541,5 +545,29 @@ export class RepairFormComponent implements OnInit {
       .map(item => item.reason)
       .filter((reason): reason is string => !!reason)
       .join(', ');
+  }
+
+  deleteRepair(repairId: number) {
+    // Confirm deletion
+    const confirmed = confirm('Are you sure you want to delete this repair? This will restore the consumed parts to inventory.');
+    if (!confirmed) return;
+
+    this.api.deleteRepair(repairId).subscribe({
+      next: (response) => {
+        if (response.status === 200) {
+          this.toast.deleteSuccess('Repair');
+          // Refresh repair history
+          const deviceId = this.form().get('device_id')?.value;
+          if (deviceId) {
+            this.fetchRepairHistory(deviceId);
+          }
+        } else {
+          this.toast.deleteError('Repair');
+        }
+      },
+      error: (err) => {
+        this.toast.deleteError('Repair');
+      }
+    });
   }
 }
