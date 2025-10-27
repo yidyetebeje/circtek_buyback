@@ -116,15 +116,17 @@ export class DeviceEventsService {
         // For REPAIR_COMPLETED events, fetch consumed items with reasons
         if (event.event_type === 'REPAIR_COMPLETED' && event.details) {
           const details = event.details as any;
+          const repair_id = details.repair_id;
+          let consumed_items = await this.getRepairItemsWithReasons(repair_id);
           
           // Check if consumed_skus is already in the new format (array of objects with part_sku and reason)
-          if (details.consumed_skus && Array.isArray(details.consumed_skus) && details.consumed_skus.length > 0) {
-            const firstItem = details.consumed_skus[0];
-            if (typeof firstItem === 'object' && firstItem.part_sku !== undefined) {
+          if (consumed_items && Array.isArray(consumed_items) && consumed_items.length > 0) {
+            const firstItem = consumed_items[0];
+            if (typeof firstItem === 'object' && firstItem.sku !== undefined) {
               // Already in new format, just rename to consumed_items
               enrichedEvent.details = {
                 ...details,
-                consumed_items: details.consumed_skus,
+                consumed_items: consumed_items,
               };
             } else if (details.repair_id) {
               // Old format (array of strings), fetch from database

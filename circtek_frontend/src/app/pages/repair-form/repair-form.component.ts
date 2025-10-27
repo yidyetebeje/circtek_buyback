@@ -86,9 +86,11 @@ export class RepairFormComponent implements OnInit {
       const quantityValid = Number(partGroup.get('quantity')?.value) > 0;
       const reasonId: number | null | undefined = partGroup.get('reason_id')?.value;
       const hasReason = !!reasonId;
+      const hasSku = sku.length > 0;
 
-      // Valid if has quantity and reason (SKU is now optional for all reasons)
-      return quantityValid && hasReason;
+      // Valid if has quantity and at least one of: SKU or reason
+      // Only invalid if both SKU and reason are missing
+      return quantityValid && (hasSku || hasReason);
     });
     
     console.log({
@@ -370,6 +372,13 @@ export class RepairFormComponent implements OnInit {
 
   onSubmit() {
     console.log(this.form().value, "submitting");
+    
+    // Early validation check - must have at least one part
+    if (this.deviceFound() && this.parts.length === 0) {
+      this.error.set('Please add at least one part or service before submitting the repair');
+      return;
+    }
+    
     if (!this.isFormValid()) {
       this.error.set(this.getValidationErrorMessage());
       return;
@@ -479,11 +488,16 @@ export class RepairFormComponent implements OnInit {
       this.parts.controls.forEach((partGroup, index) => {
         const partErrors: string[] = [];
         const sku: string = (partGroup.get('sku')?.value || '').toString().trim();
+        const reasonId = partGroup.get('reason_id')?.value;
+        const hasSku = sku.length > 0;
+        const hasReason = !!reasonId;
+        
         if (!partGroup.get('quantity')?.value || partGroup.get('quantity')?.value < 1) {
           partErrors.push('quantity');
         }
-        if (!partGroup.get('reason_id')?.value) {
-          partErrors.push('reason');
+        // Only error if both SKU and reason are missing
+        if (!hasSku && !hasReason) {
+          partErrors.push('either part SKU or reason (both are missing)');
         }
 
         if (partErrors.length > 0) {

@@ -90,7 +90,7 @@ export class RepairsRepository {
         .leftJoin(devices, eq(repairs.device_id, devices.id))
     }
 
-    let rows
+    let rows: any[];
     if (conditions.length) {
       const final = and(...conditions)
       // Use subquery to get distinct repair IDs first, then join for full data

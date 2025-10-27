@@ -93,6 +93,8 @@ export class RepairsController {
 
       return { data, message: 'Repair created and items consumed successfully', status: 201 }
     } catch (error) {
+    
+      console.log("error",error);
       return { data: null, message: 'Failed to create repair with consumption', status: 500, error: (error as Error).message }
     }
   }
@@ -143,7 +145,9 @@ export class RepairsController {
 
       // Step 3: Persist repair items
       const persistResult = await this.persistRepairItems(allocations, repair_id, tenant_id)
+      console.log("persistResult",persistResult);
       if (!persistResult.success) {
+
         await this.rollbackMovements(successfulMovements, payload.warehouse_id, repair_id, tenant_id, actor_id)
         await this.rollbackAllocations(allocations, tenant_id)
         return { data: null, message: 'Failed to record repair items; operation reverted', status: 500 }
@@ -190,6 +194,7 @@ export class RepairsController {
         // Non-blocking: log in tests
         if (process.env.NODE_ENV === 'test') {
           console.error('Failed to create REPAIR_COMPLETED device event', e)
+          console.log("Failed to create Repaired_complete ",e);
         }
       }
 
@@ -219,8 +224,8 @@ export class RepairsController {
       // Handle fixed-price items (service-only repairs)
       if (item.sku === 'fixed_price' || item.sku === '') {
         // Get model-specific or default price
-        const priceInfo = await this.repo.getRepairReasonPrice(item.reason_id, device.model_name || '', tenant_id)
-        const reason = await this.repo.getRepairReasonById(item.reason_id, tenant_id)
+        const priceInfo = await this.repo.getRepairReasonPrice(item.reason_id || 0, device.model_name || '', tenant_id)
+        const reason = await this.repo.getRepairReasonById(item.reason_id || 0, tenant_id)
         
         if (!priceInfo) {
           // Rollback any successful allocations before failing
@@ -238,7 +243,7 @@ export class RepairsController {
           await this.rollbackAllocations(allocations, tenant_id)
           
           // Get the repair reason name for a better error message
-          const repairReason = await this.repo.getRepairReasonById(item.reason_id, tenant_id)
+          const repairReason = await this.repo.getRepairReasonById(item.reason_id || 0, tenant_id)
           const reasonName = repairReason?.name || 'Unknown'
           
           return { 
@@ -251,7 +256,7 @@ export class RepairsController {
         allocations.push({ 
           sku: 'fixed_price', 
           quantity: item.quantity, 
-          reason_id: item.reason_id, 
+          reason_id: item.reason_id || 0, 
           description: item.description,
           allocations: [],
           is_fixed_price: true,
@@ -282,7 +287,7 @@ export class RepairsController {
       allocations.push({ 
         sku: item.sku, 
         quantity: item.quantity, 
-        reason_id: item.reason_id, 
+        reason_id: item.reason_id || 0, 
         description: item.description,
         allocations: allocation.allocations 
       })
@@ -357,6 +362,9 @@ export class RepairsController {
 
   private async persistRepairItems(allocations: any[], repair_id: number, tenant_id: number) {
     const repairItems = allocations.flatMap(item => {
+      if(item.reason_id == 0){
+         item.reason_id = null;
+      }
       // Handle fixed-price items (no purchase allocations)
       if (item.is_fixed_price) {
         return [{
@@ -394,6 +402,7 @@ export class RepairsController {
       await this.repo.addRepairItems(repair_id, repairItems, tenant_id)
       return { success: true, message: 'Repair items persisted successfully' }
     } catch (error) {
+      console.log(error);
       return { success: false, message: 'Failed to persist repair items' }
     }
   }
