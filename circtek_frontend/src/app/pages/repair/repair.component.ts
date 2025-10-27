@@ -5,8 +5,10 @@ import { HttpParams } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { GenericPageComponent, type Facet, type GenericTab } from '../../shared/components/generic-page/generic-page.component';
+import { GenericModalComponent, type ModalAction } from '../../shared/components/generic-modal/generic-modal.component';
 import { ApiService } from '../../core/services/api.service';
 import { PaginationService } from '../../shared/services/pagination.service';
+import { ToastService } from '../../core/services/toast.service';
 import { RepairRecord } from '../../core/models/repair';
 import { RepairReasonRecord } from '../../core/models/repair-reason';
 import { DeadIMEIRecord } from '../../core/models/dead-imei';
@@ -17,7 +19,7 @@ export type RepairRow = RepairRecord | RepairReasonRecord | DeadIMEIRecord | Sku
 
 @Component({
   selector: 'app-repair',
-  imports: [CommonModule, GenericPageComponent],
+  imports: [CommonModule, GenericPageComponent, GenericModalComponent],
   templateUrl: './repair.component.html',
   styleUrls: ['./repair.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,6 +29,7 @@ export class RepairComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly paginationService = inject(PaginationService);
+  private readonly toast = inject(ToastService);
 
   // State
   loading = signal(false);
@@ -66,6 +69,23 @@ export class RepairComponent {
 
   // Options
   warehouseOptions = signal<Array<{ label: string; value: string }>>([]);
+
+  // Delete confirmation modal state
+  isDeleteModalOpen = signal(false);
+  deleteContext = signal<RepairRecord | null>(null);
+
+  deleteModalActions = computed<ModalAction[]>(() => [
+    {
+      label: 'Cancel',
+      variant: 'ghost',
+      action: 'cancel'
+    },
+    {
+      label: 'Delete',
+      variant: 'error',
+      action: 'delete'
+    }
+  ]);
 
   // Guards
   private initialized = signal(false);
@@ -199,6 +219,7 @@ export class RepairComponent {
             meta: {
               actions: [
                 { key: 'detail', label: 'View Details', class: 'text-info', icon: 'eye' },
+                { key: 'delete', label: 'Delete', class: 'text-error', icon: 'delete' },
               ],
               cellClass: () => 'text-right'
             }
@@ -640,6 +661,11 @@ export class RepairComponent {
       return;
     }
 
+    if (tab === 'repairs' && event.action === 'delete') {
+      this.deleteRepair(row);
+      return;
+    }
+
     if (tab === 'repair-reasons' && event.action === 'edit') {
       this.router.navigate(['/repair/repair-reasons', row.id, 'edit']);
       return;
@@ -654,5 +680,46 @@ export class RepairComponent {
       // Analytics rows don't have detail views currently
       return;
     }
+  }
+
+  deleteRepair(repair: RepairRecord) {
+    this.deleteContext.set(repair);
+    this.isDeleteModalOpen.set(true);
+  }
+
+  closeDeleteModal() {
+    this.isDeleteModalOpen.set(false);
+    this.deleteContext.set(null);
+  }
+
+  onDeleteModalAction(action: string): void {
+    if (action === 'delete') {
+      this.confirmDelete();
+    } else if (action === 'cancel') {
+      this.closeDeleteModal();
+    }
+  }
+
+  confirmDelete() {
+    const repair = this.deleteContext();
+    if (!repair) return;
+
+    this.loading.set(true);
+    this.api.deleteRepair(repair.id).subscribe({
+      next: (res) => {
+        this.loading.set(false);
+        if (res.status === 200) {
+          this.closeDeleteModal();
+          this.fetchData(); // Refresh the list
+          this.toast.success('Repair deleted successfully and stock restored', 'Delete Successful');
+        } else {
+          this.toast.error(res.message || 'Failed to delete repair', 'Delete Failed');
+        }
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.toast.error(err.error?.message || 'Failed to delete repair', 'Delete Failed');
+      },
+    });
   }
 }

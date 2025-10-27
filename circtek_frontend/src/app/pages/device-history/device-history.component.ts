@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpParams } from '@angular/common/http';
-import { LucideAngularModule, Skull, Wrench, CheckCircle, Download, Upload, Scale, FlaskConical, Package, Table2, Calendar, XCircle, Search, RotateCcw } from 'lucide-angular';
+import { LucideAngularModule, Skull, Wrench, CheckCircle, Download, Upload, Scale, FlaskConical, Package, Table2, Calendar, XCircle, Search, RotateCcw, Trash2 } from 'lucide-angular';
 import { ApiService } from '../../core/services/api.service';
 import { DeviceEvent } from '../../core/models/device-event';
 import { BarcodeScannerComponent, ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
@@ -31,6 +31,7 @@ export class DeviceHistoryComponent {
   protected readonly XCircleIcon = XCircle;
   protected readonly SearchIcon = Search;
   protected readonly RotateCcwIcon = RotateCcw;
+  protected readonly Trash2Icon = Trash2;
 
   // State signals
   protected readonly loading = signal<boolean>(false);
@@ -42,12 +43,18 @@ export class DeviceHistoryComponent {
   // Computed properties
   protected readonly hasEvents = computed(() => this.events().length > 0);
   protected readonly hasSearched = computed(() => this.searchValue().trim().length > 0);
+  protected readonly timelineEvents = computed(() => {
+    // Timeline should show latest events at the top (descending order by time)
+    // Reverse the array so newest events appear first
+    return [...this.events()].reverse();
+  });
 
   // Event type labels and icons
   protected readonly eventTypeConfig = {
     'DEAD_IMEI': { label: 'Dead IMEI', icon: Skull, color: 'text-red-600', bgColor: 'bg-gradient-to-br from-red-500 to-red-600', ringColor: 'ring-red-200' },
     'REPAIR_STARTED': { label: 'Repair Started', icon: Wrench, color: 'text-blue-600', bgColor: 'bg-gradient-to-br from-blue-500 to-blue-600', ringColor: 'ring-blue-200' },
     'REPAIR_COMPLETED': { label: 'Repair Completed', icon: CheckCircle, color: 'text-green-600', bgColor: 'bg-gradient-to-br from-green-500 to-green-600', ringColor: 'ring-green-200' },
+    'REPAIR_DELETED': { label: 'Repair Deleted', icon: Trash2, color: 'text-rose-600', bgColor: 'bg-gradient-to-br from-rose-500 to-rose-600', ringColor: 'ring-rose-200' },
     'TRANSFER_IN': { label: 'Transfer In', icon: Download, color: 'text-purple-600', bgColor: 'bg-gradient-to-br from-purple-500 to-purple-600', ringColor: 'ring-purple-200' },
     'TRANSFER_OUT': { label: 'Transfer Out', icon: Upload, color: 'text-orange-600', bgColor: 'bg-gradient-to-br from-orange-500 to-orange-600', ringColor: 'ring-orange-200' },
     'ADJUSTMENT': { label: 'Adjustment', icon: Scale, color: 'text-yellow-600', bgColor: 'bg-gradient-to-br from-yellow-500 to-yellow-600', ringColor: 'ring-yellow-200' },
@@ -94,7 +101,17 @@ export class DeviceHistoryComponent {
 
   protected formatDate(dateString: string | null): string {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString();
+    const date = new Date(dateString);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[date.getMonth()];
+    const day = date.getDate();
+    const year = date.getFullYear();
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${month} ${day} ${year}, ${hours}:${minutes}:${seconds} ${ampm}`;
   }
 
   protected formatDetails(details: any): string {
@@ -105,9 +122,9 @@ export class DeviceHistoryComponent {
       const excludedKeys = ['id', 'action', 'warehouse_id', 'warehouse_name', 'tester_username', 
                             'actor_name', 'grade_name', 'grade_color', 'grade_id', 'repair_id', 
                             'repair_items_count', 'consumed_skus', 'consumed_items', 
-                            'total_quantity_consumed', 'items_quantity', 'repairer_name',
+                            'total_quantity_consumed', 'items_quantity', 'repairer_name', 'items_count',
                             'failed_components', 'passed_components', 'pending_components',
-                            'test_result_id', 'imei', 'serial_number'];
+                            'test_result_id', 'imei', 'serial_number', 'deleted_at', 'total_quantity_restored', 'total_cost'];
       
       const filteredEntries = Object.entries(details)
         .filter(([key]) => !excludedKeys.includes(key))
@@ -142,9 +159,9 @@ export class DeviceHistoryComponent {
     const excludedKeys = ['id', 'action', 'warehouse_id', 'warehouse_name', 'tester_username', 
                           'actor_name', 'grade_name', 'grade_color', 'grade_id', 'remarks', 
                           'repair_id', 'repair_items_count', 'consumed_skus', 'consumed_items', 
-                          'total_quantity_consumed', 'items_quantity', 'repairer_name',
+                          'total_quantity_consumed', 'items_quantity', 'repairer_name', 'items_count',
                           'failed_components', 'passed_components', 'pending_components',
-                          'test_result_id', 'imei', 'serial_number'];
+                          'test_result_id', 'imei', 'serial_number', 'deleted_at', 'total_quantity_restored', 'total_cost'];
     
     return Object.entries(details)
       .filter(([key]) => !excludedKeys.includes(key))
@@ -283,10 +300,48 @@ export class DeviceHistoryComponent {
   }
 
   protected getRepairerName(event: DeviceEvent): string {
-    if (event.event_type === 'REPAIR_COMPLETED' && event.details && (event.details as any).repairer_name) {
+    if ((event.event_type === 'REPAIR_COMPLETED' || event.event_type === 'REPAIR_DELETED') && event.details && (event.details as any).repairer_name) {
       return (event.details as any).repairer_name;
     }
     return 'N/A';
+  }
+
+  protected getDeletedRepairItems(event: DeviceEvent): Array<{sku: string, quantity: number, reason: string, cost: string}> {
+    if (event.event_type === 'REPAIR_DELETED' && event.details && (event.details as any).consumed_items) {
+      const items = (event.details as any).consumed_items;
+      return items.map((item: any) => ({
+        sku: item.sku || 'fixed_price',
+        quantity: item.quantity || 1,
+        reason: item.reason || 'Unknown',
+        cost: item.cost || '0'
+      }));
+    }
+    return [];
+  }
+
+  protected hasDeletedRepairItems(event: DeviceEvent): boolean {
+    return this.getDeletedRepairItems(event).length > 0;
+  }
+
+  protected getDeletedAt(event: DeviceEvent): string {
+    if (event.event_type === 'REPAIR_DELETED' && event.details && (event.details as any).deleted_at) {
+      return this.formatDate((event.details as any).deleted_at);
+    }
+    return 'N/A';
+  }
+
+  protected getTotalQuantityRestored(event: DeviceEvent): number {
+    if (event.event_type === 'REPAIR_DELETED' && event.details && (event.details as any).total_quantity_restored) {
+      return (event.details as any).total_quantity_restored;
+    }
+    return 0;
+  }
+
+  protected getTotalCost(event: DeviceEvent): number {
+    if (event.event_type === 'REPAIR_DELETED' && event.details && (event.details as any).total_cost) {
+      return (event.details as any).total_cost;
+    }
+    return 0;
   }
 
   private searchDeviceHistory(identifier: string) {

@@ -115,6 +115,19 @@ export const repairs_routes = new Elysia({ prefix: '/repairs' })
     }
   })
 
+  // Delete repair with cleanup
+  .delete('/:id', async (ctx) => {
+    const { params, currentTenantId, currentUserId } = ctx as any
+    return controller.deleteRepairWithCleanup(Number(params.id), currentTenantId, currentUserId)
+  }, {
+    detail: {
+      
+      tags: ['Repairs'],
+      summary: 'Delete repair',
+      description: 'Delete a repair and restore consumed stock, deallocate purchases, and remove device events'
+    }
+  })
+
 export { controller as repairsController };
 
 

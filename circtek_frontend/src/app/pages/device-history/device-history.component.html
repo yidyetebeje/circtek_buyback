@@ -108,7 +108,7 @@
                 <!-- Timeline connector line -->
                 <div class="absolute left-5 top-5 bottom-0 w-0.5 bg-base-300"></div>
                 
-                @for (event of events(); track event.id; let idx = $index) {
+                @for (event of timelineEvents(); track event.id; let idx = $index) {
                   <div class="relative pl-14 group">
                     <!-- Event icon -->
                     <div class="absolute left-0 top-0 z-10">
@@ -288,6 +288,50 @@
                               </div>
                             }
                           </div>
+                        } @else if (event.event_type === 'REPAIR_DELETED') {
+                          <!-- Repair Deleted Event -->
+                          <div class="space-y-2">
+                            <!-- Warehouse and Repairer -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                              <div class="flex flex-col">
+                                <span class="text-xs text-base-content/50 font-medium mb-1">Warehouse</span>
+                                <span class="font-semibold text-base-content">{{ getWarehouseName(event) }}</span>
+                              </div>
+                              
+                              <div class="flex flex-col">
+                                <span class="text-xs text-base-content/50 font-medium mb-1">Original Repairer</span>
+                                <span class="font-semibold text-base-content">{{ getRepairerName(event) }}</span>
+                              </div>
+                            </div>
+                            
+                            <!-- Deletion Summary -->
+                            <div class="bg-rose-50/50 dark:bg-rose-900/10 rounded-md px-3 py-2 border-l-2 border-rose-500">
+                              <div class="text-xs text-rose-700 dark:text-rose-400 mb-2 font-medium">⚠️ Repair Deletion Summary</div>
+                              <div class="text-sm">
+                                <div class="font-semibold text-base-content">{{ getTotalQuantityRestored(event) }} items restored to stock</div>
+                              </div>
+                            </div>
+                            
+                            <!-- Items That Were Restored -->
+                            @if (hasDeletedRepairItems(event)) {
+                              <div class="bg-amber-50/50 dark:bg-amber-900/10 rounded-md px-3 py-2 border-l-2 border-amber-500">
+                                <div class="text-xs text-amber-700 dark:text-amber-400 mb-2 font-medium">Items Restored to Stock</div>
+                                <div class="space-y-1.5">
+                                  @for (item of getDeletedRepairItems(event); track $index) {
+                                    <div class="flex items-center gap-3 text-sm">
+                                      <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-1.5 mb-0.5">
+                                          <span class="font-semibold text-base-content truncate">{{ item.sku === 'fixed_price' ? '💰 Fixed Price Service' : '🔧 ' + item.sku }}</span>
+                                          <span class="badge badge-xs badge-outline flex-shrink-0">×{{ item.quantity }}</span>
+                                        </div>
+                                        <div class="text-xs text-amber-700 dark:text-amber-400">{{ item.reason }}</div>
+                                      </div>
+                                    </div>
+                                  }
+                                </div>
+                              </div>
+                            }
+                          </div>
                         } @else {
                           <!-- Other Event Types -->
                           @if (getDetailsList(event.details).length > 0) {
@@ -325,7 +369,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @for (event of events(); track event.id; let idx = $index) {
+                    @for (event of timelineEvents(); track event.id; let idx = $index) {
                       <tr class="hover:bg-base-200/50 transition-colors">
                         <td>
                           <div class="flex items-center gap-3">
@@ -350,7 +394,7 @@
                           </div>
                         </td>
                         <td class="text-sm">
-                          @if (isStockInEvent(event) || event.event_type === 'TEST_COMPLETED' || event.event_type === 'REPAIR_COMPLETED') {
+                          @if (isStockInEvent(event) || event.event_type === 'TEST_COMPLETED' || event.event_type === 'REPAIR_COMPLETED' || event.event_type === 'REPAIR_DELETED') {
                             <span class="font-semibold text-base-content">{{ getWarehouseName(event) }}</span>
                           } @else {
                             <span class="text-base-content/30 italic">Not specified</span>
@@ -366,6 +410,9 @@
                           } @else if (event.event_type === 'REPAIR_COMPLETED') {
                             <div class="font-semibold text-base-content">{{ getRepairerName(event) }}</div>
                             <div class="text-xs text-base-content/50">Repairer</div>
+                          } @else if (event.event_type === 'REPAIR_DELETED') {
+                            <div class="font-semibold text-base-content">{{ getRepairerName(event) }}</div>
+                            <div class="text-xs text-rose-600 dark:text-rose-400">Original Repairer</div>
                           } @else {
                             <span class="text-base-content/30 italic">N/A</span>
                           }
@@ -412,6 +459,22 @@
                                   <span class="text-base-content/50">•</span>
                                   <span class="font-semibold">${{ item.cost }}</span>
                                 </div>
+                              }
+                            </div>
+                          } @else if (event.event_type === 'REPAIR_DELETED') {
+                            <div class="space-y-1">
+                              <div class="flex items-center gap-2 text-xs mb-1">
+                                <span class="badge badge-error badge-sm">⚠️ Deleted</span>
+                                <span class="font-semibold text-rose-600">{{ getTotalQuantityRestored(event) }} items restored</span>
+                              </div>
+                              @if (hasDeletedRepairItems(event)) {
+                                @for (item of getDeletedRepairItems(event); track $index) {
+                                  <div class="flex items-center gap-2 text-xs">
+                                    <span class="font-semibold text-amber-600">{{ item.sku === 'fixed_price' ? '💰 Fixed Price' : item.sku }}</span>
+                                    <span class="text-base-content/50">•</span>
+                                    <span class="text-amber-600 dark:text-amber-400">{{ item.reason }}</span>
+                                  </div>
+                                }
                               }
                             </div>
                           } @else if (formatDetails(event.details)) {

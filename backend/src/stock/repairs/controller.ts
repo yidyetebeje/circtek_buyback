@@ -495,6 +495,95 @@ export class RepairsController {
       return { data: null, message: 'Failed to retrieve IMEI analytics', status: 500, error: (error as Error).message }
     }
   }
+
+  async deleteRepairWithCleanup(repair_id: number, tenant_id: number, actor_id: number): Promise<response<{ id: number } | null>> {
+    try {
+      // Step 1: Get the repair with all its items
+      const repairWithItems = await this.repo.getRepairWithItems(repair_id, tenant_id)
+      if (!repairWithItems) {
+        return { data: null, message: 'Repair not found', status: 404 }
+      }
+
+      const { repair, items } = repairWithItems
+
+      // Step 2: Restore stock and deallocate purchases for each item
+      for (const item of items) {
+        // Skip fixed-price items as they don't consume physical inventory
+        if (item.sku === 'fixed_price') {
+          continue
+        }
+
+        // Deallocate from purchase items (restore quantity_used_for_repair)
+        if (item.purchase_items_id) {
+          await purchasesRepository.deallocateAllocations(
+            [{ purchase_item_id: item.purchase_items_id, quantity: item.quantity }],
+            tenant_id
+          )
+        }
+
+        // Create reverse stock movement to restore inventory
+        await movementsController.create({
+          sku: item.sku,
+          warehouse_id: repair.warehouse_id,
+          delta: item.quantity, // positive delta to restore stock
+          reason: 'repair',
+          ref_type: 'repairs_deleted',
+          ref_id: repair_id,
+          actor_id,
+        }, tenant_id)
+      }
+      // delete all device events from this repair
+      await this.repo.deleteDeviceEventsByRepairId(repair_id, tenant_id)
+
+      
+      // Step 3: Create REPAIR_DELETED event for audit trail
+      try {
+        // Prepare consumed items summary for the event
+        const consumedItemsSummary = items.map(item => ({
+          sku: item.sku,
+          quantity: item.quantity,
+          cost: Number(item.cost),
+          reason: item.reason_name || null
+        }))
+
+        await deviceEventsService.createDeviceEvent({
+          device_id: repair.device_id,
+          actor_id,
+          event_type: 'REPAIR_DELETED',
+          details: {
+            repair_id: repair.id,
+            deleted_at: new Date().toISOString(),
+            warehouse_id: repair.warehouse_id,
+            warehouse_name: repair.warehouse_name || 'Unknown',
+            repairer_name: repair.repairer_name || 'Unknown',
+            items_count: items.length,
+            total_quantity_restored: items.reduce((sum, item) => sum + item.quantity, 0),
+            total_cost: items.reduce((sum, item) => sum + Number(item.cost) * item.quantity, 0),
+            consumed_items: consumedItemsSummary,
+            remarks: repair.remarks || null,
+          },
+          tenant_id,
+        })
+      } catch (e) {
+        // Non-blocking: log the error but continue with deletion
+        console.error('Failed to create REPAIR_DELETED device event', e)
+      }
+
+      // Step 4: Delete repair items
+      await this.repo.deleteRepairItemsByRepairId(repair_id, tenant_id)
+
+      // Step 5: Delete the repair itself
+      await this.repo.deleteRepair(repair_id, tenant_id)
+
+      // Note: We keep the original REPAIR_STARTED and REPAIR_COMPLETED events for audit trail
+      // The REPAIR_DELETED event marks that this repair was removed
+
+      return { data: { id: repair_id }, message: 'Repair deleted successfully and stock restored', status: 200 }
+    } catch (error) {
+      console.error('Failed to delete repair:', error)
+      return { data: null, message: 'Failed to delete repair', status: 500, error: (error as Error).message }
+    }
+  }
 }
 
 

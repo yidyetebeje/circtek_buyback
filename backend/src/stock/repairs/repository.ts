@@ -1,6 +1,6 @@
 import { and, count, desc, eq, gte, lte, like, or, sql } from "drizzle-orm"
 import { db } from "../../db"
-import { repair_items, repairs, devices, repair_reasons, warehouses, users, repair_reason_model_prices } from "../../db/circtek.schema"
+import { repair_items, repairs, devices, repair_reasons, warehouses, users, repair_reason_model_prices, device_events } from "../../db/circtek.schema"
 import { purchase_items } from "../../db/circtek.schema"
 import { RepairConsumeItemsInput, RepairListResult, RepairRecord, RepairWithItems, RepairCreateInput, RepairItemRecord, RepairQueryInput } from "./types"
 
@@ -261,6 +261,30 @@ export class RepairsRepository {
   async deleteRepairItemsByIds(ids: number[], tenant_id: number): Promise<void> {
     if (!ids.length) return
     await this.database.delete(repair_items).where(and(eq(repair_items.tenant_id, tenant_id), (sql`FIND_IN_SET(${repair_items.id}, ${ids.join(',')})` as any)))
+  }
+
+  async deleteRepairItemsByRepairId(repair_id: number, tenant_id: number): Promise<void> {
+    await this.database.delete(repair_items).where(and(eq(repair_items.repair_id, repair_id), eq(repair_items.tenant_id, tenant_id)))
+  }
+
+  async deleteDeviceEventsByRepairId(repair_id: number, tenant_id: number): Promise<void> {
+    
+    // Delete both REPAIR_STARTED and REPAIR_COMPLETED events for this repair
+    await this.database.delete(device_events).where(
+      and(
+        eq(device_events.tenant_id, tenant_id),
+        or(
+          and(
+            eq(device_events.event_type, 'REPAIR_STARTED'),
+            sql`JSON_EXTRACT(${device_events.details}, '$.repair_id') = ${repair_id}`
+          ),
+          and(
+            eq(device_events.event_type, 'REPAIR_COMPLETED'),
+            sql`JSON_EXTRACT(${device_events.details}, '$.repair_id') = ${repair_id}`
+          )
+        )
+      )
+    )
   }
 
   async deleteRepair(id: number, tenant_id: number): Promise<void> {

@@ -321,7 +321,7 @@ export const device_events = mysqlTable('device_events', {
   id: serial('id').primaryKey(),
   device_id: bigint('device_id', { mode: 'number', unsigned: true }).references(() => devices.id).notNull(),
   actor_id: bigint('actor_id', { mode: 'number', unsigned: true }).references(() => users.id).notNull(),
-  event_type: mysqlEnum('device_event_type', ['DEAD_IMEI','REPAIR_STARTED','REPAIR_COMPLETED','TRANSFER_IN','TRANSFER_OUT','ADJUSTMENT','TEST_COMPLETED']).notNull(),
+  event_type: mysqlEnum('device_event_type', ['DEAD_IMEI','REPAIR_STARTED','REPAIR_COMPLETED','TRANSFER_IN','TRANSFER_OUT','ADJUSTMENT','TEST_COMPLETED', 'REPAIR_DELETED']).notNull(),
   details: json('details'),
   status: boolean('status').default(true),
   tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),

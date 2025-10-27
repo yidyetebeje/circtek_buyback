@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { device_events } from "../db/circtek.schema";
 import { DeviceEventCreateInput } from "./types";
 import { db } from "../db/index";
@@ -87,7 +87,7 @@ export class DeviceEventsService {
       .select()
       .from(device_events)
       .where(and(...conditions))
-      .orderBy(device_events.created_at);
+      .orderBy(desc(device_events.created_at));
 
     // Enhance events with additional details
     const enhancedEvents = await Promise.all(

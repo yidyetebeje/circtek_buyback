@@ -146,7 +146,8 @@ export const DeviceEventCreate = t.Object({
     t.Literal('TRANSFER_IN'),
     t.Literal('TRANSFER_OUT'),
     t.Literal('ADJUSTMENT'),
-    t.Literal('TEST_COMPLETED')
+    t.Literal('TEST_COMPLETED'),
+    t.Literal('REPAIR_DELETED')
   ]),
   details: t.Optional(t.Object({})),
   tenant_id: t.Number(),
