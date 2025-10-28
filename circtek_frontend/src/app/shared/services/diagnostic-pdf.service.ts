@@ -124,13 +124,15 @@ export class DiagnosticPdfService {
     const qrCodeDataUrl = await this.generateQrCode(diagnostic.id, diagnostic.serial_number || undefined);
     console.log('QR code generated:', qrCodeDataUrl ? 'Success' : 'Failed');
     
-    // Convert logo to base64 data URL for PDF embedding
-    const logoUrl = this.logosService.getClientLogoUrl() || 'https://api.circtek.com/logo.png';
-    console.log('Original logo URL:', logoUrl);
+    // Use cached base64 logo if available, otherwise use URL
+    const cachedBase64 = this.logosService.getClientLogoBase64();
+    const logoUrl = cachedBase64 || this.logosService.getClientLogoUrl() || 'https://api.circtek.com/logo.png';
     
-    const logoDataUrl = await this.getImageAsDataUrl(logoUrl);
-    console.log('Logo data URL conversion:', logoDataUrl.startsWith('data:') ? 'Success (base64)' : 'Failed (using original URL)');
-    console.log('Logo data URL length:', logoDataUrl.length);
+    if (cachedBase64) {
+      console.log('Using cached base64 logo (instant!)');
+    } else {
+      console.log('Using logo URL:', logoUrl);
+    }
     
     const encodedReportId = this.cipherService.encodeTestId(diagnostic.id, diagnostic.serial_number || undefined);
     
@@ -141,7 +143,7 @@ export class DiagnosticPdfService {
     
     // Set inputs
     componentRef.setInput('report', diagnostic);
-    componentRef.setInput('logoUrl', logoDataUrl);
+    componentRef.setInput('logoUrl', logoUrl);
     componentRef.setInput('qrCodeDataUrl', qrCodeDataUrl);
     componentRef.setInput('encodedReportId', encodedReportId);
     componentRef.setInput('showPrintButtons', false);
