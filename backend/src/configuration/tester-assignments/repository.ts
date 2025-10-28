@@ -103,7 +103,12 @@ export class TesterAssignmentsRepository {
                 .from(label_templates)
                 .leftJoin(tenants, eq(label_templates.tenant_id, tenants.id))
                 .where(eq(label_templates.id, testerRow.label_template_id))
+
             result.label_template = labelTemplateRow as any
+           // check canvas state is string
+           if (typeof result.label_template?.canvas_state === 'string') {
+            result.label_template.canvas_state = JSON.parse(result.label_template.canvas_state)
+           }
         }
 
         // Get OTA Update if assigned
