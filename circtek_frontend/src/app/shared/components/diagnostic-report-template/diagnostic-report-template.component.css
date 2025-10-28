@@ -172,6 +172,7 @@ table {
   text-transform: none;
   padding: 0px 10px 0px 20px !important;
   background-color: #808282 !important;
+  border: none;
 }
 
 .print-table2 td {
@@ -181,11 +182,24 @@ table {
   text-transform: none;
   border-top: none;
   padding: 0px 0px 0px 20px !important;
-  border: 1.5px solid #000;
+  border: none;
 }
 
 .print-table2 {
   border-collapse: collapse;
+  border: none;
+}
+
+.print-table2 tr {
+  border: none;
+}
+
+.print-table2 tbody {
+  border: none;
+}
+
+.print-table2 thead {
+  border: none;
 }
 
 .bold-text {
