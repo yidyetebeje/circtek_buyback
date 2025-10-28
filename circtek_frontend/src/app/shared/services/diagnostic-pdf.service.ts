@@ -7,6 +7,7 @@ import { ApiService } from '../../core/services/api.service';
 import { LogosService } from '../../services/logos.service';
 import { CipherService } from '../../core/services/cipher.service';
 import qrcode from 'qrcode';
+import { DiagnosticReportTemplateComponent } from '../components/diagnostic-report-template/diagnostic-report-template.component';
 
 @Injectable({
   providedIn: 'root'
@@ -22,6 +23,7 @@ export class DiagnosticPdfService {
     console.log('Starting diagnostic PDF generation for ID:', diagnosticId);
     
     let container: HTMLElement | null = null;
+    let componentRef: ComponentRef<DiagnosticReportTemplateComponent> | null = null;
     
     try {
       // Fetch the diagnostic data
@@ -33,8 +35,10 @@ export class DiagnosticPdfService {
       const diagnostic = response.data;
       console.log('Diagnostic data fetched successfully');
       
-      // Create the report HTML container
-      container = await this.createReportContainer(diagnostic);
+      // Create the report using the shared component
+      const result = await this.createReportContainer(diagnostic);
+      container = result.container;
+      componentRef = result.componentRef;
       
       // Add to DOM for rendering
       document.body.appendChild(container);
@@ -43,47 +47,30 @@ export class DiagnosticPdfService {
       // Wait for images and content to load
       await this.waitForImagesAndContent(container);
       
-      // Add PDF optimization styles
-      container.classList.add('pdf-optimized');
+      // Convert all images to base64 to ensure they're captured
+      await this.convertAllImagesToBase64(container);
       
-      // Find the report document
-      const reportDocument = container.querySelector('.report-document') as HTMLElement;
-      if (!reportDocument) {
-        throw new Error('Report document element not found');
-      }
+      // Extra wait for rendering since container is now visible
+      console.log('Waiting for visible rendering...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       console.log('Starting canvas capture...');
       
-      // Capture with html2canvas
-      const canvas = await html2canvas(reportDocument, {
-        scale: 1.5,
+      // Capture the component element directly (like report page does)
+      const componentElement = componentRef.location.nativeElement;
+      if (!componentElement) {
+        throw new Error('Component element not found');
+      }
+      
+      console.log('Component element dimensions:', componentElement.offsetWidth, 'x', componentElement.offsetHeight);
+      
+      // Use same simple options as the working report component
+      const canvas = await html2canvas(componentElement, {
+        scale: 1,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        width: 800,
-        height: reportDocument.scrollHeight,
-        removeContainer: true,
-        logging: false,
-        imageTimeout: 5000,
-        foreignObjectRendering: false,
-        onclone: (clonedDoc) => {
-          // Apply optimization styles to cloned document
-          const clonedContainer = clonedDoc.querySelector('.temp-report-container') as HTMLElement;
-          if (clonedContainer) {
-            clonedContainer.classList.add('pdf-optimized');
-            
-            // Remove no-print elements
-            const noPrintElements = clonedContainer.querySelectorAll('.no-print');
-            noPrintElements.forEach(el => el.remove());
-            
-            // Optimize images
-            const images = clonedContainer.querySelectorAll('img');
-            images.forEach(img => {
-              img.style.maxWidth = '100%';
-              img.style.height = 'auto';
-            });
-          }
-        }
+        logging: true,
       });
       
       console.log('Canvas captured successfully:', canvas.width, 'x', canvas.height);
@@ -92,8 +79,23 @@ export class DiagnosticPdfService {
         throw new Error('Canvas capture failed - zero dimensions');
       }
       
-      // Generate PDF
-      const pdf = this.createPdf(canvas, true); // true for single page
+      // Generate PDF using same logic as report component
+      const pdf = new jsPDF('portrait', 'mm', 'a4', true);
+      const ratio = canvas.width / canvas.height;
+      const pdfWidth = 210;
+      const leftMargin = 0;
+      const imgWidth = pdfWidth - leftMargin;
+      const imgHeight = imgWidth / ratio;
+      const zoomFactor = 1;
+      const adjustedImgWidth = imgWidth * zoomFactor;
+      const adjustedImgHeight = imgHeight * zoomFactor;
+      const offsetX = (imgWidth - adjustedImgWidth) / 2;
+      const topMargin = 20;
+      const offsetY = (imgHeight - adjustedImgHeight) / 2 + topMargin;
+
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', leftMargin + offsetX, offsetY, adjustedImgWidth, adjustedImgHeight);
+      
       const blob = pdf.output('blob');
       
       console.log('PDF generated successfully, size:', blob.size);
@@ -104,6 +106,9 @@ export class DiagnosticPdfService {
       throw error;
     } finally {
       // Cleanup
+      if (componentRef) {
+        componentRef.destroy();
+      }
       if (container && document.body.contains(container)) {
         document.body.removeChild(container);
         console.log('Report container cleaned up');
@@ -111,382 +116,209 @@ export class DiagnosticPdfService {
     }
   }
   
-  private async createReportContainer(diagnostic: Diagnostic): Promise<HTMLElement> {
+  private async createReportContainer(diagnostic: Diagnostic): Promise<{ container: HTMLElement; componentRef: ComponentRef<DiagnosticReportTemplateComponent> }> {
     console.log('Creating report container with diagnostic data');
     
-    // Create main container
-    const container = document.createElement('div');
-    container.className = 'temp-report-container report-page-container';
-    container.style.cssText = `
-      position: absolute;
-      top: -10000px;
-      left: 0;
-      visibility: visible;
-      opacity: 1;
-      background-color: #f0f2f5;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-      box-sizing: border-box;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      z-index: -1;
-    `;
-    
-    // Create report document
-    const reportDoc = document.createElement('div');
-    reportDoc.className = 'report-document';
-    reportDoc.style.cssText = `
-      background-color: #ffffff;
-      width: 210mm;
-      min-height: 297mm;
-      padding: 15mm;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: #333;
-      line-height: 1.4;
-      display: flex;
-      flex-direction: column;
-      font-size: 12px;
-    `;
-    
     // Generate QR code
-    const qrCodeDataUrl = await this.generateQrCode(diagnostic.id);
+    const qrCodeDataUrl = await this.generateQrCode(diagnostic.id, diagnostic.serial_number || undefined);
+    console.log('QR code generated:', qrCodeDataUrl ? 'Success' : 'Failed');
     
-    // Build the report HTML content
-    reportDoc.innerHTML = await this.buildReportContent(diagnostic, qrCodeDataUrl);
+    // Convert logo to base64 data URL for PDF embedding
+    const logoUrl = this.logosService.getClientLogoUrl() || 'https://api.circtek.com/logo.png';
+    console.log('Original logo URL:', logoUrl);
     
-    // Add styles
+    const logoDataUrl = await this.getImageAsDataUrl(logoUrl);
+    console.log('Logo data URL conversion:', logoDataUrl.startsWith('data:') ? 'Success (base64)' : 'Failed (using original URL)');
+    console.log('Logo data URL length:', logoDataUrl.length);
+    
+    const encodedReportId = this.cipherService.encodeTestId(diagnostic.id, diagnostic.serial_number || undefined);
+    
+    // Create the component dynamically
+    const componentRef = createComponent(DiagnosticReportTemplateComponent, {
+      environmentInjector: this.injector,
+    });
+    
+    // Set inputs
+    componentRef.setInput('report', diagnostic);
+    componentRef.setInput('logoUrl', logoDataUrl);
+    componentRef.setInput('qrCodeDataUrl', qrCodeDataUrl);
+    componentRef.setInput('encodedReportId', encodedReportId);
+    componentRef.setInput('showPrintButtons', false);
+    
+    // Attach to application
+    this.appRef.attachView(componentRef.hostView);
+    
+    // Create container - MUST be visible for html2canvas to capture images properly
+    const container = document.createElement('div');
+    container.className = 'temp-report-container';
+    container.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(255, 255, 255, 0.98);
+      z-index: 9999;
+      overflow: hidden;
+      font-family: arial !important;
+      pointer-events: none;
+    `;
+    
+    // Add loading message
+    const loadingDiv = document.createElement('div');
+    loadingDiv.style.cssText = `
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #294174;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      z-index: 10000;
+    `;
+    loadingDiv.textContent = 'Generating PDF...';
+    container.appendChild(loadingDiv);
+    
+    // Create wrapper for PDF capture - match report page layout
+    const pdfTableWrapper = document.createElement('div');
+    pdfTableWrapper.className = 'pdf-table-wrapper';
+    pdfTableWrapper.style.cssText = `
+      font-family: arial !important;
+      width: 100%;
+      padding: 15px;
+      box-sizing: border-box;
+    `;
+    pdfTableWrapper.appendChild(componentRef.location.nativeElement);
+    
+    container.appendChild(pdfTableWrapper);
+    
+    // Add the shared component styles
     this.addReportStyles(container);
     
-    container.appendChild(reportDoc);
+    // Trigger change detection
+    componentRef.changeDetectorRef.detectChanges();
     
-    return container;
-  }
-  
-  private async buildReportContent(diagnostic: Diagnostic, qrCodeDataUrl: string | null): Promise<string> {
-    const logoUrl = this.logosService.getClientLogoUrl() || 'https://api.circtek.com/logo.png';
-    
-    // Parse component lists
-    const passedComponents = this.parseComponentList(diagnostic.passed_components);
-    const failedComponents = this.parseComponentList(diagnostic.failed_components);
-    const pendingComponents = this.parseComponentList(diagnostic.pending_components);
-    
-    // Format date
-    const formattedDate = diagnostic.created_at ? 
-      new Date(diagnostic.created_at).toLocaleDateString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      }) : 'N/A';
-    
-    return `
-      <!-- Header -->
-      <div class="report-header">
-        <div class="logo-section">
-          <img src="${logoUrl}" alt="Company Logo" class="company-logo">
-          <div class="report-title-block">
-            <h1 class="report-title">Diagnostic Report</h1>
-            <div class="report-id">Report ID: <span class="report-id-value">${diagnostic.id}</span></div>
-          </div>
-        </div>
-        <div class="report-meta-section">
-          <div class="flex justify-end gap-2 no-print mb-4" style="display: none;">
-            <!-- Print buttons hidden in PDF -->
-          </div>
-          <div class="tested-on-label">Tested on:</div>
-          <div class="tested-on-value">${formattedDate}</div>
-          <div class="qr-code-placeholder">
-            ${qrCodeDataUrl ? `<img src="${qrCodeDataUrl}" alt="QR Code" style="width: 100%; height: 100%; object-fit: contain;">` : '<span style="font-size: 12px; color: #999;">QR Code</span>'}
-          </div>
-        </div>
-      </div>
-
-      <!-- Device Info -->
-      <div class="report-section">
-        <div class="card" style="background-color: rgba(229, 231, 235, 0.6);">
-          <div class="card-body" style="padding: 12px;">
-            <h2 class="card-title" style="font-size: 16px; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-              <span>${diagnostic.model_name || '-'}</span>
-              <span style="font-size: 12px; color: rgba(107, 114, 128, 1);">${(diagnostic.device_storage ? (' ' + diagnostic.device_storage) : '') + (diagnostic.device_color ? (' ' + diagnostic.device_color) : '') || '-'}</span>
-            </h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 11px; margin-top: 8px;">
-              <div><span style="font-weight: 600;">IMEI:</span> ${diagnostic.imei || diagnostic.device_imei || '-'}</div>
-              <div><span style="font-weight: 600;">Serial:</span> ${diagnostic.serial_number || diagnostic.device_serial || '-'}</div>
-              <div><span style="font-weight: 600;">LPN:</span> ${diagnostic.lpn || diagnostic.device_lpn || '-'}</div>
-              <div><span style="font-weight: 600;">Battery:</span> ${this.getBatteryInfo(diagnostic)}</div>
-              <div><span style="font-weight: 600;">Carrier:</span> ${this.getCarrierLock(diagnostic)}</div>
-              <div><span style="font-weight: 600;">OS:</span> ${diagnostic.os_version || '-'}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Status bar row -->
-      <div class="report-section">
-        <div style="display: grid; grid-template-columns: repeat(6, 1fr); text-align: center; font-size: 10px; font-weight: 600;">
-          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 4px 0; border-radius: 4px 0 0 0;">FMI</div>
-          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 4px 0;">Jailbreak</div>
-          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 4px 0;">Grade</div>
-          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 4px 0;">ESN</div>
-          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 4px 0;">MDM</div>
-          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 4px 0; border-radius: 0 4px 0 0;">Wipe</div>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(6, 1fr); text-align: center; border: 1px solid rgba(229, 231, 235, 1); border-top: 0; border-radius: 0 0 4px 4px; font-size: 9px;">
-          <div style="padding: 4px 0; font-weight: 500;">${this.getICloudStatus(diagnostic)}</div>
-          <div style="padding: 4px 0; font-weight: 500;">No</div>
-          <div style="padding: 4px 0; font-weight: 500;">-</div>
-          <div style="padding: 4px 0; font-weight: 500;">${diagnostic.ESN || '-'}</div>
-          <div style="padding: 4px 0; font-weight: 500;">${diagnostic.device_lock || '-'}</div>
-          <div style="padding: 4px 0; font-weight: 500;">${diagnostic.eSIM_erasure || '-'}</div>
-        </div>
-      </div>
-
-      <!-- Tests Matrix -->
-      <div class="report-section">
-        <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Functional Tests</h3>
-        <div class="functional-tests-grid" style="font-size: 10px;">
-          ${passedComponents.map(name => `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; margin-bottom: 1px; border-bottom: 1px solid #eee;">
-              <span style="font-weight: 500;">${name}</span>
-              <span style="color: #000;">✓ Passed</span>
-            </div>
-          `).join('')}
-          ${pendingComponents.map(name => `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; margin-bottom: 1px; border-bottom: 1px solid #eee;">
-              <span style="font-weight: 500;">${name}</span>
-              <span style="color: #000;">● Pending</span>
-            </div>
-          `).join('')}
-          ${failedComponents.map(name => `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; margin-bottom: 1px; border-bottom: 1px solid #eee;">
-              <span style="font-weight: 500;">${name}</span>
-              <span style="color: #000;">✗ Failed</span>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-
-      <!-- Footer summary -->
-      <div class="report-footer-summary">
-        <div style="font-size: 11px; font-weight: 600;">
-          <span>Overall Result:</span>
-          <span style="margin-left: 8px;">
-            ${failedComponents.length > 0 ? 
-              '<span style="padding: 3px 6px; border: 1px solid #000; color: #000; font-size: 9px; font-weight: 700; text-transform: uppercase; display: inline-block;">Failed</span>' : 
-              pendingComponents.length > 0 ? 
-              '<span style="padding: 3px 6px; border: 1px solid #000; color: #000; font-size: 9px; font-weight: 700; text-transform: uppercase; display: inline-block;">Pending</span>' : 
-              '<span style="padding: 3px 6px; border: 1px solid #000; color: #000; font-size: 9px; font-weight: 700; text-transform: uppercase; display: inline-block;">Passed</span>'
-            }
-          </span>
-        </div>
-        <div style="font-size: 9px; color: rgba(107, 114, 128, 0.8); margin-top: 4px;">
-          ${failedComponents.length > 0 ? 
-            `${failedComponents.length} component(s) failed, ${passedComponents.length} component(s) passed.` :
-            pendingComponents.length > 0 ?
-            'This device has pending tests.' :
-            `All ${passedComponents.length} components passed with no errors.`
-          }
-        </div>
-      </div>
-    `;
+    return { container, componentRef };
   }
   
   private addReportStyles(container: HTMLElement): void {
-    const style = document.createElement('style');
-    style.textContent = `
-      .temp-report-container .report-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #eee;
-      }
-      
-      .temp-report-container .logo-section {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      
-      .temp-report-container .company-logo {
-        max-height: 50px;
-        width: auto;
-      }
-      
-      .temp-report-container .report-title-block {
-        display: flex;
-        flex-direction: column;
-      }
-      
-      .temp-report-container .report-title {
-        font-size: 1.6em;
-        font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 3px;
-      }
-      
-      .temp-report-container .report-id {
-        font-size: 0.9em;
-        color: #7f8c8d;
-      }
-      
-      .temp-report-container .report-id-value {
-        background-color: #ecf0f1;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-family: 'Courier New', Courier, monospace;
-      }
-      
-      .temp-report-container .report-meta-section {
-        text-align: right;
-      }
-      
-      .temp-report-container .tested-on-label {
-        font-size: 0.85em;
-        color: #7f8c8d;
-        margin-top: 10px;
-      }
-      
-      .temp-report-container .tested-on-value {
-        font-weight: 600;
-        font-size: 0.95em;
-        color: #555;
-      }
-      
-      .temp-report-container .qr-code-placeholder {
-        width: 70px;
-        height: 70px;
-        border: 1px dashed #ccc;
-        border-radius: 5px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: auto;
-        margin-top: 8px;
-        color: #999;
-        font-size: 0.7em;
-      }
-      
-      .temp-report-container .report-section {
-        margin-bottom: 15px;
-      }
-      
-      .temp-report-container .card {
-        border: 1px solid #e0e0e0;
-        border-radius: 6px;
-        overflow: hidden;
-        background-color: #fdfdfd;
-      }
-      
-      .temp-report-container .card-body {
-        padding: 12px;
-      }
-      
-      .temp-report-container .card-title {
-        font-size: 1.1em;
-        font-weight: 600;
-        color: #34495e;
-        margin-bottom: 6px;
-      }
-      
-      .temp-report-container .report-footer-summary {
-        margin-top: auto;
-        padding-top: 20px;
-        border-top: 1px solid #eee;
-        text-align: center;
-        color: #555;
-      }
-      
-      .temp-report-container .badge {
-        padding: 5px 10px;
-        border-radius: 4px;
-        font-weight: 700;
-        text-transform: uppercase;
-        font-size: 0.75em;
-        display: inline-block;
-      }
-      
-      .temp-report-container .badge-error {
-        background-color: #e74c3c;
-        color: white;
-      }
-      
-      .temp-report-container .badge-warning {
-        background-color: #f39c12;
-        color: white;
-      }
-      
-      .temp-report-container .badge-success {
-        background-color: #27ae60;
-        color: white;
-      }
-      
-      .temp-report-container.pdf-optimized {
-        width: 800px !important;
-        transform: scale(1) !important;
-        font-size: 11px !important;
-        line-height: 1.3 !important;
-      }
-      
-      .temp-report-container.pdf-optimized .report-document {
-        width: 100% !important;
-        max-width: none !important;
-        box-shadow: none !important;
-        border-radius: 0 !important;
-        padding: 15px !important;
-      }
-      
-      .temp-report-container.pdf-optimized .report-header {
-        margin-bottom: 12px !important;
-        padding-bottom: 8px !important;
-      }
-      
-      .temp-report-container.pdf-optimized .company-logo {
-        max-height: 40px !important;
-      }
-      
-      .temp-report-container.pdf-optimized .qr-code-placeholder {
-        width: 60px !important;
-        height: 60px !important;
-      }
-      
-      .temp-report-container.pdf-optimized .report-section {
-        margin-bottom: 10px !important;
-      }
-      
-      .temp-report-container.pdf-optimized .card-body {
-        padding: 10px !important;
-      }
-    `;
-    
-    container.appendChild(style);
+    // Styles are now in the shared component, no need to add them here
+    // This method can be kept for any additional PDF-specific styles if needed
   }
   
-  private async generateQrCode(diagnosticId: number): Promise<string | null> {
+  private async generateQrCode(diagnosticId: number, serialNumber?: string): Promise<string | null> {
     try {
-      const reportUrl = `${window.location.origin}/diagnostics/report/${diagnosticId}`;
+      const encodedId = this.cipherService.encodeTestId(diagnosticId, serialNumber);
+      const reportUrl = `${window.location.origin}/diagnostics/report/${encodedId}`;
       return await qrcode.toDataURL(reportUrl, { errorCorrectionLevel: 'H', width: 256 });
     } catch (err) {
       console.error('Error generating QR code:', err);
       return null;
     }
   }
-  
-  private parseComponentList(value: string | null): string[] {
-    if (!value) return [];
-    const s = String(value).trim();
-    if (!s) return [];
-    try {
-      const j = JSON.parse(s);
-      if (Array.isArray(j)) return j.map(x => String(x)).filter(Boolean);
-    } catch {}
-    return s.split(/[;,]/g).map(x => x.trim()).filter(Boolean);
+
+  private async getImageAsDataUrl(imageUrl: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous'; // Enable CORS
+      
+      img.onload = () => {
+        try {
+          // Create a canvas to convert image to data URL
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            console.error('Failed to get canvas context');
+            resolve(imageUrl); // Fallback to original URL
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0);
+          
+          try {
+            const dataUrl = canvas.toDataURL('image/png');
+            console.log('Image converted to data URL successfully');
+            resolve(dataUrl);
+          } catch (error) {
+            console.error('Error converting canvas to data URL (CORS issue?):', error);
+            resolve(imageUrl); // Fallback to original URL
+          }
+        } catch (error) {
+          console.error('Error processing image:', error);
+          resolve(imageUrl); // Fallback to original URL
+        }
+      };
+      
+      img.onerror = (error) => {
+        console.error('Error loading image:', error);
+        resolve(imageUrl); // Fallback to original URL
+      };
+      
+      // Set timeout for image loading
+      setTimeout(() => {
+        if (!img.complete) {
+          console.warn('Image loading timeout, using original URL');
+          resolve(imageUrl);
+        }
+      }, 5000);
+      
+      img.src = imageUrl;
+    });
+  }
+
+  private async convertAllImagesToBase64(container: HTMLElement): Promise<void> {
+    console.log('Converting all images to base64...');
+    const images = container.querySelectorAll('img');
+    
+    const conversionPromises = Array.from(images).map(async (img, index) => {
+      const src = img.src;
+      
+      // Skip if already base64
+      if (src.startsWith('data:')) {
+        console.log(`Image ${index} already base64`);
+        return;
+      }
+      
+      console.log(`Converting image ${index} from ${src.substring(0, 50)}...`);
+      
+      try {
+        // Ensure img has proper attributes
+        img.setAttribute('crossorigin', 'anonymous');
+        
+        const dataUrl = await this.getImageAsDataUrl(src);
+        if (dataUrl.startsWith('data:')) {
+          img.src = dataUrl;
+          // Remove crossorigin attribute after conversion to avoid issues
+          img.removeAttribute('crossorigin');
+          console.log(`Image ${index} converted successfully`);
+          
+          // Wait for the new src to be processed
+          await new Promise(resolve => {
+            if (img.complete) {
+              resolve(void 0);
+            } else {
+              img.onload = () => resolve(void 0);
+              img.onerror = () => resolve(void 0);
+              setTimeout(() => resolve(void 0), 1000);
+            }
+          });
+        } else {
+          console.warn(`Image ${index} conversion failed, keeping original URL`);
+        }
+      } catch (error) {
+        console.error(`Error converting image ${index}:`, error);
+      }
+    });
+    
+    await Promise.all(conversionPromises);
+    
+    console.log('All images conversion complete');
   }
   
   private async waitForImagesAndContent(container: HTMLElement): Promise<void> {
@@ -494,110 +326,43 @@ export class DiagnosticPdfService {
     
     // Wait for images
     const images = container.querySelectorAll('img');
-    const imagePromises = Array.from(images).map(img => {
-      if (img.complete) return Promise.resolve();
-      return new Promise((resolve, reject) => {
-        img.onload = () => resolve(void 0);
-        img.onerror = () => resolve(void 0); // Don't fail on image errors
-        // Timeout after 5 seconds
-        setTimeout(() => resolve(void 0), 5000);
+    console.log(`Found ${images.length} images to load`);
+    
+    const imagePromises = Array.from(images).map((img, index) => {
+      if (img.complete) {
+        console.log(`Image ${index} already loaded`);
+        return Promise.resolve();
+      }
+      return new Promise((resolve) => {
+        img.onload = () => {
+          console.log(`Image ${index} loaded successfully`);
+          resolve(void 0);
+        };
+        img.onerror = () => {
+          console.warn(`Image ${index} failed to load`);
+          resolve(void 0); // Don't fail on image errors
+        };
+        // Timeout after 8 seconds
+        setTimeout(() => {
+          console.warn(`Image ${index} loading timeout`);
+          resolve(void 0);
+        }, 8000);
       });
     });
     
     await Promise.all(imagePromises);
     
-    // Additional wait for fonts and layout
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Additional wait for fonts, layout, and rendering
+    console.log('Waiting for layout and rendering...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     console.log('Content loading complete');
   }
-  
-  private createPdf(canvas: HTMLCanvasElement, singlePage: boolean = true): jsPDF {
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    
-    let imgWidth = pdfWidth;
-    let imgHeight = (canvas.height * pdfWidth) / canvas.width;
-    
-    if (singlePage && imgHeight > pdfHeight) {
-      // Scale to fit single page
-      const scaleFactor = pdfHeight / imgHeight;
-      imgHeight = pdfHeight;
-      imgWidth = pdfWidth * scaleFactor;
-      console.log('Content scaled to fit single page');
-    }
-    
-    const xOffset = (pdfWidth - imgWidth) / 2;
-    const imgData = canvas.toDataURL('image/jpeg', 0.85);
-    
-    if (singlePage) {
-      pdf.addImage(imgData, 'JPEG', xOffset, 0, imgWidth, imgHeight);
-    } else {
-      // Multi-page support
-      let position = 0;
-      let heightLeft = imgHeight;
-      
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pdfHeight;
-      
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
-      }
-    }
-    
-    return pdf;
-  }
-  
-  private getBatteryInfo(diagnostic: Diagnostic): string {
-    if (!diagnostic.battery_info) return '-';
-    
-    const batteryInfo = diagnostic.battery_info as any;
-    
-    // Handle different battery info structures
-    if (batteryInfo.health_percentage !== undefined) {
-      // iPhone/Android format
-      return `${batteryInfo.health_percentage}%`;
-    } else if (batteryInfo.health !== undefined) {
-      // Alternative health format
-      return batteryInfo.health;
-    } else if (batteryInfo.case || batteryInfo.left || batteryInfo.right) {
-      // AirPods format - show case battery
-      const caseBattery = batteryInfo.case?.charge_percentage;
-      const leftBattery = batteryInfo.left?.charge_percentage;
-      const rightBattery = batteryInfo.right?.charge_percentage;
-      
-      const parts = [];
-      if (caseBattery) parts.push(`Case: ${caseBattery}`);
-      if (leftBattery) parts.push(`L: ${leftBattery}`);
-      if (rightBattery) parts.push(`R: ${rightBattery}`);
-      
-      return parts.length > 0 ? parts.join(', ') : '-';
-    }
-    
-    return '-';
-  }
-  
-  private getCarrierLock(diagnostic: Diagnostic): string {
-    if (!diagnostic.carrier_lock) return '-';
-    
-    const carrierLock = diagnostic.carrier_lock as any;
-    return carrierLock.carrier || carrierLock || '-';
-  }
-  
-  private getICloudStatus(diagnostic: Diagnostic): string {
-    if (!diagnostic.iCloud) return '-';
-    
-    const iCloud = diagnostic.iCloud as any;
-    return iCloud.status || iCloud || '-';
-  }
 
   generateFilename(diagnostic: Diagnostic): string {
-    const timestamp = new Date().toISOString().split('T')[0];
-    const encodedId = this.cipherService.encodeTestId(diagnostic.id, diagnostic.serial_number || undefined);
-    return `diagnostic_report_${encodedId}_${timestamp}.pdf`;
+    const lpn = diagnostic.lpn || diagnostic.device_lpn || `report${diagnostic.id}`;
+    const createdAt = diagnostic.created_at || '';
+    const datePart = createdAt ? new Date(createdAt).toISOString().slice(0, 10) : '';
+    return datePart ? `${lpn}_${datePart}.pdf` : `${lpn}.pdf`;
   }
 }

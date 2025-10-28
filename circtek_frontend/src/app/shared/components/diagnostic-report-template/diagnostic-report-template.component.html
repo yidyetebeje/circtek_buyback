@@ -1,0 +1,189 @@
+<div class="container-fluid">
+  <div class="container">
+    <!-- Header Row -->
+    <div class="flex pt-3">
+      <div class="w-1/2 pt-4">
+        @if (logoUrl(); as logo) {
+          <img [src]="logo" style="max-height:5rem !important" alt="Logo">
+        } @else {
+          <img src="https://api.circtek.com/logo.png" style="max-height:5rem !important" alt="Logo">
+        }
+        <div class="pt-3">
+          <span style="border:2px solid #000;border-radius:10px;padding:5px;font-size:22px;font-weight:600;color:#000;">
+            Report ID: <span style="font-weight:600;color:#294174;">{{ encodedReportId() }}</span>
+          </span>
+        </div>
+      </div>
+      <div class="w-1/2" style="text-align: right;">
+        <div>
+          <span style="padding:5px;font-size:20px;font-weight:600;color:#294174;">
+            Tested on: <span style="font-weight:600;color:#000;">{{ report().created_at | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+          </span>
+        </div>
+        <div class="qrcodeImage qr-code-container" style="float: right;height: 9rem;">
+          @if (qrCodeDataUrl(); as qrCode) {
+            <img [src]="qrCode" alt="QR Code">
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Device Info Table -->
+    <div class="flex device-info-section">
+      <div class="w-full table-container">
+        <hr class="print-hr">
+        <table class="table print-table">
+          <thead>
+            <tr>
+              <th style="width: 20%;border-right:1px solid #000;font-weight:600;">Device Name</th>
+              <th style="width: 80%;">
+                <h1>{{ report().model_name || '-' }} {{ report().device_storage ? report().device_storage + 'GB' : '' }} {{ report().device_color || '' }}</h1>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><h3>IMEI Number</h3></td>
+              <td>{{ report().imei || report().device_imei || '-' }}</td>
+            </tr>
+            <tr>
+              <td><h3>Serial Number</h3></td>
+              <td>{{ report().serial_number || report().device_serial || '-' }}</td>
+            </tr>
+            <tr>
+              <td><h3>LPN</h3></td>
+              <td>{{ report().lpn || report().device_lpn || 'N/A' }}</td>
+            </tr>
+            <tr>
+              <td><h3>Battery Health</h3></td>
+              <td>{{ getBatteryInfo() }}</td>
+            </tr>
+            <tr>
+              <td><h3>Carrier</h3></td>
+              <td>{{ getCarrierLock() }}</td>
+            </tr>
+            <tr>
+              <td><h3>Version</h3></td>
+              <td>{{ report().os_version || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Status Table -->
+    <div class="flex mt-3">
+      <div class="w-full">
+        <table class="table print-table2" style="width: -webkit-fill-available;">
+          <thead>
+            <tr>
+              <th>{{ getDeviceOs() === 'ios' ? 'FMI' : 'FRP' }}</th>
+              <th>{{ getDeviceOs() === 'ios' ? 'JAIL' : 'Rooted' }}</th>
+              <th class="text-center">GRADE</th>
+              <th class="text-center">ESN</th>
+              <th class="text-center">MDM</th>
+              <th class="text-center">Data Wipe</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ getICloudStatus() }}</td>
+              <td>-</td>
+              <td class="text-center">-</td>
+              <td class="text-center">{{ report().ESN || '-' }}</td>
+              <td class="text-center">{{ report().device_lock || 'Off' }}</td>
+              <td class="text-center">{{ report().eSIM_erasure ? 'Yes' : 'No' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- OEM Parts Table (if available) -->
+    @if (report().oem_info && getOemParts().length > 0) {
+      <div class="flex mt-3">
+        <div class="w-full">
+          <table class="table print-table2" style="width: -webkit-fill-available;">
+            <thead>
+              <tr>
+                <th width="15%">Part</th>
+                <th>Factory Serial Number</th>
+                <th>Current Serial Number</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (part of getOemParts(); track part.partName) {
+                <tr>
+                  <td class="ellipses-cell">{{ part.partName }}</td>
+                  <td class="ellipses-cell">{{ part.factorySerial }}</td>
+                  <td class="ellipses-cell">{{ part.currentSerial }}</td>
+                  <td class="ellipses-cell">{{ part.status }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- Tests Table -->
+    <div class="flex mt-3">
+      <div class="w-full">
+        <table class="table print-table2" style="width: -webkit-fill-available;">
+          <thead>
+            <tr>
+              <th scope="col">Test Name</th>
+              <th scope="col">Result</th>
+              <th scope="col">Test Name</th>
+              <th scope="col">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (getAllTests().length > 0) {
+              @for (testPair of chunkArray(getAllTests(), 2); track testPair) {
+                <tr>
+                  @for (test of testPair; track test) {
+                    <td class="bold-text">{{ test.name }}</td>
+                    <td>
+                      @if (test.status === 'failed') {
+                        <span class="test-result-icon failed">✗</span>
+                      } @else {
+                        <span class="test-result-icon passed">✓</span>
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Underline Image -->
+    @if (getAllTests().length > 0) {
+      <div class="flex" style="padding-bottom:10px;">
+        
+      </div>
+    }
+
+    <!-- Diagnostic Result -->
+    <div class="flex" style="padding-bottom:60px;">
+      @if (getAllTests().length > 0) {
+        <span style="font-weight:700;color:#000;font-size:20px; text-decoration: underline;">Diagnostic Result:</span>
+        &nbsp;&nbsp;&nbsp;
+        <span style="font-size:20px;color:#294174">
+          This device has passed {{ getPassedCount() }} tests
+          @if (getFailedCount() === 0) {
+            <span>with no errors.</span>
+          }
+        </span>
+      } @else {
+        <span style="font-weight:700;color:#000;font-size:20px; text-decoration: underline;">Diagnostic Result:</span>
+        &nbsp;&nbsp;&nbsp;
+        <span style="font-size:20px;color:#294174">This device has not performed any test.</span>
+      }
+    </div>
+  </div>
+</div>

@@ -1,129 +1,28 @@
-<div class="report-page-container">
+<div class="table-wrapper">
   @if (report(); as r) {
-    <div class="report-document">
-      <!-- Header -->
-      <div class="report-header">
-        <div class="logo-section">
-          @if (logoUrl(); as logo) {
-            <img [src]="logo" alt="Company Logo" class="company-logo">
-          } @else {
-            <img src="https://api.circtek.com/logo.png" alt="Circtek Logo" class="company-logo">
-          }
-          <div class="report-title-block">
-            <h1 class="report-title">Diagnostic Report</h1>
-            <div class="report-id">Report ID: <span class="report-id-value">{{ encodedReportId() }}</span></div>
-          </div>
-        </div>
-        <div class="report-meta-section">
-          <div class="flex justify-end gap-2 no-print mb-4">
-            <button class="btn btn-primary btn-square" (click)="downloadPdf()" title="Download as PDF">
-              <lucide-icon [img]="Download" class="h-5 w-5"></lucide-icon>
-            </button>
-            <button class="btn btn-primary btn-square" (click)="print()" title="Print Report">
-              <lucide-icon [img]="Printer" class="h-5 w-5"></lucide-icon>
-            </button>
-          </div>
-          <div class="tested-on-label">Tested on:</div>
-          <div class="tested-on-value">{{ r.created_at | date: 'MM/dd/yyyy HH:mm:ss' }}</div>
-          <div class="qr-code-placeholder">
-            @if (qrCodeDataUrl(); as qrCode) {
-              <img [src]="qrCode" alt="QR Code" class="w-full h-full object-contain">
-            } @else {
-              <span class="text-xs text-base-content/50">QR Code</span>
-            }
-          </div>
+    <!-- Print Buttons -->
+    <div class="print-btns-div no-print" style="padding-right: 15px;padding-left: 15px;margin-right: auto;margin-left: auto;margin-top:20px;margin-bottom:20px;">
+      <div style="margin-right: -15px; margin-left: -15px;">
+        <div style="flex: 0 0 100%;max-width:100%;">
+          <button class="btn btn-dark-custom btn-sm" (click)="print()">
+            <lucide-icon [img]="Printer" class="w-4 h-4"></lucide-icon>
+          </button>
+          <button class="btn btn-dark-custom btn-sm" (click)="downloadPdf()">
+            <lucide-icon [img]="Download" class="w-4 h-4"></lucide-icon>
+          </button>
         </div>
       </div>
+    </div>
 
-      <!-- Device Info -->
-      <div class="report-section">
-        <div class="card bg-base-200/60">
-          <div class="card-body">
-            <h2 class="card-title flex items-center gap-2">
-              <span>{{ r.model_name || '-' }}</span>
-              <span class="text-sm text-base-content/70">{{ (r.device_storage ? (' ' + r.device_storage) : '') + (r.device_color ? (' ' + r.device_color) : '') || '-' }}</span>
-            </h2>
-            <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-2">
-              <div><span class="font-semibold">IMEI:</span> {{ r.imei || r.device_imei || '-' }}</div>
-              <div><span class="font-semibold">Serial:</span> {{ r.serial_number || r.device_serial || '-' }}</div>
-              <div><span class="font-semibold">LPN:</span> {{ r.lpn || r.device_lpn || '-' }}</div>
-              <div><span class="font-semibold">Battery:</span> {{ getBatteryInfo() }}</div>
-              <div><span class="font-semibold">Carrier:</span> {{ getCarrierLock() }}</div>
-              <div><span class="font-semibold">OS:</span> {{ r.os_version || '-' }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Status bar row -->
-      <div class="report-section">
-        <div class="grid grid-cols-6 text-center text-sm font-semibold">
-          <div class="bg-base-300/60 py-2 rounded-l-lg">FMI</div>
-          <div class="bg-base-300/60 py-2">Jailbreak</div>
-          <div class="bg-base-300/60 py-2">Grade</div>
-          <div class="bg-base-300/60 py-2">ESN</div>
-          <div class="bg-base-300/60 py-2">MDM</div>
-          <div class="bg-base-300/60 py-2 rounded-r-lg">Wipe</div>
-        </div>
-        <div class="grid grid-cols-6 text-center border border-t-0 border-base-300 rounded-b-lg rounded-t-none text-sm">
-          <div class="py-2 font-medium">{{ getICloudStatus() }}</div>
-          <div class="py-2 font-medium">No</div>
-          <div class="py-2 font-medium">-</div>
-          <div class="py-2 font-medium">{{ r.ESN || '-' }}</div>
-          <div class="py-2 font-medium">{{ r.device_lock || '-' }}</div>
-          <div class="py-2 font-medium">{{ r.eSIM_erasure || '-' }}</div>
-        </div>
-      </div>
-
-      <!-- Tests Matrix -->
-      <div class="report-section">
-        <h3 class="font-bold mb-2">Functional Tests</h3>
-        <div class="functional-tests-grid text-sm">
-          @for (name of parseList(r.passed_components); track name) {
-            <div class="flex items-center justify-between py-1 px-2">
-              <span class="font-medium">{{ name }}</span>
-              <span class="text-success">✓ Passed</span>
-            </div>
-          }
-          @for (name of parseList(r.pending_components); track name) {
-            <div class="flex items-center justify-between py-1 px-2">
-              <span class="font-medium">{{ name }}</span>
-              <span class="text-warning">● Pending</span>
-            </div>
-          }
-          @for (name of parseList(r.failed_components); track name) {
-            <div class="flex items-center justify-between py-1 px-2">
-              <span class="font-medium">{{ name }}</span>
-              <span class="text-error">✗ Failed</span>
-            </div>
-          }
-        </div>
-      </div>
-
-      <!-- Footer summary -->
-      <div class="report-footer-summary">
-        <div class="text-sm font-semibold">
-          <span>Overall Result:</span>
-          <span class="ml-2">
-            @if (parseList(r.failed_components).length) {
-              <span class="badge badge-error">Failed</span>
-            } @else if (parseList(r.pending_components).length) {
-              <span class="badge badge-warning">Pending</span>
-            } @else {
-              <span class="badge badge-success">Passed</span>
-            }
-          </span>
-        </div>
-        <div class="text-xs text-base-content/60 mt-1">
-          @if (parseList(r.failed_components).length) {
-            <span>{{ parseList(r.failed_components).length }} component(s) failed, {{ parseList(r.passed_components).length }} component(s) passed.</span>
-          } @else if (parseList(r.pending_components).length) {
-            <span>This device has pending tests.</span>
-          } @else {
-            <span>All {{ parseList(r.passed_components).length }} components passed with no errors.</span>
-          }
-        </div>
-      </div>
+    <!-- PDF Table -->
+    <div #pdfTable style="font-family: arial !important;">
+      <app-diagnostic-report-template
+        [report]="r"
+        [logoUrl]="logoUrl()"
+        [qrCodeDataUrl]="qrCodeDataUrl()"
+        [encodedReportId]="encodedReportId()"
+        [showPrintButtons]="false"
+      />
     </div>
   } @else {
     <div class="p-6 text-center text-base-content/60">

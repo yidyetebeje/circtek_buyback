@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
@@ -10,10 +10,11 @@ import qrcode from 'qrcode';
 import { LucideAngularModule, Download, Printer } from 'lucide-angular';
 import html2canvas from 'html2canvas-pro';
 import { jsPDF } from 'jspdf';
+import { DiagnosticReportTemplateComponent } from '../../shared/components/diagnostic-report-template/diagnostic-report-template.component';
 
 @Component({
   selector: 'app-diagnostic-report',
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, DiagnosticReportTemplateComponent],
   templateUrl: './diagnostic-report.component.html',
   styleUrl: './diagnostic-report.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,6 +26,8 @@ export class DiagnosticReportComponent {
   private readonly diagnosticPdfService = inject(DiagnosticPdfService);
   private readonly cipherService = inject(CipherService);
 
+  @ViewChild('pdfTable', { static: false }) pdfTable: ElementRef | undefined;
+
   loading = signal<boolean>(true);
   report = signal<Diagnostic | null>(null);
   logoUrl = computed(() => this.logosService.getClientLogoUrl());
@@ -35,55 +38,6 @@ export class DiagnosticReportComponent {
     const report = this.report();
     if (!report) return '';
     return this.cipherService.encodeTestId(report.id, report.serial_number || undefined);
-  });
-  // Expose Math for template usage (ceil/slicing)
-  protected readonly Math = Math;
-  
-  // Helper methods for field mapping
-  protected getBatteryInfo = computed(() => {
-    const report = this.report();
-    if (!report?.battery_info) return '-';
-    
-    const batteryInfo = report.battery_info as any;
-    
-    // Handle different battery info structures
-    if (batteryInfo.health_percentage !== undefined) {
-      // iPhone/Android format
-      return `${batteryInfo.health_percentage}%`;
-    } else if (batteryInfo.health !== undefined) {
-      // Alternative health format
-      return batteryInfo.health;
-    } else if (batteryInfo.case || batteryInfo.left || batteryInfo.right) {
-      // AirPods format - show case battery
-      const caseBattery = batteryInfo.case?.charge_percentage;
-      const leftBattery = batteryInfo.left?.charge_percentage;
-      const rightBattery = batteryInfo.right?.charge_percentage;
-      
-      const parts = [];
-      if (caseBattery) parts.push(`Case: ${caseBattery}`);
-      if (leftBattery) parts.push(`L: ${leftBattery}`);
-      if (rightBattery) parts.push(`R: ${rightBattery}`);
-      
-      return parts.length > 0 ? parts.join(', ') : '-';
-    }
-    
-    return '-';
-  });
-  
-  protected getICloudStatus = computed(() => {
-    const report = this.report();
-    if (!report?.iCloud) return '-';
-    
-    const iCloud = report.iCloud as any;
-    return iCloud.status || iCloud || '-';
-  });
-  
-  protected getCarrierLock = computed(() => {
-    const report = this.report();
-    if (!report?.carrier_lock) return '-';
-    
-    const carrierLock = report.carrier_lock as any;
-    return carrierLock.carrier || carrierLock || '-';
   });
   // Lucide icons
   protected readonly Download = Download;
@@ -129,109 +83,140 @@ export class DiagnosticReportComponent {
   }
 
   async downloadPdf() {
+    const element = this.pdfTable?.nativeElement;
+    if (!element) return;
+    
     try {
-      console.log('Starting optimized PDF generation...');
-      const reportElement = document.querySelector('.report-document') as HTMLElement;
-      const containerElement = document.querySelector('.report-page-container') as HTMLElement;
-      if (!reportElement || !containerElement) {
-        console.error('Report elements not found');
-        return;
-      }
-
-      // Add PDF optimization class temporarily
-      containerElement.classList.add('pdf-optimized');
-      console.log('Added PDF optimization styles');
+      // Convert all images to base64 first
+      const images = element.querySelectorAll('img');
+      console.log(`Found ${images.length} images to convert`);
       
-      // Wait for styles to be applied
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Capture the HTML element as canvas using html2canvas-pro with optimized settings
-      const canvas = await html2canvas(reportElement, {
-        scale: 1.5, // Reduced scale for better performance while maintaining quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 800, // Fixed width for consistency
-        height: reportElement.scrollHeight,
-        removeContainer: true, // Remove the temporary container after rendering
-        logging: false, // Disable logging for better performance
-        imageTimeout: 5000, // 5 second timeout for images
-        foreignObjectRendering: false, // Better compatibility
-        onclone: (clonedDoc) => {
-          // Apply PDF optimization styles to cloned document
-          const clonedContainer = clonedDoc.querySelector('.report-page-container') as HTMLElement;
-          const clonedElement = clonedDoc.querySelector('.report-document') as HTMLElement;
-          if (clonedContainer && clonedElement) {
-            clonedContainer.classList.add('pdf-optimized');
-            // Ensure images are loaded and styled properly
-            const images = clonedElement.querySelectorAll('img');
-            images.forEach(img => {
-              img.style.maxWidth = '100%';
-              img.style.height = 'auto';
+      const conversionPromises = Array.from(images as NodeListOf<HTMLImageElement>).map(async (img, index) => {
+        const src = img.src;
+        
+        // Skip if already base64
+        if (src.startsWith('data:')) {
+          console.log(`Image ${index} already base64`);
+          return;
+        }
+        
+        console.log(`Converting image ${index}...`);
+        
+        try {
+          const dataUrl = await this.convertImageToDataUrl(src);
+          if (dataUrl.startsWith('data:')) {
+            img.src = dataUrl;
+            console.log(`Image ${index} converted successfully`);
+            
+            // Wait for image to be processed
+            await new Promise<void>(resolve => {
+              if (img.complete) {
+                resolve();
+              } else {
+                img.onload = () => resolve();
+                img.onerror = () => resolve();
+                setTimeout(() => resolve(), 1000);
+              }
             });
-            // Remove any problematic elements
-            const noPrintElements = clonedElement.querySelectorAll('.no-print');
-            noPrintElements.forEach(el => el.remove());
           }
+        } catch (error) {
+          console.error(`Error converting image ${index}:`, error);
         }
       });
-
-      console.log('Canvas captured successfully:', canvas.width, 'x', canvas.height);
-
-      // Calculate PDF dimensions
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 295; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-
-      // Create PDF
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
-
-      // Add the image to PDF with optimized compression
-      const imgData = canvas.toDataURL('image/jpeg', 0.85); // Use JPEG with 85% quality for smaller file size
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      // Generate filename with encoded report ID and current date
-      const report = this.report();
-      const encodedId = report ? this.cipherService.encodeTestId(report.id, report.serial_number || undefined) : 'unknown';
-      const fileName = `diagnostic_report_${encodedId}_${new Date().toISOString().split('T')[0]}.pdf`;
       
-      // Save the PDF
-      pdf.save(fileName);
-      console.log('PDF saved successfully:', fileName);
+      await Promise.all(conversionPromises);
+      console.log('All images converted, starting capture...');
+      
+      // Small delay to ensure rendering
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Now capture with html2canvas
+      const canvas = await html2canvas(element, {
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        logging: true,
+      });
+      
+      const pdf = new jsPDF('portrait', 'mm', 'a4', true);
+      const ratio = canvas.width / canvas.height;
 
-      // Remove PDF optimization class
-      containerElement.classList.remove('pdf-optimized');
+      const pdfWidth = 210;
+      const leftMargin = 0;
+      const imgWidth = pdfWidth - leftMargin;
+      const imgHeight = imgWidth / ratio;
+      const zoomFactor = 1;
+      const adjustedImgWidth = imgWidth * zoomFactor;
+      const adjustedImgHeight = imgHeight * zoomFactor;
+      const offsetX = (imgWidth - adjustedImgWidth) / 2;
+      const topMargin = 20;
+      const offsetY = (imgHeight - adjustedImgHeight) / 2 + topMargin;
+
+      // Add the image to the PDF with the new dimensions, margins, and zoom factor
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', leftMargin + offsetX, offsetY, adjustedImgWidth, adjustedImgHeight);
+
+      // Generate filename with encoded report ID and date
+      const report = this.report();
+      const lpn = report?.lpn || report?.device_lpn || `report${this.encodedReportId()}`;
+      const createdAt = report?.created_at || '';
+      const datePart = createdAt ? new Date(createdAt).toISOString().slice(0, 10) : '';
+      const fileName = datePart ? `${lpn}_${datePart}` : lpn;
+      pdf.save(`${fileName}.pdf`);
+      
+      console.log('PDF generated successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      // Remove PDF optimization class in case of error
-      const containerElement = document.querySelector('.report-page-container') as HTMLElement;
-      if (containerElement) {
-        containerElement.classList.remove('pdf-optimized');
-      }
-      // Fallback to print dialog if PDF generation fails
-      window.print();
+      alert('Failed to generate PDF. Please try again.');
     }
   }
-
-  protected parseList(v: string | null): string[] {
-    if (!v) return [];
-    const s = String(v).trim();
-    if (!s) return [];
-    try {
-      const j = JSON.parse(s);
-      if (Array.isArray(j)) return j.map(x => String(x)).filter(Boolean);
-    } catch {}
-    return s.split(/[;,]/g).map(x => x.trim()).filter(Boolean);
+  
+  private convertImageToDataUrl(imageUrl: string): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(imageUrl);
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0);
+          
+          try {
+            const dataUrl = canvas.toDataURL('image/png');
+            resolve(dataUrl);
+          } catch (error) {
+            console.error('Canvas to dataURL failed:', error);
+            resolve(imageUrl);
+          }
+        } catch (error) {
+          console.error('Image processing error:', error);
+          resolve(imageUrl);
+        }
+      };
+      
+      img.onerror = () => {
+        console.error('Image loading failed:', imageUrl);
+        resolve(imageUrl);
+      };
+      
+      setTimeout(() => {
+        if (!img.complete) {
+          console.warn('Image loading timeout:', imageUrl);
+          resolve(imageUrl);
+        }
+      }, 5000);
+      
+      img.src = imageUrl;
+    });
   }
 }
 
