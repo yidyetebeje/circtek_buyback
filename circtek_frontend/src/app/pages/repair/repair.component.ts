@@ -46,7 +46,8 @@ export class RepairComponent {
   startDate = signal<string | null>(null); // repairs date range
   endDate = signal<string | null>(null); // repairs date range
   selectedWarehouseId = signal<number | null>(null); // dead-imei and analytics
-  repairReasonStatus = signal<'any' | 'true' | 'false'>('any'); // repair-reasons
+  repairReasonStatus = signal<'true' | 'false'>('true'); // repair-reasons
+  groupByBatch = signal<boolean>(false); // analytics
   
   // Validation
   dateRangeError = computed<string | null>(() => {
@@ -159,7 +160,6 @@ export class RepairComponent {
     }
     if (tab === 'repair-reasons') {
       list.push({ key: 'status', label: 'Status', type: 'select', options: [
-        { label: 'Any', value: 'any' },
         { label: 'Active', value: 'true' },
         { label: 'Inactive', value: 'false' },
       ] });
@@ -175,6 +175,10 @@ export class RepairComponent {
         { label: 'Last 60 days', value: '60' },
         { label: 'Last 90 days', value: '90' },
         { label: 'Custom Range', value: 'custom' }
+      ] });
+      list.push({ key: 'group_by_batch', label: 'Group by Batch', type: 'select', options: [
+        { label: 'No (Show individual SKUs)', value: 'false' },
+        { label: 'Yes (Group by base SKU)', value: 'true' }
       ] });
       // Only show date fields when custom range is selected
       if (this.isCustomDateRange()) {
@@ -333,7 +337,8 @@ export class RepairComponent {
     this.startDate.set(str('start_date') || null);
     this.endDate.set(str('end_date') || null);
     this.selectedWarehouseId.set(optNum('warehouse_id'));
-    const rrs = str('repair_reason_status', 'any'); this.repairReasonStatus.set(rrs === 'true' || rrs === 'false' ? (rrs as any) : 'any');
+    const rrs = str('repair_reason_status', 'true'); this.repairReasonStatus.set(rrs === 'false' ? 'false' : 'true');
+    this.groupByBatch.set(str('group_by_batch') === 'true');
     
     // Analytics parameters
     const urlPeriodParam = qp.get('period_days');
@@ -386,6 +391,7 @@ export class RepairComponent {
       this.periodDays();
       this.analyticsStartDate();
       this.analyticsEndDate();
+      this.groupByBatch();
       this.fetchData();
     });
 
@@ -406,7 +412,7 @@ export class RepairComponent {
         }
       }
       if (this.activeTab() === 'repair-reasons') {
-        if (this.repairReasonStatus() !== 'any') query['repair_reason_status'] = this.repairReasonStatus();
+        query['repair_reason_status'] = this.repairReasonStatus();
       }
       if (this.activeTab() === 'dead-imei') {
         const wid = this.selectedWarehouseId(); if (wid != null) query['warehouse_id'] = String(wid);
@@ -414,6 +420,8 @@ export class RepairComponent {
       if (this.activeTab() === 'analytics') {
         const sb = this.sortBy(); if (sb) query['sort_by'] = sb;
         const sd = this.sortDir(); if (sd) query['sort_dir'] = sd;
+        const wid = this.selectedWarehouseId(); if (wid != null) query['warehouse_id'] = String(wid);
+        if (this.groupByBatch()) query['group_by_batch'] = 'true';
         if (this.isCustomPeriod()) {
           query['period_days'] = 'custom';
           const asd = this.analyticsStartDate(); if (asd) query['analytics_start_date'] = asd;
@@ -489,7 +497,7 @@ export class RepairComponent {
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
       const s = this.search().trim(); if (s) params = params.set('search', s);
-      const rrs = this.repairReasonStatus(); if (rrs !== 'any') params = params.set('status', rrs);
+      const rrs = this.repairReasonStatus(); params = params.set('status', rrs);
       this.api.getRepairReasons(params).subscribe({
         next: (res) => {
           if (seq !== this.requestSeq) return;
@@ -528,6 +536,7 @@ export class RepairComponent {
       const sb = this.sortBy(); if (sb) params = params.set('sort_by', sb);
       const sd = this.sortDir(); if (sd) params = params.set('sort_dir', sd);
       const wid = this.selectedWarehouseId(); if (wid != null) params = params.set('warehouse_id', String(wid));
+      if (this.groupByBatch()) params = params.set('group_by_batch', 'true');
       
       // Date range parameters
       if (this.isCustomPeriod()) {
@@ -571,7 +580,7 @@ export class RepairComponent {
     }
 
     if (this.activeTab() === 'repair-reasons') {
-      const rrs = f['status']; this.repairReasonStatus.set(rrs === 'true' || rrs === 'false' ? (rrs as any) : 'any');
+      const rrs = f['status']; this.repairReasonStatus.set(rrs === 'false' ? 'false' : 'true');
     }
 
     if (this.activeTab() === 'dead-imei') {
@@ -580,9 +589,10 @@ export class RepairComponent {
 
     if (this.activeTab() === 'analytics') {
       this.selectedWarehouseId.set(parseNum(f['warehouse_id']));
+      this.groupByBatch.set(f['group_by_batch'] === 'true');
       
       // Handle period selection
-      const period = f['period'];
+      const period = f['period_days'];
       if (period === 'custom') {
         // Keep current period but use custom dates
         this.analyticsStartDate.set(f['analytics_start_date'] || null);
@@ -624,7 +634,8 @@ export class RepairComponent {
       this.startDate.set(null);
       this.endDate.set(null);
       this.selectedWarehouseId.set(null);
-      this.repairReasonStatus.set('any');
+      this.repairReasonStatus.set('true');
+      this.groupByBatch.set(false);
       this.sortBy.set(null);
       this.sortDir.set(null);
       this.pageIndex.set(0);
@@ -634,6 +645,7 @@ export class RepairComponent {
         this.periodDays.set(30);
         this.analyticsStartDate.set(null);
         this.analyticsEndDate.set(null);
+        this.groupByBatch.set(false);
       }
     }
   }

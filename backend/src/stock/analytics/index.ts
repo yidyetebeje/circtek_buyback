@@ -21,7 +21,7 @@ export const analytics_routes = new Elysia({ prefix: '/analytics' })
     detail: { 
       tags: ['Stock Analytics'], 
       summary: 'Get SKU usage analytics for repair parts',
-      description: 'Retrieve detailed analytics about part SKU usage in repairs, including current stock levels, usage rates, and projected days until empty. Shows how many parts were used for repairs in a given period (e.g., last 30 days) and calculates when current stock will be depleted based on usage patterns.'
+      description: 'Retrieve detailed analytics about part SKU usage in repairs, including current stock levels, usage rates, and projected days until empty. Shows how many parts were used for repairs in a given period (e.g., last 30 days) and calculates when current stock will be depleted based on usage patterns. Use group_by_batch=true to aggregate SKUs by base pattern (e.g., GSM-TI-BAT-11-290 and GSM-TI-BAT-11-320 will be grouped as GSM-TI-BAT-11).'
     } 
   })
 

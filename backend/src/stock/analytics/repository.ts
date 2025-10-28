@@ -14,6 +14,18 @@ export class SkuUsageAnalyticsRepository {
   constructor(private readonly database: typeof db) {}
 
   /**
+   * Extract base SKU by removing the last segment (batch number)
+   * Example: GSM-TI-BAT-11-290 -> GSM-TI-BAT-11
+   */
+  private getBaseSku(sku: string): string {
+    const parts = sku.split('-')
+    if (parts.length <= 1) {
+      return sku // No batch segment to remove
+    }
+    return parts.slice(0, -1).join('-')
+  }
+
+  /**
    * Get SKU usage analytics for a given period
    */
   async getSkuUsageAnalytics(
@@ -25,7 +37,7 @@ export class SkuUsageAnalyticsRepository {
     const usageData = await this.getUsageData(filters, periodInfo)
     
     // Step 2: Get current stock levels for all SKUs that had usage
-    const stockData = await this.getCurrentStockLevels(usageData, filters.tenant_id)
+    const stockData = await this.getCurrentStockLevels(usageData, filters.tenant_id, filters.group_by_batch)
     
     // Step 3: Combine usage and stock data
     const combinedData = this.combineUsageAndStock(usageData, stockData, periodInfo)
@@ -77,9 +89,15 @@ export class SkuUsageAnalyticsRepository {
       conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
     }
     
-    // SKU filter
+    // SKU filter - handle both full SKU and base SKU (batch) filtering
     if (filters.sku) {
-      conditions.push(eq(repair_items.sku, filters.sku))
+      if (filters.group_by_batch) {
+        // When batch grouping is enabled, match SKUs that start with the base pattern
+        const pattern = `${filters.sku}%`
+        conditions.push(like(repair_items.sku, pattern))
+      } else {
+        conditions.push(eq(repair_items.sku, filters.sku))
+      }
     }
     
     // Search filter
@@ -99,7 +117,7 @@ export class SkuUsageAnalyticsRepository {
     conditions.push(eq(repair_items.status, true))
     conditions.push(eq(repairs.status, true))
 
-    const query = this.database
+    const results = await this.database
       .select({
         warehouse_id: repairs.warehouse_id,
         warehouse_name: warehouses.name,
@@ -112,7 +130,31 @@ export class SkuUsageAnalyticsRepository {
       .where(and(...conditions))
       .groupBy(repairs.warehouse_id, warehouses.name, repair_items.sku)
 
-    const results = await query
+    // If batch grouping is enabled, aggregate by base SKU
+    if (filters.group_by_batch) {
+      const batchAggregated = new Map<string, SkuUsageCalculation>()
+      
+      results.forEach(row => {
+        const baseSku = this.getBaseSku(row.sku || '')
+        const key = `${row.warehouse_id}:${baseSku}`
+        
+        const existing = batchAggregated.get(key)
+        if (existing) {
+          existing.total_used += Number(row.total_used) || 0
+        } else {
+          batchAggregated.set(key, {
+            warehouse_id: row.warehouse_id,
+            warehouse_name: row.warehouse_name || 'Unknown Warehouse',
+            sku: baseSku,
+            total_used: Number(row.total_used) || 0,
+            current_stock: 0, // Will be filled later
+            is_part: true
+          })
+        }
+      })
+      
+      return Array.from(batchAggregated.values())
+    }
 
     return results.map(row => ({
       warehouse_id: row.warehouse_id,
@@ -129,13 +171,51 @@ export class SkuUsageAnalyticsRepository {
    */
   private async getCurrentStockLevels(
     usageData: SkuUsageCalculation[],
-    tenant_id?: number
+    tenant_id?: number,
+    groupByBatch: boolean = false
   ): Promise<Map<string, number>> {
     
     if (usageData.length === 0) {
       return new Map()
     }
 
+    // If grouping by batch, we need to get stock for all SKUs that match the base pattern
+    if (groupByBatch) {
+      const stockMap = new Map<string, number>()
+      
+      // For each usage data item (which has base SKU), query stock for all matching SKUs
+      for (const item of usageData) {
+        const baseSku = item.sku
+        const pattern = `${baseSku}-%` // Match any SKU starting with base pattern
+        
+        const conditions: any[] = [
+          eq(stock.warehouse_id, item.warehouse_id),
+          like(stock.sku, pattern)
+        ]
+        
+        if (typeof tenant_id === 'number') {
+          conditions.push(eq(stock.tenant_id, tenant_id))
+        }
+        
+        const stockResults = await this.database
+          .select({
+            warehouse_id: stock.warehouse_id,
+            sku: stock.sku,
+            quantity: stock.quantity
+          })
+          .from(stock)
+          .where(and(...conditions))
+        
+        // Aggregate stock for all SKUs in the same batch
+        const key = `${item.warehouse_id}:${baseSku}`
+        const totalStock = stockResults.reduce((sum, s) => sum + s.quantity, 0)
+        stockMap.set(key, (stockMap.get(key) || 0) + totalStock)
+      }
+      
+      return stockMap
+    }
+
+    // Original logic for non-batch grouping
     // Create unique combinations of warehouse_id and sku
     const stockKeys = usageData.map(item => ({
       warehouse_id: item.warehouse_id,

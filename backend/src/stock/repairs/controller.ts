@@ -265,7 +265,7 @@ export class RepairsController {
         })
         continue
       }
-     
+      
       
       // Handle regular parts-based items
       const allocation = await purchasesRepository.allocateSkuQuantity(item.sku, item.quantity, tenant_id, warehouse_id)

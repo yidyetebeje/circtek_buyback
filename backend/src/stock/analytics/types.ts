@@ -30,7 +30,8 @@ export const SkuUsageAnalyticsQuery = t.Object({
   // Additional filters
   min_usage: t.Optional(t.Number({ minimum: 0 })),
   max_days_until_empty: t.Optional(t.Number({ minimum: 0 })),
-  only_parts: t.Optional(t.Boolean({ default: true })) // Only show parts SKUs by default
+  only_parts: t.Optional(t.Boolean({ default: true })), // Only show parts SKUs by default
+  group_by_batch: t.Optional(t.Boolean({ default: false })) // Group SKUs by base pattern (exclude last batch number)
 })
 
 export type SkuUsageAnalyticsQueryInput = Static<typeof SkuUsageAnalyticsQuery>
