@@ -446,7 +446,7 @@ export class PurchasesRepository {
   }
 
   // Allocation helpers for repairs consumption cost-resolution
-  async getSkuBatchesWithAvailability(skuValue: string, tenant_id: number): Promise<Array<PurchaseItemRecord & { received_quantity: number; available_quantity: number }>> {
+  async getSkuBatchesWithAvailability(skuValue: string, tenant_id: number, warehouse_id: number): Promise<Array<PurchaseItemRecord & { received_quantity: number; available_quantity: number }>> {
     const items = await this.database
       .select({
         id: purchase_items.id,
@@ -463,10 +463,13 @@ export class PurchasesRepository {
       })
       .from(purchase_items)
       .leftJoin(received_items, eq(purchase_items.id, received_items.purchase_item_id))
+      .leftJoin(purchases, eq(purchase_items.purchase_id, purchases.id))
       .where(and(
         eq(purchase_items.sku, skuValue),
         eq(purchase_items.tenant_id, tenant_id),
-        eq(purchase_items.status, true as any)
+        eq(purchase_items.status, true as any),
+        eq(purchases.warehouse_id, warehouse_id)
+
       ))
       .groupBy(purchase_items.id)
       .orderBy(desc(purchase_items.created_at));
@@ -487,11 +490,12 @@ export class PurchasesRepository {
   async allocateSkuQuantity(
     skuValue: string,
     quantityNeeded: number,
-    tenant_id: number
+    tenant_id: number,
+    warehouse_id: number
   ): Promise<{ total_allocated: number; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }> }> {
     if (quantityNeeded <= 0) return { total_allocated: 0, allocations: [] }
 
-    const batches = await this.getSkuBatchesWithAvailability(skuValue, tenant_id)
+    const batches = await this.getSkuBatchesWithAvailability(skuValue, tenant_id,warehouse_id)
     let remaining = quantityNeeded
     const allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }> = []
 

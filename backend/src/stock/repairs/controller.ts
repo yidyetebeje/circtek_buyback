@@ -4,6 +4,7 @@ import type { response } from '../../types/response'
 import { movementsController } from '../movements'
 import { purchasesRepository } from '../purchases'
 import { deviceEventsService } from '../device-events'
+import { stockRepository } from '../stock'
 
 export class RepairsController {
   constructor(private readonly repo: RepairsRepository) {}
@@ -127,7 +128,7 @@ export class RepairsController {
       if (!repair) return { data: null, message: 'Repair not found', status: 404 }
 
       // Step 1: Allocate all items from purchases (fail fast if insufficient)
-      const allocationsResult = await this.allocateAllItems(payload.items, repair.device_id, tenant_id)
+      const allocationsResult = await this.allocateAllItems(payload.items, repair.device_id, tenant_id, payload.warehouse_id)
       if (!allocationsResult.success || !allocationsResult.data) {
         return { data: null, message: allocationsResult.message, status: 400 }
       }
@@ -204,7 +205,7 @@ export class RepairsController {
     }
   }
 
-  private async allocateAllItems(items: RepairConsumeItemsInput['items'], device_id: number, tenant_id: number) {
+  private async allocateAllItems(items: RepairConsumeItemsInput['items'], device_id: number, tenant_id: number, warehouse_id: number) {
     type ItemAllocation = { sku: string; quantity: number; reason_id: number; description?: string; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }>; is_fixed_price?: boolean; fixed_price?: number}
     const allocations: ItemAllocation[] = []
 
@@ -264,9 +265,10 @@ export class RepairsController {
         })
         continue
       }
-
+     
+      
       // Handle regular parts-based items
-      const allocation = await purchasesRepository.allocateSkuQuantity(item.sku, item.quantity, tenant_id)
+      const allocation = await purchasesRepository.allocateSkuQuantity(item.sku, item.quantity, tenant_id, warehouse_id)
       
       if (allocation.total_allocated !== item.quantity) {
         // Rollback any successful allocations before failing
