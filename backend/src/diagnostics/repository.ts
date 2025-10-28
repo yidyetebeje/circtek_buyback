@@ -194,7 +194,7 @@ export class DiagnosticsRepository {
 	async upload(input: DiagnosticUploadInput, testerId: number, tenantId: number, warehouseId: number, customTimestamps?: { created_at?: string | Date; updated_at?: string | Date }): Promise<DiagnosticPublic | undefined> {
 		// Ensure device exists or create it
 		const deviceToInsert = {
-			make: input.device.make,
+			make: input.device.make.toLowerCase(),
 			model_no: input.device.model_no,
 			model_name: input.device.model_name,
 			device_type: input.device.device_type as any,
