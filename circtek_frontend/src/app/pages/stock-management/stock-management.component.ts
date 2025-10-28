@@ -63,6 +63,7 @@ export class StockManagementComponent {
     const opt = this.warehouseOptions().find(o => Number(o.value) === id);
     return opt?.label ?? String(id);
   });
+  adjustAvailableQty = signal<number>(0);
   adjustQty = signal<number>(0);
   adjustReason = signal<'dead_imei' | 'inventory_loss' | 'manual_correction' | 'damage' | 'theft' | 'expired' | 'return_to_supplier'>('manual_correction');
   adjustNotes = signal<string>('');
@@ -108,13 +109,14 @@ export class StockManagementComponent {
     const sku = this.adjustSku();
     const wid = this.adjustWarehouseId();
     const qty = this.adjustQty();
-    if (!sku || wid == null || qty === 0) return;
+    const availableQty = this.adjustAvailableQty();
+    if (!sku || wid == null || qty <= 0 || qty > availableQty) return;
     this.submitting.set(true);
     this.adjustError.set('');
     this.api.createStockAdjustment({
       sku,
       warehouse_id: wid,
-      quantity_adjustment: qty,
+      quantity_adjustment: -qty,
       reason: this.adjustReason(),
       notes: this.adjustNotes() || undefined,
       actor_id: 1,
@@ -590,6 +592,7 @@ export class StockManagementComponent {
       const r = row as StockWithWarehouse;
       this.adjustSku.set(r.sku);
       this.adjustWarehouseId.set(r.warehouse_id);
+      this.adjustAvailableQty.set(r.quantity);
       this.adjustQty.set(0);
       this.adjustReason.set('manual_correction');
       this.adjustNotes.set('');
