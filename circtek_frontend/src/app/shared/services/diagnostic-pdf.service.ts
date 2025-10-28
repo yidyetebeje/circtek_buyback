@@ -44,15 +44,15 @@ export class DiagnosticPdfService {
       document.body.appendChild(container);
       console.log('Report container added to DOM');
       
-      // Wait for images and content to load
+      // Wait for images and content to load (reduced timeout)
       await this.waitForImagesAndContent(container);
       
       // Convert all images to base64 to ensure they're captured
       await this.convertAllImagesToBase64(container);
       
-      // Extra wait for rendering since container is now visible
-      console.log('Waiting for visible rendering...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Minimal wait for rendering - just enough for browser paint
+      console.log('Waiting for rendering...');
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       console.log('Starting canvas capture...');
       
@@ -149,6 +149,7 @@ export class DiagnosticPdfService {
     this.appRef.attachView(componentRef.hostView);
     
     // Create container - MUST be visible for html2canvas to capture images properly
+    // Use minimal visibility to avoid user distraction
     const container = document.createElement('div');
     container.className = 'temp-report-container';
     container.style.cssText = `
@@ -157,29 +158,30 @@ export class DiagnosticPdfService {
       left: 0;
       width: 100vw;
       height: 100vh;
-      background-color: rgba(255, 255, 255, 0.98);
+      background-color: rgba(255, 255, 255, 0.5);
       z-index: 9999;
       overflow: hidden;
       font-family: arial !important;
       pointer-events: none;
+      opacity: 0.3;
     `;
     
-    // Add loading message
+    // Add minimal loading indicator
     const loadingDiv = document.createElement('div');
     loadingDiv.style.cssText = `
       position: absolute;
-      top: 20px;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translate(-50%, -50%);
       background: #294174;
       color: white;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 16px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
       font-weight: 600;
       z-index: 10000;
     `;
-    loadingDiv.textContent = 'Generating PDF...';
+    loadingDiv.textContent = 'Generating...';
     container.appendChild(loadingDiv);
     
     // Create wrapper for PDF capture - match report page layout
@@ -266,7 +268,7 @@ export class DiagnosticPdfService {
           console.warn('Image loading timeout, using original URL');
           resolve(imageUrl);
         }
-      }, 5000);
+      }, 2000);
       
       img.src = imageUrl;
     });
@@ -305,7 +307,7 @@ export class DiagnosticPdfService {
             } else {
               img.onload = () => resolve(void 0);
               img.onerror = () => resolve(void 0);
-              setTimeout(() => resolve(void 0), 1000);
+              setTimeout(() => resolve(void 0), 300);
             }
           });
         } else {
@@ -342,19 +344,19 @@ export class DiagnosticPdfService {
           console.warn(`Image ${index} failed to load`);
           resolve(void 0); // Don't fail on image errors
         };
-        // Timeout after 8 seconds
+        // Timeout after 3 seconds (faster than before)
         setTimeout(() => {
           console.warn(`Image ${index} loading timeout`);
           resolve(void 0);
-        }, 8000);
+        }, 3000);
       });
     });
     
     await Promise.all(imagePromises);
     
-    // Additional wait for fonts, layout, and rendering
+    // Minimal wait for fonts, layout, and rendering
     console.log('Waiting for layout and rendering...');
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     console.log('Content loading complete');
   }
