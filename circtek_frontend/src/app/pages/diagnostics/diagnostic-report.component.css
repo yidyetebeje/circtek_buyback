@@ -14,35 +14,36 @@
 
 .report-document {
   background-color: #ffffff; /* White background for the document itself */
-  width: 250mm; /* Increased width for the document */
+  width: 210mm; /* A4 width */
   min-height: 297mm; /* A4 height */
-  padding: 30mm; /* Margins for the document */
+  padding: 15mm; /* Reduced margins for more space */
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
   border-radius: 8px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
-  line-height: 1.6;
+  line-height: 1.4; /* Reduced line height for compactness */
   display: flex;
   flex-direction: column;
+  font-size: 12px; /* Smaller base font size */
 }
 
 .report-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 40px;
-  padding-bottom: 20px;
+  margin-bottom: 15px; /* Reduced margin */
+  padding-bottom: 10px; /* Reduced padding */
   border-bottom: 1px solid #eee;
 }
 
 .logo-section {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px; /* Reduced gap */
 }
 
 .company-logo {
-  max-height: 80px;
+  max-height: 50px; /* Smaller logo */
   width: auto;
 }
 
@@ -52,10 +53,10 @@
 }
 
 .report-title {
-  font-size: 2.2em;
+  font-size: 1.6em; /* Smaller title */
   font-weight: 700;
   color: #2c3e50;
-  margin-bottom: 5px;
+  margin-bottom: 3px; /* Reduced margin */
 }
 
 .report-id {
@@ -87,29 +88,29 @@
 }
 
 .qr-code-placeholder {
-  width: 100px;
-  height: 100px;
+  width: 70px; /* Smaller QR code */
+  height: 70px;
   border: 1px dashed #ccc;
   border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-left: auto;
-  margin-top: 15px;
+  margin-top: 8px; /* Reduced margin */
   color: #999;
-  font-size: 0.75em;
+  font-size: 0.7em;
 }
 
 .report-section {
-  margin-bottom: 30px;
+  margin-bottom: 15px; /* Reduced margin */
 }
 
 .report-section h3 {
-  font-size: 1.5em;
+  font-size: 1.2em; /* Smaller heading */
   font-weight: 600;
   color: #2c3e50;
-  margin-bottom: 15px;
-  padding-bottom: 5px;
+  margin-bottom: 8px; /* Reduced margin */
+  padding-bottom: 3px; /* Reduced padding */
   border-bottom: 1px solid #eee;
 }
 
@@ -121,18 +122,18 @@
 }
 
 .card-body {
-  padding: 20px;
+  padding: 12px; /* Reduced padding */
 }
 
 .card-title {
-  font-size: 1.2em;
+  font-size: 1.1em; /* Smaller title */
   font-weight: 600;
   color: #34495e;
-  margin-bottom: 10px;
+  margin-bottom: 6px; /* Reduced margin */
 }
 
 .grid-cols-2 > div {
-  padding: 8px 0;
+  padding: 4px 0; /* Reduced padding */
 }
 
 .report-footer-summary {
@@ -170,8 +171,8 @@
 .pdf-optimized {
   width: 800px !important;
   transform: scale(1) !important;
-  font-size: 14px !important;
-  line-height: 1.4 !important;
+  font-size: 11px !important; /* Smaller font for PDF */
+  line-height: 1.3 !important;
 }
 
 .pdf-optimized .report-document {
@@ -179,40 +180,186 @@
   max-width: none !important;
   box-shadow: none !important;
   border-radius: 0 !important;
-  padding: 20px !important;
+  padding: 15px !important; /* Reduced padding */
 }
 
 .pdf-optimized .no-print {
   display: none !important;
 }
 
+/* PDF compact styles */
+.pdf-optimized .report-header {
+  margin-bottom: 12px !important;
+  padding-bottom: 8px !important;
+}
+
+.pdf-optimized .company-logo {
+  max-height: 40px !important;
+}
+
+.pdf-optimized .report-title {
+  font-size: 1.5em !important;
+}
+
+.pdf-optimized .qr-code-placeholder {
+  width: 60px !important;
+  height: 60px !important;
+}
+
+.pdf-optimized .report-section {
+  margin-bottom: 10px !important;
+}
+
+.pdf-optimized .card-body {
+  padding: 10px !important;
+}
+
+.pdf-optimized .functional-tests-grid > div {
+  padding: 1px 4px !important;
+  margin-bottom: 1px !important;
+  font-size: 10px !important;
+}
+
 /* Print-specific styles */
 @media print {
+  @page {
+    size: A4;
+    margin: 12mm 10mm; /* Minimal margins */
+  }
+  
   body {
     margin: 0;
     padding: 0;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    font-size: 11px !important; /* Smaller font for print */
+    line-height: 1.3 !important;
+    color: #000 !important; /* Pure black for better contrast */
+    background: white !important;
   }
 
   .report-page-container {
     background-color: #ffffff !important;
     padding: 0 !important;
     display: block;
+    min-height: auto !important;
   }
 
   .report-document {
     width: 100% !important;
+    max-width: 100% !important;
     min-height: auto !important;
-    padding: 15mm !important;
+    padding: 8mm !important; /* Minimal padding */
     box-shadow: none !important;
     border-radius: 0 !important;
+    font-size: 11px !important;
+    line-height: 1.3 !important;
   }
 
   .no-print {
     display: none !important;
   }
 
+  /* Compact header for print */
+  .report-header {
+    margin-bottom: 8mm !important;
+    padding-bottom: 4mm !important;
+  }
+  
+  .company-logo {
+    max-height: 35px !important;
+  }
+  
+  .report-title {
+    font-size: 1.4em !important;
+    margin-bottom: 2mm !important;
+  }
+  
+  .qr-code-placeholder {
+    width: 50px !important;
+    height: 50px !important;
+    margin-top: 4mm !important;
+  }
+
+  /* Compact sections */
+  .report-section {
+    margin-bottom: 6mm !important;
+  }
+  
+  .report-section h3 {
+    font-size: 1.1em !important;
+    margin-bottom: 3mm !important;
+    padding-bottom: 1mm !important;
+  }
+  
+  .card {
+    border: 1px solid #ccc !important;
+    background-color: transparent !important;
+  }
+  
+  .card-body {
+    padding: 6mm !important;
+  }
+  
+  .card-title {
+    font-size: 1em !important;
+    margin-bottom: 3mm !important;
+  }
+
+  /* Single column functional tests for better space utilization */
+  .functional-tests-grid {
+    display: block !important;
+    columns: 1 !important;
+  }
+  
+  .functional-tests-grid > div {
+    margin-bottom: 1mm !important;
+    padding: 1mm 2mm !important;
+    font-size: 10px !important;
+    break-inside: avoid;
+    border-bottom: 1px solid #eee !important;
+  }
+  
+  /* Status grid compact */
+  .grid-cols-6 {
+    font-size: 10px !important;
+  }
+  
+  .grid-cols-6 > div {
+    padding: 2mm !important;
+  }
+  
+  /* Device info grid compact */
+  .grid-cols-2 > div {
+    padding: 1mm 0 !important;
+    font-size: 10px !important;
+  }
+  
+  /* Footer compact */
+  .report-footer-summary {
+    margin-top: 6mm !important;
+    padding-top: 3mm !important;
+    font-size: 10px !important;
+  }
+  
+  /* Remove colors for print-friendly design */
+  .text-success, .badge-success {
+    color: #000 !important;
+    background-color: transparent !important;
+    border: 1px solid #000 !important;
+  }
+  
+  .text-error, .badge-error {
+    color: #000 !important;
+    background-color: transparent !important;
+    border: 1px solid #000 !important;
+  }
+  
+  .text-warning, .badge-warning {
+    color: #000 !important;
+    background-color: transparent !important;
+    border: 1px solid #000 !important;
+  }
+  
+  /* Ensure single page */
   .report-header, .report-section, .report-footer-summary {
     page-break-inside: avoid;
   }
@@ -220,15 +367,5 @@
   h1, h2, h3, p {
     page-break-after: avoid;
     page-break-inside: avoid;
-  }
-
-  .grid {
-    page-break-inside: avoid;
-  }
-
-  .functional-tests-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 1.5rem !important; /* Equivalent to Tailwind's gap-6 */
   }
 }

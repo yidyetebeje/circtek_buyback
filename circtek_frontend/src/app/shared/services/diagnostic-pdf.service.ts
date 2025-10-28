@@ -56,7 +56,7 @@ export class DiagnosticPdfService {
       
       // Capture with html2canvas
       const canvas = await html2canvas(reportDocument, {
-        scale: 2,
+        scale: 1.5,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -64,7 +64,7 @@ export class DiagnosticPdfService {
         height: reportDocument.scrollHeight,
         removeContainer: true,
         logging: false,
-        imageTimeout: 10000,
+        imageTimeout: 5000,
         foreignObjectRendering: false,
         onclone: (clonedDoc) => {
           // Apply optimization styles to cloned document
@@ -138,16 +138,17 @@ export class DiagnosticPdfService {
     reportDoc.className = 'report-document';
     reportDoc.style.cssText = `
       background-color: #ffffff;
-      width: 250mm;
+      width: 210mm;
       min-height: 297mm;
-      padding: 30mm;
+      padding: 15mm;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       border-radius: 8px;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       color: #333;
-      line-height: 1.6;
+      line-height: 1.4;
       display: flex;
       flex-direction: column;
+      font-size: 12px;
     `;
     
     // Generate QR code
@@ -207,25 +208,19 @@ export class DiagnosticPdfService {
 
       <!-- Device Info -->
       <div class="report-section">
-        <div style="display: grid; grid-template-columns: 1fr; gap: 24px;">
-          <div class="card" style="background-color: rgba(229, 231, 235, 0.6);">
-            <div class="card-body" style="padding: 12px;">
-              <h2 class="card-title" style="font-size: 18px; display: flex; align-items: center; gap: 8px;">
-                <span>${diagnostic.model_name || '-'}</span>
-                <span style="font-size: 14px; color: rgba(107, 114, 128, 1);">${(diagnostic.device_storage ? (' ' + diagnostic.device_storage) : '') + (diagnostic.device_color ? (' ' + diagnostic.device_color) : '') || '-'}</span>
-              </h2>
-            </div>
-          </div>
-          <div class="card" style="background-color: rgba(229, 231, 235, 0.6);">
-            <div class="card-body" style="padding: 20px;">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px 8px; font-size: 14px;">
-                <div><span style="font-weight: 600;">IMEI:</span> ${diagnostic.imei || diagnostic.device_imei || '-'}</div>
-                <div><span style="font-weight: 600;">Serial:</span> ${diagnostic.serial_number || diagnostic.device_serial || '-'}</div>
-                <div><span style="font-weight: 600;">LPN:</span> ${diagnostic.lpn || diagnostic.device_lpn || '-'}</div>
-                <div><span style="font-weight: 600;">Battery:</span> ${(diagnostic.battery_info?.health || '-')}</div>
-                <div><span style="font-weight: 600;">Carrier:</span> ${(diagnostic.carrier_lock?.carrier || '-')}</div>
-                <div><span style="font-weight: 600;">OS:</span> ${diagnostic.os_version || '-'}</div>
-              </div>
+        <div class="card" style="background-color: rgba(229, 231, 235, 0.6);">
+          <div class="card-body" style="padding: 12px;">
+            <h2 class="card-title" style="font-size: 16px; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span>${diagnostic.model_name || '-'}</span>
+              <span style="font-size: 12px; color: rgba(107, 114, 128, 1);">${(diagnostic.device_storage ? (' ' + diagnostic.device_storage) : '') + (diagnostic.device_color ? (' ' + diagnostic.device_color) : '') || '-'}</span>
+            </h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 11px; margin-top: 8px;">
+              <div><span style="font-weight: 600;">IMEI:</span> ${diagnostic.imei || diagnostic.device_imei || '-'}</div>
+              <div><span style="font-weight: 600;">Serial:</span> ${diagnostic.serial_number || diagnostic.device_serial || '-'}</div>
+              <div><span style="font-weight: 600;">LPN:</span> ${diagnostic.lpn || diagnostic.device_lpn || '-'}</div>
+              <div><span style="font-weight: 600;">Battery:</span> ${this.getBatteryInfo(diagnostic)}</div>
+              <div><span style="font-weight: 600;">Carrier:</span> ${this.getCarrierLock(diagnostic)}</div>
+              <div><span style="font-weight: 600;">OS:</span> ${diagnostic.os_version || '-'}</div>
             </div>
           </div>
         </div>
@@ -233,44 +228,44 @@ export class DiagnosticPdfService {
 
       <!-- Status bar row -->
       <div class="report-section">
-        <div style="display: grid; grid-template-columns: repeat(6, 1fr); text-align: center; font-size: 14px; font-weight: 600;">
-          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 8px 0; border-radius: 8px 0 0 0;">FMI</div>
-          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 8px 0;">Jailbreak</div>
-          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 8px 0;">Grade</div>
-          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 8px 0;">ESN</div>
-          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 8px 0;">MDM</div>
-          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 8px 0; border-radius: 0 8px 0 0;">Wipe</div>
+        <div style="display: grid; grid-template-columns: repeat(6, 1fr); text-align: center; font-size: 10px; font-weight: 600;">
+          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 4px 0; border-radius: 4px 0 0 0;">FMI</div>
+          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 4px 0;">Jailbreak</div>
+          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 4px 0;">Grade</div>
+          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 4px 0;">ESN</div>
+          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 4px 0;">MDM</div>
+          <div style="background-color: rgba(229, 231, 235, 0.6); padding: 4px 0; border-radius: 0 4px 0 0;">Wipe</div>
         </div>
-        <div style="display: grid; grid-template-columns: repeat(6, 1fr); text-align: center; border: 1px solid rgba(229, 231, 235, 1); border-top: 0; border-radius: 0 0 8px 8px; font-size: 14px;">
-          <div style="padding: 8px 0; font-weight: 500;">${diagnostic.iCloud || '-'}</div>
-          <div style="padding: 8px 0; font-weight: 500;">No</div>
-          <div style="padding: 8px 0; font-weight: 500;">-</div>
-          <div style="padding: 8px 0; font-weight: 500;">${diagnostic.ESN || '-'}</div>
-          <div style="padding: 8px 0; font-weight: 500;">${diagnostic.device_lock || '-'}</div>
-          <div style="padding: 8px 0; font-weight: 500;">${diagnostic.eSIM_erasure || '-'}</div>
+        <div style="display: grid; grid-template-columns: repeat(6, 1fr); text-align: center; border: 1px solid rgba(229, 231, 235, 1); border-top: 0; border-radius: 0 0 4px 4px; font-size: 9px;">
+          <div style="padding: 4px 0; font-weight: 500;">${this.getICloudStatus(diagnostic)}</div>
+          <div style="padding: 4px 0; font-weight: 500;">No</div>
+          <div style="padding: 4px 0; font-weight: 500;">-</div>
+          <div style="padding: 4px 0; font-weight: 500;">${diagnostic.ESN || '-'}</div>
+          <div style="padding: 4px 0; font-weight: 500;">${diagnostic.device_lock || '-'}</div>
+          <div style="padding: 4px 0; font-weight: 500;">${diagnostic.eSIM_erasure || '-'}</div>
         </div>
       </div>
 
       <!-- Tests Matrix -->
       <div class="report-section">
-        <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Functional Tests</h3>
-        <div class="functional-tests-grid" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 8px; font-size: 14px;">
+        <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Functional Tests</h3>
+        <div class="functional-tests-grid" style="font-size: 10px;">
           ${passedComponents.map(name => `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border-radius: 6px; background-color: rgba(229, 231, 235, 0.5);">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; margin-bottom: 1px; border-bottom: 1px solid #eee;">
               <span style="font-weight: 500;">${name}</span>
-              <span style="color: #10B981;">✓ Passed</span>
+              <span style="color: #000;">✓ Passed</span>
             </div>
           `).join('')}
           ${pendingComponents.map(name => `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border-radius: 6px; background-color: rgba(229, 231, 235, 0.5);">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; margin-bottom: 1px; border-bottom: 1px solid #eee;">
               <span style="font-weight: 500;">${name}</span>
-              <span style="color: #F59E0B;">● Pending</span>
+              <span style="color: #000;">● Pending</span>
             </div>
           `).join('')}
           ${failedComponents.map(name => `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border-radius: 6px; background-color: rgba(229, 231, 235, 0.5);">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; margin-bottom: 1px; border-bottom: 1px solid #eee;">
               <span style="font-weight: 500;">${name}</span>
-              <span style="color: #EF4444;">✗ Failed</span>
+              <span style="color: #000;">✗ Failed</span>
             </div>
           `).join('')}
         </div>
@@ -278,18 +273,18 @@ export class DiagnosticPdfService {
 
       <!-- Footer summary -->
       <div class="report-footer-summary">
-        <div style="font-size: 14px; font-weight: 600;">
+        <div style="font-size: 11px; font-weight: 600;">
           <span>Overall Result:</span>
           <span style="margin-left: 8px;">
             ${failedComponents.length > 0 ? 
-              '<span class="badge badge-error">Failed</span>' : 
+              '<span style="padding: 3px 6px; border: 1px solid #000; color: #000; font-size: 9px; font-weight: 700; text-transform: uppercase; display: inline-block;">Failed</span>' : 
               pendingComponents.length > 0 ? 
-              '<span class="badge badge-warning">Pending</span>' : 
-              '<span class="badge badge-success">Passed</span>'
+              '<span style="padding: 3px 6px; border: 1px solid #000; color: #000; font-size: 9px; font-weight: 700; text-transform: uppercase; display: inline-block;">Pending</span>' : 
+              '<span style="padding: 3px 6px; border: 1px solid #000; color: #000; font-size: 9px; font-weight: 700; text-transform: uppercase; display: inline-block;">Passed</span>'
             }
           </span>
         </div>
-        <div style="font-size: 12px; color: rgba(107, 114, 128, 0.6); margin-top: 4px;">
+        <div style="font-size: 9px; color: rgba(107, 114, 128, 0.8); margin-top: 4px;">
           ${failedComponents.length > 0 ? 
             `${failedComponents.length} component(s) failed, ${passedComponents.length} component(s) passed.` :
             pendingComponents.length > 0 ?
@@ -308,19 +303,19 @@ export class DiagnosticPdfService {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 40px;
-        padding-bottom: 20px;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
         border-bottom: 1px solid #eee;
       }
       
       .temp-report-container .logo-section {
         display: flex;
         align-items: center;
-        gap: 20px;
+        gap: 12px;
       }
       
       .temp-report-container .company-logo {
-        max-height: 80px;
+        max-height: 50px;
         width: auto;
       }
       
@@ -330,10 +325,10 @@ export class DiagnosticPdfService {
       }
       
       .temp-report-container .report-title {
-        font-size: 2.2em;
+        font-size: 1.6em;
         font-weight: 700;
         color: #2c3e50;
-        margin-bottom: 5px;
+        margin-bottom: 3px;
       }
       
       .temp-report-container .report-id {
@@ -365,21 +360,21 @@ export class DiagnosticPdfService {
       }
       
       .temp-report-container .qr-code-placeholder {
-        width: 100px;
-        height: 100px;
+        width: 70px;
+        height: 70px;
         border: 1px dashed #ccc;
         border-radius: 5px;
         display: flex;
         align-items: center;
         justify-content: center;
         margin-left: auto;
-        margin-top: 15px;
+        margin-top: 8px;
         color: #999;
-        font-size: 0.75em;
+        font-size: 0.7em;
       }
       
       .temp-report-container .report-section {
-        margin-bottom: 30px;
+        margin-bottom: 15px;
       }
       
       .temp-report-container .card {
@@ -390,14 +385,14 @@ export class DiagnosticPdfService {
       }
       
       .temp-report-container .card-body {
-        padding: 20px;
+        padding: 12px;
       }
       
       .temp-report-container .card-title {
-        font-size: 1.2em;
+        font-size: 1.1em;
         font-weight: 600;
         color: #34495e;
-        margin-bottom: 10px;
+        margin-bottom: 6px;
       }
       
       .temp-report-container .report-footer-summary {
@@ -435,8 +430,8 @@ export class DiagnosticPdfService {
       .temp-report-container.pdf-optimized {
         width: 800px !important;
         transform: scale(1) !important;
-        font-size: 14px !important;
-        line-height: 1.4 !important;
+        font-size: 11px !important;
+        line-height: 1.3 !important;
       }
       
       .temp-report-container.pdf-optimized .report-document {
@@ -444,7 +439,29 @@ export class DiagnosticPdfService {
         max-width: none !important;
         box-shadow: none !important;
         border-radius: 0 !important;
-        padding: 20px !important;
+        padding: 15px !important;
+      }
+      
+      .temp-report-container.pdf-optimized .report-header {
+        margin-bottom: 12px !important;
+        padding-bottom: 8px !important;
+      }
+      
+      .temp-report-container.pdf-optimized .company-logo {
+        max-height: 40px !important;
+      }
+      
+      .temp-report-container.pdf-optimized .qr-code-placeholder {
+        width: 60px !important;
+        height: 60px !important;
+      }
+      
+      .temp-report-container.pdf-optimized .report-section {
+        margin-bottom: 10px !important;
+      }
+      
+      .temp-report-container.pdf-optimized .card-body {
+        padding: 10px !important;
       }
     `;
     
@@ -512,22 +529,22 @@ export class DiagnosticPdfService {
     }
     
     const xOffset = (pdfWidth - imgWidth) / 2;
-    const imgData = canvas.toDataURL('image/png', 1.0);
+    const imgData = canvas.toDataURL('image/jpeg', 0.85);
     
     if (singlePage) {
-      pdf.addImage(imgData, 'PNG', xOffset, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'JPEG', xOffset, 0, imgWidth, imgHeight);
     } else {
       // Multi-page support
       let position = 0;
       let heightLeft = imgHeight;
       
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
       heightLeft -= pdfHeight;
       
       while (heightLeft >= 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
       }
     }
@@ -535,6 +552,49 @@ export class DiagnosticPdfService {
     return pdf;
   }
   
+  private getBatteryInfo(diagnostic: Diagnostic): string {
+    if (!diagnostic.battery_info) return '-';
+    
+    const batteryInfo = diagnostic.battery_info as any;
+    
+    // Handle different battery info structures
+    if (batteryInfo.health_percentage !== undefined) {
+      // iPhone/Android format
+      return `${batteryInfo.health_percentage}%`;
+    } else if (batteryInfo.health !== undefined) {
+      // Alternative health format
+      return batteryInfo.health;
+    } else if (batteryInfo.case || batteryInfo.left || batteryInfo.right) {
+      // AirPods format - show case battery
+      const caseBattery = batteryInfo.case?.charge_percentage;
+      const leftBattery = batteryInfo.left?.charge_percentage;
+      const rightBattery = batteryInfo.right?.charge_percentage;
+      
+      const parts = [];
+      if (caseBattery) parts.push(`Case: ${caseBattery}`);
+      if (leftBattery) parts.push(`L: ${leftBattery}`);
+      if (rightBattery) parts.push(`R: ${rightBattery}`);
+      
+      return parts.length > 0 ? parts.join(', ') : '-';
+    }
+    
+    return '-';
+  }
+  
+  private getCarrierLock(diagnostic: Diagnostic): string {
+    if (!diagnostic.carrier_lock) return '-';
+    
+    const carrierLock = diagnostic.carrier_lock as any;
+    return carrierLock.carrier || carrierLock || '-';
+  }
+  
+  private getICloudStatus(diagnostic: Diagnostic): string {
+    if (!diagnostic.iCloud) return '-';
+    
+    const iCloud = diagnostic.iCloud as any;
+    return iCloud.status || iCloud || '-';
+  }
+
   generateFilename(diagnostic: Diagnostic): string {
     const timestamp = new Date().toISOString().split('T')[0];
     const encodedId = this.cipherService.encodeTestId(diagnostic.id, diagnostic.serial_number || undefined);
