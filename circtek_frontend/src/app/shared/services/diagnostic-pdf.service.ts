@@ -47,8 +47,9 @@ export class DiagnosticPdfService {
       // Wait for images and content to load (reduced timeout)
       await this.waitForImagesAndContent(container);
       
-      // Convert all images to base64 to ensure they're captured
-      await this.convertAllImagesToBase64(container);
+      // Skip base64 conversion to avoid CORS issues
+      // html2canvas with allowTaint:true can handle external images directly
+      console.log('Skipping base64 conversion - using allowTaint mode');
       
       // Minimal wait for rendering - just enough for browser paint
       console.log('Waiting for rendering...');

@@ -87,48 +87,12 @@ export class DiagnosticReportComponent {
     if (!element) return;
     
     try {
-      // Convert all images to base64 first
-      const images = element.querySelectorAll('img');
-      console.log(`Found ${images.length} images to convert`);
+      // Skip base64 conversion to avoid CORS issues
+      // html2canvas with allowTaint:true can handle external images directly
+      console.log('Skipping image conversion - using allowTaint mode');
       
-      const conversionPromises = Array.from(images as NodeListOf<HTMLImageElement>).map(async (img, index) => {
-        const src = img.src;
-        
-        // Skip if already base64
-        if (src.startsWith('data:')) {
-          console.log(`Image ${index} already base64`);
-          return;
-        }
-        
-        console.log(`Converting image ${index}...`);
-        
-        try {
-          const dataUrl = await this.convertImageToDataUrl(src);
-          if (dataUrl.startsWith('data:')) {
-            img.src = dataUrl;
-            console.log(`Image ${index} converted successfully`);
-            
-            // Wait for image to be processed
-            await new Promise<void>(resolve => {
-              if (img.complete) {
-                resolve();
-              } else {
-                img.onload = () => resolve();
-                img.onerror = () => resolve();
-                setTimeout(() => resolve(), 1000);
-              }
-            });
-          }
-        } catch (error) {
-          console.error(`Error converting image ${index}:`, error);
-        }
-      });
-      
-      await Promise.all(conversionPromises);
-      console.log('All images converted, starting capture...');
-      
-      // Small delay to ensure rendering
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Small delay to ensure images are loaded
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       // Now capture with html2canvas
       const canvas = await html2canvas(element, {
@@ -169,54 +133,6 @@ export class DiagnosticReportComponent {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');
     }
-  }
-  
-  private convertImageToDataUrl(imageUrl: string): Promise<string> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            resolve(imageUrl);
-            return;
-          }
-          
-          ctx.drawImage(img, 0, 0);
-          
-          try {
-            const dataUrl = canvas.toDataURL('image/png');
-            resolve(dataUrl);
-          } catch (error) {
-            console.error('Canvas to dataURL failed:', error);
-            resolve(imageUrl);
-          }
-        } catch (error) {
-          console.error('Image processing error:', error);
-          resolve(imageUrl);
-        }
-      };
-      
-      img.onerror = () => {
-        console.error('Image loading failed:', imageUrl);
-        resolve(imageUrl);
-      };
-      
-      setTimeout(() => {
-        if (!img.complete) {
-          console.warn('Image loading timeout:', imageUrl);
-          resolve(imageUrl);
-        }
-      }, 5000);
-      
-      img.src = imageUrl;
-    });
   }
 }
 
