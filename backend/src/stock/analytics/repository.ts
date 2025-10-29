@@ -37,7 +37,7 @@ export class SkuUsageAnalyticsRepository {
     const usageData = await this.getUsageData(filters, periodInfo)
     
     // Step 2: Get current stock levels for all SKUs that had usage
-    const stockData = await this.getCurrentStockLevels(usageData, filters.tenant_id, filters.group_by_batch)
+    const stockData = await this.getCurrentStockLevels(usageData, filters.tenant_id, filters.group_by_batch, filters.search)
     
     // Step 3: Combine usage and stock data
     const combinedData = this.combineUsageAndStock(usageData, stockData, periodInfo)
@@ -172,7 +172,8 @@ export class SkuUsageAnalyticsRepository {
   private async getCurrentStockLevels(
     usageData: SkuUsageCalculation[],
     tenant_id?: number,
-    groupByBatch: boolean = false
+    groupByBatch: boolean = false,
+    searchFilter?: string
   ): Promise<Map<string, number>> {
     
     if (usageData.length === 0) {
@@ -192,6 +193,12 @@ export class SkuUsageAnalyticsRepository {
           eq(stock.warehouse_id, item.warehouse_id),
           like(stock.sku, pattern)
         ]
+        
+        // Apply search filter to match usage query filtering
+        if (searchFilter) {
+          const searchPattern = `%${searchFilter}%`
+          conditions.push(like(stock.sku, searchPattern))
+        }
         
         if (typeof tenant_id === 'number') {
           conditions.push(eq(stock.tenant_id, tenant_id))
