@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { HttpParams } from '@angular/common/http';
 import { LucideAngularModule, Trash2 } from 'lucide-angular';
 
-import { GenericFormPageComponent, type FormField, type FormAction } from '../../shared/components/generic-form-page/generic-form-page.component';
+import { GenericFormPageComponent, type FormField } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -59,14 +59,6 @@ export class RepairFormComponent implements OnInit {
   subtitle = 'Create a new repair record for a device';
   submitLabel = 'Create Repair';
   fields = computed<FormField[]>(() => []);
-  actions = computed<FormAction[]>(() => [
-    { 
-      label: 'Cancel', 
-      type: 'button', 
-      variant: 'ghost' 
-    },
-    
-  ]);
 
   // Computed form validation
   isFormValid = () => {
@@ -428,15 +420,6 @@ export class RepairFormComponent implements OnInit {
         this.error.set(err.message || 'An error occurred while creating the repair');
       }
     });
-  }
-
-  onActionClick(event: { action: string; data?: any }) {
-    console.log("event action", event.action)
-    if (event.action === 'Cancel') { 
-      this.onCancel(); 
-    } else if (event.action === 'Create Repair') {
-      this.onSubmit();
-    }
   }
 
   onCancel() {

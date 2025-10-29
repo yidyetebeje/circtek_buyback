@@ -3,12 +3,10 @@
   [subtitle]="subtitle"
   [form]="form()"
   [fields]="fields()"
-  [actions]="actions()"
+  [actions]="[]"
   [loading]="loading()"
-  [submitting]="submitting()"
   [error]="error()"
-  [submitLabel]="submitLabel"
-  (actionClick)="onActionClick($event)"
+  [hideSubmitButton]="true"
   (backClick)="onBackClick()"
 >
   <!-- Custom content starts: we keep the header from GenericFormPage -->
@@ -121,6 +119,29 @@
 
       <div class="mt-4 flex justify-end">
         <button type="button" class="btn btn-sm btn-primary" (click)="addPart()">+ Add Item</button>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="mt-6 flex gap-3 justify-end border-t border-base-300/40 pt-4">
+        <button 
+          type="button" 
+          class="btn btn-ghost" 
+          (click)="onCancel()"
+          [disabled]="submitting()"
+        >
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-accent" 
+          (click)="onSubmit()"
+          [disabled]="!isFormValid() || submitting()"
+        >
+          @if (submitting()) {
+            <span class="loading loading-spinner loading-sm"></span>
+          }
+          Create Repair
+        </button>
       </div>
 
       <!-- Repair History -->

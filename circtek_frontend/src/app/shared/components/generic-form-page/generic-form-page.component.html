@@ -200,19 +200,21 @@
                 }
               </button>
             }
-            <button 
-             type="submit"
-             (click)="onActionClick({ label: submitLabel(), type: 'submit', variant: 'primary' })"
-             [disabled]="loading() || submitting() || submitDisabled()"
-             [class]="getButtonClass({ label: submitLabel(), type: 'submit', variant: 'primary' })"
-            >
-             @if (submitting()) {
-              <span class="loading loading-spinner loading-sm"></span>
-             } @else {
-              <lucide-icon [img]="Save" class="size-4"></lucide-icon>
-             {{ submitLabel()}}
-             }
-            </button>
+            @if (!hideSubmitButton()) {
+              <button 
+               type="submit"
+               (click)="onActionClick({ label: submitLabel(), type: 'submit', variant: 'primary' })"
+               [disabled]="loading() || submitting() || submitDisabled()"
+               [class]="getButtonClass({ label: submitLabel(), type: 'submit', variant: 'primary' })"
+              >
+               @if (submitting()) {
+                <span class="loading loading-spinner loading-sm"></span>
+               } @else {
+                <lucide-icon [img]="Save" class="size-4"></lucide-icon>
+               {{ submitLabel()}}
+               }
+              </button>
+            }
           </div>
         </form>
 

@@ -64,6 +64,7 @@ export class GenericFormPageComponent {
   backUrl = input<string>('../');
   submitLabel = input<string>('Save');
   submitDisabled = input<boolean>(false);
+  hideSubmitButton = input<boolean>(false);
 
   // Outputs
   formSubmit = output<any>();
