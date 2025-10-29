@@ -25,6 +25,9 @@ export class AdjustmentsController {
       if (payload.quantity_adjustment === 0) {
         return { data: null, message: 'Adjustment quantity cannot be zero', status: 400 }
       }
+      if (payload.quantity_adjustment > 0){
+         return { data: null, message: 'Adjustment quantity cannot be positive', status: 400 }
+      }
       
 
       // Create stock movement for the adjustment

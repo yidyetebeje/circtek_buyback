@@ -38,7 +38,8 @@ export const adjustments_routes = new Elysia({ prefix: '/adjustments' })
 
   // Create stock adjustment
   .post('/', async (ctx) => {
-    const { body, currentTenantId } = ctx as any
+    const { body, currentTenantId, currentUserId } = ctx as any
+    body.actor_id = currentUserId
     return controller.createAdjustment(body as any, currentTenantId)
   }, { 
     body: AdjustmentCreate, 
@@ -51,7 +52,8 @@ export const adjustments_routes = new Elysia({ prefix: '/adjustments' })
 
   // Create dead IMEI write-off
   .post('/dead-imei', async (ctx) => {
-    const { body, currentTenantId } = ctx as any
+    const { body, currentTenantId, currentUserId } = ctx as any
+    body.actor_id = currentUserId
     return controller.createDeadIMEIWriteOff(body as any, currentTenantId)
   }, { 
     body: DeadIMEIWriteOff, 
