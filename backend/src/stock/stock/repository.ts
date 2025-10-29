@@ -19,6 +19,18 @@ const stockWithWarehouseSelection = {
 export class StockRepository {
   constructor(private readonly database: typeof db) {}
 
+  /**
+   * Extract base SKU by removing the last segment (batch number)
+   * Example: GSM-TI-BAT-11-290 -> GSM-TI-BAT-11
+   */
+  private getBaseSku(sku: string): string {
+    const parts = sku.split('-');
+    if (parts.length <= 1) {
+      return sku; // No batch segment to remove
+    }
+    return parts.slice(0, -1).join('-');
+  }
+
   async createStock(stockData: StockCreateInput & { tenant_id: number }): Promise<StockWithWarehouse | undefined> {
     // Check if stock already exists for this SKU and warehouse
     const existing = await this.findBySkuAndWarehouse(stockData.sku, stockData.warehouse_id, stockData.tenant_id);
@@ -97,6 +109,11 @@ export class StockRepository {
   }
 
   async findAll(filters: StockQueryInput & { tenant_id?: number }): Promise<StockListResult> {
+    // If batch grouping is enabled, use specialized method
+    if (filters.group_by_batch) {
+      return this.findAllGroupedByBatch(filters);
+    }
+
     const conditions: any[] = [];
     
     if (typeof filters.tenant_id === 'number') {
@@ -162,6 +179,121 @@ export class StockRepository {
     }
 
     return { rows, total: totalRow?.total ?? 0, page, limit };
+  }
+
+  /**
+   * Find all stock grouped by base SKU (batch grouping)
+   */
+  private async findAllGroupedByBatch(filters: StockQueryInput & { tenant_id?: number }): Promise<StockListResult> {
+    const conditions: any[] = [];
+    
+    if (typeof filters.tenant_id === 'number') {
+      conditions.push(eq(stock.tenant_id, filters.tenant_id));
+    }
+    if (typeof filters.warehouse_id === 'number') {
+      conditions.push(eq(stock.warehouse_id, filters.warehouse_id));
+    }
+    if (filters.sku) {
+      // When batch grouping, match SKUs that start with the base pattern
+      const pattern = `${filters.sku}%`;
+      conditions.push(like(stock.sku, pattern));
+    }
+    if (typeof filters.is_part === 'boolean') {
+      conditions.push(eq(stock.is_part, filters.is_part));
+    }
+    if (filters.search) {
+      const pattern = `%${filters.search}%`;
+      conditions.push(like(stock.sku, pattern));
+    }
+
+    // Get all stock records matching conditions
+    let allRecords;
+    if (conditions.length) {
+      const finalCondition = and(...conditions as any);
+      allRecords = await this.database
+        .select(stockWithWarehouseSelection)
+        .from(stock)
+        .leftJoin(warehouses, eq(stock.warehouse_id, warehouses.id))
+        .where(finalCondition as any);
+    } else {
+      allRecords = await this.database
+        .select(stockWithWarehouseSelection)
+        .from(stock)
+        .leftJoin(warehouses, eq(stock.warehouse_id, warehouses.id));
+    }
+
+    // Group by base SKU and warehouse
+    const groupedMap = new Map<string, StockWithWarehouse>();
+    
+    allRecords.forEach(record => {
+      const baseSku = this.getBaseSku(record.sku);
+      const key = `${record.warehouse_id}:${baseSku}`;
+      
+      const existing = groupedMap.get(key);
+      if (existing) {
+        // Aggregate quantities
+        existing.quantity += record.quantity;
+      } else {
+        // Create new grouped record with base SKU
+        groupedMap.set(key, {
+          ...record,
+          sku: baseSku,
+          quantity: record.quantity
+        });
+      }
+    });
+
+    let groupedRecords = Array.from(groupedMap.values());
+
+    // Apply low stock threshold filter after grouping
+    if (typeof filters.low_stock_threshold === 'number') {
+      groupedRecords = groupedRecords.filter(r => r.quantity <= filters.low_stock_threshold);
+    }
+
+    // Apply sorting
+    const sortBy = filters.sort_by || 'created_at';
+    const sortDir = filters.sort_dir || 'asc';
+    
+    groupedRecords.sort((a, b) => {
+      let aVal: any, bVal: any;
+      
+      switch (sortBy) {
+        case 'sku':
+          aVal = a.sku;
+          bVal = b.sku;
+          break;
+        case 'quantity':
+          aVal = a.quantity;
+          bVal = b.quantity;
+          break;
+        case 'warehouse_name':
+          aVal = a.warehouse_name || '';
+          bVal = b.warehouse_name || '';
+          break;
+        case 'is_part':
+          aVal = a.is_part ? 1 : 0;
+          bVal = b.is_part ? 1 : 0;
+          break;
+        default:
+          aVal = a.created_at?.getTime() ?? 0;
+          bVal = b.created_at?.getTime() ?? 0;
+      }
+      
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      
+      return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+
+    // Apply pagination
+    const page = Math.max(1, filters.page ?? 1);
+    const limit = Math.max(1, Math.min(100, filters.limit ?? 10));
+    const offset = (page - 1) * limit;
+    const total = groupedRecords.length;
+    const rows = groupedRecords.slice(offset, offset + limit);
+
+    return { rows, total, page, limit };
   }
 
   async updateStock(id: number, updates: StockUpdateInput, tenant_id?: number): Promise<StockWithWarehouse | undefined> {

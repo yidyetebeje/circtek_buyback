@@ -42,6 +42,7 @@ export class StockManagementComponent {
   selectedWarehouseId = signal<number | null>(null); // stock, transfers
   selectedIsPart = signal<'any' | 'true' | 'false'>('any'); // stock
   lowStockThreshold = signal<number | null>(null); // stock
+  groupByBatch = signal<boolean>(false); // stock
 
   // Sorting (server-side)
   sortBy = signal<string | null>(null);
@@ -169,6 +170,10 @@ export class StockManagementComponent {
         { label: 'Device', value: 'false' },
       ] });
       list.push({ key: 'low_stock_threshold', label: 'Low stock ≤', type: 'text', placeholder: 'e.g., 5', inputType: 'number' });
+      list.push({ key: 'group_by_batch', label: 'Group by Batch', type: 'select', options: [
+        { label: 'No (Show individual SKUs)', value: 'false' },
+        { label: 'Yes (Group by base SKU)', value: 'true' }
+      ] });
     }
     if (tab === 'transfers') {
       list.push({ key: 'from_warehouse_id', label: 'From Warehouse', type: 'select', options: this.warehouseOptions() });
@@ -325,6 +330,7 @@ export class StockManagementComponent {
     this.selectedWarehouseId.set(optNum('warehouse_id'));
     const ip = str('is_part', 'any'); this.selectedIsPart.set(ip === 'true' || ip === 'false' ? (ip as any) : 'any');
     this.lowStockThreshold.set(optNum('low_stock_threshold'));
+    this.groupByBatch.set(str('group_by_batch') === 'true');
 
     this.fromWarehouseId.set(optNum('from_warehouse_id'));
     this.toWarehouseId.set(optNum('to_warehouse_id'));
@@ -364,6 +370,7 @@ export class StockManagementComponent {
       this.selectedWarehouseId();
       this.selectedIsPart();
       this.lowStockThreshold();
+      this.groupByBatch();
       // transfers
       this.fromWarehouseId();
       this.toWarehouseId();
@@ -388,6 +395,7 @@ export class StockManagementComponent {
         const wid = this.selectedWarehouseId(); if (wid != null) query['warehouse_id'] = String(wid);
         if (this.selectedIsPart() !== 'any') query['is_part'] = this.selectedIsPart();
         const lst = this.lowStockThreshold(); if (lst != null) query['low_stock_threshold'] = String(lst);
+        if (this.groupByBatch()) query['group_by_batch'] = 'true';
       }
       if (this.activeTab() === 'transfers') {
         const fw = this.fromWarehouseId(); if (fw != null) query['from_warehouse_id'] = String(fw);
@@ -431,6 +439,7 @@ export class StockManagementComponent {
       const wid = this.selectedWarehouseId(); if (wid != null) params = params.set('warehouse_id', String(wid));
       const ip = this.selectedIsPart(); if (ip !== 'any') params = params.set('is_part', ip === 'true' ? 'true' : 'false');
       const lst = this.lowStockThreshold(); if (lst != null) params = params.set('low_stock_threshold', String(lst));
+      if (this.groupByBatch()) params = params.set('group_by_batch', 'true');
       this.api.getStock(params).subscribe({
         next: (res) => {
           if (seq !== this.requestSeq) return;
@@ -531,6 +540,7 @@ export class StockManagementComponent {
       this.selectedWarehouseId.set(parseNum(f['warehouse_id']));
       const ip = f['is_part']; this.selectedIsPart.set(ip === 'true' || ip === 'false' ? (ip as any) : 'any');
       this.lowStockThreshold.set(parsePositiveNum(f['low_stock_threshold']));
+      this.groupByBatch.set(f['group_by_batch'] === 'true');
     }
 
     if (this.activeTab() === 'transfers') {

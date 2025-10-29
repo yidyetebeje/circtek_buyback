@@ -24,6 +24,7 @@ export const StockQuery = t.Object({
   limit: t.Optional(t.Number({ default: 10 })),
   sort_by: t.Optional(t.String()),
   sort_dir: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
+  group_by_batch: t.Optional(t.Boolean()),
 })
 
 export type StockCreateInput = Static<typeof StockCreate>

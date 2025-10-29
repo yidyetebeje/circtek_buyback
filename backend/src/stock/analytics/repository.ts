@@ -197,7 +197,11 @@ export class SkuUsageAnalyticsRepository {
           like(stock.sku, pattern)
         ]
         
-      
+        // Apply search filter to match usage query filtering
+        if (searchFilter) {
+          const searchPattern = `%${searchFilter}%`
+          conditions.push(like(stock.sku, searchPattern))
+        }
         
         if (typeof tenant_id === 'number') {
           conditions.push(eq(stock.tenant_id, tenant_id))
@@ -211,7 +215,6 @@ export class SkuUsageAnalyticsRepository {
           })
           .from(stock)
           .where(and(...conditions))
-          console.log("from stock", stockResults)
         
         // Aggregate stock for all SKUs in the same batch
         const key = `${item.warehouse_id}:${baseSku}`
