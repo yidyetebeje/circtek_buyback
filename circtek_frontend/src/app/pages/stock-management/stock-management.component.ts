@@ -66,7 +66,7 @@ export class StockManagementComponent {
   });
   adjustAvailableQty = signal<number>(0);
   adjustQty = signal<number>(0);
-  adjustReason = signal<'dead_imei' | 'inventory_loss' | 'manual_correction' | 'damage' | 'theft' | 'expired' | 'return_to_supplier'>('manual_correction');
+  adjustReason = signal<'inventory_loss' | 'manual_correction' | 'damage' | 'theft' | 'expired' | 'return_to_supplier'>('manual_correction');
   adjustNotes = signal<string>('');
   adjustError = signal<string>('');
 
