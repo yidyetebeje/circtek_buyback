@@ -15,3 +15,42 @@
 .bg-gradient-to-r {
   background-image: linear-gradient(to right, var(--tw-gradient-stops));
 }
+
+/* Override DaisyUI btn-primary to use solid primary background */
+.btn-primary {
+  background: #A7D48E !important;
+  border: 1px solid #A7D48E !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: #92c76a !important;
+  border-color: #92c76a !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(167, 212, 142, 0.3);
+}
+
+.btn-primary:focus {
+  background: #92c76a !important;
+  border-color: #92c76a !important;
+  color: #ffffff !important;
+  outline: 2px solid #A7D48E;
+  outline-offset: 2px;
+}
+
+.btn-primary:active {
+  background: #7db04d !important;
+  border-color: #7db04d !important;
+  color: #ffffff !important;
+  transform: translateY(0px);
+}
+
+/* Override DaisyUI badge-success and badge-primary to use primary color */
+.badge-success,
+.badge-primary {
+  background-color: #A7D48E !important;
+  color: #ffffff !important;
+  border-color: #A7D48E !important;
+}

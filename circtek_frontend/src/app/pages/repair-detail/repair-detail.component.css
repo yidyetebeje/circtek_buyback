@@ -2,3 +2,38 @@
 :host ::ng-deep app-generic-form-page .flex.justify-end.gap-4.pt-6 {
   display: none;
 }
+
+/* Override DaisyUI badge-success to use primary color with higher specificity */
+:host .badge-success,
+:host ::ng-deep .badge-success,
+.badge.badge-success {
+  background-color: #A7D48E !important;
+  color: #ffffff !important;
+  border-color: #A7D48E !important;
+  --tw-bg-opacity: 1 !important;
+  --tw-text-opacity: 1 !important;
+  --tw-border-opacity: 1 !important;
+}
+
+/* Force override for any potential CSS variable issues */
+:host .badge-success::before,
+:host .badge-success::after {
+  background-color: #A7D48E !important;
+}
+
+/* Comprehensive DaisyUI badge override */
+:host [data-theme] .badge-success,
+:host [data-theme="light"] .badge-success,
+:host [data-theme="dim"] .badge-success,
+.badge-success {
+  background: #A7D48E !important;
+  background-color: #A7D48E !important;
+  color: white !important;
+  border: 1px solid #A7D48E !important;
+}
+
+/* Override CSS custom properties that DaisyUI might use */
+:host {
+  --su: 142 69% 58% !important; /* Primary color in oklch format */
+  --success: #A7D48E !important;
+}

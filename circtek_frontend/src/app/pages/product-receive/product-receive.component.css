@@ -9,6 +9,26 @@
   border-radius: 0.75rem;
 }
 
+/* Override DaisyUI alert-success to use primary color */
+.alert-success {
+  background-color: #A7D48E !important;
+  border-color: transparent !important;
+  color: #ffffff !important; /* White text for light mode */
+}
+
+.alert-success svg {
+  color: #ffffff !important; /* White icon for light mode */
+}
+
+/* Dark mode text colors */
+[data-theme="dim"] .alert-success {
+  color: #000000 !important; /* Black text for dark mode */
+}
+
+[data-theme="dim"] .alert-success svg {
+  color: #000000 !important; /* Black icon for dark mode */
+}
+
 .card {
   transition: all 0.2s ease-in-out;
 }

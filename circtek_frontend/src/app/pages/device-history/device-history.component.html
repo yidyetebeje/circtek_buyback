@@ -249,8 +249,8 @@
                             
                             <!-- Parts Consumed -->
                             @if (hasConsumedItems(event)) {
-                              <div class="bg-green-50/50 dark:bg-green-900/10 rounded-md px-3 py-2 border-l-2 border-green-500">
-                                <div class="text-xs text-green-700 dark:text-green-400 mb-2 font-medium">Parts Consumed</div>
+                              <div class="bg-primary/10 rounded-md px-3 py-2 border-l-2 border-primary">
+                                <div class="text-xs text-primary mb-2 font-medium">Parts Consumed</div>
                                 <div class="space-y-1.5">
                                   @for (item of getConsumedItems(event); track $index) {
                                     <div class="flex items-center justify-between gap-3 text-sm">
@@ -259,7 +259,7 @@
                                           <span class="font-semibold text-base-content truncate">{{ item.sku === 'fixed_price' ? '💰 Fixed Price' : '🔧 ' + item.sku }}</span>
                                           <span class="badge badge-xs badge-outline flex-shrink-0">×{{ item.quantity }}</span>
                                         </div>
-                                        <div class="text-xs text-green-700 dark:text-green-400">{{ item.reason }}</div>
+                                        <div class="text-xs text-primary">{{ item.reason }}</div>
                                         @if (item.description) {
                                           <div class="text-xs text-base-content/50 italic">{{ item.description }}</div>
                                         }
@@ -455,7 +455,7 @@
                                 <div class="flex items-center gap-2 text-xs">
                                   <span class="font-semibold">{{ item.sku === 'fixed_price' ? '💰 Fixed Price' : item.sku }}</span>
                                   <span class="text-base-content/50">•</span>
-                                  <span class="text-green-600 dark:text-green-400">{{ item.reason }}</span>
+                                  <span class="text-primary">{{ item.reason }}</span>
                                   <span class="text-base-content/50">•</span>
                                   <span class="font-semibold">${{ item.cost }}</span>
                                 </div>

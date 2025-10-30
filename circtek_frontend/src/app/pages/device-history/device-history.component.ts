@@ -53,7 +53,7 @@ export class DeviceHistoryComponent {
   protected readonly eventTypeConfig = {
     'DEAD_IMEI': { label: 'Dead IMEI', icon: Skull, color: 'text-red-600', bgColor: 'bg-gradient-to-br from-red-500 to-red-600', ringColor: 'ring-red-200' },
     'REPAIR_STARTED': { label: 'Repair Started', icon: Wrench, color: 'text-blue-600', bgColor: 'bg-gradient-to-br from-blue-500 to-blue-600', ringColor: 'ring-blue-200' },
-    'REPAIR_COMPLETED': { label: 'Repair Completed', icon: CheckCircle, color: 'text-green-600', bgColor: 'bg-gradient-to-br from-green-500 to-green-600', ringColor: 'ring-green-200' },
+    'REPAIR_COMPLETED': { label: 'Repair Completed', icon: CheckCircle, color: 'text-primary', bgColor: 'bg-gradient-to-br from-primary to-primary', ringColor: 'ring-primary/30' },
     'REPAIR_DELETED': { label: 'Repair Deleted', icon: Trash2, color: 'text-rose-600', bgColor: 'bg-gradient-to-br from-rose-500 to-rose-600', ringColor: 'ring-rose-200' },
     'TRANSFER_IN': { label: 'Transfer In', icon: Download, color: 'text-purple-600', bgColor: 'bg-gradient-to-br from-purple-500 to-purple-600', ringColor: 'ring-purple-200' },
     'TRANSFER_OUT': { label: 'Transfer Out', icon: Upload, color: 'text-orange-600', bgColor: 'bg-gradient-to-br from-orange-500 to-orange-600', ringColor: 'ring-orange-200' },
@@ -220,9 +220,9 @@ export class DeviceHistoryComponent {
       return {
         label: 'Stock In',
         icon: Package,
-        color: 'text-emerald-600',
-        bgColor: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
-        ringColor: 'ring-emerald-200'
+        color: 'text-primary',
+        bgColor: 'bg-gradient-to-br from-primary to-primary',
+        ringColor: 'ring-primary/30'
       };
     }
     return this.getEventConfig(event.event_type);

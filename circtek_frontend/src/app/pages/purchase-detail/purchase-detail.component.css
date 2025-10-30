@@ -105,6 +105,13 @@
   transform: scale(1.05);
 }
 
+/* Override DaisyUI badge-success to use primary color */
+.badge-success {
+  background-color: #A7D48E !important;
+  color: #ffffff !important;
+  border-color: #A7D48E !important;
+}
+
 /* Enhanced modal backdrop */
 .fixed.inset-0.bg-black\/50 {
   backdrop-filter: blur(4px);

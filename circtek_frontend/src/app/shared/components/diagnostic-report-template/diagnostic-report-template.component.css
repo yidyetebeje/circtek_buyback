@@ -247,8 +247,8 @@ table {
 }
 
 .test-result-icon.passed {
-  color: #22c55e;
-  background-color: #dcfce7;
+  color: #A7D48E;
+  background-color: rgba(167, 212, 142, 0.2);
 }
 
 .test-result-icon.failed {

@@ -443,7 +443,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   // Helper methods for template
   protected getReportColor(report: string): string {
     switch (report.toLowerCase()) {
-      case 'pass': return 'text-green-600 bg-green-100';
+      case 'pass': return 'text-primary bg-primary/20';
       case 'fail': return 'text-red-600 bg-red-100';
       case 'partial pass': return 'text-yellow-600 bg-yellow-100';
       default: return 'text-gray-600 bg-gray-100';

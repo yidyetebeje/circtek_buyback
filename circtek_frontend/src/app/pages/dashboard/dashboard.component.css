@@ -80,7 +80,7 @@ canvas {
 }
 
 .gradient-green {
-  background: linear-gradient(135deg, #10B981 0%, #047857 100%);
+  background: linear-gradient(135deg, #A7D48E 0%, #92c76a 100%);
 }
 
 .gradient-purple {
@@ -112,8 +112,8 @@ canvas {
 }
 
 .status-success {
-  background-color: #dcfce7;
-  color: #166534;
+  background-color: rgba(167, 212, 142, 0.2);
+  color: #A7D48E;
 }
 
 .status-warning {

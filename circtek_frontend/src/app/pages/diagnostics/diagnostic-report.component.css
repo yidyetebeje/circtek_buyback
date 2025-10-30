@@ -257,8 +257,8 @@ table {
 }
 
 .test-result-icon.passed {
-  color: #22c55e;
-  background-color: #dcfce7;
+  color: #A7D48E;
+  background-color: rgba(167, 212, 142, 0.2);
 }
 
 .test-result-icon.failed {
@@ -419,9 +419,9 @@ table {
   }
 
   .test-result-icon.passed {
-    color: #22c55e !important;
-    background-color: #dcfce7 !important;
-    border: 1px solid #22c55e !important;
+    color: #A7D48E !important;
+    background-color: rgba(167, 212, 142, 0.2) !important;
+    border: 1px solid #A7D48E !important;
   }
 
   .test-result-icon.failed {
