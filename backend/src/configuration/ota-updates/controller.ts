@@ -89,7 +89,7 @@ export class OtaUpdatesController {
     }
 
     async checkForUpdate(testerId: number, tenantId: number, payload: VersionCheckRequestInput): Promise<response<VersionCheckResponse>> {
-        console.log('payload', payload)
+       
         const { current_version, target_os, target_architecture } = payload
         
         try {
@@ -109,7 +109,7 @@ export class OtaUpdatesController {
                     download_url: availableUpdate.url,
                     message: `Update available: ${availableUpdate.version} for ${target_os} (${target_architecture})`
                 }
-                console.log('response', response)
+               
                 return { data: response, message: 'Update available', status: 200 }
             } else {
                 const response: VersionCheckResponse = {
@@ -118,7 +118,7 @@ export class OtaUpdatesController {
                     latest_version: current_version,
                     message: `No updates available for ${target_os} (${target_architecture}). You are running the latest version or no update is assigned.`
                 }
-                console.log('response', response)
+               
                 return { data: response, message: 'No update available', status: 200 }
             }
         } catch (error) {

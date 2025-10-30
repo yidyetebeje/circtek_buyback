@@ -71,7 +71,7 @@ export class ModelRepository {
     }
 
     // Add search LIKE condition if provided
-    console.log("search", search);
+   
     if (search && search.trim() !== '') {
       whereConditions.push(like(models.title, `%${search}%`));
     }

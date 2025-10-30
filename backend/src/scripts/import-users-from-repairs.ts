@@ -206,23 +206,23 @@ async function importUsers(
   }
 
   // Read CSV file
-  console.log(`📂 Reading CSV file: ${csvPath}`)
+ 
   const content = fs.readFileSync(csvPath, 'utf-8')
   const records = parseCSV(content)
   
-  console.log(`✅ Found ${records.length} records in CSV`)
+ 
   stats.total = records.length
 
   // Extract unique user names
   const uniqueUserNames = extractUniqueUsers(records)
   stats.unique = uniqueUserNames.length
   
-  console.log(`👥 Found ${uniqueUserNames.length} unique users\n`)
+ 
 
   // Hash the default password once
-  console.log(`🔐 Hashing default password...`)
+ 
   const passwordHash = await bcrypt.hash(defaultPassword, 10)
-  console.log(`✅ Password hashed\n`)
+ 
 
   // Process each unique user
   for (const name of uniqueUserNames) {
@@ -238,7 +238,7 @@ async function importUsers(
       
       if (exists) {
         stats.existing++
-        console.log(`⏭️  User "${name}" already exists - skipping`)
+       
       } else {
         // Create new user
         await createUser(name, passwordHash, tenantId, roleId, warehouseId)
@@ -252,7 +252,7 @@ async function importUsers(
           .limit(1)
         
         const username = created[0]?.user_name || 'unknown'
-        console.log(`✅ Created user: Name="${name}", Username="${username}"`)
+       
       }
     } catch (error) {
       stats.errors.push({
@@ -275,11 +275,11 @@ async function main() {
 
   if (args.length < 4) {
     console.error('❌ Error: Missing required arguments')
-    console.log('\nUsage:')
-    console.log('  bun run src/scripts/import-users-from-repairs.ts <csv-path> <tenant-id> <role-id> <warehouse-id> [default-password]')
-    console.log('\nExample:')
-    console.log('  bun run src/scripts/import-users-from-repairs.ts ./repairs.csv 1 2 1 password123')
-    console.log('\nDefault password: "password" (if not specified)')
+   
+   
+   
+   
+   
     process.exit(1)
   }
 
@@ -300,13 +300,13 @@ async function main() {
     process.exit(1)
   }
 
-  console.log('🚀 Starting user import...\n')
-  console.log('📋 Configuration:')
-  console.log(`   CSV File: ${csvPath}`)
-  console.log(`   Tenant ID: ${tenantId}`)
-  console.log(`   Role ID: ${roleId}`)
-  console.log(`   Warehouse ID: ${warehouseId}`)
-  console.log(`   Default Password: ${'*'.repeat(defaultPassword.length)}\n`)
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
   const startTime = Date.now()
 
@@ -315,42 +315,42 @@ async function main() {
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2)
 
-    console.log('\n' + '='.repeat(60))
-    console.log('📊 Import Summary')
-    console.log('='.repeat(60))
-    console.log(`📝 Total records: ${stats.total}`)
-    console.log(`👥 Unique users: ${stats.unique}`)
-    console.log(`⏭️  Skipped (empty name): ${stats.skipped}`)
-    console.log(`🔄 Already existing: ${stats.existing}`)
-    console.log(`✅ Newly created: ${stats.created}`)
-    console.log(`❌ Errors: ${stats.errors.length}`)
-    console.log(`⏱️  Duration: ${duration}s`)
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
 
     if (stats.errors.length > 0) {
-      console.log('\n❌ Errors encountered:')
+     
       stats.errors.slice(0, 10).forEach((err, idx) => {
-        console.log(`  ${idx + 1}. User "${err.name}": ${err.error}`)
+       
       })
 
       if (stats.errors.length > 10) {
-        console.log(`  ... and ${stats.errors.length - 10} more errors`)
+       
       }
 
       // Save error details to JSON
       const errorJsonPath = path.join(path.dirname(csvPath), 'user-import-errors.json')
       fs.writeFileSync(errorJsonPath, JSON.stringify(stats.errors, null, 2))
-      console.log(`\n💾 Error details saved to: ${errorJsonPath}`)
+     
 
       // Save failed names to text file
       const failedNamesPath = path.join(path.dirname(csvPath), 'user-import-failed-names.txt')
       fs.writeFileSync(failedNamesPath, stats.failedNames.join('\n'))
-      console.log(`📄 Failed user names saved to: ${failedNamesPath}`)
-      console.log(`   💡 Review these names and check if they exist in the CSV`)
+     
+     
     }
 
-    console.log('\n✨ Import completed!')
-    console.log(`\n📌 Note: All users were created with the default password: "${defaultPassword}"`)
-    console.log('   Please advise users to change their passwords after first login.')
+   
+   
+   
     
     process.exit(0)
   } catch (error) {

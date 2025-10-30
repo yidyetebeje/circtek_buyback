@@ -34,7 +34,7 @@ export class LogosService {
     // Try to load from cache first
     const cached = this.getFromCache(tenantId);
     if (cached) {
-      console.log('Logo loaded from cache');
+     
       this.logoUrl.set(cached.url);
       this.logoBase64.set(cached.base64);
       return;
@@ -51,7 +51,7 @@ export class LogosService {
           const base64 = await this.convertToBase64(logoUrl);
           this.logoBase64.set(base64);
           this.saveToCache(logoUrl, base64, tenantId);
-          console.log('Logo fetched and cached');
+         
         } catch (error) {
           console.error('Error converting logo to base64:', error);
           // Still set the URL even if conversion fails

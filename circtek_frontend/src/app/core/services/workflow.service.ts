@@ -39,11 +39,11 @@ export class WorkflowService {
   }
 
   getWorkflow(id: string): Observable<IWorkflow | null> {
-    console.log(`🔍 WorkflowService: Making GET request to ${this.baseUrl}/${id}`);
+   
     return this.apiService.get<{data: IWorkflow | null, message: string, status: number}>(`${this.baseUrl}/${id}`)
       .pipe(
         map((response: {data: IWorkflow | null, message: string, status: number}) => {
-          console.log('🔍 Raw API response:', response);
+         
           return response.data;
         })
       );
@@ -53,7 +53,7 @@ export class WorkflowService {
     return this.apiService.get<{data: any[], message: string, status: number}>(this.baseUrl)
       .pipe(
         map((response: {data: any[], message: string, status: number}) => {
-          console.log('🔍 Raw workflows list response:', response);
+         
           return response.data;
         })
       );

@@ -22,7 +22,7 @@ export function SimpleHero({
   const handleModelSelect = (model: Model) => {
     onSelectModel(model);
   };
-  console.log(backgroundColor, "primaryColor");
+ 
 
   return (
     <section 

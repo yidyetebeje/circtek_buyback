@@ -291,7 +291,7 @@ const publicShopApi = new Elysia()
   )
   .get('/:shopId', 
     async ({ params, query, ...ctx }) => { 
-      console.log("here I am comming")
+     
         const numericId = parseInt(params.shopId, 10);
         if (isNaN(numericId)) {
             ctx.set.status = 400; 

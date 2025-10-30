@@ -69,8 +69,8 @@ export const getDynamicText = (
   locale: string,
   defaultLocale: string = 'en'
 ): string => {
-  console.log("orginal text", originalText);
-  console.log("translation text", translations)
+ 
+ 
   if(locale == 'en'){
     return originalText || '';
   }

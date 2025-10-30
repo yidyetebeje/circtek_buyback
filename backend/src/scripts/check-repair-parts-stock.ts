@@ -250,14 +250,14 @@ async function main() {
 
   if (args.length < 2) {
     console.error('❌ Error: Missing required arguments')
-    console.log('\nUsage:')
-    console.log('  bun run src/scripts/check-repair-parts-stock.ts <csv-path> <tenant-id> [warehouse-id]')
-    console.log('\nExamples:')
-    console.log('  bun run src/scripts/check-repair-parts-stock.ts ./repairs.csv 1')
-    console.log('  bun run src/scripts/check-repair-parts-stock.ts ./repairs.csv 1 1')
-    console.log('\nNote:')
-    console.log('  - If warehouse-id is provided, checks stock only in that warehouse')
-    console.log('  - If omitted, checks total stock across all warehouses for the tenant')
+   
+   
+   
+   
+   
+   
+   
+   
     process.exit(1)
   }
 
@@ -281,37 +281,37 @@ async function main() {
     process.exit(1)
   }
 
-  console.log('🔍 Checking repair parts stock availability...\n')
-  console.log('📋 Configuration:')
-  console.log(`   CSV File: ${csvPath}`)
-  console.log(`   Tenant ID: ${tenantId}`)
-  console.log(`   Warehouse: ${warehouseId !== undefined ? warehouseId : 'All warehouses'}\n`)
+ 
+ 
+ 
+ 
+ 
 
   try {
     // Read and parse CSV
-    console.log('📂 Reading CSV file...')
+   
     const content = fs.readFileSync(csvPath, 'utf-8')
     const records = parseCSV(content)
-    console.log(`✅ Found ${records.length} repair records\n`)
+   
 
     // Aggregate partcodes
-    console.log('📊 Aggregating part codes...')
+   
     const aggregations = aggregatePartCodes(records)
     
     const totalParts = aggregations.reduce((sum, agg) => sum + agg.count, 0)
     const uniqueParts = aggregations.length
     const repairsWithoutParts = records.filter(r => !r.partcode?.trim()).length
     
-    console.log(`✅ Found ${totalParts} parts across ${uniqueParts} unique SKUs`)
-    console.log(`📝 ${repairsWithoutParts} repairs have no part code (service-only)\n`)
+   
+   
 
     if (aggregations.length === 0) {
-      console.log('ℹ️  No parts to check (all repairs are service-only)')
+     
       process.exit(0)
     }
 
     // Check stock availability
-    console.log('🔍 Checking stock availability...\n')
+   
     const stockChecks = await checkStockAvailability(aggregations, tenantId, warehouseId)
 
     // Categorize results
@@ -321,88 +321,88 @@ async function main() {
     const partialStock = insufficient.filter(c => c.available > 0)
 
     // Display results
-    console.log('='.repeat(80))
-    console.log('📊 STOCK AVAILABILITY REPORT')
-    console.log('='.repeat(80))
-    console.log(`✅ Sufficient Stock: ${sufficient.length} SKUs`)
-    console.log(`⚠️  Insufficient Stock: ${partialStock.length} SKUs`)
-    console.log(`❌ Not in Stock: ${notFound.length} SKUs`)
-    console.log('='.repeat(80))
+   
+   
+   
+   
+   
+   
+   
 
     // Show sufficient stock
     if (sufficient.length > 0) {
-      console.log('\n✅ SUFFICIENT STOCK:')
-      console.log('-'.repeat(80))
+     
+     
       for (const check of sufficient.slice(0, 10)) {
-        console.log(`   ${check.sku}: Required=${check.required}, Available=${check.available}`)
+       
       }
       if (sufficient.length > 10) {
-        console.log(`   ... and ${sufficient.length - 10} more SKUs with sufficient stock`)
+       
       }
     }
 
     // Show insufficient stock (partial)
     if (partialStock.length > 0) {
-      console.log('\n⚠️  INSUFFICIENT STOCK (Partial):')
-      console.log('-'.repeat(80))
+     
+     
       for (const check of partialStock) {
         const shortage = check.required - check.available
-        console.log(`   ${check.sku}: Required=${check.required}, Available=${check.available}, Shortage=${shortage}`)
+       
         if (check.warehouses && check.warehouses.length > 1) {
-          console.log(`      Spread across ${check.warehouses.length} warehouses`)
+         
         }
       }
     }
 
     // Show not found
     if (notFound.length > 0) {
-      console.log('\n❌ NOT IN STOCK:')
-      console.log('-'.repeat(80))
+     
+     
       for (const check of notFound) {
-        console.log(`   ${check.sku}: Required=${check.required}, Available=0`)
+       
         // Show which repairs need this part
         const agg = aggregations.find(a => a.sku === check.sku)
         if (agg && agg.repairs.length > 0) {
           const repairList = agg.repairs.slice(0, 3).join(', ')
           const more = agg.repairs.length > 3 ? ` (+${agg.repairs.length - 3} more)` : ''
-          console.log(`      Used in repairs: ${repairList}${more}`)
+         
         }
       }
     }
 
     // Summary and recommendations
-    console.log('\n' + '='.repeat(80))
-    console.log('💡 RECOMMENDATIONS')
-    console.log('='.repeat(80))
+   
+   
+   
 
     if (insufficient.length === 0) {
-      console.log('✅ All required parts are in stock!')
-      console.log('   You can proceed with the repair import.')
+     
+     
     } else {
-      console.log(`⚠️  ${insufficient.length} SKUs need attention before importing repairs:`)
+     
       
       if (notFound.length > 0) {
-        console.log(`\n   1. Add missing SKUs to stock (${notFound.length} SKUs):`)
+       
         notFound.slice(0, 5).forEach(check => {
-          console.log(`      - ${check.sku} (need ${check.required})`)
+         
         })
         if (notFound.length > 5) {
-          console.log(`      ... and ${notFound.length - 5} more`)
+         
         }
       }
       
       if (partialStock.length > 0) {
-        console.log(`\n   2. Increase stock for partially available SKUs (${partialStock.length} SKUs):`)
+       
         partialStock.slice(0, 5).forEach(check => {
           const shortage = check.required - check.available
-          console.log(`      - ${check.sku} (need ${shortage} more)`)
+         
         })
         if (partialStock.length > 5) {
-          console.log(`      ... and ${partialStock.length - 5} more`)
+         
         }
       }
 
-      console.log('\n   Alternative: Import repairs without consuming stock (modify import script)')
+     
     }
 
     // Save detailed JSON report
@@ -431,14 +431,14 @@ async function main() {
     }
     
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2))
-    console.log(`\n💾 Detailed report saved to: ${reportPath}`)
+   
 
     // Generate CSV for missing SKUs (to purchase)
     if (notFound.length > 0) {
       const missingCsvPath = path.join(path.dirname(csvPath), 'parts-to-purchase-missing.csv')
       const missingCsvContent = generatePurchaseCSV(notFound, 'Missing SKUs - Not in Stock')
       fs.writeFileSync(missingCsvPath, missingCsvContent)
-      console.log(`📄 Missing SKUs CSV saved to: ${missingCsvPath}`)
+     
     }
 
     // Generate CSV for insufficient SKUs (to increase stock)
@@ -446,7 +446,7 @@ async function main() {
       const insufficientCsvPath = path.join(path.dirname(csvPath), 'parts-to-purchase-insufficient.csv')
       const insufficientCsvContent = generatePurchaseCSV(partialStock, 'Insufficient SKUs - Need More Stock')
       fs.writeFileSync(insufficientCsvPath, insufficientCsvContent)
-      console.log(`📄 Insufficient SKUs CSV saved to: ${insufficientCsvPath}`)
+     
     }
 
     // Generate combined CSV for all items to purchase
@@ -454,11 +454,11 @@ async function main() {
       const allToPurchasePath = path.join(path.dirname(csvPath), 'parts-to-purchase-all.csv')
       const allToPurchaseContent = generatePurchaseCSV(insufficient, 'All SKUs Needing Stock')
       fs.writeFileSync(allToPurchasePath, allToPurchaseContent)
-      console.log(`📄 Combined purchase list saved to: ${allToPurchasePath}`)
-      console.log(`   💡 Use this file to create purchase orders`)
+     
+     
     }
 
-    console.log('\n✨ Check completed!')
+   
     process.exit(insufficient.length > 0 ? 1 : 0)
   } catch (error) {
     console.error('\n💥 Fatal error during stock check:')

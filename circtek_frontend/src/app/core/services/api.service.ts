@@ -791,9 +791,9 @@ export class ApiService {
   }
 
   createDiagnosticQuestionSet(payload: any): Observable<ApiResponse<DiagnosticQuestionSet | null>> {
-    console.log('=== API Service createDiagnosticQuestionSet ===');
-    console.log('Payload before POST:', JSON.stringify(payload, null, 2));
-    console.log('payload.status type:', typeof payload.status, 'value:', payload.status);
+   
+   
+   
     return this.post<ApiResponse<DiagnosticQuestionSet | null>>('/configuration/diagnostic-questions/sets', payload);
   }
 

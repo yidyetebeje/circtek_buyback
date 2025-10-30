@@ -174,7 +174,7 @@ export class BrandService {
    */
   async uploadBrandLogo(brandId: number, file: File): Promise<ApiResponse<{ iconUrl: string }>> {
     const formData = new FormData();
-    console.log(file, "formData")
+   
     formData.append('file', file);
     
     return this.apiClient.post<ApiResponse<{ iconUrl: string }>>(

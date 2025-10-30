@@ -137,8 +137,8 @@ export class SkuUsageAnalyticsRepository {
       results.forEach(row => {
         const baseSku = this.getBaseSku(row.sku || '')
         const key = `${row.warehouse_id}:${baseSku}`
-        console.log("key", key);
-        console.log("base sku", baseSku);
+       
+       
         
         const existing = batchAggregated.get(key)
         if (existing) {
@@ -177,7 +177,7 @@ export class SkuUsageAnalyticsRepository {
     groupByBatch: boolean = false,
     searchFilter?: string
   ): Promise<Map<string, number>> {
-    console.log("usage data", usageData);
+   
     
     if (usageData.length === 0) {
       return new Map()
@@ -191,7 +191,7 @@ export class SkuUsageAnalyticsRepository {
       for (const item of usageData) {
         const baseSku = item.sku
         const pattern = `${baseSku}-%` // Match any SKU starting with base pattern
-        console.log("base sku", baseSku);
+       
         const conditions: any[] = [
           eq(stock.warehouse_id, item.warehouse_id),
           like(stock.sku, pattern)
@@ -221,7 +221,7 @@ export class SkuUsageAnalyticsRepository {
         const totalStock = stockResults.reduce((sum, s) => sum + s.quantity, 0)
         stockMap.set(key, (stockMap.get(key) || 0) + totalStock)
       }
-      console.log("stock map", stockMap);
+     
       
       return stockMap
     }

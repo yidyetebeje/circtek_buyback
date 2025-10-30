@@ -30,6 +30,7 @@ export function HeaderVariantSelector({ value, onChange }: HeaderVariantSelector
     benefits: "/images/header-previews/benefits-header.png",
     modern: "/images/header-previews/modern-header.png",
     thePhoneLab: "/images/header-previews/thephonelab-header.png",
+    remarketedBuyback: "/images/header-previews/remarketed-buyback-header.png",
   };
   
   // Variant descriptions
@@ -40,6 +41,7 @@ export function HeaderVariantSelector({ value, onChange }: HeaderVariantSelector
     benefits: "Header with key benefits/USPs displayed prominently", 
     modern: "Clean modern design with key benefits integrated into navigation",
     thePhoneLab: "Header with centered logo, top benefits bar, and distinct styling from image",
+    remarketedBuyback: "Dark teal header with centered benefits display and orange cart badge",
   };
 
   return (

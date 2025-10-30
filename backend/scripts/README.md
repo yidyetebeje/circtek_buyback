@@ -111,11 +111,11 @@ import { db } from '../src/db';
 import { your_table } from '../src/db/circtek.schema';
 
 async function yourScriptFunction() {
-  console.log('🔄 Starting your script...\n');
+ 
   
   try {
     // Your logic here
-    console.log('✅ Script complete!');
+   
   } catch (error) {
     console.error('❌ Error:', error);
     throw error;

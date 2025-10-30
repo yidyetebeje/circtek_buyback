@@ -204,7 +204,7 @@ try {
   );
 
   // translatedHero now contains the translations in heroSection.translations['es']
-  console.log(translatedHero.translations["es"]);
+ 
 } catch (error) {
   console.error("Translation failed:", error);
 }

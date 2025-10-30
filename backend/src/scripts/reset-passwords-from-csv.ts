@@ -147,11 +147,11 @@ async function updateUserPassword(userId: number, passwordHash: string): Promise
  * Reset passwords for users in CSV
  */
 async function resetPasswords(csvPath: string): Promise<PasswordResetResult[]> {
-  console.log(`📂 Reading CSV file: ${csvPath}`)
+ 
   const content = fs.readFileSync(csvPath, 'utf-8')
   const records = parseCSV(content)
   
-  console.log(`✅ Found ${records.length} users in CSV\n`)
+ 
   
   const results: PasswordResetResult[] = []
   
@@ -160,7 +160,7 @@ async function resetPasswords(csvPath: string): Promise<PasswordResetResult[]> {
     const name = record.name?.trim() || ''
     
     if (!username) {
-      console.log(`⏭️  Skipping row with empty username`)
+     
       continue
     }
     
@@ -169,7 +169,7 @@ async function resetPasswords(csvPath: string): Promise<PasswordResetResult[]> {
       const user = await findUserByUsername(username)
       
       if (!user) {
-        console.log(`❌ User not found: ${username}`)
+       
         results.push({
           name,
           username,
@@ -189,7 +189,7 @@ async function resetPasswords(csvPath: string): Promise<PasswordResetResult[]> {
       // Update password in database
       await updateUserPassword(user.id, passwordHash)
       
-      console.log(`✅ Password reset for: ${username} (${name})`)
+     
       results.push({
         name,
         username,
@@ -226,7 +226,7 @@ function exportResultsToCSV(results: PasswordResetResult[], outputPath: string):
   }
   
   fs.writeFileSync(outputPath, lines.join('\n'))
-  console.log(`\n💾 Results exported to: ${outputPath}`)
+ 
 }
 
 /**
@@ -249,11 +249,11 @@ async function main() {
 
   if (args.length < 1) {
     console.error('❌ Error: Missing required arguments')
-    console.log('\nUsage:')
-    console.log('  bun run src/scripts/reset-passwords-from-csv.ts <csv-path> [output-file]')
-    console.log('\nExample:')
-    console.log('  bun run src/scripts/reset-passwords-from-csv.ts ./users-list.csv ./new-passwords.csv')
-    console.log('\nDefault output: ./password-reset-results.csv (if not specified)')
+   
+   
+   
+   
+   
     process.exit(1)
   }
 
@@ -268,10 +268,10 @@ async function main() {
     process.exit(1)
   }
 
-  console.log('🔐 Starting password reset...\n')
-  console.log('📋 Configuration:')
-  console.log(`   CSV File: ${csvPath}`)
-  console.log(`   Output File: ${outputPath}\n`)
+ 
+ 
+ 
+ 
 
   const startTime = Date.now()
 
@@ -286,22 +286,22 @@ async function main() {
     const stats = calculateStats(results)
     const duration = ((Date.now() - startTime) / 1000).toFixed(2)
 
-    console.log('\n' + '='.repeat(60))
-    console.log('📊 Password Reset Summary')
-    console.log('='.repeat(60))
-    console.log(`📝 Total users: ${stats.total}`)
-    console.log(`✅ Successful: ${stats.successful}`)
-    console.log(`❌ Not found: ${stats.notFound}`)
-    console.log(`❌ Errors: ${stats.errors}`)
-    console.log(`⏱️  Duration: ${duration}s`)
+   
+   
+   
+   
+   
+   
+   
+   
 
-    console.log('\n✨ Password reset completed!')
-    console.log(`\n📌 Important:`)
-    console.log(`   • New passwords are 8 characters long`)
-    console.log(`   • Passwords contain uppercase, lowercase, numbers, and special characters`)
-    console.log(`   • Results saved to: ${outputPath}`)
-    console.log(`   • ⚠️  Keep the output file secure - it contains plaintext passwords!`)
-    console.log(`   • Share passwords securely with users and advise them to change on first login`)
+   
+   
+   
+   
+   
+   
+   
     
     process.exit(0)
   } catch (error) {

@@ -36,8 +36,8 @@ export function LoginPageClient() {
     setError('');
     
     try {
-      console.log(`Attempting to sign in with email: ${email}`);
-      console.log(`Redirect URL: ${callbackUrl}`);
+     
+     
       
       const result = await signIn('credentials', {
         identifier: email,
@@ -46,7 +46,7 @@ export function LoginPageClient() {
         callbackUrl,
       });
 
-      console.log('Sign in result:', result);
+     
 
       if (result.error) {
         // Instead of using result.error directly (which might be a technical string like "CredentialsSignin"),
@@ -67,7 +67,7 @@ export function LoginPageClient() {
         redirectUrl = `/en${redirectUrl.startsWith('/') ? '' : '/'}${redirectUrl}`;
       }
       
-      console.log(`Redirecting to: ${redirectUrl}`);
+     
       router.push(redirectUrl);
       router.refresh();
     } catch (error) {

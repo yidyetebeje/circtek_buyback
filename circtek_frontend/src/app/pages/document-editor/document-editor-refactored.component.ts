@@ -373,7 +373,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
                 // Force update the hasElements flag after deserialization to ensure proper UI state
                 // Use a longer timeout to ensure all async operations (like placeholder creation) are complete
                 setTimeout(() => {
-                  console.log('Final update of hasElements flag after deserialization');
+                 
                   this.canvasService.forceUpdateHasElementsFlag();
                   this.cdRef.detectChanges();
                 }, 1000);
@@ -409,7 +409,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   recreateElement(element: SerializedNodeV2): void {
     if (!element || !this.canvasService.layer) return;
     
-    console.log('Recreating element:', element);
+   
 
     const get = (camel: string, snake: string) =>
       element[snake] !== undefined ? element[snake] : element[camel];
@@ -505,7 +505,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     }
 
     if (node) {
-      console.log('Adding recreated node to canvas:', node);
+     
       this.canvasService.addElement(node as Konva.Shape | Konva.Group);
     }
   }
@@ -797,7 +797,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
 
     // Check if list mode is active and we have selected nodes (before grouping)
     if (this.isListModeActive && this.listSelectedNodes.length > 0) {
-      console.log(
+     
         `[List Mode] Setting font size to ${fontSize} for ${this.listSelectedNodes.length} selected nodes`,
       );
       // Update font size for all selected text nodes in list mode
@@ -818,7 +818,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     } else if (this.isGroupSelected()) {
       const group = this.selectedShape as Konva.Group;
       const textNodes = this.getTextNodesFromGroup(group);
-      console.log(
+     
         `[Group Mode] Setting font size to ${fontSize} for ${textNodes.length} text nodes in group`,
       );
       // Handle grouped text nodes after list layout - enables font size changes on grouped elements
@@ -836,10 +836,10 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
 
   setFontWeight(weight: "bold" | "normal"): void {
     let group = this.stage?.find("#list-layout-group");
-    console.log(group, "the gro");
+   
     // Check if list mode is active and we have selected nodes
     if (this.isListModeActive && this.listSelectedNodes.length > 0) {
-      console.log(
+     
         `[List Mode] Setting font weight to ${weight} for ${this.listSelectedNodes.length} selected nodes`,
       );
       // Update font weight for all selected text nodes in list mode
@@ -858,7 +858,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     } else if (this.isGroupSelected()) {
       const group = this.selectedShape as Konva.Group;
       const textNodes = this.getTextNodesFromGroup(group);
-      console.log(
+     
         `[Group Mode] Setting font weight to ${weight} for ${textNodes.length} text nodes in group`,
       );
       // Handle grouped text nodes after list layout
@@ -915,7 +915,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   setTextColor(color: string): void {
     // Check if list mode is active and we have selected nodes (before grouping)
     if (this.isListModeActive && this.listSelectedNodes.length > 0) {
-      console.log(
+     
         `[List Mode] Setting text color to ${color} for ${this.listSelectedNodes.length} selected nodes`,
       );
       // Update text color for all selected text nodes in list mode
@@ -934,7 +934,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     } else if (this.isGroupSelected()) {
       const group = this.selectedShape as Konva.Group;
       const textNodes = this.getTextNodesFromGroup(group);
-      console.log(
+     
         `[Group Mode] Setting text color to ${color} for ${textNodes.length} text nodes in group`,
       );
       // Handle grouped text nodes after list layout - enables color changes on grouped elements
@@ -1390,7 +1390,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     const documentState = this.canvasService.serializeCanvasState(
       this.placeholderRegistry,
     );
-    console.log("Document state serialized");
+   
   }
 
   openSaveModal(): void {
@@ -1481,7 +1481,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
                 "Save Successful",
               );
             // Navigate back to the management page labels tab after updating
-            console.log('Updated document response:', updatedDocument);
+           
             this.router.navigate(["/management"], { 
               queryParams: { tab: 'labels' },
               replaceUrl: true 
@@ -1506,7 +1506,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
               "Save Successful",
             );
             // Navigate back to the management page labels tab after creation
-            console.log('New document response:', newDocument);
+           
             this.router.navigate(["/management"], { 
               queryParams: { tab: 'labels' },
               replaceUrl: true 
@@ -1699,7 +1699,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
       if (placeholderRef?.instance) {
         placeholderRef.instance.placeholderCreated.subscribe(
           (placeholderImage: Konva.Image) => {
-            console.log('Placeholder created:', placeholderId, placeholderImage);
+           
             // Notify canvas service and update UI within Angular zone
             this.ngZone.run(() => {
               this.canvasService.addElement(placeholderImage as any);
@@ -1820,7 +1820,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
   ): void {
     // Instead of showing a dialog, select the placeholder for editing
     this.selectShape(placeholderNode);
-    console.log(`Placeholder selected for editing - ID: ${this.getPlaceholderId(placeholderNode)}`);
+   
   }
 
   // Placeholder helper methods
@@ -1966,7 +1966,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
       this.selectedShape instanceof Konva.Group &&
       this.selectedShape.name() === "list-group-layout";
     if (isGroup) {
-      console.log("[Debug] List group selected for editing");
+     
     }
     return isGroup;
   }
@@ -2001,7 +2001,7 @@ export class DocumentEditorComponent implements OnInit, OnDestroy {
     if (this.isGroupSelected()) {
       const group = this.selectedShape as Konva.Group;
       const textNodes = this.getTextNodesFromGroup(group);
-      console.log(`[Debug] Updating ${textNodes.length} text nodes in group`);
+     
       textNodes.forEach(callback);
       this.canvasService.layer?.draw();
     }

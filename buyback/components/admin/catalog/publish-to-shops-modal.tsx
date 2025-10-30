@@ -60,7 +60,7 @@ export function PublishToShopsModal({
   // Extract shop IDs from the publishedInShops array
   const filterNullFormPublishedInShops = publishedInShops.filter(item => item !== null);
 
-  console.log('filterNullFormPublishedInShops', filterNullFormPublishedInShops);
+ 
   const publishedShopIds = filterNullFormPublishedInShops.map(item => item?.shop_id);
   
   const [selectedShops, setSelectedShops] = useState<number[]>(publishedShopIds);
@@ -177,7 +177,7 @@ export function PublishToShopsModal({
         return;
       }
       // Log to verify the managed shop ID is available
-      console.log("Using managed shop ID for shop manager:", managedShopId);
+     
     } else if (selectedShops.length === 0) {
       // For non-shop managers, verify they selected at least one shop
       toast.error(`Please select at least one shop to ${isUnpublishMode ? "unpublish from" : "publish to"}`);
@@ -263,7 +263,7 @@ export function PublishToShopsModal({
         };
         
         // Log the request data to verify shop IDs are included
-        console.log("Single entity publish data:", singleData);
+       
         
         // Call the appropriate single entity method for multiple shops
         switch (entityType) {

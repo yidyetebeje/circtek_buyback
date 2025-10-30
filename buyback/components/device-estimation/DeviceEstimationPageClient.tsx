@@ -73,7 +73,7 @@ const getTranslatedTitle = (
   });
 
   if (translation && translation.title) {
-    console.log('Found translation:', translation.title);
+   
     return translation.title;
   }
 
@@ -83,11 +83,11 @@ const getTranslatedTitle = (
   );
 
   if (defaultTranslation && defaultTranslation.title) {
-    console.log('Using default translation:', defaultTranslation.title);
+   
     return defaultTranslation.title;
   }
 
-  console.log('No translation found, using original:', originalTitle);
+ 
   return originalTitle;
 };
 
@@ -120,29 +120,29 @@ export function DeviceEstimationPageClient({
   const currentLanguage = useAtomValue(currentLanguageObjectAtom);
 
   const processedQuestions: DeviceEstimationQuestion[] = useMemo(() => {
-    console.log('Processing questions, deviceModel:', deviceModel);
+   
     
     if (!deviceModel?.questionSetAssignments) {
-      console.log('No questionSetAssignments found');
+     
       return [];
     }
 
-    console.log('questionSetAssignments:', deviceModel.questionSetAssignments);
+   
 
     const allQuestions: CatalogQuestion[] = deviceModel.questionSetAssignments
       .sort((a, b) => a.assignmentOrder - b.assignmentOrder)
       .reduce((acc, qsa) => {
         if (qsa?.questionSet?.questions) {
-          console.log('Adding questions from questionSet:', qsa.questionSet.id, 'questions:', qsa.questionSet.questions.length);
+         
           return acc.concat(qsa.questionSet.questions.sort((qa, qb) => qa.orderNo - qb.orderNo));
         }
         return acc;
       }, [] as CatalogQuestion[]);
     
-    console.log('All questions collected:', allQuestions.length);
+   
     
     return allQuestions.map((q: CatalogQuestion) => {
-      console.log('Processing question:', {
+     
         id: q.id,
         key: q.key,
         title: q.title,
@@ -152,14 +152,14 @@ export function DeviceEstimationPageClient({
       });
       
       const translatedTitle = getTranslatedTitle(q.title, q.translations, currentLanguage);
-      console.log('Translated title:', translatedTitle);
+     
       
       return {
         id: q.key || q.id.toString(),
         text: translatedTitle,
         type: mapInputType(q.inputType),
         options: q.options.map((opt: CatalogQuestionOption) => {
-          console.log('Processing option:', {
+         
             id: opt.id,
             key: opt.key,
             title: opt.title,
@@ -168,7 +168,7 @@ export function DeviceEstimationPageClient({
           });
           
           const translatedOptionTitle = getTranslatedTitle(opt.title, opt.translations, currentLanguage);
-          console.log('Translated option title:', translatedOptionTitle);
+         
           
           return {
             label: translatedOptionTitle,
@@ -181,7 +181,7 @@ export function DeviceEstimationPageClient({
 
   useEffect(() => {
     // Always reset the active questionnaire state when the device context changes or on initial load for this device.
-    console.log('Resetting questionnaire state for device:', deviceModel?.sef_url);
+   
     setCurrentQuestionIndex(0);
     setAnswers({});
     setEstimatedPrice(null); // Reset the price as well, it will be recalculated as user answers.
@@ -191,7 +191,7 @@ export function DeviceEstimationPageClient({
     if (deviceModel && processedQuestions && processedQuestions.length === 0) {
       const basePrice = deviceModel.base_price || 0;
       setEstimatedPrice(basePrice);
-      console.log('No questions for this device. Estimate is base price:', basePrice);
+     
     }
     // This effect should run when the deviceModel changes or when processedQuestions are re-evaluated (e.g. language change).
   }, [deviceModel, processedQuestions, setCurrentQuestionIndex, setAnswers, setEstimatedPrice]);
@@ -229,7 +229,7 @@ export function DeviceEstimationPageClient({
       }
       finalPrice = (deviceModel.base_price || 0) + totalModifier;
       setEstimatedPrice(finalPrice);
-      console.log(`All questions answered. Base Price: ${deviceModel.base_price}, Modifier: ${totalModifier}, Final Price: ${finalPrice}`);
+     
     }
   };
   
@@ -266,7 +266,7 @@ export function DeviceEstimationPageClient({
   };
   
   const handleCheckout = () => {
-    console.log('Checkout initiated with price:', estimatedPrice, 'Answers:', answers, 'Device ID:', deviceModel.sef_url);
+   
 
     if (!deviceModel || !deviceModel.sef_url) {
       console.error("Cannot add to cart: deviceModel or sef_url is missing.");
@@ -292,10 +292,10 @@ export function DeviceEstimationPageClient({
       if (existingItemIndex !== -1) {
         const newCart = [...prevCart];
         newCart[existingItemIndex] = cartItem;
-        console.log('Updated item in cart:', cartItem);
+       
         return newCart;
       } else {
-        console.log('Added new item to cart:', cartItem);
+       
         return [...prevCart, cartItem];
       }
     });
@@ -306,7 +306,7 @@ export function DeviceEstimationPageClient({
   const handleEditSection = () => { 
     setPreviewConfigSetter(null);
     setActiveComponentSetter('deviceEstimation');
-    console.log('Editing Device Estimation section in ComponentEditor');
+   
   };
   
   const handleCloseEditor = () => {
@@ -349,7 +349,7 @@ export function DeviceEstimationPageClient({
       handlePrevQuestion,
       handleNextQuestion,
     };
-    console.log("current questions",processedQuestions)
+   
 
     switch (variant) {
       case 'image-prominent':

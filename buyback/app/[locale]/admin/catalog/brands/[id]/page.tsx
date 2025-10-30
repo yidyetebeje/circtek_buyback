@@ -75,7 +75,7 @@ export default function BrandDetailPage() {
   }, []);
   
   useEffect(() => {
-    console.log(brandResponse, "brandResponse")
+   
     if (brandResponse) {
       setBrand(brandResponse.data);
       

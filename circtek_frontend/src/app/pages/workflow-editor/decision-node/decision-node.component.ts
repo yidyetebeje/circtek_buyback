@@ -88,19 +88,19 @@ export class DecisionNodeComponent implements OnInit {
   }
 
   onNodeClick(event: MouseEvent): void {
-    console.log('🖱️ DECISION NODE CLICKED:', this.node?.id);
+   
     event.stopPropagation();
     this.nodeClick.emit(this.node);
   }
 
   onNodeMouseDown(event: MouseEvent): void {
-    console.log('🖱️ DECISION NODE MOUSE DOWN:', this.node?.id, event.target);
+   
     event.stopPropagation();
     this.nodeMouseDown.emit({ event, node: this.node });
   }
 
   onHandleMouseDown(event: MouseEvent, handleSuffix: string): void {
-    console.log('🖱️ Decision node handle mouse down:', this.node?.id, handleSuffix);
+   
     event.stopPropagation();
     const handleElement = event.target as HTMLElement;
     this.handleMouseDown.emit({

@@ -41,7 +41,7 @@ export const wifi_profiles_routes = new Elysia({ prefix: '/wifi-profiles' })
     .delete('/:id', async (ctx) => {
         const { params, currentTenantId } = ctx as any
         const response = await controller.delete(Number(params.id), Number(currentTenantId))
-        console.log("response", response)
+       
         
         ctx.set.status = response.status
         return response

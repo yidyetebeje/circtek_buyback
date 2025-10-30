@@ -78,8 +78,8 @@ export class ShippingService {
       };
 
       // Log the request that would be made in production
-      console.log(`[ShippingService] Generating label for order ${orderId}`);
-      console.log("[ShippingService] Request payload:", shippingRequestPayload);
+     
+     
 
       // Simulate API response delay
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -135,7 +135,7 @@ export class ShippingService {
     // For this implementation, we'll simulate a response
 
     try {
-      console.log(`[ShippingService] Getting tracking info for ${trackingNumber}`);
+     
       
       // Simulate API response delay
       await new Promise(resolve => setTimeout(resolve, 500));

@@ -320,11 +320,11 @@ async function importRepairs(
   }
 
   // Read CSV file
-  console.log(`📂 Reading CSV file: ${csvPath}`)
+ 
   const content = fs.readFileSync(csvPath, 'utf-8')
   const records = parseCSV(content)
   
-  console.log(`✅ Found ${records.length} records in CSV\n`)
+ 
   stats.total = records.length
 
   let rowNum = 1 // Start from 1 (header is row 0)
@@ -359,14 +359,14 @@ async function importRepairs(
       // Skip records without IMEI
       if (!record.imei || record.imei.trim() === '') {
         stats.skipped++
-        console.log(`⏭️  Row ${rowNum}: Skipping - no IMEI`)
+       
         continue
       }
 
       // Skip records without reason
       if (!record.reason || record.reason.trim() === '') {
         stats.skipped++
-        console.log(`⏭️  Row ${rowNum}: Skipping IMEI ${record.imei} - no reason`)
+       
         continue
       }
 
@@ -381,7 +381,7 @@ async function importRepairs(
           error: 'Device not found - run import-devices script first',
         })
         stats.failedRows.push(record)
-        console.log(`❌ Row ${rowNum}: Device not found for IMEI ${record.imei}`)
+       
         continue
       }
 
@@ -398,12 +398,12 @@ async function importRepairs(
             error: `User "${record.user}" not found - run import-users script first`,
           })
           stats.failedRows.push(record)
-          console.log(`❌ Row ${rowNum}: User "${record.user}" not found`)
+         
           continue
         }
       } else {
         stats.skipped++
-        console.log(`⏭️  Row ${rowNum}: Skipping - no user`)
+       
         continue
       }
 
@@ -419,7 +419,7 @@ async function importRepairs(
           error: 'Failed to create repair reason',
         })
         stats.failedRows.push(record)
-        console.log(`❌ Row ${rowNum}: Failed to create repair reason`)
+       
         continue
       }
 
@@ -446,7 +446,7 @@ async function importRepairs(
           error: createResult.error || 'Failed to create repair',
         })
         stats.failedRows.push(record)
-        console.log(`❌ Row ${rowNum}: ${createResult.error}`)
+       
         continue
       }
 
@@ -454,7 +454,7 @@ async function importRepairs(
       const dateInfo = parseRepairDate(record.repair_dates) 
         ? ` (Date: ${record.repair_dates})` 
         : ''
-      console.log(
+     
         `✅ Row ${rowNum}: Created repair #${record.repair_number} for IMEI ${record.imei}, Reason: ${record.reason}, Part: ${record.partcode || 'Service'}${dateInfo}`
       )
     } catch (error) {
@@ -507,13 +507,13 @@ async function main() {
 
   if (args.length < 3) {
     console.error('❌ Error: Missing required arguments')
-    console.log('\nUsage:')
-    console.log('  bun run src/scripts/import-repairs-from-csv.ts <csv-path> <tenant-id> <warehouse-id>')
-    console.log('\nExample:')
-    console.log('  bun run src/scripts/import-repairs-from-csv.ts ./repairs.csv 1 1')
-    console.log('\nPrerequisites:')
-    console.log('  1. Run import-devices script first')
-    console.log('  2. Run import-users script first')
+   
+   
+   
+   
+   
+   
+   
     process.exit(1)
   }
 
@@ -532,11 +532,11 @@ async function main() {
     process.exit(1)
   }
 
-  console.log('🚀 Starting repair import...\n')
-  console.log('📋 Configuration:')
-  console.log(`   CSV File: ${csvPath}`)
-  console.log(`   Tenant ID: ${tenantId}`)
-  console.log(`   Warehouse ID: ${warehouseId}\n`)
+ 
+ 
+ 
+ 
+ 
 
   const startTime = Date.now()
 
@@ -545,39 +545,39 @@ async function main() {
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2)
 
-    console.log('\n' + '='.repeat(60))
-    console.log('📊 Import Summary')
-    console.log('='.repeat(60))
-    console.log(`📝 Total records: ${stats.total}`)
-    console.log(`⏭️  Skipped: ${stats.skipped}`)
-    console.log(`✅ Created: ${stats.created}`)
-    console.log(`❌ Errors: ${stats.errors.length}`)
-    console.log(`⏱️  Duration: ${duration}s`)
+   
+   
+   
+   
+   
+   
+   
+   
 
     if (stats.errors.length > 0) {
-      console.log('\n❌ Errors encountered:')
+     
       stats.errors.slice(0, 10).forEach((err, idx) => {
-        console.log(`  ${idx + 1}. Row ${err.row} - IMEI ${err.imei}: ${err.error}`)
+       
       })
 
       if (stats.errors.length > 10) {
-        console.log(`  ... and ${stats.errors.length - 10} more errors`)
+       
       }
 
       // Save error details to JSON
       const errorJsonPath = path.join(path.dirname(csvPath), 'repair-import-errors.json')
       fs.writeFileSync(errorJsonPath, JSON.stringify(stats.errors, null, 2))
-      console.log(`\n💾 Error details saved to: ${errorJsonPath}`)
+     
 
       // Save failed rows to CSV for re-import
       const failedCsvPath = path.join(path.dirname(csvPath), 'repair-import-failed.csv')
       const failedCsv = recordsToCSV(stats.failedRows)
       fs.writeFileSync(failedCsvPath, failedCsv)
-      console.log(`📄 Failed rows saved to: ${failedCsvPath}`)
-      console.log(`   💡 Fix the issues and re-import this file`)
+     
+     
     }
 
-    console.log('\n✨ Import completed!')
+   
     process.exit(0)
   } catch (error) {
     console.error('\n💥 Fatal error during import:')

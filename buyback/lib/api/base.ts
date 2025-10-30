@@ -161,7 +161,7 @@ export class ApiClient {
       try {
         errorBody = await response.json();
         // Log the parsed body if available
-        console.log(errorBody, `[ApiClient] Response body for ${response.status} error`);
+       
       } catch {
         // Handle cases where response.json() might fail (e.g., empty or non-JSON body)
         console.warn(`[ApiClient] Could not parse JSON body for ${response.status} error, or body was empty.`);
@@ -241,13 +241,13 @@ export class ApiClient {
     const { params, isProtected, ...fetchOptions } = options;
     const url = this.buildUrl(endpoint, params);
     const headers = await this.prepareHeaders(fetchOptions.headers, isProtected);
-    console.log(url, "url for get request")
+   
     const response = await fetch(url, {
       method: 'GET',
       headers,
       ...fetchOptions,
     });
-    console.log(response, "response for get request")
+   
     
     return this.processResponse<T>(response);
   }

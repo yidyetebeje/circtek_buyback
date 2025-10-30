@@ -356,7 +356,7 @@ export class WorkflowEditorComponent
     // Convert to world coordinates
     const worldPos = this.screenToWorld({ x: screenX, y: screenY });
 
-    console.log(
+   
       `Actual DOM position for ${handleId}: screen(${screenX}, ${screenY}) -> world(${worldPos.x}, ${worldPos.y})`,
     );
     return worldPos;
@@ -910,7 +910,7 @@ export class WorkflowEditorComponent
     private toastr: ToastrService,
     private documentService: DocumentService, // Inject DocumentService
   ) {
-    console.log("WorkflowEditorComponent: Constructor called");
+   
     effect(() => {
       // Dependencies: this.isFormValid() (which depends on this.name()), this.isSaveModalVisible, and this.isSaving()
       const modalVisible = this.isSaveModalVisible;
@@ -918,7 +918,7 @@ export class WorkflowEditorComponent
       const saving = this.isSaving();
       
       if (modalVisible) {
-        console.log('Modal state changed:', { isValid, saving, name: this.name(), modalVisible });
+       
         this.updateModalActionsValidation(isValid, saving);
       }
     });
@@ -928,7 +928,7 @@ export class WorkflowEditorComponent
    * Update modal actions validation and saving state
    */
   private updateModalActionsValidation(isValid: boolean, isSaving: boolean = false): void {
-    console.log('updateModalActionsValidation called:', { isValid, isSaving, actionsLength: this.modalActions.length });
+   
     if (this.modalActions.length === 0) return;
     
     const saveIndex = this.modalActions.findIndex(a => a.action === 'save');
@@ -940,7 +940,7 @@ export class WorkflowEditorComponent
         ? (isUpdate ? "Updating..." : "Saving...") 
         : (isUpdate ? "Update" : "Save");
       
-      console.log('Updating action:', { 
+     
         oldAction: newActions[saveIndex], 
         newLabel, 
         disabled: !isValid || isSaving, 
@@ -954,7 +954,7 @@ export class WorkflowEditorComponent
         label: newLabel
       };
       this.modalActions = newActions;
-      console.log('Updated modalActions:', this.modalActions);
+     
       this.changeDetectorRef.detectChanges();
     }
   }
@@ -1014,7 +1014,7 @@ export class WorkflowEditorComponent
   }
 
   ngOnInit(): void {
-    console.log("WorkflowEditorComponent: ngOnInit started");
+   
     this.renderer.addClass(document.body, "workflow-editor-fullscreen");
 
     // Always load labels from the label templates endpoint
@@ -1023,11 +1023,11 @@ export class WorkflowEditorComponent
     // Initialize ResizeObserver to detect node dimension changes
     this.initializeResizeObserver();
 
-    console.log("WorkflowEditorComponent: ngOnInit finished setup");
+   
   }
 
   ngOnDestroy(): void {
-    console.log("WorkflowEditorComponent: ngOnDestroy called");
+   
     this.renderer.removeClass(document.body, "workflow-editor-fullscreen");
     // Clean up global listeners if they were attached
     document.removeEventListener("mousemove", this.onMouseMove);
@@ -1041,11 +1041,11 @@ export class WorkflowEditorComponent
   }
 
   ngAfterViewInit(): void {
-    console.log("WorkflowEditorComponent: ngAfterViewInit started");
+   
 
     // Defer jsPlumb initialization slightly to ensure DOM is fully ready
     setTimeout(() => {
-      console.log(
+     
         "WorkflowEditorComponent: ngAfterViewInit - Attempting jsPlumb initialization inside setTimeout",
       );
       this.jsPlumbInitPromise = this.initializeJsPlumb();
@@ -1053,21 +1053,21 @@ export class WorkflowEditorComponent
       // Once jsPlumb is initialized, load workflow data and update paths
       this.jsPlumbInitPromise
         .then(() => {
-          console.log(
+         
             "WorkflowEditorComponent: ngAfterViewInit - jsPlumb initialized successfully.",
           );
 
           // Now load workflow based on route params
           this.route.paramMap.subscribe((params) => {
             const id = params.get("id");
-            console.log(
+           
               "WorkflowEditorComponent: ngAfterViewInit - Route parameter ID:",
               id,
             );
             if (id) {
               this.loadWorkflowFromServer(id);
             } else {
-              console.log(
+             
                 "WorkflowEditorComponent: ngAfterViewInit - No ID found, initializing new workflow.",
               );
               this.loadWorkflow(); // Call loadWorkflow for new/empty case
@@ -1087,7 +1087,7 @@ export class WorkflowEditorComponent
         });
     }, 0); // Zero delay setTimeout
 
-    console.log("WorkflowEditorComponent: ngAfterViewInit finished");
+   
   }
 
   // --- Initialization ---
@@ -1095,16 +1095,16 @@ export class WorkflowEditorComponent
   initializeJsPlumb(): Promise<void> {
     // Return existing promise if initialization is already in progress or done
     if (this.jsPlumbInitPromise) {
-      console.log(
+     
         "jsPlumb initialization already requested, returning existing promise.",
       );
       return this.jsPlumbInitPromise;
     }
 
-    console.log("Initializing jsPlumb...");
+   
     return new Promise((resolve, reject) => {
       if (this.jsPlumbInstance) {
-        console.log("jsPlumb already initialized (instance exists)");
+       
         resolve();
         return;
       }
@@ -1135,7 +1135,7 @@ export class WorkflowEditorComponent
               endpointStyle: { fill: "#567567" },
             });
             this.jsPlumbInstance = instance;
-            console.log("jsPlumb instance created successfully");
+           
             // Resolve the promise once the instance is created
             resolve();
           } catch (initError) {
@@ -1153,14 +1153,14 @@ export class WorkflowEditorComponent
 
   // Placeholder for @foblex/flow integration if needed
   onFlowInit(): void {
-    console.log("Flow initialized (placeholder)");
+   
     if (!this.jsPlumbInstance) {
       this.initializeJsPlumb();
     }
   }
 
   loadLabelNodes(): void {
-    console.log("Loading label nodes from label templates endpoint...");
+   
 
     this.documentService
       .getDocuments({
@@ -1172,7 +1172,7 @@ export class WorkflowEditorComponent
       .subscribe({
         next: (response) => {
           const labels = response.data;
-          console.log(`Found ${labels.length} label templates.`);
+         
           const labelNodeTypes: INodeType[] = labels.map((label: any) => ({
             id: `print_label_${label.id}`,
             label: `Print label: "${label.name}"`,
@@ -1181,7 +1181,7 @@ export class WorkflowEditorComponent
           }));
           this.nodeTypes = [...this.staticNodeTypes, ...labelNodeTypes];
           this.changeDetectorRef.detectChanges();
-          console.log("Updated nodeTypes with dynamic labels:", this.nodeTypes);
+         
         },
         error: (error) => {
           console.error("Error loading labels (documents):", error);
@@ -1193,7 +1193,7 @@ export class WorkflowEditorComponent
   }
 
   clearWorkflow(): void {
-    console.log("Clearing workflow...");
+   
 
     // Stop observing all nodes
     if (this.resizeObserver) {
@@ -1213,7 +1213,7 @@ export class WorkflowEditorComponent
 
   loadWorkflow(): void {
     // Fallback for empty/new workflow
-    console.log("Initializing empty workflow canvas...");
+   
     this.clearWorkflow();
     this.nodes = [];
     this.edges = [];
@@ -1226,7 +1226,7 @@ export class WorkflowEditorComponent
     };
     this.changeDetectorRef.detectChanges();
     // No need for waitForJsPlumb here, as this is called after init completes in ngOnInit
-    console.log("Empty workflow canvas initialized successfully");
+   
     // Initial path update will be handled by ngAfterViewInit
   }
 
@@ -1300,7 +1300,7 @@ export class WorkflowEditorComponent
       },
     };
     this.nodes = [...this.nodes, newNode];
-    console.log(`Added node "${nodeType.label}" at`, nodePosition);
+   
     this.changeDetectorRef.detectChanges(); // Ensure view updates
 
     // Observe the new node for resize changes
@@ -1318,7 +1318,7 @@ export class WorkflowEditorComponent
     }
     const hasOptions = this.selectedNode.data.type === "airpods_battery_drain_test"
       || this.selectedNode.data.type === "airpods_parrot_test";
-    console.log('hasNodeOptions check', { 
+   
       nodeType: this.selectedNode.data.type, 
       hasOptions 
     });
@@ -1331,7 +1331,7 @@ export class WorkflowEditorComponent
   }
 
   handleSaveOptionsModal(options: any) {
-    console.log('handleSaveOptionsModal called', { 
+   
       options, 
       selectedOptionsNode: this.selectedOptionsNode,
       selectedNode: this.selectedNode,
@@ -1344,7 +1344,7 @@ export class WorkflowEditorComponent
     }
 
     const nodeId = this.selectedOptionsNode.id;
-    console.log('Updating node with ID:', nodeId);
+   
 
     // Find the node in the nodes array
     const nodeIndex = this.nodes.findIndex(node => node.id === nodeId);
@@ -1362,7 +1362,7 @@ export class WorkflowEditorComponent
       return;
     }
 
-    console.log('Found node at index:', nodeIndex, 'Current node data:', this.nodes[nodeIndex].data);
+   
 
     // Create a new nodes array with the updated node to trigger change detection
     const updatedNodes = [...this.nodes];
@@ -1372,9 +1372,9 @@ export class WorkflowEditorComponent
       ...options
     };
     
-    console.log('Original node data:', originalNode.data);
-    console.log('Options to merge:', options);
-    console.log('Merged data:', updatedData);
+   
+   
+   
     
     updatedNodes[nodeIndex] = {
       ...originalNode,
@@ -1384,9 +1384,9 @@ export class WorkflowEditorComponent
     // Update the nodes array
     this.nodes = updatedNodes;
 
-    console.log('Updated node data:', this.nodes[nodeIndex].data);
-    console.log('Node type after update:', this.nodes[nodeIndex].data.type);
-    console.log('Nodes array after update:', this.nodes.length);
+   
+   
+   
 
     // Update selectedOptionsNode to reflect the changes
     this.selectedOptionsNode.data = {
@@ -1402,20 +1402,20 @@ export class WorkflowEditorComponent
     // Trigger change detection
     this.changeDetectorRef.detectChanges();
 
-    console.log('Options saved successfully, change detection triggered');
+   
 
     this.optionsModalType = null;
     this.selectedOptionsNode = null;
   }
 
   openNodeOptions() {
-    console.log('openNodeOptions called', { selectedNode: this.selectedNode });
+   
     if (!this.selectedNode) {
-      console.log('No selected node, returning');
+     
       return;
     }
 
-    console.log('Setting options modal', { 
+   
       nodeType: this.selectedNode.data.type,
       nodeData: this.selectedNode.data 
     });
@@ -1432,7 +1432,7 @@ export class WorkflowEditorComponent
     };
     
     this.optionsModalType = this.selectedNode.data.type;
-    console.log('Modal state set', { 
+   
       optionsModalType: this.optionsModalType,
       selectedOptionsNode: this.selectedOptionsNode 
     });
@@ -1440,7 +1440,7 @@ export class WorkflowEditorComponent
 
   onNodeSelect(event: MouseEvent, node: INode): void {
     event.stopPropagation(); // Stop event propagation here
-    console.log("Node selected:", node.id);
+   
     this.selectedNode = node;
     this.selectedEdge = null; // Deselect edge
     this.updateConnectionPaths(); // Redraw to remove edge selection style
@@ -1456,7 +1456,7 @@ export class WorkflowEditorComponent
         return;
       }
       
-      console.log("Deleting node:", nodeId);
+     
 
       // Stop observing the deleted node
       const nodeElement = document.getElementById(nodeId + "_node");
@@ -1480,7 +1480,7 @@ export class WorkflowEditorComponent
     sourceHandleSuffix: string | null,
   ): void {
     const suffix = sourceHandleSuffix || "_out";
-    console.log(
+   
       "Attempting to create connection with source handle suffix:",
       suffix,
     );
@@ -1550,7 +1550,7 @@ export class WorkflowEditorComponent
     );
 
     if (connectionExists) {
-      console.log("Connection already exists:", {
+     
         sourceHandleId,
         targetHandleId,
       });
@@ -1572,13 +1572,13 @@ export class WorkflowEditorComponent
     };
 
     this.edges = [...this.edges, newEdge];
-    console.log("Created new connection:", newEdge);
+   
     setTimeout(() => this.updateConnectionPaths(), 50); // Increased delay slightly
   }
 
   onConnectionClick(event: MouseEvent, edge: IEdge): void {
     event.stopPropagation(); // Stop event propagation here
-    console.log("Connection clicked:", edge.id);
+   
     this.selectedEdge = edge;
     this.selectedNode = null; // Deselect node
     this.updateConnectionPaths(); // Redraw to apply edge selection style
@@ -1587,7 +1587,7 @@ export class WorkflowEditorComponent
   deleteSelectedConnection(): void {
     if (this.selectedEdge) {
       const edgeId = this.selectedEdge.id;
-      console.log("Deleting connection:", edgeId);
+     
       this.edges = this.edges.filter((edge) => edge.id !== edgeId);
       this.selectedEdge = null;
       this.updateConnectionPaths();
@@ -1597,7 +1597,7 @@ export class WorkflowEditorComponent
   // --- Drag and Drop ---
 
   onNodeDragStart(nodeType: INodeType): void {
-    console.log("Node palette drag start:", nodeType.label);
+   
     this.draggingNodeType = nodeType;
   }
 
@@ -1625,7 +1625,7 @@ export class WorkflowEditorComponent
     // Convert screen coordinates to world coordinates using the new viewport system
     const worldPosition = this.screenToWorld({ x: screenX, y: screenY });
 
-    console.log(
+   
       "Drop coordinates - screen:",
       { x: screenX, y: screenY },
       "world:",
@@ -1645,7 +1645,7 @@ export class WorkflowEditorComponent
     }
 
     if (nodeType) {
-      console.log("Adding node at world position:", worldPosition);
+     
       this.addNode(nodeType, worldPosition);
       this.draggingNodeType = null;
       this.updateLastNodePosition(worldPosition);
@@ -1656,8 +1656,8 @@ export class WorkflowEditorComponent
 
   // --- Node Dragging Internals ---
   onNodeDragDown(event: MouseEvent, node: INode): void {
-    console.log("➡️ [onNodeDragDown] Event Target:", event.target);
-    console.log(
+   
+   
       "➡️ [onNodeDragDown] Node:",
       node.id,
       "Current isDraggingNode:",
@@ -1669,7 +1669,7 @@ export class WorkflowEditorComponent
 
     // More specific check: Only return if the *direct target* has the 'node-handle' class
     if (target && target.classList.contains("node-handle")) {
-      console.log(
+     
         "➡️ [onNodeDragDown] Clicked directly on a handle, returning.",
       );
       return;
@@ -1678,7 +1678,7 @@ export class WorkflowEditorComponent
     event.preventDefault(); // Restore default prevention
     event.stopPropagation(); // Restore propagation stop
 
-    console.log("➡️ [onNodeDragDown] Proceeding to set drag state...");
+   
     // Set dragging state
     this.isDraggingNode = true;
     this.draggedNodeId = node.id;
@@ -1688,7 +1688,7 @@ export class WorkflowEditorComponent
     // Select the node
     this.onNodeSelect(event, node);
 
-    console.log(
+   
       "⚠️ DRAG INITIATED for node:",
       node.id,
       "from:",
@@ -1700,9 +1700,9 @@ export class WorkflowEditorComponent
   }
 
   handleNodeDragMove(event: MouseEvent): void {
-    // console.log('⚠️ [handleNodeDragMove] Moving node:', this.draggedNodeId); // Keep this commented for now to reduce noise
+    //
     if (!this.isDraggingNode || !this.draggedNodeId) {
-      // console.log('Not dragging any node'); // Reduced console noise
+      //
       return;
     }
 
@@ -1725,7 +1725,7 @@ export class WorkflowEditorComponent
       y: this.nodeStartPosition.y + dy,
     };
 
-    // console.log('⚠️ Node movement delta (scaled):', dx, dy, 'New position:', newPosition); // Reduced console noise
+    //
 
     // Create a new nodes array to trigger change detection
     const updatedNodes = [...this.nodes];
@@ -1748,7 +1748,7 @@ export class WorkflowEditorComponent
       return;
     }
 
-    console.log(
+   
       "➡️ [handleNodeDragEnd] Ending node drag. Current isDraggingNode:",
       this.isDraggingNode,
     );
@@ -1756,7 +1756,7 @@ export class WorkflowEditorComponent
     // Find the node and log its final position
     const node = this.nodes.find((n) => n.id === this.draggedNodeId);
     if (node) {
-      console.log(
+     
         "⚠️ DRAG ENDED for node:",
         node.id,
         "final position:",
@@ -1803,7 +1803,7 @@ export class WorkflowEditorComponent
       else if (handleId.endsWith("_out_no")) extractedSuffix = "_out_no";
     }
 
-    console.log("Handle mouse down:", { nodeId, suffix: extractedSuffix });
+   
 
     const allowedOutputSuffixes = [
       "_out",
@@ -1816,7 +1816,7 @@ export class WorkflowEditorComponent
       "_out_no",
     ];
     if (!extractedSuffix || !allowedOutputSuffixes.includes(extractedSuffix)) {
-      console.log(
+     
         "Cannot start connection from this handle type:",
         extractedSuffix,
       );
@@ -1839,7 +1839,7 @@ export class WorkflowEditorComponent
     this.connectionMousePosition = { ...this.connectionSourcePosition }; // Initial position
 
     handleElement.classList.add("dragging");
-    console.log(
+   
       `Started connection from node: ${nodeId}, handle suffix: ${extractedSuffix}`,
     );
   }
@@ -1870,7 +1870,7 @@ export class WorkflowEditorComponent
     const tempPath = document.getElementById("temp-connection-path");
     tempPath?.remove();
 
-    console.log("Connection drag end:", {
+   
       source: this.connectionSource,
       target: this.connectionTarget,
       suffix: this.connectionSourceHandleSuffix,
@@ -1929,7 +1929,7 @@ export class WorkflowEditorComponent
         // Prevent self-connection
         this.connectionTarget = targetNodeId;
         element.classList.add("connection-target");
-        console.log("Connection target acquired:", targetNodeId);
+       
       }
     }
   }
@@ -1991,7 +1991,7 @@ export class WorkflowEditorComponent
     const pathElement = document.getElementById("connection-" + edge.id);
     pathElement?.classList.add("selected", "dragging");
 
-    console.log("Started dragging edge:", edge.id);
+   
   }
 
   handleEdgeDragMove(event: MouseEvent): void {
@@ -2153,7 +2153,7 @@ export class WorkflowEditorComponent
 
     if (newTargetId && dragDistance > threshold) {
       // Reconnect
-      console.log(
+     
         `Reconnecting edge ${this.draggedEdgeId} from ${this.draggedEdgeSource} to ${newTargetId}`,
       );
       const originalEdge = this.edges[edgeIndex];
@@ -2178,16 +2178,16 @@ export class WorkflowEditorComponent
         };
         this.edges = updatedEdges;
         this.selectedEdge = updatedEdges[edgeIndex]; // Keep reconnected edge selected
-        console.log("Edge reconnected", updatedEdges[edgeIndex]);
+       
       } else {
-        console.log(
+       
           "Connection to target already exists, cancelling reconnect.",
         );
         this.selectedEdge = originalEdge; // Re-select original if reconnect failed
       }
     } else if (dragDistance > threshold) {
       // Disconnect (Delete)
-      console.log("Disconnecting edge:", this.draggedEdgeId);
+     
       this.deleteSelectedConnection(); // This resets selectedEdge to null
     } else {
       // Drag didn't meet threshold, keep edge selected
@@ -2208,13 +2208,13 @@ export class WorkflowEditorComponent
 
   // --- Connection Path Updates ---
   updateConnectionPaths(): void {
-    console.log(`Updating ${this.edges.length} connection paths.`);
-    console.log('Current edges:', this.edges);
-    console.log('Current nodes:', this.nodes);
+   
+   
+   
     
     // Check if SVG layer exists
     const svgLayer = document.querySelector('.connections-layer');
-    console.log('SVG connections layer found:', svgLayer);
+   
     
     this.edges.forEach((edge) => this.updateConnectionPath(edge));
     this.changeDetectorRef.detectChanges(); // Necessary if path data is bound in template
@@ -2269,7 +2269,7 @@ export class WorkflowEditorComponent
   }
 
   updateConnectionPath(edge: IEdge): void {
-    console.log(`Updating connection path for edge: ${edge.id}, source: ${edge.source}, target: ${edge.target}`);
+   
     
     const sourceNode = this.nodes.find((n) => n.id === edge.source);
     const targetNode = this.nodes.find((n) => n.id === edge.target);
@@ -2317,10 +2317,10 @@ export class WorkflowEditorComponent
     const pathData = this.calculatePathData(sourcePosition, targetPosition);
 
     const pathElement = document.getElementById("connection-" + edge.id);
-    console.log(`Looking for path element with ID: connection-${edge.id}, found:`, pathElement);
+   
     
     if (pathElement) {
-      console.log(`Setting path data for edge ${edge.id}:`, pathData);
+     
       pathElement.setAttribute("d", pathData);
       // Update styles based on selection/dragging state
       pathElement.classList.toggle(
@@ -2335,7 +2335,7 @@ export class WorkflowEditorComponent
       
       // Let's check what SVG elements are actually in the DOM
       const allPaths = document.querySelectorAll('.connections-layer path');
-      console.log(`Found ${allPaths.length} path elements in connections layer:`, Array.from(allPaths).map(p => p.id));
+     
     }
   }
 
@@ -2359,7 +2359,7 @@ export class WorkflowEditorComponent
     const isSVGPath = target.tagName === 'path' && target.id && target.id.startsWith('connection-');
 
     if (!isNodeOrHandle && !isSVGPath) {
-      console.log("Canvas clicked, clearing selections.");
+     
       this.selectedNode = null;
       this.selectedEdge = null;
       this.updateConnectionPaths(); // Redraw to remove selection styles
@@ -2376,14 +2376,14 @@ export class WorkflowEditorComponent
     const yDiff = Math.abs(screenY - this.lastClickPosition.y);
 
     if (timeDiff < 300 && xDiff < 10 && yDiff < 10 && !isNodeOrHandle && !isSVGPath) {
-      console.log("Double-click detected on canvas at screen coords", {
+     
         screenX,
         screenY,
       });
 
       // Convert screen coordinates to world coordinates for infinite canvas
       const worldPosition = this.screenToWorld({ x: screenX, y: screenY });
-      console.log("Double-click world position:", worldPosition);
+     
 
       if (this.lastSelectedNodeType) {
         this.addNode(this.lastSelectedNodeType, worldPosition);
@@ -2400,7 +2400,7 @@ export class WorkflowEditorComponent
 
   // Enhanced canvas mouse down handler for pan detection
   onCanvasMouseDown(event: MouseEvent): void {
-    console.log("🖱️ Canvas mouse down at:", event.clientX, event.clientY);
+   
 
     // Only start panning if we're not doing other operations
     if (!this.isDraggingNode && !this.isConnecting && !this.isDraggingEdge) {
@@ -2461,13 +2461,13 @@ export class WorkflowEditorComponent
   @HostListener("document:mousemove", ["$event"])
   onMouseMove = (event: MouseEvent): void => {
     // Disable for debugging performance
-    // console.log('[onMouseMove] Mouse position:', event.clientX, event.clientY);
-    console.log(
+    //
+   
       `➡️ [onMouseMove] State check: isDraggingNode=${this.isDraggingNode}, isConnecting=${this.isConnecting}, isDraggingEdge=${this.isDraggingEdge}, isPanning=${this.isPanning}`,
     );
 
     if (this.isDraggingNode) {
-      // console.log('[onMouseMove] Dragging node:', this.draggedNodeId, 'to:', event.clientX, event.clientY); // Keep commented to reduce noise
+      //
       this.handleNodeDragMove(event);
     } else if (this.isConnecting) {
       this.handleConnectionDragMove(event);
@@ -2481,7 +2481,7 @@ export class WorkflowEditorComponent
   @HostListener("document:mouseup", ["$event"])
   onMouseUp = (event: MouseEvent): void => {
     const timestamp = new Date().toLocaleTimeString();
-    console.log(
+   
       `➡️ [onMouseUp @ ${timestamp}] State check: isDraggingNode=${this.isDraggingNode}, isConnecting=${this.isConnecting}, isDraggingEdge=${this.isDraggingEdge}, isPanning=${this.isPanning}`,
     );
     if (this.isDraggingNode) {
@@ -2626,7 +2626,7 @@ export class WorkflowEditorComponent
           edges: edgesSnapshot,
         },
       };
-      console.log(
+     
         "Prepared workflow data for saving",
         this.currentWorkflowData,
       );
@@ -2639,7 +2639,7 @@ export class WorkflowEditorComponent
 
   saveWorkflow(): void {
     // Likely just calls prepareWorkflowData, actual save triggered by modal
-    console.log("Preparing workflow data (saveWorkflow called)...");
+   
     this.prepareWorkflowData();
     // The actual saving happens in handleSaveWorkflow
   }
@@ -2653,7 +2653,7 @@ export class WorkflowEditorComponent
       this.isSaving.set(false);
       return;
     }
-    console.log("Handling workflow save:", formData);
+   
     if (!this.currentWorkflowData || !this.currentWorkflowData.canvas_state) {
       // Check canvas_state too
       this.showToast("Workflow data not prepared correctly", "error");
@@ -2663,7 +2663,7 @@ export class WorkflowEditorComponent
 
     // Set saving state
     this.isSaving.set(true);
-    console.log('Setting isSaving to true');
+   
 
     // Construct the data payload, ensuring all required fields are present
     const saveData: IWorkflow = {
@@ -2699,7 +2699,7 @@ export class WorkflowEditorComponent
   createNewWorkflow(workflowData: IWorkflow): void {
     this.workflowService.createWorkflow(workflowData).subscribe({
       next: (response: any) => {
-        console.log("Workflow created successfully:", response);
+       
         this.isSaving.set(false);
         this.showToast("Workflow saved successfully", "success");
         this.closeSaveModal();
@@ -2729,7 +2729,7 @@ export class WorkflowEditorComponent
   updateExistingWorkflow(id: string, workflowData: IWorkflow): void {
     this.workflowService.updateWorkflow(id, workflowData).subscribe({
       next: (response: any) => {
-        console.log("Workflow updated successfully:", response);
+       
         this.isSaving.set(false);
         this.showToast("Workflow updated successfully", "success");
         this.closeSaveModal();
@@ -2740,7 +2740,7 @@ export class WorkflowEditorComponent
         }
         
         // Stay on the edit page (no navigation needed)
-        console.log("Remaining on edit page after successful update");
+       
       },
       error: (error: any) => {
         console.error("Error updating workflow:", error);
@@ -2755,13 +2755,13 @@ export class WorkflowEditorComponent
   }
 
   loadWorkflowFromServer(id: string): void {
-    console.log(`Loading workflow ID ${id}...`);
+   
     // Use the updated IWorkflow interface for the subscription type
     this.workflowService.getWorkflow(id).subscribe({
       next: (workflow: IWorkflow | null) => {
-        console.log('✅ HTTP Response received:', workflow);
-        console.log('Response type:', typeof workflow);
-        console.log('Response keys:', workflow ? Object.keys(workflow) : 'null');
+       
+       
+       
         // Use adjusted IWorkflow
         // Check for workflow AND canvas_state before proceeding
         if (!workflow || !workflow.canvas_state) {
@@ -2794,12 +2794,12 @@ export class WorkflowEditorComponent
         this.loadLabelNodes(); // Load labels based on client ID from localStorage
 
         // Now safe to access canvas_state
-        console.log('Loading canvas state:', canvasState);
+       
         this.nodes = canvasState.nodes.map((node: any) => ({ ...node }));
         this.edges = canvasState.edges.map((edge: any) => ({ ...edge }));
         
-        console.log(`Loaded ${this.nodes.length} nodes:`, this.nodes);
-        console.log(`Loaded ${this.edges.length} edges:`, this.edges);
+       
+       
 
         // Store the loaded data
         this.currentWorkflowData = { ...workflow };
@@ -2829,7 +2829,7 @@ export class WorkflowEditorComponent
         this.applyCanvasTransform(viewportPosition, viewportScale);
 
         this.changeDetectorRef.detectChanges();
-        console.log(
+       
           `Loaded ${this.nodes.length} nodes and ${this.edges.length} edges`,
         );
 
@@ -2851,12 +2851,12 @@ export class WorkflowEditorComponent
           
           // Wait a bit more for any final rendering
           setTimeout(() => {
-            console.log("Updating connection paths after load...");
+           
             
             // Check if SVG layer is ready
             const svgLayer = document.querySelector('.connections-layer');
             if (svgLayer) {
-              console.log('SVG layer is ready, updating connections...');
+             
               this.updateConnectionPaths();
             } else {
               console.warn('SVG layer not ready yet, retrying...');
@@ -2884,7 +2884,7 @@ export class WorkflowEditorComponent
         this.loadWorkflow();
       },
       complete: () => {
-        console.log("✅ Observable completed");
+       
       }
     });
   }
@@ -2910,7 +2910,7 @@ export class WorkflowEditorComponent
       this.currentWorkflowData.viewport_position_y = position.y;
       this.currentWorkflowData.viewport_scale = scale;
 
-      console.log("Applying loaded transform:", { position, scale });
+     
       this.updateCanvasTransform(); // Use the new method
     }
   }

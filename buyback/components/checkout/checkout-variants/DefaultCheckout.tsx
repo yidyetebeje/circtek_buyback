@@ -266,21 +266,21 @@ export function DefaultCheckout({
     // Try current locale first
     if (locale && textObj[locale]) {
       result = textObj[locale];
-      console.log(`[Language] Found text in current locale (${locale}): ${result.substring(0, 30)}${result.length > 30 ? '...' : ''}`);
+     
     }
     // Then try default locale
     else if (defaultLocale && textObj[defaultLocale]) {
       result = textObj[defaultLocale];
-      console.log(`[Language] Fallback to default locale (${defaultLocale}): ${result.substring(0, 30)}${result.length > 30 ? '...' : ''}`);
+     
     }
     // Finally, try any available locale
     else if (availableLocales.length > 0) {
       result = textObj[availableLocales[0]];
-      console.log(`[Language] Fallback to first available locale (${availableLocales[0]}): ${result.substring(0, 30)}${result.length > 30 ? '...' : ''}`);
+     
     }
     
     if (!result && debugContext) {
-      console.log(`[Language] No localized text found for ${debugContext}. Available locales:`, availableLocales);
+     
     }
     
     return result;
@@ -288,7 +288,7 @@ export function DefaultCheckout({
 
   // This function gets the full text for each question and answer based on the processedQuestions
   const getAnsweredQuestionsListForItem = (item: InProgressEstimation): QuestionAnswer[] => {
-    console.log('getAnsweredQuestionsListForItem - item:', {
+   
       deviceId: item.deviceId,
       answers: Object.keys(item.answers || {}).length,
       hasModel: !!item.deviceModel,
@@ -315,7 +315,7 @@ export function DefaultCheckout({
       }
     }
     
-    console.log(`Found ${questions.length} questions in the device model`);
+   
     
     // Now match the answers to the questions
     Object.entries(item.answers).forEach(([questionKey, answerValue]) => {
@@ -326,7 +326,7 @@ export function DefaultCheckout({
       let answerText = String(answerValue); // Default fallback
       
       if (question) {
-        console.log(`[Language] Processing question:`, {
+       
           id: question.id,
           key: question.key,
           hasTitle: !!question.title,
@@ -348,7 +348,7 @@ export function DefaultCheckout({
         );
         
         if (option) {
-          console.log(`[Language] Processing option:`, {
+         
             id: option.id,
             key: option.key,
             hasTitle: !!option.title,
@@ -594,11 +594,11 @@ export function DefaultCheckout({
                                           qa.answer.trim() !== String(Number(qa.answer));
                                       
                                       if (!shouldShow) {
-                                          console.log(`Skipping numeric-only condition item: ${qa.question}: ${qa.answer}`);
+                                         
                                           return null;
                                       }
                                       
-                                      console.log(`Rendering condition item ${index}:`, qa);
+                                     
                                       return (
                                           <li key={index} className="text-xs text-gray-500" data-component-name="DefaultCheckout">
                                               <span className="font-medium text-gray-700">{qa.question}:</span> {qa.answer}

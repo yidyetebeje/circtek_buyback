@@ -72,15 +72,15 @@ export default function EditDeviceQuestionSetPage() {
     const fetchLanguages = async () => {
       try {
         setIsLoadingLanguages(true);
-        console.log('🔍 Starting to fetch languages...');
+       
         const response = await languageService.getLanguages(1, 100); // Get all languages
-        console.log('🔍 Languages API response:', response);
+       
         if (response.data) {
           const languageData = response.data;
-          console.log('🔍 Language data extracted:', languageData);
+         
           setLanguages(languageData);
           const defaultLang = languageData.find((lang: Language) => Boolean(lang.is_default));
-          console.log('🔍 Default language found:', defaultLang);
+         
           if (defaultLang) {
             setDefaultLanguage(defaultLang);
           } else if (languageData.length > 0) {
@@ -254,7 +254,7 @@ export default function EditDeviceQuestionSetPage() {
 
   // Access the actual translations from the API response and map to compatible format
   const questionSetTranslations = (() => {
-    console.log('🔍 Building questionSetTranslations from:', { translationsData, defaultLanguage, questionSetData });
+   
     
     // The API returns a comprehensive structure, but we need to map it to the component's expected format
     const translationList = (translationsData?.data || []).map((translation: ComprehensiveTranslationResponse) => ({
@@ -265,13 +265,13 @@ export default function EditDeviceQuestionSetPage() {
       questions: translation.questions || [],
     })) as QuestionSetTranslation[];
 
-    console.log('🔍 Mapped translation list:', translationList);
+   
 
     // Check if there's already a translation for the default language
     const hasDefaultLanguageTranslation = defaultLanguage && 
       translationList.some(t => t.language_id === defaultLanguage.id);
 
-    console.log('🔍 Has default language translation:', hasDefaultLanguageTranslation);
+   
 
     // If no default language translation exists, use the main question set data as fallback
     if (defaultLanguage && !hasDefaultLanguageTranslation && questionSetData && questionSetId) {
@@ -292,12 +292,12 @@ export default function EditDeviceQuestionSetPage() {
         })),
       };
       
-      console.log('🔍 Adding default translation:', defaultTranslation);
+     
       // Add the default translation to the beginning of the list
       translationList.unshift(defaultTranslation);
     }
 
-    console.log('🔍 Final translation list:', translationList);
+   
     return translationList;
   })();
 

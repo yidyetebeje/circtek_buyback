@@ -29,7 +29,7 @@
                 content: '<p>Hello {{customer.name}}, this is a test email.</p>'
             };
             
-            console.log('Testing new template with request:', request);
+           
             
             try {
                 const response = await fetch('http://localhost:5500/api/email-templates/populate', {
@@ -41,7 +41,7 @@
                 });
                 
                 const result = await response.json();
-                console.log('New template result:', result);
+               
                 document.getElementById('result1').innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
             } catch (error) {
                 console.error('New template error:', error);
@@ -63,7 +63,7 @@
                         orderId: 'mock-order-' + Date.now()
                     };
                     
-                    console.log('Testing existing template with request:', request);
+                   
                     
                     const response = await fetch('http://localhost:5500/api/email-templates/populate', {
                         method: 'POST',
@@ -74,7 +74,7 @@
                     });
                     
                     const result = await response.json();
-                    console.log('Existing template result:', result);
+                   
                     document.getElementById('result2').innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
                 } else {
                     document.getElementById('result2').innerHTML = '<pre>No existing templates found</pre>';

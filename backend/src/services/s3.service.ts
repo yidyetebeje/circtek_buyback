@@ -34,7 +34,7 @@ export class S3Service {
 
 
   constructor(config: S3Config) {
-    console.log(config, "config")
+   
     
     // Configure S3 client
     this.s3Client = new S3Client({

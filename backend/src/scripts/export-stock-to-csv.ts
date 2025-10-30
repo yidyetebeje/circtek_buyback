@@ -203,22 +203,22 @@ async function exportStock(
   outputFile: string,
   tenantId?: number
 ): Promise<ExportStats> {
-  console.log(`\n${'='.repeat(70)}`)
-  console.log('Stock Export to CSV')
-  console.log(`${'='.repeat(70)}`)
-  console.log(`Output File: ${outputFile}`)
+ 
+ 
+ 
+ 
   if (tenantId) {
-    console.log(`Tenant ID: ${tenantId}`)
+   
   } else {
-    console.log('Tenant ID: All tenants')
+   
   }
-  console.log(`${'='.repeat(70)}\n`)
+ 
 
-  console.log('📦 Fetching stock data...')
+ 
   const stockData = await fetchStockData(tenantId)
   
   if (stockData.length === 0) {
-    console.log('⚠️  No stock items found with quantity > 0')
+   
     return {
       totalRecords: 0,
       totalQuantity: 0,
@@ -228,15 +228,15 @@ async function exportStock(
     }
   }
 
-  console.log(`✓ Found ${stockData.length} stock items\n`)
+ 
 
-  console.log('📊 Converting to CSV format...')
+ 
   const csvContent = convertToCSV(stockData)
-  console.log(`✓ CSV content generated\n`)
+ 
 
-  console.log('💾 Writing to file...')
+ 
   await writeCsvFile(outputFile, csvContent)
-  console.log(`✓ File written successfully: ${outputFile}\n`)
+ 
 
   const stats = calculateStats(stockData)
 
@@ -272,19 +272,19 @@ async function main() {
     const duration = ((Date.now() - startTime) / 1000).toFixed(2)
 
     // Print summary
-    console.log(`${'='.repeat(70)}`)
-    console.log('Export Summary')
-    console.log(`${'='.repeat(70)}`)
-    console.log(`Total Records: ${stats.totalRecords}`)
-    console.log(`Total Quantity: ${stats.totalQuantity}`)
-    console.log(`Unique SKUs: ${stats.uniqueSkus}`)
-    console.log(`Unique Warehouses: ${stats.uniqueWarehouses}`)
-    console.log(`Unique Tenants: ${stats.uniqueTenants}`)
-    console.log(`Duration: ${duration}s`)
-    console.log(`Output File: ${outputPath}`)
-    console.log(`${'='.repeat(70)}\n`)
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
 
-    console.log('✓ Export completed successfully')
+   
     process.exit(0)
   } catch (error) {
     console.error('\n✗ Export failed:', error)

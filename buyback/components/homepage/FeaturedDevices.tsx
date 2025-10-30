@@ -27,7 +27,7 @@ export function FeaturedDevices({ shopConfig, shopId }: FeaturedDevicesProps) {
   const fallbackLocale = availableLanguages.find(lang => lang.isDefault)?.code || 'en';
   
   // For debugging
-  console.log('[FeaturedDevices Debug] currentLocale:', currentLocale, 'nextIntlLocale:', nextIntlLocale);
+ 
   
   // Fetch featured devices with filters
   const { data: featuredDevicesResponse, isLoading, isError } = useFeaturedDevices({ 

@@ -201,7 +201,7 @@ export class ProductReceiveComponent {
           this.form.patchValue({ purchase_id: String(purchaseId) });
           this.selectedPurchase.set(targetPurchase);
           
-          console.log(`Auto-selected Purchase Order: ${targetPurchase.purchase.supplier_order_no}`);
+         
         } else {
           // Purchase is fully received
           this.error.set(`Purchase Order ${targetPurchase.purchase.supplier_order_no} has been fully received and cannot receive more items.`);

@@ -15,14 +15,14 @@ console.log(`- NEXT_PUBLIC_API_URL: ${process.env.NEXT_PUBLIC_API_URL || 'not se
 
 console.log('\n📝 Recommendations:');
 if (!process.env.NEXTAUTH_URL) {
-  console.log('- Set NEXTAUTH_URL in your .env.local file (e.g., NEXTAUTH_URL=http://localhost:3000)');
+ 
 }
 if (!process.env.NEXTAUTH_SECRET) {
-  console.log('- Set NEXTAUTH_SECRET in your .env.local file (run this for a secure value:)');
-  console.log('  node -e "console.log(crypto.randomBytes(32).toString(\'hex\'))"');
+ 
+ 
 }
 if (!process.env.NEXT_PUBLIC_API_URL) {
-  console.log('- Set NEXT_PUBLIC_API_URL in your .env.local file (e.g., NEXT_PUBLIC_API_URL=http://localhost:5500/api)');
+ 
 }
 
 console.log('\n📚 Important Tips:');

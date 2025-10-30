@@ -20,7 +20,7 @@ export class DiagnosticPdfService {
   private readonly injector = inject(EnvironmentInjector);
 
   async generatePdf(diagnosticId: number): Promise<Blob> {
-    console.log('Starting diagnostic PDF generation for ID:', diagnosticId);
+   
     
     let container: HTMLElement | null = null;
     let componentRef: ComponentRef<DiagnosticReportTemplateComponent> | null = null;
@@ -33,7 +33,7 @@ export class DiagnosticPdfService {
       }
       
       const diagnostic = response.data;
-      console.log('Diagnostic data fetched successfully');
+     
       
       // Create the report using the shared component
       const result = await this.createReportContainer(diagnostic);
@@ -42,20 +42,20 @@ export class DiagnosticPdfService {
       
       // Add to DOM for rendering
       document.body.appendChild(container);
-      console.log('Report container added to DOM');
+     
       
       // Wait for images and content to load (reduced timeout)
       await this.waitForImagesAndContent(container);
       
       // Skip base64 conversion to avoid CORS issues
       // html2canvas with allowTaint:true can handle external images directly
-      console.log('Skipping base64 conversion - using allowTaint mode');
+     
       
       // Minimal wait for rendering - just enough for browser paint
-      console.log('Waiting for rendering...');
+     
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      console.log('Starting canvas capture...');
+     
       
       // Capture the component element directly (like report page does)
       const componentElement = componentRef.location.nativeElement;
@@ -63,7 +63,7 @@ export class DiagnosticPdfService {
         throw new Error('Component element not found');
       }
       
-      console.log('Component element dimensions:', componentElement.offsetWidth, 'x', componentElement.offsetHeight);
+     
       
       // Use same simple options as the working report component
       const canvas = await html2canvas(componentElement, {
@@ -74,7 +74,7 @@ export class DiagnosticPdfService {
         logging: true,
       });
       
-      console.log('Canvas captured successfully:', canvas.width, 'x', canvas.height);
+     
       
       if (canvas.width === 0 || canvas.height === 0) {
         throw new Error('Canvas capture failed - zero dimensions');
@@ -99,7 +99,7 @@ export class DiagnosticPdfService {
       
       const blob = pdf.output('blob');
       
-      console.log('PDF generated successfully, size:', blob.size);
+     
       return blob;
       
     } catch (error) {
@@ -112,26 +112,26 @@ export class DiagnosticPdfService {
       }
       if (container && document.body.contains(container)) {
         document.body.removeChild(container);
-        console.log('Report container cleaned up');
+       
       }
     }
   }
   
   private async createReportContainer(diagnostic: Diagnostic): Promise<{ container: HTMLElement; componentRef: ComponentRef<DiagnosticReportTemplateComponent> }> {
-    console.log('Creating report container with diagnostic data');
+   
     
     // Generate QR code
     const qrCodeDataUrl = await this.generateQrCode(diagnostic.id, diagnostic.serial_number || undefined);
-    console.log('QR code generated:', qrCodeDataUrl ? 'Success' : 'Failed');
+   
     
     // Use cached base64 logo if available, otherwise use URL
     const cachedBase64 = this.logosService.getClientLogoBase64();
     const logoUrl = cachedBase64 || this.logosService.getClientLogoUrl() || 'https://api.circtek.com/logo.png';
     
     if (cachedBase64) {
-      console.log('Using cached base64 logo (instant!)');
+     
     } else {
-      console.log('Using logo URL:', logoUrl);
+     
     }
     
     const encodedReportId = this.cipherService.encodeTestId(diagnostic.id, diagnostic.serial_number || undefined);
@@ -248,7 +248,7 @@ export class DiagnosticPdfService {
           
           try {
             const dataUrl = canvas.toDataURL('image/png');
-            console.log('Image converted to data URL successfully');
+           
             resolve(dataUrl);
           } catch (error) {
             console.error('Error converting canvas to data URL (CORS issue?):', error);
@@ -278,7 +278,7 @@ export class DiagnosticPdfService {
   }
 
   private async convertAllImagesToBase64(container: HTMLElement): Promise<void> {
-    console.log('Converting all images to base64...');
+   
     const images = container.querySelectorAll('img');
     
     const conversionPromises = Array.from(images).map(async (img, index) => {
@@ -286,11 +286,11 @@ export class DiagnosticPdfService {
       
       // Skip if already base64
       if (src.startsWith('data:')) {
-        console.log(`Image ${index} already base64`);
+       
         return;
       }
       
-      console.log(`Converting image ${index} from ${src.substring(0, 50)}...`);
+     
       
       try {
         // Ensure img has proper attributes
@@ -301,7 +301,7 @@ export class DiagnosticPdfService {
           img.src = dataUrl;
           // Remove crossorigin attribute after conversion to avoid issues
           img.removeAttribute('crossorigin');
-          console.log(`Image ${index} converted successfully`);
+         
           
           // Wait for the new src to be processed
           await new Promise(resolve => {
@@ -323,24 +323,24 @@ export class DiagnosticPdfService {
     
     await Promise.all(conversionPromises);
     
-    console.log('All images conversion complete');
+   
   }
   
   private async waitForImagesAndContent(container: HTMLElement): Promise<void> {
-    console.log('Waiting for images and content to load...');
+   
     
     // Wait for images
     const images = container.querySelectorAll('img');
-    console.log(`Found ${images.length} images to load`);
+   
     
     const imagePromises = Array.from(images).map((img, index) => {
       if (img.complete) {
-        console.log(`Image ${index} already loaded`);
+       
         return Promise.resolve();
       }
       return new Promise((resolve) => {
         img.onload = () => {
-          console.log(`Image ${index} loaded successfully`);
+         
           resolve(void 0);
         };
         img.onerror = () => {
@@ -358,10 +358,10 @@ export class DiagnosticPdfService {
     await Promise.all(imagePromises);
     
     // Minimal wait for fonts, layout, and rendering
-    console.log('Waiting for layout and rendering...');
+   
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    console.log('Content loading complete');
+   
   }
 
   generateFilename(diagnostic: Diagnostic): string {

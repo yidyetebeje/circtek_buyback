@@ -431,7 +431,7 @@ export class RepairReasonsFormComponent {
     this.submitting.set(true);
     this.error.set(null);
 
-    console.log('Submitting form with model prices count:', this.modelPrices.length);
+   
 
     // Ensure values are properly trimmed before submission
     const formData: any = {
@@ -445,7 +445,7 @@ export class RepairReasonsFormComponent {
       formData.fixed_price = Number(this.form.value.fixed_price);
     }
 
-    console.log('Form data to submit:', formData);
+   
 
     const request = this.isEditMode() 
       ? this.updateRepairReason(formData)
@@ -458,8 +458,8 @@ export class RepairReasonsFormComponent {
         }
 
         const repairReasonId = response.data.id;
-        console.log('Repair reason saved with ID:', repairReasonId);
-        console.log('Will save model prices, count:', this.modelPrices.length);
+       
+       
 
         // Save model prices for both create and edit modes
         if (this.modelPrices.length > 0) {
@@ -471,7 +471,7 @@ export class RepairReasonsFormComponent {
       })
     ).subscribe({
       next: (response) => {
-        console.log('Form submitted successfully');
+       
         this.toast.saveSuccess('Repair Reason', this.isEditMode() ? 'updated' : 'created');
         this.router.navigate(['/repair'], { 
           queryParams: { tab: 'repair-reasons' } 
@@ -490,9 +490,9 @@ export class RepairReasonsFormComponent {
   private saveModelPrices(repairReasonId: number): Observable<any> {
     const requests: Observable<any>[] = [];
 
-    console.log('=== saveModelPrices called ===');
-    console.log('Repair Reason ID:', repairReasonId);
-    console.log('Total model prices controls:', this.modelPrices.controls.length);
+   
+   
+   
 
     this.modelPrices.controls.forEach((control, index) => {
       const formGroup = control as FormGroup;
@@ -502,7 +502,7 @@ export class RepairReasonsFormComponent {
       const modelName = formGroup.get('model_name')?.value?.trim();
       const fixedPrice = formGroup.get('fixed_price')?.value;
 
-      console.log(`Control ${index}:`, {
+     
         id,
         isNew,
         isDeleted,
@@ -513,7 +513,7 @@ export class RepairReasonsFormComponent {
 
       if (isDeleted && id) {
         // Delete existing price
-        console.log(`→ Deleting model price ID: ${id}`);
+       
         requests.push(this.api.deleteModelPrice(id));
       } else if (isNew && !isDeleted) {
         // Create new price
@@ -522,7 +522,7 @@ export class RepairReasonsFormComponent {
           fixed_price: Number(fixedPrice),
           status: formGroup.get('status')?.value ?? true
         };
-        console.log('→ Creating new model price:', data);
+       
         requests.push(this.api.createModelPrice(repairReasonId, data));
       } else if (!isNew && !isDeleted && id) {
         // Update existing price
@@ -531,26 +531,26 @@ export class RepairReasonsFormComponent {
           fixed_price: Number(fixedPrice),
           status: formGroup.get('status')?.value
         };
-        console.log(`→ Updating model price ID ${id}:`, data);
+       
         requests.push(this.api.updateModelPrice(id, data));
       } else {
-        console.log('→ Skipped (no action needed)');
+       
       }
     });
 
-    console.log('Total API requests to execute:', requests.length);
+   
 
     // If no requests, return empty observable
     if (requests.length === 0) {
-      console.log('No model price operations needed');
+     
       return of(null);
     }
 
     // Execute all requests in parallel
-    console.log('Executing model price API calls...');
+   
     return forkJoin(requests).pipe(
       switchMap((results) => {
-        console.log('Model price operations completed:', results);
+       
         return of(results);
       }),
       catchError((error) => {

@@ -27,7 +27,7 @@ export class ShapeService {
       shapeType: 'filled-rectangle'
     });
 
-    console.log('Created filled rectangle at', x, y);
+   
     return rect;
   }
 
@@ -51,7 +51,7 @@ export class ShapeService {
       shapeType: 'outlined-rectangle'
     });
 
-    console.log('Created outlined rectangle at', x, y);
+   
     return rect;
   }
 
@@ -89,7 +89,7 @@ export class ShapeService {
       line.scaleY(1);
     });
 
-    console.log('Created line at', x, y);
+   
     return line;
   }
 
@@ -117,7 +117,7 @@ export class ShapeService {
       ellipsis: false,
     });
 
-    console.log('Created text node at', x, y);
+   
     return textNode;
   }
 
@@ -142,7 +142,7 @@ export class ShapeService {
           isClientLogo: !!isClientLogo
         });
         
-        console.log('Created image node at', x, y);
+       
         resolve(imageNode);
       }, (error) => {
         console.error('Error creating image:', error);

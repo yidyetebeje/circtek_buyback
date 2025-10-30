@@ -68,7 +68,7 @@ export function ModelListPageClient({
   };
 
   const handleModelSelect = (model: Model) => {
-    console.log("Model selected, navigating to estimation page:", model);
+   
     if (model.sef_url) {
       router.push(`/${currentLocale}/sell/${model.sef_url}/estimate`);
     } else {
@@ -107,7 +107,7 @@ export function ModelListPageClient({
     if (shopId) {
       updateShopConfig(config, {
         onSuccess: () => {
-          console.log('Shop configuration updated successfully');
+         
         },
         onError: (error) => {
           console.error('Failed to update shop configuration:', error);

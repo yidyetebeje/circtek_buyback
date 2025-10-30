@@ -22,7 +22,7 @@ export function AnimatedDeviceInformationPanel({
   answers,
   imageSize = 'large' // 'small', 'medium', 'large'
 }: AnimatedDeviceInformationPanelProps & { imageSize?: 'small' | 'medium' | 'large' }) {
-  console.log(theme)
+ 
   // Handle translatable text with proper type checking
   const deviceName = typeof deviceInfo.name === 'string' 
     ? deviceInfo.name 

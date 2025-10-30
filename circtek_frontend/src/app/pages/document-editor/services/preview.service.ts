@@ -23,7 +23,7 @@ export class PreviewService {
     const newPreviewMode = !this.isPreviewMode;
     this.isPreviewModeSubject.next(newPreviewMode);
     
-    console.log('Preview mode toggled:', newPreviewMode);
+   
     
     if (newPreviewMode) {
       this.showPlaceholderPreviewValues(layer);
@@ -33,12 +33,12 @@ export class PreviewService {
   }
 
   private showPlaceholderPreviewValues(layer: Konva.Layer): void {
-    console.log('Showing placeholder preview values');
+   
     this.originalNodeStates.clear();
 
     // Handle Placeholders
     const placeholderNodes = layer.find('Text[name="placeholder"]');
-    console.log('Found placeholder nodes:', placeholderNodes.length);
+   
 
     placeholderNodes.forEach((textNode: Konva.Node) => {
       if (!(textNode instanceof Konva.Text)) return;
@@ -78,13 +78,13 @@ export class PreviewService {
         textNode.fontStyle('normal');
         textNode.fill('#333333');
 
-        console.log(`Placeholder ${placeholderId} state set to ${PLACEHOLDER_STATES.PREVIEW}`);
+       
       }
     });
 
     // Handle Regular Text Nodes
     const textNodes = layer.find('Text[name="text"]');
-    console.log('Found regular text nodes:', textNodes.length);
+   
 
     textNodes.forEach((textNode: Konva.Node, index: number) => {
       if (!(textNode instanceof Konva.Text)) return;
@@ -102,7 +102,7 @@ export class PreviewService {
   }
 
   private restorePlaceholderOriginalTexts(layer: Konva.Layer): void {
-    console.log('Restoring original texts and styles');
+   
 
     // Combine both placeholder and regular text nodes for iteration
     const allTextNodes = layer.find('Text');
@@ -136,7 +136,7 @@ export class PreviewService {
           textNode.attrs.placeholderState = PLACEHOLDER_STATES.ORIGINAL;
         }
         
-        console.log(`Restored placeholder ${textNode.attrs.placeholderId} to state ${textNode.attrs.placeholderState}`);
+       
       }
     });
 

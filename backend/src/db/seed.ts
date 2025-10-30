@@ -6,7 +6,7 @@ import { faker } from '@faker-js/faker';
 import { sql } from 'drizzle-orm';
 
 async function cleanup() {
-    console.log('🧹 Cleaning up existing data...');
+   
     
     // Delete in reverse order of dependencies to avoid foreign key constraints
     await db.delete(test_results);
@@ -17,7 +17,7 @@ async function cleanup() {
     await db.delete(roles);
     await db.delete(tenants);
     
-    console.log('✅ Cleanup completed');
+   
 }
 
 async function seed_tenants() {
@@ -30,7 +30,7 @@ async function seed_tenants() {
         }
     ];
     await db.insert(tenants).values(tenants_data);
-    console.log('Tenants seeded successfully');
+   
 }
 
 async function seed_shops() {
@@ -43,7 +43,7 @@ async function seed_shops() {
         }
     ];
     await db.insert(shops).values(shops_data);
-    console.log('Shops seeded successfully');
+   
 }
 
 async function seed_warehouses() {
@@ -58,7 +58,7 @@ async function seed_warehouses() {
         }
     ];
     await db.insert(warehouses).values(warehouses_data);
-    console.log('Warehouses seeded successfully');
+   
 }
 
 async function seed_roles() {
@@ -106,7 +106,7 @@ async function seed_users() {
     const hashed_password = await bcrypt.hash('password', 10)
     users_data[0].password = hashed_password
     await db.insert(users).values(users_data)
-    console.log('Users seeded successfully')
+   
 }
 
 async function seed_devices() {
@@ -152,7 +152,7 @@ async function seed_devices() {
         });
     }
     await db.insert(devices).values(devices_data);
-    console.log('Devices seeded successfully');
+   
 }
 
 async function seed_test_results() {
@@ -172,7 +172,7 @@ async function seed_test_results() {
         });
     }
     await db.insert(test_results).values(test_results_data);
-    console.log('Test results seeded successfully');
+   
 }
 async function seed_shop() {
     const shop_data = [
@@ -272,14 +272,14 @@ async function seed_shop() {
     ];
 
     await db.insert(shops).values(shop_data);
-    console.log('Detailed shops seeded successfully');
+   
 }
 async function seed() {
    
     await seed_tenants();
     await seed_roles();
     await seed_users();
-    console.log('🎉 All seeding completed successfully!');
+   
 }
 
 // Alternative: Seed without cleanup (handles duplicates gracefully)

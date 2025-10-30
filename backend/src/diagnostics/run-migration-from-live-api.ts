@@ -201,20 +201,20 @@ async function runMigrationFromLiveAPI() {
 	// 	warehouseId: firstRecord.warehouseId || MIGRATION_CONFIG.warehouseId,
 	// }
 
-	// console.log('📋 Migration Configuration:')
-	// console.log(`   Tester ID: ${config.testerId}`)
-	// console.log(`   Tenant ID: ${config.tenantId}`)
-	// console.log(`   Warehouse ID: ${config.warehouseId}`)
-	// console.log()
+	//
+	//
+	//
+	//
+	//
 
 	// // Step 3: Migrate data
-	// console.log('🔄 Starting migration process...')
-	// console.log(`📊 Total records to migrate: ${oldData.length}`)
-	// console.log('⏳ This may take a while...\n')
+	//
+	//
+	//
 
 	// // Choose migration method based on data size
 	// const useBatch = oldData.length > 50
-	// console.log(`📦 Using ${useBatch ? 'batch' : 'detailed'} migration method\n`)
+	//
 
 	// const migrationStartTime = Date.now()
 
@@ -226,15 +226,15 @@ async function runMigrationFromLiveAPI() {
 	// const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2)
 
 	// // Step 4: Display results
-	// console.log('\n' + '='.repeat(60))
-	// console.log('📈 MIGRATION COMPLETE')
-	// console.log('='.repeat(60))
-	// console.log(`✅ Success: ${result.success}`)
-	// console.log(`❌ Failed: ${result.failed}`)
-	// console.log(`📊 Success Rate: ${((result.success / oldData.length) * 100).toFixed(1)}%`)
-	// console.log(`⏱️  Fetch Duration: ${((migrationStartTime - startTime) / 1000).toFixed(2)}s`)
-	// console.log(`⏱️  Migration Duration: ${migrationDuration}s`)
-	// console.log(`⏱️  Total Duration: ${totalDuration}s`)
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
 
 	// if (result.errors.length > 0) {
 	// 	console.log('\n❌ Errors:')
@@ -259,8 +259,8 @@ async function runMigrationFromLiveAPI() {
 	// 	}
 	// }
 
-	// console.log('\n✨ Migration process finished!')
-	// console.log('='.repeat(60))
+	//
+	//
 }
 
 // Run the migration

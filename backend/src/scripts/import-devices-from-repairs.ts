@@ -149,11 +149,11 @@ async function importDevices(
   }
 
   // Read CSV file
-  console.log(`📂 Reading CSV file: ${csvPath}`)
+ 
   const content = fs.readFileSync(csvPath, 'utf-8')
   const records = parseCSV(content)
   
-  console.log(`✅ Found ${records.length} records in CSV\n`)
+ 
   stats.total = records.length
 
   // Process each record
@@ -174,12 +174,12 @@ async function importDevices(
       
       if (exists) {
         stats.existing++
-        console.log(`⏭️  IMEI ${imei} already exists - skipping`)
+       
       } else {
         // Create new device
         await createDevice(imei, modelName, memory, tenantId, warehouseId)
         stats.created++
-        console.log(`✅ Created device: IMEI=${imei}, Model=${modelName}, Memory=${memory}`)
+       
       }
     } catch (error) {
       stats.errors.push({
@@ -225,10 +225,10 @@ async function main() {
 
   if (args.length < 3) {
     console.error('❌ Error: Missing required arguments')
-    console.log('\nUsage:')
-    console.log('  bun run src/scripts/import-devices-from-repairs.ts <csv-path> <tenant-id> <warehouse-id>')
-    console.log('\nExample:')
-    console.log('  bun run src/scripts/import-devices-from-repairs.ts ./repairs.csv 1 1')
+   
+   
+   
+   
     process.exit(1)
   }
 
@@ -247,11 +247,11 @@ async function main() {
     process.exit(1)
   }
 
-  console.log('🚀 Starting device import...\n')
-  console.log('📋 Configuration:')
-  console.log(`   CSV File: ${csvPath}`)
-  console.log(`   Tenant ID: ${tenantId}`)
-  console.log(`   Warehouse ID: ${warehouseId}\n`)
+ 
+ 
+ 
+ 
+ 
 
   const startTime = Date.now()
 
@@ -260,40 +260,40 @@ async function main() {
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2)
 
-    console.log('\n' + '='.repeat(60))
-    console.log('📊 Import Summary')
-    console.log('='.repeat(60))
-    console.log(`📝 Total records: ${stats.total}`)
-    console.log(`⏭️  Skipped (no IMEI): ${stats.skipped}`)
-    console.log(`🔄 Already existing: ${stats.existing}`)
-    console.log(`✅ Newly created: ${stats.created}`)
-    console.log(`❌ Errors: ${stats.errors.length}`)
-    console.log(`⏱️  Duration: ${duration}s`)
+   
+   
+   
+   
+   
+   
+   
+   
+   
 
     if (stats.errors.length > 0) {
-      console.log('\n❌ Errors encountered:')
+     
       stats.errors.slice(0, 10).forEach((err, idx) => {
-        console.log(`  ${idx + 1}. IMEI ${err.imei}: ${err.error}`)
+       
       })
 
       if (stats.errors.length > 10) {
-        console.log(`  ... and ${stats.errors.length - 10} more errors`)
+       
       }
 
       // Save error details to JSON
       const errorJsonPath = path.join(path.dirname(csvPath), 'device-import-errors.json')
       fs.writeFileSync(errorJsonPath, JSON.stringify(stats.errors, null, 2))
-      console.log(`\n💾 Error details saved to: ${errorJsonPath}`)
+     
 
       // Save failed rows to CSV for re-import
       const failedCsvPath = path.join(path.dirname(csvPath), 'device-import-failed.csv')
       const failedCsv = recordsToCSV(stats.failedRows)
       fs.writeFileSync(failedCsvPath, failedCsv)
-      console.log(`📄 Failed rows saved to: ${failedCsvPath}`)
-      console.log(`   💡 Fix the issues and re-import this file`)
+     
+     
     }
 
-    console.log('\n✨ Import completed!')
+   
     process.exit(0)
   } catch (error) {
     console.error('\n💥 Fatal error during import:')

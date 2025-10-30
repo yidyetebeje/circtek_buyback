@@ -182,7 +182,7 @@ export class StockController {
   async updateStockQuantity(sku: string, warehouse_id: number, delta: number, tenant_id: number, is_part?: boolean): Promise<response<StockWithWarehouse | null>> {
     try {
       // First, try to update existing stock
-      console.log("updateStockQuantity", sku, warehouse_id, delta, tenant_id);
+     
       let updated = await this.repo.updateStockQuantity(sku, warehouse_id, delta, tenant_id)
       
       // If no stock record exists and delta is positive, create a new one
@@ -198,7 +198,7 @@ export class StockController {
           updated = created
         } catch (createError) {
           // If creation fails (e.g., duplicate key), try update again
-          console.log("error", createError);
+         
           updated = await this.repo.updateStockQuantity(sku, warehouse_id, delta, tenant_id)
         }
       }
@@ -218,7 +218,7 @@ export class StockController {
         status: updated ? 200 : 404
       }
     } catch (error) {
-      console.log("error", error);
+     
       return { 
         data: null, 
         message: 'Failed to update stock quantity', 

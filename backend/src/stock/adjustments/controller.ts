@@ -111,7 +111,7 @@ export class AdjustmentsController {
             eq(device_events.event_type as any, 'DEAD_IMEI' as any),
           )
         )
-      console.log(existingDead, 'existing dead imei')
+     
 
       let deadEventCreated = false
       if (!existingDead) {

@@ -14,16 +14,16 @@ export function EnvironmentChecker() {
       console.warn('NEXT_PUBLIC_API_URL is not defined in environment variables');
       toast.warning('API URL not configured properly. Authentication may fail.');
     } else {
-      console.log('Using API URL:', apiUrl);
+     
     }
     
     // Test if the auth API is accessible without language prefix
     fetch('/api/auth-check')
       .then(response => response.json())
       .then(data => {
-        console.log('Auth API check:', data);
+       
         if (data.success) {
-          console.log('Auth API is accessible');
+         
         } else {
           toast.error('Auth API check failed');
         }

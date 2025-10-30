@@ -105,13 +105,13 @@ export class BasePlaceholderComponent implements OnInit {
     
     // After transform, reset scales and adjust actual sizes stored in state
     this.placeholderImage.on('transformend', (e) => {
-        console.log('transformend called', e);
+       
         const newWidth = e.target.width() * e.target.scaleX();
         const newHeight = e.target.height() * e.target.scaleY();
-        console.log('newWidth', newWidth);
-        console.log('newHeight', newHeight);
-        console.log("oldWidth", this.state.width);
-        console.log("oldHeight", this.state.height);
+       
+       
+       
+       
         
         // Update the component's internal state
         this.state.width = newWidth;
@@ -142,7 +142,7 @@ export class BasePlaceholderComponent implements OnInit {
         this.position.y = this.placeholderImage.y();
         this.state.x = this.position.x; // Update state as well
         this.state.y = this.position.y;
-        console.log(`Placeholder ${this.placeholderId} drag ended at:`, this.position.x, this.position.y);
+       
       }
     });
 
@@ -166,12 +166,12 @@ export class BasePlaceholderComponent implements OnInit {
   // Base transformer event handlers - can be overridden by subclasses
   protected onTransformerTransform(): void {
     // Default implementation - subclasses can override for custom behavior
-    console.log(`Transformer transforming placeholder: ${this.placeholderId}`);
+   
   }
 
   protected onTransformerTransformEnd(): void {
     // Default implementation - subclasses can override for custom behavior
-    console.log(`Transformer transform ended for placeholder: ${this.placeholderId}`);
+   
   }
 
   // Handle double-click - select the element for editing instead of showing alert
@@ -183,6 +183,6 @@ export class BasePlaceholderComponent implements OnInit {
       this.transformer.getLayer()?.batchDraw();
     }
     // Log for debugging purposes
-    console.log(`Placeholder selected for editing - ID: ${this.placeholderId}`);
+   
   }
 } 

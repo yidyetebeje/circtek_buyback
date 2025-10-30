@@ -126,7 +126,7 @@ export function SteppedCheckout({
       alert(t('messages.emptyCartAlert'));
       return;
     }
-    console.log('Order Submitted (Validated):', {
+   
       formData: data,
       items: relevantCartItems.map(item => ({
         deviceId: item.deviceId,

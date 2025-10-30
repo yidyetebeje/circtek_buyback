@@ -52,7 +52,7 @@ export class ShopService {
       `${this.baseEndpoint}/${shopId}/published-categories`, 
       { params }
     );
-    console.log('response', response);
+   
     
     // Map the API response to our frontend format
     return {

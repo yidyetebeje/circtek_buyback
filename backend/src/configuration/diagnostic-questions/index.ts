@@ -115,11 +115,11 @@ export const diagnostic_questions_routes = new Elysia({ prefix: '/diagnostic-que
 
     .post('/sets', async (ctx) => {
         const { body, currentTenantId, currentRole } = ctx as any
-        console.log('=== POST /sets - Route Handler ===')
-        console.log('Raw body:', JSON.stringify(body, null, 2))
-        console.log('body.status type:', typeof body.status, 'value:', body.status)
+       
+       
+       
         const tenantId = currentRole === 'super_admin' && body.tenant_id ? Number(body.tenant_id) : Number(currentTenantId)
-        console.log('Resolved tenantId:', tenantId)
+       
         const response = await controller.createQuestionSet(body as any, tenantId)
         ctx.set.status = response.status as any
         return response

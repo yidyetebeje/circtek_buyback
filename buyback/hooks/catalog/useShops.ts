@@ -117,7 +117,7 @@ export const useUploadShopLogo = () => {
     mutationFn: ({ shopId, file }: { shopId: number; file: File }) => 
       shopService.uploadShopLogo(shopId, file),
     onSuccess: (data, variables) => {
-      console.log('Logo upload success:', data);
+     
       queryClient.invalidateQueries({ queryKey: ['shop', variables.shopId] });
       queryClient.invalidateQueries({ queryKey: ['shops'] });
     },

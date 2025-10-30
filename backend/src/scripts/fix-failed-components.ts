@@ -35,7 +35,7 @@ const COMPONENTS_TO_REMOVE = [
 
 async function fixFailedComponents() {
   try {
-    console.log('Starting failed components cleanup...\n');
+   
 
     // Get the start of this week (Sunday 00:00:00)
     const now = new Date();
@@ -44,7 +44,7 @@ async function fixFailedComponents() {
     weekStart.setDate(now.getDate() - dayOfWeek);
     weekStart.setHours(0, 0, 0, 0);
 
-    console.log(`Fetching test results from ${weekStart.toISOString()}...`);
+   
 
     // Fetch test results from this week
     const results = await db
@@ -52,10 +52,10 @@ async function fixFailedComponents() {
       .from(test_results)
       .where(sql`${test_results.created_at} >= ${weekStart}`);
 
-    console.log(`Found ${results.length} test result(s) from this week.\n`);
+   
 
     if (results.length === 0) {
-      console.log('No test results to process. Exiting.');
+     
       return;
     }
 
@@ -66,7 +66,7 @@ async function fixFailedComponents() {
       const { id, failed_components, imei, serial_number } = result;
       
       if (!failed_components || failed_components.trim() === '') {
-        console.log(`[ID: ${id}] No failed components. Skipping.`);
+       
         skippedCount++;
         continue;
       }
@@ -87,7 +87,7 @@ async function fixFailedComponents() {
 
       // Check if anything changed
       if (cleanedComponents.length === components.length) {
-        console.log(`[ID: ${id}] No problematic components found. Skipping.`);
+       
         skippedCount++;
         continue;
       }
@@ -107,21 +107,21 @@ async function fixFailedComponents() {
         })
         .where(sql`${test_results.id} = ${id}`);
 
-      console.log(`[ID: ${id}] Updated successfully`);
-      console.log(`  Device: IMEI=${imei || 'N/A'}, Serial=${serial_number || 'N/A'}`);
-      console.log(`  Removed: ${removedComponents.join(', ')}`);
-      console.log(`  Before: ${components.length} components`);
-      console.log(`  After: ${cleanedComponents.length} components`);
-      console.log(`  New value: ${newFailedComponents || '(empty)'}\n`);
+     
+     
+     
+     
+     
+     
 
       updatedCount++;
     }
 
-    console.log('\n=== Summary ===');
-    console.log(`Total test results found: ${results.length}`);
-    console.log(`Updated: ${updatedCount}`);
-    console.log(`Skipped (no changes needed): ${skippedCount}`);
-    console.log('\nCleanup completed successfully!');
+   
+   
+   
+   
+   
 
   } catch (error) {
     console.error('Error fixing failed components:', error);
@@ -132,7 +132,7 @@ async function fixFailedComponents() {
 // Run the script
 fixFailedComponents()
   .then(() => {
-    console.log('\n✓ Script execution completed');
+   
     process.exit(0);
   })
   .catch((error) => {

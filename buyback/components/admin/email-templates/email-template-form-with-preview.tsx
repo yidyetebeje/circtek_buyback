@@ -117,7 +117,7 @@ export function EmailTemplateFormWithPreview({
 
   // Generate preview function
   const generatePreview = useCallback(async (subject: string, content: string) => {
-    console.log('generatePreview called with:', {
+   
       subject: subject || '(empty)',
       content: content || '(empty)',
       subjectLength: subject?.length || 0,
@@ -127,7 +127,7 @@ export function EmailTemplateFormWithPreview({
     });
 
     if (!subject && !content) {
-      console.log('Skipping preview: both subject and content are empty');
+     
       return;
     }
 
@@ -141,7 +141,7 @@ export function EmailTemplateFormWithPreview({
       content
     };
 
-    console.log('Frontend sending preview request:', {
+   
       templateId,
       orderId: mockOrderId,
       hasSubject: !!subject,
@@ -154,7 +154,7 @@ export function EmailTemplateFormWithPreview({
 
     try {
       const result = await previewMutation.mutateAsync(previewRequest);
-      console.log('Frontend received preview result:', result);
+     
       setLastPreviewContent(content);
       setLastPreviewSubject(subject);
     } catch (error) {
@@ -182,7 +182,7 @@ export function EmailTemplateFormWithPreview({
     if (autoPreview && (watchedValues.subject || watchedValues.content)) {
       // Only trigger if content has actually changed
       if (watchedValues.content !== lastPreviewContent || watchedValues.subject !== lastPreviewSubject) {
-        console.log('Auto-preview triggered with watched values:', {
+       
           subject: watchedValues.subject || '(empty)',
           content: watchedValues.content || '(empty)',
           lastPreviewSubject: lastPreviewSubject || '(empty)',
@@ -226,7 +226,7 @@ export function EmailTemplateFormWithPreview({
   const handleManualPreview = async () => {
     // Get the latest form values directly
     const currentValues = form.getValues();
-    console.log('Manual preview triggered with current form values:', {
+   
       subject: currentValues.subject || '(empty)',
       content: currentValues.content || '(empty)',
       watchedSubject: watchedValues.subject || '(empty)',
@@ -234,7 +234,7 @@ export function EmailTemplateFormWithPreview({
     });
     
     if (!currentValues.content && !currentValues.subject) {
-      console.log('Skipping manual preview: both subject and content are empty');
+     
       return;
     }
     

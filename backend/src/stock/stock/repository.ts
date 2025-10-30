@@ -312,7 +312,7 @@ export class StockRepository {
 
   async updateStockQuantity(sku: string, warehouse_id: number, delta: number, tenant_id: number): Promise<StockWithWarehouse | undefined> {
     const existing = await this.findBySkuAndWarehouse(sku, warehouse_id, tenant_id);
-     console.log("updateStockQuantity", sku, warehouse_id, delta, tenant_id);
+    
     
     if (!existing) {
       // Create new stock record if doesn't exist

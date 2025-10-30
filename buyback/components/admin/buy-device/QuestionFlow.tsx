@@ -62,7 +62,7 @@ const getTranslatedTitle = (
   });
 
   if (translation && translation.title) {
-    console.log('Found translation:', translation.title);
+   
     return translation.title;
   }
 
@@ -72,11 +72,11 @@ const getTranslatedTitle = (
   );
 
   if (defaultTranslation && defaultTranslation.title) {
-    console.log('Using default translation:', defaultTranslation.title);
+   
     return defaultTranslation.title;
   }
 
-  console.log('No translation found, using original:', originalTitle);
+ 
   return originalTitle;
 };
 
@@ -88,9 +88,9 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
   const { data: product, isLoading, error } = useQuery({
     queryKey: ['product-details', shopId, productSefUrl],
     queryFn: async () => {
-      console.log(`Fetching product details for shopId: ${shopId}, sefUrl: ${productSefUrl}`);
+     
       const response = await shopService.getPublishedModelDetailsBySefUrl(shopId, productSefUrl);
-      console.log('Product API Response:', {
+     
         hasData: !!response.data,
         dataKeys: response.data ? Object.keys(response.data) : [],
         questionSetAssignments: response.data?.questionSetAssignments,
@@ -104,33 +104,33 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
   // Process questions from the product's questionSetAssignments - same logic as DeviceEstimationPageClient
   const processedQuestions: DeviceEstimationQuestion[] = useMemo(() => {
     if (!product) {
-      console.log('No product data yet');
+     
       return [];
     }
 
-    console.log('Processing questions for product:', product);
+   
     
     if (!product?.questionSetAssignments) {
-      console.log('No questionSetAssignments found');
+     
       return [];
     }
 
-    console.log('questionSetAssignments:', product.questionSetAssignments);
+   
 
     const allQuestions: CatalogQuestion[] = product.questionSetAssignments
       .sort((a: QuestionSetAssignment, b: QuestionSetAssignment) => a.assignmentOrder - b.assignmentOrder)
       .reduce((acc: CatalogQuestion[], qsa: QuestionSetAssignment) => {
         if (qsa?.questionSet?.questions) {
-          console.log('Adding questions from questionSet:', qsa.questionSet.id, 'questions:', qsa.questionSet.questions.length);
+         
           return acc.concat(qsa.questionSet.questions.sort((qa: CatalogQuestion, qb: CatalogQuestion) => qa.orderNo - qb.orderNo));
         }
         return acc;
       }, [] as CatalogQuestion[]);
     
-    console.log('All questions collected:', allQuestions.length);
+   
     
     return allQuestions.map((q: CatalogQuestion) => {
-      console.log('Processing question:', {
+     
         id: q.id,
         key: q.key,
         title: q.title,
@@ -139,14 +139,14 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
       });
       
       const translatedTitle = getTranslatedTitle(q.title, q.translations, locale);
-      console.log('Translated title:', translatedTitle);
+     
       
       return {
         id: q.key || q.id.toString(),
         text: translatedTitle as string,
         type: mapInputType(q.inputType),
         options: q.options.map((opt: CatalogQuestionOption) => {
-          console.log('Processing option:', {
+         
             id: opt.id,
             key: opt.key,
             title: opt.title,
@@ -155,7 +155,7 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
           });
           
           const translatedOptionTitle = getTranslatedTitle(opt.title, opt.translations, locale);
-          console.log('Translated option title:', translatedOptionTitle);
+         
           
           return {
             label: translatedOptionTitle as string,
@@ -205,7 +205,7 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
       }
     }
     const estimatedPrice = (product.base_price || 0) + totalModifier;
-    console.log(`Price calculation - Base: ${product.base_price}, Modifier: ${totalModifier}, Final: ${estimatedPrice}`);
+   
     
     onCompleted(finalAnswers, estimatedPrice, product);
   };
@@ -298,7 +298,7 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
   // If no questions, proceed directly with base price
   if (processedQuestions.length === 0) {
     const basePrice = product.base_price || 0;
-    console.log('No questions for this product. Using base price:', basePrice);
+   
     
     return (
       <div className="space-y-6">

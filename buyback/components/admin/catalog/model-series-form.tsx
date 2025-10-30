@@ -71,7 +71,7 @@ export function ModelSeriesForm({
   });
 
   const handleSubmit = (values: ModelSeriesFormValues) => {
-    console.log("Submitting Model Series Form:", values);
+   
     onSubmit(values);
   };
 

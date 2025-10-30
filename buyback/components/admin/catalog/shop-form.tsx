@@ -65,7 +65,7 @@ export function ShopForm({
   if(initialData){
     initialData.active = initialData.active ? true : false;
   }
-  console.log(initialData);
+ 
   const form = useForm<ShopFormValues>({
     resolver: zodResolver(shopFormSchema),
     defaultValues: {
@@ -113,7 +113,7 @@ export function ShopForm({
 
   const onFormSubmit = form.handleSubmit(
     (values) => {
-      console.log("Validation passed, submitting:", values);
+     
       onSubmit(values);
     },
     (errors) => {

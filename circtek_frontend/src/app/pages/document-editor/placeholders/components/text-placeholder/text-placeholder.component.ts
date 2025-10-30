@@ -29,7 +29,7 @@ export class TextPlaceholderComponent extends BasePlaceholderComponent implement
   }
 
   override createPlaceholder(): void {
-    console.log('Creating text placeholder for ID:', this.placeholderId);
+   
     this.setupPlaceholderGroup();
     this.addTextPlaceholderElements();
     this.setupGroupEventListeners();
@@ -201,7 +201,7 @@ export class TextPlaceholderComponent extends BasePlaceholderComponent implement
       this.position.height = this.state.height;
     }
     
-    console.log(`Placeholder ${this.placeholderId} auto-adjusted to ${finalWidth}x${finalHeight} (font size: ${this.textNode.fontSize()}px)`);
+   
     
     this.layer?.batchDraw();
   }
@@ -283,7 +283,7 @@ export class TextPlaceholderComponent extends BasePlaceholderComponent implement
         this.position.y = this.placeholderGroup.y();
         this.state.x = this.position.x;
         this.state.y = this.position.y;
-        console.log(`Placeholder ${this.placeholderId} drag ended at:`, this.position.x, this.position.y);
+       
       }
     });
 
@@ -364,6 +364,6 @@ export class TextPlaceholderComponent extends BasePlaceholderComponent implement
       this.transformer.getLayer()?.batchDraw();
     }
     // Log for debugging purposes
-    console.log(`Text placeholder selected for editing - ID: ${this.placeholderId}`);
+   
   }
 }

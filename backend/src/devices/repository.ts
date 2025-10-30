@@ -24,7 +24,7 @@ export class DevicesRepository {
       .limit(1)
 
     if (deviceRow && deviceRow.lpn) {
-      console.log('Device LPN found in devices table', deviceRow.lpn)
+     
       return deviceRow.lpn
     }
 
@@ -48,7 +48,7 @@ export class DevicesRepository {
       .limit(1)
 
     if (testResultRow && testResultRow.lpn) {
-      console.log('Device LPN found in test_results table', testResultRow.lpn)
+     
       return testResultRow.lpn
     }
 

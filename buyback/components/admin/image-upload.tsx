@@ -28,7 +28,7 @@ export function ImageUpload({
   
   // Update imageUrl when initialImage prop changes
   useEffect(() => {
-    console.log('ImageUpload: initialImage changed to:', initialImage);
+   
     setImageUrl(initialImage || null);
   }, [initialImage]);
   const [isUploading, setIsUploading] = useState(false);

@@ -56,7 +56,7 @@ export function BrandForm({
   isLoading, 
   onFileSelect 
 }: BrandFormProps) {
-  console.log(brandId, "brand id")
+ 
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(initialData?.logo || null);
 
   const { mutate: uploadLogo, isPending: isUploadingLogo } = useUploadBrandLogo();
@@ -108,10 +108,10 @@ export function BrandForm({
       return new Promise((resolve, reject) => {
         uploadLogo({ brandId, file }, {
           onSuccess: (data) => {
-            console.log("data", data);
+           
             const actualUrl = data.data?.iconUrl;
             if (actualUrl) {
-              console.log("Upload successful, Server URL:", actualUrl);
+             
               setLogoPreviewUrl(actualUrl); // Update preview with actual URL
               form.setValue('logo', actualUrl); // Update form value with actual URL
               if (objectUrl) URL.revokeObjectURL(objectUrl); // Clean up blob URL
@@ -139,14 +139,14 @@ export function BrandForm({
 
     } else { // CREATE MODE: Just update state and notify parent
       onFileSelect?.(file);
-      console.log('Create mode: Passing file up, using object URL for preview:', objectUrl);
+     
       return Promise.resolve(objectUrl); // Return blob URL for immediate preview in ImageUpload
     }
   };
   
   // Function called by ImageUpload when the image is removed
   const handleFileRemove = () => {
-    console.log('Removing image');
+   
     if (logoPreviewUrl && logoPreviewUrl.startsWith('blob:')) {
       URL.revokeObjectURL(logoPreviewUrl);
     }
@@ -154,7 +154,7 @@ export function BrandForm({
     form.setValue('logo', '');
 
     if (brandId) { // EDIT MODE: Need to potentially update the brand to remove logo
-      console.log("Edit mode: Image removed. Parent onSubmit should handle update.");
+     
       form.setValue('logo', ''); // Ensure form value is cleared
     } else { // CREATE MODE: Notify parent
       onFileSelect?.(null);
@@ -163,7 +163,7 @@ export function BrandForm({
 
   // Handle final form submission (text fields mainly)
   const handleFormSubmit = (values: BrandFormValues) => {
-    console.log('Submitting form values:', values);
+   
     // In edit mode, logo URL should already be the actual server URL if changed.
     // In create mode, parent component handles the file via onFileSelect.
     onSubmit(values);

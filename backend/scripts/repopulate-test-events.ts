@@ -17,11 +17,11 @@ import { device_events, test_results, devices, warehouses, users } from '../src/
  */
 
 async function repopulateTestEvents() {
-  console.log('🔄 Starting TEST_COMPLETED device events repopulation...\n');
+ 
 
   try {
     // Step 1: Delete existing TEST_COMPLETED events (excluding stock_in)
-    console.log('🗑️  Step 1: Deleting existing TEST_COMPLETED device events...');
+   
     
     // Get all TEST_COMPLETED events
     const existingEvents = await db
@@ -29,7 +29,7 @@ async function repopulateTestEvents() {
       .from(device_events)
       .where(eq(device_events.event_type, 'TEST_COMPLETED'));
 
-    console.log(`   Found ${existingEvents.length} TEST_COMPLETED events`);
+   
 
     // Filter out stock_in events
     const eventsToDelete = existingEvents.filter(event => {
@@ -37,7 +37,7 @@ async function repopulateTestEvents() {
       return details?.action !== 'stock_in';
     });
 
-    console.log(`   Will delete ${eventsToDelete.length} events (preserving ${existingEvents.length - eventsToDelete.length} stock_in events)`);
+   
 
     // Delete the events
     for (const event of eventsToDelete) {
@@ -46,10 +46,10 @@ async function repopulateTestEvents() {
         .where(eq(device_events.id, event.id));
     }
 
-    console.log(`   ✓ Deleted ${eventsToDelete.length} events\n`);
+   
 
     // Step 2: Fetch all test results with related data
-    console.log('📊 Step 2: Fetching test results from database...');
+   
     
     const testResultsData = await db
       .select({
@@ -81,10 +81,10 @@ async function repopulateTestEvents() {
       .leftJoin(users, eq(test_results.tester_id, users.id))
       .where(eq(test_results.status, true));
 
-    console.log(`   ✓ Found ${testResultsData.length} test results\n`);
+   
 
     // Step 3: Create new device events
-    console.log('✨ Step 3: Creating new device events with complete data...');
+   
     
     let successCount = 0;
     let errorCount = 0;
@@ -118,7 +118,7 @@ async function repopulateTestEvents() {
         
         // Progress indicator
         if (successCount % 100 === 0) {
-          console.log(`   Progress: ${successCount}/${testResultsData.length} events created`);
+         
         }
       } catch (error) {
         errorCount++;
@@ -129,23 +129,23 @@ async function repopulateTestEvents() {
       }
     }
 
-    console.log(`   ✓ Created ${successCount} new device events\n`);
+   
 
     // Step 4: Summary
-    console.log('📋 Summary:');
-    console.log(`   ✓ Deleted: ${eventsToDelete.length} old events`);
-    console.log(`   ✓ Created: ${successCount} new events`);
-    console.log(`   ✓ Preserved: ${existingEvents.length - eventsToDelete.length} stock_in events`);
+   
+   
+   
+   
     
     if (errorCount > 0) {
-      console.log(`   ⚠️  Errors: ${errorCount} events failed`);
-      console.log('\n❌ Failed events:');
+     
+     
       errors.forEach(({ test_id, error }) => {
-        console.log(`   Test ID ${test_id}: ${error}`);
+       
       });
     }
 
-    console.log('\n✅ Repopulation complete!');
+   
     
   } catch (error) {
     console.error('\n❌ Fatal error during repopulation:', error);
@@ -156,7 +156,7 @@ async function repopulateTestEvents() {
 // Run the script
 repopulateTestEvents()
   .then(() => {
-    console.log('\n🎉 Script finished successfully');
+   
     process.exit(0);
   })
   .catch((error) => {

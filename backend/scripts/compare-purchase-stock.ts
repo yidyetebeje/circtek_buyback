@@ -95,11 +95,11 @@ function convertToCSV(results: ComparisonResult[]): string {
 
 async function comparePurchaseStock() {
   try {
-    console.log('🔍 Starting Purchase vs Stock Comparison Analysis...\n');
-    console.log('═'.repeat(120));
+   
+   
 
     // Step 1: Get all purchase items aggregated by SKU, warehouse, and tenant
-    console.log('\n📦 Step 1: Fetching purchase items data...');
+   
     
     const purchaseData = await db
       .select({
@@ -127,10 +127,10 @@ async function comparePurchaseStock() {
         purchase_items.is_part
       );
 
-    console.log(`✅ Found ${purchaseData.length} unique SKU-warehouse combinations in purchases`);
+   
 
     // Step 2: Get all stock data
-    console.log('\n📊 Step 2: Fetching stock data...');
+   
     
     const stockData = await db
       .select({
@@ -143,10 +143,10 @@ async function comparePurchaseStock() {
       .from(stock)
       .where(eq(stock.status, true));
 
-    console.log(`✅ Found ${stockData.length} stock records`);
+   
 
     // Step 3: Get SKU names for better reporting
-    console.log('\n📝 Step 3: Fetching SKU specifications...');
+   
     
     const skuNames = await db
       .select({
@@ -162,7 +162,7 @@ async function comparePurchaseStock() {
       skuNameMap.set(`${spec.sku}-${spec.tenant_id}`, spec.name.trim());
     });
 
-    console.log(`✅ Loaded ${skuNames.length} SKU specifications`);
+   
 
     // Step 4: Create stock lookup map
     const stockMap = new Map<string, number>();
@@ -172,7 +172,7 @@ async function comparePurchaseStock() {
     });
 
     // Step 5: Compare and build results
-    console.log('\n🔄 Step 4: Comparing purchase and stock data...');
+   
     
     const comparisonResults: ComparisonResult[] = [];
     
@@ -212,7 +212,7 @@ async function comparePurchaseStock() {
     }
 
     // Step 6: Check for stock records without corresponding purchases
-    console.log('\n🔍 Step 5: Checking for stock without purchase records...');
+   
     
     let stockOnlyCount = 0;
     for (const stockItem of stockData) {
@@ -263,7 +263,7 @@ async function comparePurchaseStock() {
       }
     }
 
-    console.log(`✅ Found ${stockOnlyCount} stock records without purchase history`);
+   
 
     // Step 7: Sort results (mismatches first, then by difference)
     comparisonResults.sort((a, b) => {
@@ -273,8 +273,8 @@ async function comparePurchaseStock() {
     });
 
     // Step 8: Display summary
-    console.log('\n' + '═'.repeat(120));
-    console.log('\n📊 COMPARISON SUMMARY:\n');
+   
+   
     
     const totalRecords = comparisonResults.length;
     const matchingRecords = comparisonResults.filter(r => r.matches).length;
@@ -283,36 +283,36 @@ async function comparePurchaseStock() {
     const stockLower = comparisonResults.filter(r => r.difference < 0).length;
     const totalDifference = comparisonResults.reduce((sum, r) => sum + Math.abs(r.difference), 0);
 
-    console.log(`  Total SKU-Warehouse Combinations:    ${totalRecords}`);
-    console.log(`  ✅ Matching Records:                  ${matchingRecords} (${((matchingRecords/totalRecords)*100).toFixed(1)}%)`);
-    console.log(`  ❌ Mismatching Records:               ${mismatchRecords} (${((mismatchRecords/totalRecords)*100).toFixed(1)}%)`);
-    console.log(`     ↗ Stock Higher than Purchase:     ${stockHigher}`);
-    console.log(`     ↘ Stock Lower than Purchase:      ${stockLower}`);
-    console.log(`  📊 Total Absolute Difference:         ${totalDifference} units`);
+   
+   
+   
+   
+   
+   
 
     // Display top mismatches
     if (mismatchRecords > 0) {
-      console.log('\n🚨 TOP 10 DISCREPANCIES:\n');
-      console.log('─'.repeat(120));
+     
+     
       
       const topMismatches = comparisonResults
         .filter(r => !r.matches)
         .slice(0, 10);
 
       topMismatches.forEach((result, index) => {
-        console.log(`\n${index + 1}. ${result.sku} - ${result.sku_name}`);
-        console.log(`   Tenant: ${result.tenant_name}, Warehouse: ${result.warehouse_name}`);
-        console.log(`   Type: ${result.is_part ? '🔧 Part' : '📱 Device'}`);
-        console.log(`   Purchase: ${result.total_purchased} total, ${result.total_used_for_repair} used, ${result.remaining_in_purchases} remaining`);
-        console.log(`   Stock: ${result.current_stock} units`);
-        console.log(`   Difference: ${result.difference > 0 ? '+' : ''}${result.difference} ${result.difference > 0 ? '(Stock has MORE)' : '(Stock has LESS)'}`);
+       
+       
+       
+       
+       
+       
       });
     }
 
-    console.log('\n' + '═'.repeat(120));
+   
 
     // Step 9: Export to CSV
-    console.log('\n📄 Generating CSV report...');
+   
     
     const csvContent = convertToCSV(comparisonResults);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T').join('_').substring(0, 19);
@@ -329,13 +329,13 @@ async function comparePurchaseStock() {
     }
     
     writeFileSync(filepath, csvContent, 'utf8');
-    console.log(`✅ CSV file saved to: ${filepath}`);
-    console.log(`📊 Total records exported: ${comparisonResults.length}`);
+   
+   
 
     // Display file location clearly
-    console.log('\n' + '═'.repeat(120));
-    console.log(`\n🎉 Analysis Complete! Report saved to:\n   ${filepath}\n`);
-    console.log('═'.repeat(120) + '\n');
+   
+   
+   
 
   } catch (error) {
     console.error('\n❌ Error during comparison:', error);

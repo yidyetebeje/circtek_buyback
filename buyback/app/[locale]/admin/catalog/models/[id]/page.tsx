@@ -155,7 +155,7 @@ export default function ModelDetailPage() {
       onSuccess: async () => {
         let assignmentsDoneSuccessfully = true;
         let imageUploadedSuccessfully = true; // Assume true if no imageFile or if upload succeeds
-        console.log("assignmentsDoneSuccessfully", assignmentsDoneSuccessfully);
+       
         try {
           const currentAssignedSets = questionSetsResponse?.data || [];
           const currentIds = currentAssignedSets.map(qs => qs.id?.toString() || '').filter(Boolean);

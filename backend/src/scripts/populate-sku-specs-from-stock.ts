@@ -137,26 +137,26 @@ async function processSkus(tenantId?: number): Promise<ProcessStats> {
     errors: [],
   }
 
-  console.log('📦 Fetching stock SKUs...')
+ 
   const stockSkus = await getStockSkus(tenantId)
   stats.totalStockSkus = stockSkus.length
-  console.log(`✅ Found ${stockSkus.length} unique SKUs in stock\n`)
+ 
 
-  console.log('🔍 Fetching existing sku_specs...')
+ 
   const existingSkuSet = await getExistingSkuSpecs(tenantId)
   stats.existingSkuSpecs = existingSkuSet.size
-  console.log(`✅ Found ${existingSkuSet.size} existing sku_specs\n`)
+ 
 
   // Filter out SKUs that already exist in sku_specs
   const missingSkus = stockSkus.filter(s => !existingSkuSet.has(s.sku))
   stats.missingSkuSpecs = missingSkus.length
 
   if (missingSkus.length === 0) {
-    console.log('✨ All stock SKUs already have sku_specs entries!')
+   
     return stats
   }
 
-  console.log(`🔧 Processing ${missingSkus.length} missing SKUs...\n`)
+ 
 
   // Process each missing SKU
   for (const stockSku of missingSkus) {
@@ -166,7 +166,7 @@ async function processSkus(tenantId?: number): Promise<ProcessStats> {
 
       if (!deviceSpecs) {
         stats.skusWithoutDeviceInfo++
-        console.log(`⚠️  SKU ${stockSku.sku} (Tenant ${stockSku.tenant_id}): No device found - creating with minimal info`)
+       
         
         // Create with minimal information (just SKU and is_part)
         await createSkuSpec({
@@ -191,7 +191,7 @@ async function processSkus(tenantId?: number): Promise<ProcessStats> {
           ...deviceSpecs,
         })
         stats.created++
-        console.log(`✅ Created sku_spec for ${stockSku.sku} (Tenant ${stockSku.tenant_id}): ${deviceSpecs.model_name || 'N/A'}`)
+       
       }
     } catch (error) {
       stats.errors.push({
@@ -220,14 +220,14 @@ async function main() {
     }
   }
 
-  console.log('🚀 Starting sku_specs population from stock...\n')
-  console.log('📋 Configuration:')
+ 
+ 
   if (tenantId) {
-    console.log(`   Tenant ID: ${tenantId}`)
+   
   } else {
-    console.log(`   Tenant ID: All tenants`)
+   
   }
-  console.log('')
+ 
 
   const startTime = Date.now()
 
@@ -236,25 +236,25 @@ async function main() {
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2)
 
-    console.log('\n' + '='.repeat(60))
-    console.log('📊 Population Summary')
-    console.log('='.repeat(60))
-    console.log(`📦 Total stock SKUs: ${stats.totalStockSkus}`)
-    console.log(`✅ Already in sku_specs: ${stats.existingSkuSpecs}`)
-    console.log(`🔍 Missing in sku_specs: ${stats.missingSkuSpecs}`)
-    console.log(`⚠️  SKUs without device info: ${stats.skusWithoutDeviceInfo}`)
-    console.log(`✨ Newly created: ${stats.created}`)
-    console.log(`❌ Errors: ${stats.errors.length}`)
-    console.log(`⏱️  Duration: ${duration}s`)
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
 
     if (stats.errors.length > 0) {
-      console.log('\n❌ Errors encountered:')
+     
       stats.errors.forEach((err, idx) => {
-        console.log(`  ${idx + 1}. SKU ${err.sku}: ${err.error}`)
+       
       })
     }
 
-    console.log('\n✨ Population completed!')
+   
     process.exit(0)
   } catch (error) {
     console.error('\n💥 Fatal error during population:')

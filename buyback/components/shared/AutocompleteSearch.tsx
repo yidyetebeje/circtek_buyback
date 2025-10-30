@@ -90,7 +90,7 @@ export function AutocompleteSearch({
 
   const handleSearch = () => {
     if (onSelectModel && searchTerm && modelsResponse?.data?.[0]) {
-      console.log(`Search triggered for: ${searchTerm}`);
+     
     }
     setIsOpen(false);
   };

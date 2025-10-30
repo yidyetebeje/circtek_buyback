@@ -49,17 +49,17 @@ async function deletePurchase(purchaseId: number, tenantId: number, dryRun: bool
     success: false,
   }
 
-  console.log(`\n${'='.repeat(70)}`)
-  console.log(`${dryRun ? '[DRY RUN] ' : ''}Deleting Purchase Entry`)
-  console.log(`${'='.repeat(70)}`)
-  console.log(`Purchase ID: ${purchaseId}`)
-  console.log(`Tenant ID: ${tenantId}`)
-  console.log(`${dryRun ? 'Mode: DRY RUN (no changes will be made)' : 'Mode: LIVE'}`)
-  console.log(`${'='.repeat(70)}\n`)
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 
   try {
     // Step 1: Verify purchase exists and belongs to tenant
-    console.log('Step 1: Verifying purchase exists...')
+   
     const [purchase] = await db
       .select()
       .from(purchases)
@@ -73,13 +73,13 @@ async function deletePurchase(purchaseId: number, tenantId: number, dryRun: bool
     }
 
     stats.purchaseOrderNo = purchase.purchase_order_no
-    console.log(`✓ Found purchase: ${purchase.purchase_order_no}`)
-    console.log(`  Supplier: ${purchase.supplier_name}`)
-    console.log(`  Warehouse ID: ${purchase.warehouse_id}`)
-    console.log(`  Created: ${purchase.created_at}\n`)
+   
+   
+   
+   
 
     // Step 2: Find and collect received items
-    console.log('Step 2: Finding received items...')
+   
     const receivedItemsList = await db
       .select()
       .from(received_items)
@@ -88,10 +88,10 @@ async function deletePurchase(purchaseId: number, tenantId: number, dryRun: bool
         eq(received_items.tenant_id, tenantId)
       ))
 
-    console.log(`✓ Found ${receivedItemsList.length} received items\n`)
+   
 
     // Step 3: Find stock movements related to this purchase
-    console.log('Step 3: Finding stock movements...')
+   
     const movements = await db
       .select()
       .from(stock_movements)
@@ -101,10 +101,10 @@ async function deletePurchase(purchaseId: number, tenantId: number, dryRun: bool
         eq(stock_movements.tenant_id, tenantId)
       ))
 
-    console.log(`✓ Found ${movements.length} stock movements\n`)
+   
 
     // Step 4: Find device events related to this purchase
-    console.log('Step 4: Finding device events...')
+   
     const deviceIds = receivedItemsList
       .filter(item => item.device_id !== null)
       .map(item => item.device_id as number)
@@ -126,10 +126,10 @@ async function deletePurchase(purchaseId: number, tenantId: number, dryRun: bool
       })
     }
 
-    console.log(`✓ Found ${deviceEventsList.length} device events\n`)
+   
 
     // Step 5: Find purchase items
-    console.log('Step 5: Finding purchase items...')
+   
     const purchaseItemsList = await db
       .select()
       .from(purchase_items)
@@ -138,28 +138,28 @@ async function deletePurchase(purchaseId: number, tenantId: number, dryRun: bool
         eq(purchase_items.tenant_id, tenantId)
       ))
 
-    console.log(`✓ Found ${purchaseItemsList.length} purchase items\n`)
+   
 
     // Display what will be done
-    console.log(`${'─'.repeat(70)}`)
-    console.log('Summary of operations:')
-    console.log(`${'─'.repeat(70)}`)
-    console.log(`Received items to delete: ${receivedItemsList.length}`)
-    console.log(`Purchase items to delete: ${purchaseItemsList.length}`)
-    console.log(`Stock movements to reverse: ${movements.length}`)
-    console.log(`Device events to delete: ${deviceEventsList.length}`)
+   
+   
+   
+   
+   
+   
+   
     
     if (receivedItemsList.length > 0) {
-      console.log(`\nReceived items details:`)
+     
       receivedItemsList.forEach((item, idx) => {
-        console.log(`  ${idx + 1}. SKU: ${item.sku}, Qty: ${item.quantity}, Device ID: ${item.device_id || 'N/A'}`)
+       
       })
     }
 
     if (movements.length > 0) {
-      console.log(`\nStock movements to reverse:`)
+     
       movements.forEach((movement, idx) => {
-        console.log(`  ${idx + 1}. SKU: ${movement.sku}, Warehouse: ${movement.warehouse_id}, Delta: ${movement.delta}`)
+       
         stats.stockAdjustments.push({
           sku: movement.sku!,
           warehouse_id: movement.warehouse_id,
@@ -168,10 +168,10 @@ async function deletePurchase(purchaseId: number, tenantId: number, dryRun: bool
       })
     }
 
-    console.log(`\n${'─'.repeat(70)}\n`)
+   
 
     if (dryRun) {
-      console.log('⊘ [DRY RUN] Skipping actual deletion operations\n')
+     
       stats.receivedItemsDeleted = receivedItemsList.length
       stats.purchaseItemsDeleted = purchaseItemsList.length
       stats.stockMovementsReversed = movements.length
@@ -184,19 +184,19 @@ async function deletePurchase(purchaseId: number, tenantId: number, dryRun: bool
 
     // Step 6: Delete device events
     if (deviceEventsList.length > 0) {
-      console.log('Step 6: Deleting device events...')
+     
       for (const event of deviceEventsList) {
         await db
           .delete(device_events)
           .where(eq(device_events.id, event.id))
         stats.deviceEventsDeleted++
       }
-      console.log(`✓ Deleted ${stats.deviceEventsDeleted} device events\n`)
+     
     }
 
     // Step 7: Reverse stock movements (reduce stock counts)
     if (movements.length > 0) {
-      console.log('Step 7: Reversing stock movements...')
+     
       for (const movement of movements) {
         if (movement.sku) {
           // Reduce stock by the original delta amount
@@ -211,7 +211,7 @@ async function deletePurchase(purchaseId: number, tenantId: number, dryRun: bool
               eq(stock.tenant_id, tenantId)
             ))
 
-          console.log(`  ✓ Reduced stock for SKU ${movement.sku} by ${movement.delta}`)
+         
 
           // Delete the stock movement record
           await db
@@ -221,12 +221,12 @@ async function deletePurchase(purchaseId: number, tenantId: number, dryRun: bool
           stats.stockMovementsReversed++
         }
       }
-      console.log(`✓ Reversed ${stats.stockMovementsReversed} stock movements\n`)
+     
     }
 
     // Step 8: Delete received items
     if (receivedItemsList.length > 0) {
-      console.log('Step 8: Deleting received items...')
+     
       const deleteResult = await db
         .delete(received_items)
         .where(and(
@@ -234,12 +234,12 @@ async function deletePurchase(purchaseId: number, tenantId: number, dryRun: bool
           eq(received_items.tenant_id, tenantId)
         ))
       stats.receivedItemsDeleted = receivedItemsList.length
-      console.log(`✓ Deleted ${stats.receivedItemsDeleted} received items\n`)
+     
     }
 
     // Step 9: Delete purchase items
     if (purchaseItemsList.length > 0) {
-      console.log('Step 9: Deleting purchase items...')
+     
       const deleteResult = await db
         .delete(purchase_items)
         .where(and(
@@ -247,32 +247,32 @@ async function deletePurchase(purchaseId: number, tenantId: number, dryRun: bool
           eq(purchase_items.tenant_id, tenantId)
         ))
       stats.purchaseItemsDeleted = purchaseItemsList.length
-      console.log(`✓ Deleted ${stats.purchaseItemsDeleted} purchase items\n`)
+     
     }
 
     // Step 10: Delete the purchase itself
-    console.log('Step 10: Deleting purchase...')
+   
     await db
       .delete(purchases)
       .where(and(
         eq(purchases.id, purchaseId),
         eq(purchases.tenant_id, tenantId)
       ))
-    console.log(`✓ Deleted purchase #${purchaseId}\n`)
+   
 
     stats.success = true
 
     // Print final summary
-    console.log(`${'='.repeat(70)}`)
-    console.log('Deletion Summary')
-    console.log(`${'='.repeat(70)}`)
-    console.log(`Purchase: ${stats.purchaseOrderNo} (ID: ${purchaseId})`)
-    console.log(`Received items deleted: ${stats.receivedItemsDeleted}`)
-    console.log(`Purchase items deleted: ${stats.purchaseItemsDeleted}`)
-    console.log(`Stock movements reversed: ${stats.stockMovementsReversed}`)
-    console.log(`Device events deleted: ${stats.deviceEventsDeleted}`)
-    console.log(`Status: ✓ SUCCESS`)
-    console.log(`${'='.repeat(70)}\n`)
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
 
     return stats
   } catch (error) {
@@ -313,7 +313,7 @@ async function main() {
     const stats = await deletePurchase(purchaseId, tenantId, dryRun)
     
     if (stats.success) {
-      console.log('\n✓ Script completed successfully')
+     
       process.exit(0)
     } else {
       console.error('\n✗ Script completed with errors')
