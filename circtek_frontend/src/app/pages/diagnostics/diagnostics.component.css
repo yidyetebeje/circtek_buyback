@@ -21,3 +21,31 @@
 :host ::ng-deep .text-success {
   color: #A7D48E !important;
 }
+
+/* Override btn-success to use primary color */
+.btn-success {
+  background-color: #A7D48E !important;
+  color: #ffffff !important;
+  border-color: #A7D48E !important;
+}
+
+.btn-success:hover {
+  background-color: #92c76a !important;
+  border-color: #92c76a !important;
+  color: #ffffff !important;
+}
+
+/* Higher specificity overrides for buttons */
+:host .btn-success,
+:host ::ng-deep .btn-success {
+  background-color: #A7D48E !important;
+  color: #ffffff !important;
+  border-color: #A7D48E !important;
+}
+
+:host .btn-success:hover,
+:host ::ng-deep .btn-success:hover {
+  background-color: #92c76a !important;
+  border-color: #92c76a !important;
+  color: #ffffff !important;
+}
