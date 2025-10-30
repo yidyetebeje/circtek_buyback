@@ -6,6 +6,7 @@ export const PAPER_SIZES_INCH: { [name: string]: PaperDimensionsInch } = {
   'Label_4x3': { width: 4, height: 3 },
   'Label_4x2': { width: 4, height: 2 },
   'Label_3x2': { width: 3, height: 2 },
+  'Label_3x1': {width: 3, height: 1},
   'Label_2.25x1.25': { width: 2.25, height: 1.25 },
   'Letter': { width: 8.5, height: 11 },
   'A4': { width: 8.27, height: 11.69 },
