@@ -1,27 +1,27 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { StepProcessConfig, TranslatableText } from '@/types/shop';
+import { GlobalEarthConfig, TranslatableText } from '@/types/shop';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; 
 import { Button } from "@/components/ui/button"; 
-import { Sparkles, Loader2, Zap, Trash2 } from "lucide-react";
+import { Sparkles, Loader2, Zap, Trash2, Image as ImageIcon } from "lucide-react";
 import { toast } from 'sonner';
 import { aiTranslationService } from '@/lib/api/catalog/aiTranslationService';
 
 const DEFAULT_LOCALES = ['en', 'nl', 'de', 'es', 'fr', 'pt'];
 
-interface StepProcessTranslationEditorProps {
-  stepProcessConfig: StepProcessConfig;
-  onChange: (updatedConfig: StepProcessConfig) => void;
+interface GlobalEarthTranslationEditorProps {
+  globalEarthConfig: GlobalEarthConfig;
+  onChange: (updatedConfig: GlobalEarthConfig) => void;
   availableLocales?: string[];
 }
 
-export function StepProcessTranslationEditor({
-  stepProcessConfig,
+export function GlobalEarthTranslationEditor({
+  globalEarthConfig,
   onChange,
   availableLocales = DEFAULT_LOCALES,
-}: StepProcessTranslationEditorProps) {
-  const [localConfig, setLocalConfig] = useState<StepProcessConfig>(stepProcessConfig || {});
+}: GlobalEarthTranslationEditorProps) {
+  const [localConfig, setLocalConfig] = useState<GlobalEarthConfig>(globalEarthConfig || {});
   const [activeLocale, setActiveLocale] = useState<string>('en');
   const [managedLocales, setManagedLocales] = useState<string[]>(['en']);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
@@ -29,13 +29,17 @@ export function StepProcessTranslationEditor({
 
   // Synchronize local state with props
   useEffect(() => {
-    setLocalConfig(stepProcessConfig || {});
+    setLocalConfig(globalEarthConfig || {});
     
     // Update managed locales based on existing data OR ensure at least English is available
     const existingLocales = new Set<string>();
     
-    // Check all step process fields for existing locales
-    Object.values(stepProcessConfig || {}).forEach(field => {
+    // Check all translatable global earth fields for existing locales
+    Object.entries(globalEarthConfig || {}).forEach(([fieldName, field]) => {
+      // Skip non-translatable fields
+      if (fieldName === 'imageUrl' || fieldName === 'backgroundColor' || fieldName === 'textColor') {
+        return;
+      }
       if (field && typeof field === 'object') {
         Object.keys(field).forEach(locale => existingLocales.add(locale));
       }
@@ -50,21 +54,26 @@ export function StepProcessTranslationEditor({
       // Fallback: start with English
       setManagedLocales(['en']);
     }
-  }, [stepProcessConfig]);
+  }, [globalEarthConfig]);
 
   // Get unselected locales
   const unselectedLocales = useMemo(() => {
     return availableLocales.filter(locale => !managedLocales.includes(locale));
   }, [availableLocales, managedLocales]);
 
-  const handleConfigChange = (locale: string, field: keyof StepProcessConfig, value: string) => {
+  const handleConfigChange = (locale: string, field: keyof GlobalEarthConfig, value: string) => {
     const updatedConfig = { ...localConfig };
     
-    if (!updatedConfig[field]) {
-      updatedConfig[field] = {};
+    if (field === 'imageUrl' || field === 'backgroundColor' || field === 'textColor') {
+      // Handle non-translatable string fields
+      updatedConfig[field] = value;
+    } else {
+      // Handle translatable text fields
+      if (!updatedConfig[field]) {
+        updatedConfig[field] = {};
+      }
+      (updatedConfig[field] as TranslatableText)[locale] = value;
     }
-    
-    (updatedConfig[field] as TranslatableText)[locale] = value;
     
     setLocalConfig(updatedConfig);
     onChange(updatedConfig);
@@ -78,10 +87,14 @@ export function StepProcessTranslationEditor({
     
     setManagedLocales(prev => prev.filter(l => l !== locale));
     
-    // Remove from config
+    // Remove from config (only from translatable fields)
     const updatedConfig = { ...localConfig };
     Object.keys(updatedConfig).forEach(field => {
-      const fieldValue = updatedConfig[field as keyof StepProcessConfig];
+      // Skip non-translatable fields
+      if (field === 'imageUrl' || field === 'backgroundColor' || field === 'textColor') {
+        return;
+      }
+      const fieldValue = updatedConfig[field as keyof GlobalEarthConfig];
       if (fieldValue && typeof fieldValue === 'object') {
         delete (fieldValue as TranslatableText)[locale];
       }
@@ -105,9 +118,13 @@ export function StepProcessTranslationEditor({
       return;
     }
 
-    // Get English texts
+    // Get English texts (only from translatable fields)
     const englishTexts: Record<string, string> = {};
     Object.entries(localConfig).forEach(([field, value]) => {
+      // Skip non-translatable fields
+      if (field === 'imageUrl' || field === 'backgroundColor' || field === 'textColor') {
+        return;
+      }
       if (value && typeof value === 'object' && value['en']) {
         englishTexts[field] = value['en'];
       }
@@ -123,7 +140,7 @@ export function StepProcessTranslationEditor({
 
     try {
       const translatedTexts = await aiTranslationService.generateComponentTexts(
-        'categories',
+        'globalEarth',
         'en',
         targetLocale,
         englishTexts
@@ -134,10 +151,10 @@ export function StepProcessTranslationEditor({
         const updatedConfig = { ...localConfig };
         
         Object.entries(translatedTexts).forEach(([field, translation]) => {
-          if (!updatedConfig[field as keyof StepProcessConfig]) {
-            updatedConfig[field as keyof StepProcessConfig] = {};
+          if (!updatedConfig[field as keyof GlobalEarthConfig]) {
+            updatedConfig[field as keyof GlobalEarthConfig] = {};
           }
-          (updatedConfig[field as keyof StepProcessConfig] as TranslatableText)[targetLocale] = translation;
+          (updatedConfig[field as keyof GlobalEarthConfig] as TranslatableText)[targetLocale] = translation;
         });
 
         setLocalConfig(updatedConfig);
@@ -161,22 +178,42 @@ export function StepProcessTranslationEditor({
     }
   };
 
-  const stepFields: Array<{ key: keyof StepProcessConfig; label: string; placeholder: string }> = [
-    { key: 'step1Title', label: 'Step 1 Title', placeholder: 'e.g., Sign up' },
-    { key: 'step1Description', label: 'Step 1 Description', placeholder: 'e.g., Answer a few questions...' },
-    { key: 'step2Title', label: 'Step 2 Title', placeholder: 'e.g., Return' },
-    { key: 'step2Description', label: 'Step 2 Description', placeholder: 'e.g., Return your device...' },
-    { key: 'step3Title', label: 'Step 3 Title', placeholder: 'e.g., Earn money' },
-    { key: 'step3Description', label: 'Step 3 Description', placeholder: 'e.g., Get paid directly...' },
+  const globalEarthFields: Array<{ key: keyof GlobalEarthConfig; label: string; placeholder: string; isTextarea?: boolean }> = [
+    { key: 'heading', label: 'Heading', placeholder: 'e.g., Reduce e-waste, make money with your old device' },
+    { key: 'subheading', label: 'Subheading', placeholder: 'e.g., Receive your personalized offer with a few clicks' },
+    { key: 'imageAlt', label: 'Image Alt Text', placeholder: 'e.g., Globe Icon' },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="text-lg font-semibold">Step Process Translations</h4>
+          <h4 className="text-lg font-semibold">Global Earth Section Settings</h4>
           <p className="text-sm text-gray-500">
-            Manage translations for step process titles and descriptions across different languages.
+            Manage the image, texts, and translations for the global earth section.
+          </p>
+        </div>
+      </div>
+
+      {/* Image Configuration */}
+      <div className="border rounded-lg p-4">
+        <div className="flex items-center space-x-2 mb-4">
+          <ImageIcon className="h-5 w-5 text-gray-600" />
+          <h5 className="font-medium text-gray-900">Image Configuration</h5>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Image URL
+          </label>
+          <input
+            type="text"
+            value={localConfig.imageUrl || ''}
+            onChange={(e) => handleConfigChange('en', 'imageUrl', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
+            placeholder="https://example.com/globe-icon.png"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            URL of the globe/earth image to display in the section
           </p>
         </div>
       </div>
@@ -191,7 +228,7 @@ export function StepProcessTranslationEditor({
           </div>
           <h5 className="font-medium text-gray-900">Styling Configuration</h5>
         </div>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Background Color
@@ -199,13 +236,9 @@ export function StepProcessTranslationEditor({
             <input
               type="text"
               value={localConfig.backgroundColor || ''}
-              onChange={(e) => {
-                const updatedConfig = { ...localConfig, backgroundColor: e.target.value };
-                setLocalConfig(updatedConfig);
-                onChange(updatedConfig);
-              }}
+              onChange={(e) => handleConfigChange('en', 'backgroundColor', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-              placeholder="#fcfaf8"
+              placeholder="#fcfaf8 or transparent"
             />
           </div>
           <div>
@@ -215,34 +248,14 @@ export function StepProcessTranslationEditor({
             <input
               type="text"
               value={localConfig.textColor || ''}
-              onChange={(e) => {
-                const updatedConfig = { ...localConfig, textColor: e.target.value };
-                setLocalConfig(updatedConfig);
-                onChange(updatedConfig);
-              }}
+              onChange={(e) => handleConfigChange('en', 'textColor', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-              placeholder="#374151"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Number Color
-            </label>
-            <input
-              type="text"
-              value={localConfig.numberColor || ''}
-              onChange={(e) => {
-                const updatedConfig = { ...localConfig, numberColor: e.target.value };
-                setLocalConfig(updatedConfig);
-                onChange(updatedConfig);
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary sm:text-sm"
-              placeholder="#3B82F6"
+              placeholder="#374151 or inherit"
             />
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          Customize the section's colors. Number color applies to the large step numbers (1, 2, 3).
+          Customize the section's background and text colors. Use hex codes, CSS color names, or 'inherit' for default.
         </p>
       </div>
 
@@ -255,7 +268,7 @@ export function StepProcessTranslationEditor({
           <div>
             <h4 className="text-sm font-medium text-blue-900">AI Translation Available</h4>
             <p className="text-sm text-blue-700 mt-1">
-              Use AI to automatically translate step process content from English to other languages. 
+              Use AI to automatically translate global earth content from English to other languages. 
               Click the AI button next to each language to generate translations.
             </p>
           </div>
@@ -336,9 +349,11 @@ export function StepProcessTranslationEditor({
                 if (value && !managedLocales.includes(value)) {
                   setManagedLocales(prev => [...prev, value]);
                   setActiveLocale(value);
-                  // Initialize with empty values for all fields
-                  stepFields.forEach(field => {
-                    handleConfigChange(value, field.key, '');
+                  // Initialize with empty values for translatable fields only
+                  globalEarthFields.forEach(field => {
+                    if (field.key !== 'imageUrl' && field.key !== 'backgroundColor' && field.key !== 'textColor') {
+                      handleConfigChange(value, field.key, '');
+                    }
                   });
                 }
               }}>
@@ -389,12 +404,12 @@ export function StepProcessTranslationEditor({
           </div>
           
           <div className="space-y-4">
-            {stepFields.map(field => (
+            {globalEarthFields.map(field => (
               <div key={field.key}>
                 <label htmlFor={`${field.key}-${activeLocale}`} className="block text-sm font-medium text-gray-700">
                   {field.label}
                 </label>
-                {field.key.includes('Description') ? (
+                {field.isTextarea ? (
                   <textarea
                     id={`${field.key}-${activeLocale}`}
                     value={(localConfig[field.key] as TranslatableText)?.[activeLocale] || ''}
@@ -422,4 +437,4 @@ export function StepProcessTranslationEditor({
       )}
     </div>
   );
-} 
+}

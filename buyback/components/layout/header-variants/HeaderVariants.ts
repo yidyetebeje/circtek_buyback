@@ -4,6 +4,7 @@ import { ExpandedHeader } from './ExpandedHeader';
 import { BenefitsHeader } from './BenefitsHeader';
 import { ModernHeader } from './ModernHeader';
 import { ThePhoneLabHeader } from './ThePhoneLabHeader';
+import { RemarketedBuybackHeader } from './RemarketedBuybackHeader';
 import { HeaderVariantType } from './index';
 
 // Map of variant types to their respective components
@@ -14,6 +15,7 @@ export const HeaderVariants = {
   benefits: BenefitsHeader,
   modern: ModernHeader,
   thePhoneLab: ThePhoneLabHeader,
+  remarketedBuyback: RemarketedBuybackHeader,
 };
 
 // Function to get the component for a specific variant
