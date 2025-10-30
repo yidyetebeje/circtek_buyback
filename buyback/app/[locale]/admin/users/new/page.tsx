@@ -13,7 +13,7 @@ const NewUserPage = () => {
   const createUserMutation = useCreateUser();
   const [preSelectedRole, setPreSelectedRole] = useState<string | null>(null);
   const envShopId = process.env.NEXT_PUBLIC_SHOP_ID ? parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) : undefined;
- 
+  console.log('envShopId', envShopId);
   
   // Check if this is a shop_manager creation
   useEffect(() => {

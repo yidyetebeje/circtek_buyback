@@ -112,7 +112,7 @@ async function fetchPublishedModelsData(
     
     const response = await shopService.getPublishedModelsByCategorySlug(shopId, categorySlug, options);
     // Assuming the actual models are in response.data based on PaginatedResponse<Model>
-   
+    console.log("response.data", response.data, response);
     return response.data; 
   } catch (error) {
     console.error('Error fetching published models via shopService:', error);

@@ -32,7 +32,7 @@ const COMPONENTS_TO_REMOVE = [
 ];
 
 async function analyzeFailedComponents(daysBack: number) {
- 
+  console.log('=== Analyzing Failed Components ===\n');
   
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - daysBack);
@@ -51,10 +51,10 @@ async function analyzeFailedComponents(daysBack: number) {
     .where(sql`${test_results.created_at} >= ${startDate} AND ${test_results.failed_components} IS NOT NULL AND ${test_results.failed_components} != ''`)
     .orderBy(desc(test_results.created_at));
 
- 
+  console.log(`Found ${results.length} test results with failed components in the last ${daysBack} days.\n`);
 
   if (results.length === 0) {
-   
+    console.log('No test results with failed components found.');
     return { results: [], uniqueComponents: new Set() };
   }
 
@@ -76,7 +76,7 @@ async function analyzeFailedComponents(daysBack: number) {
     }
   });
 
- 
+  console.log('=== Unique Failed Components Found ===');
   const sortedComponents = Array.from(componentCounts.entries())
     .sort((a, b) => b[1] - a[1]);
   
@@ -85,14 +85,14 @@ async function analyzeFailedComponents(daysBack: number) {
       removeComp => component.toLowerCase() === removeComp.toLowerCase()
     );
     const marker = isProblematic ? '⚠️  [WILL BE REMOVED]' : '';
-   
+    console.log(`  ${component} (${count} occurrences) ${marker}`);
   });
 
- 
+  console.log('\n=== Sample Test Results ===');
   results.slice(0, 5).forEach(result => {
-   
-   
-   
+    console.log(`[ID: ${result.id}] ${result.created_at.toISOString()}`);
+    console.log(`  Device: IMEI=${result.imei || 'N/A'}, Serial=${result.serial_number || 'N/A'}`);
+    console.log(`  Failed: ${result.failed_components}\n`);
   });
 
   return { results, uniqueComponents };
@@ -100,24 +100,24 @@ async function analyzeFailedComponents(daysBack: number) {
 
 async function fixFailedComponents(daysBack: number, dryRun: boolean = false) {
   try {
-   
-   
+    console.log('Starting failed components cleanup...');
+    console.log(`Mode: ${dryRun ? 'DRY RUN (no changes will be made)' : 'LIVE (changes will be applied)'}\n`);
 
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - daysBack);
     startDate.setHours(0, 0, 0, 0);
 
-   
+    console.log(`Date range: Last ${daysBack} days (from ${startDate.toISOString()})\n`);
 
     // First analyze
     const { results } = await analyzeFailedComponents(daysBack);
 
     if (results.length === 0) {
-     
+      console.log('\nNo test results to process. Exiting.');
       return;
     }
 
-   
+    console.log('\n=== Processing Updates ===\n');
 
     let updatedCount = 0;
     let skippedCount = 0;
@@ -183,37 +183,37 @@ async function fixFailedComponents(daysBack: number, dryRun: boolean = false) {
 
       updatedRecords.push(updateInfo);
 
-     
-     
-     
-     
-     
-     
+      console.log(`${dryRun ? '[DRY RUN] ' : ''}[ID: ${id}] ${dryRun ? 'Would be updated' : 'Updated successfully'}`);
+      console.log(`  Date: ${created_at.toISOString()}`);
+      console.log(`  Device: IMEI=${imei || 'N/A'}, Serial=${serial_number || 'N/A'}`);
+      console.log(`  Removed: ${removedComponents.join(', ')}`);
+      console.log(`  Before: "${failed_components}"`);
+      console.log(`  After:  "${newFailedComponents || '(empty)'}"\n`);
 
       updatedCount++;
     }
 
-   
-   
-   
-   
-   
-   
+    console.log('\n=== Summary ===');
+    console.log(`Mode: ${dryRun ? 'DRY RUN' : 'LIVE'}`);
+    console.log(`Date range: Last ${daysBack} days`);
+    console.log(`Total test results with failed components: ${results.length}`);
+    console.log(`${dryRun ? 'Would be updated' : 'Updated'}: ${updatedCount}`);
+    console.log(`Skipped (no problematic components): ${skippedCount}`);
     
     if (updatedRecords.length > 0) {
-     
+      console.log('\n=== Affected Records ===');
       updatedRecords.forEach(record => {
-       
+        console.log(`ID ${record.id} (${record.date.toISOString().split('T')[0]}): Removed ${record.removed.join(', ')}`);
       });
     }
     
     if (dryRun && updatedCount > 0) {
-     
+      console.log('\n⚠️  This was a DRY RUN. To apply changes, run: npx tsx src/scripts/analyze-and-fix-failed-components.ts <days> apply');
     } else if (updatedCount > 0) {
-     
+      console.log('\n✓ Changes have been applied to the database!');
     }
     
-   
+    console.log('\nCleanup completed successfully!');
 
   } catch (error) {
     console.error('Error fixing failed components:', error);
@@ -240,7 +240,7 @@ if (isNaN(daysBack) || daysBack < 1) {
 // Run the script
 fixFailedComponents(daysBack, dryRun)
   .then(() => {
-   
+    console.log('\n✓ Script execution completed');
     process.exit(0);
   })
   .catch((error) => {

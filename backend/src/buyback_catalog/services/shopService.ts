@@ -187,7 +187,7 @@ export class ShopService {
       const timestamp = new Date().getTime();
       const fileName = `shop_logo_${id}_${timestamp}`;
       const filePath = `/uploads/shop_logos/${fileName}`;
-     
+      console.log(`Simulating logo upload: ${filePath}`);
       return shopRepository.update(id, { logo: filePath });
     }
   }

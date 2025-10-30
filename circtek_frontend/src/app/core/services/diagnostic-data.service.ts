@@ -72,7 +72,7 @@ export class DiagnosticDataService {
     const cached = this.warehouseOptionsCache();
     const isValid = this.isValidCache(cached);
     const data = isValid ? cached.data : [];
-   
+    console.log('warehouseOptions computed - cached:', cached, 'isValid:', isValid, 'data:', data);
     return data;
   });
 
@@ -80,7 +80,7 @@ export class DiagnosticDataService {
     const cached = this.testerOptionsCache();
     const isValid = this.isValidCache(cached);
     const data = isValid ? cached.data : [];
-   
+    console.log('testerOptions computed - cached:', cached, 'isValid:', isValid, 'data:', data);
     return data;
   });
 
@@ -88,7 +88,7 @@ export class DiagnosticDataService {
     const cached = this.tenantOptionsCache();
     const isValid = this.isValidCache(cached);
     const data = isValid ? cached.data : [];
-   
+    console.log('tenantOptions computed - cached:', cached, 'isValid:', isValid, 'data:', data);
     return data;
   });
 
@@ -132,17 +132,17 @@ export class DiagnosticDataService {
 
   // Load and cache user info
   loadUserInfo(): Observable<UserInfo> {
-   
+    console.log('loadUserInfo called - checking cache...');
     
     if (this.isValidCache(this.userInfoCache())) {
-     
+      console.log('Using cached user info:', this.userInfoCache()!.data);
       return new BehaviorSubject(this.userInfoCache()!.data).asObservable();
     }
 
     this.loadingStates.userInfo.set(true);
 
     const currentUser = this.auth.currentUser();
-   
+    console.log('Current user from auth service:', currentUser);
     
     if (!currentUser) {
       console.error('No authenticated user found in auth service');
@@ -151,11 +151,11 @@ export class DiagnosticDataService {
     }
 
     // Get full user details
-   
+    console.log('Fetching full user details for user ID:', currentUser.id);
     
     return this.apiService.getUser(currentUser.id).pipe(
       tap((user) => {
-       
+        console.log('Full user details received:', user);
         
         const userInfo: UserInfo = {
           id: user.id,
@@ -165,12 +165,12 @@ export class DiagnosticDataService {
           role_id: user.role_id
         };
         
-       
+        console.log('Caching user info:', userInfo);
         this.userInfoCache.set(this.createCachedData(userInfo, this.USER_CACHE_DURATION));
         
         // Load tenant info if user has tenant_id and is not super admin
         if (user.tenant_id && user.role_id !== 1) {
-         
+          console.log('Loading tenant info for tenant ID:', user.tenant_id);
           this.loadTenantInfo(user.tenant_id);
         }
         
@@ -215,11 +215,11 @@ export class DiagnosticDataService {
 
   // Load and cache warehouse options
   loadWarehouseOptions(tenantId?: number): Observable<Array<{ label: string; value: string }>> {
-   
+    console.log('loadWarehouseOptions called with tenantId:', tenantId);
     
     const cached = this.warehouseOptionsCache();
     if (this.isValidCache(cached)) {
-     
+      console.log('Using cached warehouse options:', cached.data);
       return new BehaviorSubject(cached.data).asObservable();
     }
 
@@ -230,18 +230,18 @@ export class DiagnosticDataService {
       params = params.set('tenant_id', String(tenantId));
     }
     
-   
+    console.log('Loading warehouse options with params:', params.toString());
 
       return this.apiService.getWarehouses(params).pipe(
       tap((res) => {
-       
+        console.log('Warehouse API response:', res);
         const options = (res.data ?? []).map(w => ({ label: w.name, value: String(w.id) }));
-       
+        console.log('Processed warehouse options:', options);
         this.warehouseOptionsCache.set(this.createCachedData(options, this.OPTIONS_CACHE_DURATION));
         this.loadingStates.warehouseOptions.set(false);
       }),
       map((res) => (res.data ?? []).map(w => ({ label: w.name, value: String(w.id) }))),
-      tap((options) =>
+      tap((options) => console.log('Final warehouse options:', options)),
       catchError((error) => {
         console.error('Error loading warehouse options:', error);
         this.loadingStates.warehouseOptions.set(false);
@@ -255,11 +255,11 @@ export class DiagnosticDataService {
 
   // Load and cache tester options
   loadTesterOptions(tenantId?: number): Observable<Array<{ label: string; value: string }>> {
-   
+    console.log('loadTesterOptions called with tenantId:', tenantId);
     
     const cached = this.testerOptionsCache();
     if (this.isValidCache(cached)) {
-     
+      console.log('Using cached tester options:', cached.data);
       return new BehaviorSubject(cached.data).asObservable();
     }
 
@@ -270,18 +270,18 @@ export class DiagnosticDataService {
       params = params.set('tenant_id', String(tenantId));
     }
     
-   
+    console.log('Loading tester options with params:', params.toString());
 
       return this.apiService.getUsers(params).pipe(
       tap((res) => {
-       
+        console.log('Tester API response:', res);
         const options = (res.data ?? []).map(u => ({ label: u.user_name, value: String(u.id) }));
-       
+        console.log('Processed tester options:', options);
         this.testerOptionsCache.set(this.createCachedData(options, this.OPTIONS_CACHE_DURATION));
         this.loadingStates.testerOptions.set(false);
       }),
       map((res) => (res.data ?? []).map(u => ({ label: u.user_name, value: String(u.id) }))),
-      tap((options) =>
+      tap((options) => console.log('Final tester options:', options)),
       catchError((error) => {
         console.error('Error loading tester options:', error);
         this.loadingStates.testerOptions.set(false);
@@ -303,18 +303,18 @@ export class DiagnosticDataService {
     this.loadingStates.tenantOptions.set(true);
 
     const params = new HttpParams().set('limit', '1000');
-   
+    console.log('Loading tenant options with params:', params.toString());
     
     return this.apiService.getTenants(params).pipe(
       tap((res) => {
-       
+        console.log('Tenant API response:', res);
         const options = (res.data ?? []).map(t => ({ label: t.name, value: String(t.id) }));
-       
+        console.log('Processed tenant options:', options);
         this.tenantOptionsCache.set(this.createCachedData(options, this.OPTIONS_CACHE_DURATION));
         this.loadingStates.tenantOptions.set(false);
       }),
       map((res) => (res.data ?? []).map(t => ({ label: t.name, value: String(t.id) }))),
-      tap((options) =>
+      tap((options) => console.log('Final tenant options:', options)),
       catchError((error) => {
         console.error('Error loading tenant options:', error);
         this.loadingStates.tenantOptions.set(false);
@@ -339,7 +339,7 @@ export class DiagnosticDataService {
 
   // Clear specific cache
   clearCache(type: 'userInfo' | 'tenantInfo' | 'warehouseOptions' | 'testerOptions' | 'tenantOptions' | 'all') {
-   
+    console.log('Clearing cache for:', type);
     switch (type) {
       case 'userInfo':
         this.userInfoCache.set(null);
@@ -368,7 +368,7 @@ export class DiagnosticDataService {
 
   // Force refresh options (clears cache and reloads)
   forceRefreshOptions(tenantId?: number): Promise<void> {
-   
+    console.log('Force refreshing options for tenantId:', tenantId);
     
     // Clear caches
     this.clearCache('warehouseOptions');
@@ -399,7 +399,7 @@ export class DiagnosticDataService {
     }
     
     return Promise.all(loadPromises).then(() => {
-     
+      console.log('Force refresh completed successfully');
     }).catch(error => {
       console.error('Force refresh failed:', error);
       throw error;
@@ -432,7 +432,7 @@ export class DiagnosticDataService {
     return timer(0, 100).pipe(
       switchMap(() => {
         const currentUser = this.auth.currentUser();
-       
+        console.log('Waiting for current user - attempt:', currentUser);
         
         if (currentUser) {
           return [currentUser]; // Return the user in an array to emit it
@@ -448,12 +448,12 @@ export class DiagnosticDataService {
   // Initialize all required data for the diagnostics page
   async initializePageData(): Promise<void> {
     try {
-     
+      console.log('Initializing page data...');
       
       // Wait for auth service to have current user first
       try {
         await firstValueFrom(this.waitForCurrentUser());
-       
+        console.log('Current user is now available');
       } catch (error) {
         console.error('Timeout waiting for current user:', error);
         // Continue anyway, loadUserInfo will handle the error
@@ -461,12 +461,12 @@ export class DiagnosticDataService {
       
       // Load user info first
       if (!this.isValidCache(this.userInfoCache())) {
-       
+        console.log('Loading user info...');
         await firstValueFrom(this.loadUserInfo());
       }
 
       const userInfo = this.userInfo();
-     
+      console.log('User info after loading:', userInfo);
       
       if (!userInfo) {
         throw new Error('Failed to load user information');
@@ -476,7 +476,7 @@ export class DiagnosticDataService {
       const loadPromises: Promise<any>[] = [];
 
       if (userInfo.role_id === 1) {
-       
+        console.log('Loading options for super admin...');
         // Super admin - load all options
         loadPromises.push(
           firstValueFrom(this.loadTenantOptions()).catch(err => {
@@ -497,7 +497,7 @@ export class DiagnosticDataService {
           })
         );
       } else {
-       
+        console.log('Loading options for regular user with tenant:', userInfo.tenant_id);
         // Regular user - load tenant-specific options
         const tenantId = userInfo.tenant_id;
         if (tenantId) {
@@ -516,19 +516,19 @@ export class DiagnosticDataService {
         }
       }
 
-     
+      console.log('Waiting for', loadPromises.length, 'option loading promises...');
       const results = await Promise.allSettled(loadPromises);
       
       // Log results for debugging
       results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
-         
+          console.log(`Promise ${index} fulfilled with:`, result.value);
         } else {
           console.error(`Promise ${index} rejected:`, result.reason);
         }
       });
       
-     
+      console.log('All option loading attempts completed');
     } catch (error) {
       console.error('Error initializing page data:', error);
       throw error;

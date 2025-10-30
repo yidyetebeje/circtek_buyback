@@ -119,7 +119,7 @@ export const authConfig: NextAuthConfig = {
 
           const shopId = process.env.NEXT_PUBLIC_SHOP_ID;
           const endpoint = `${BASE_API_URL}/auth/shop-login`;
-         
+          console.log("endpoint", endpoint)
         
           const payload: { identifier: string; password: string; shopId?: number } = {
             identifier: String(credentials.identifier),
@@ -131,15 +131,15 @@ export const authConfig: NextAuthConfig = {
             payload.shopId = parseInt(shopId);
           }
           
-         
-         
+          console.log(`Authenticating with endpoint: ${endpoint}`);
+          console.log(`Payload: ${JSON.stringify(payload)}`);
           
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
           });
-         
+          console.log(response.ok, "response status:", response.status);
 
           if (!response.ok) {
             console.error(`Authentication failed with status: ${response.status}`);
@@ -162,7 +162,7 @@ export const authConfig: NextAuthConfig = {
             console.error("Response text:", text);
             throw new Error("Failed to parse server response");
           }
-         
+          console.log("data", data)
 
           if (data && data.data?.token) {
             const user = data.data.user;

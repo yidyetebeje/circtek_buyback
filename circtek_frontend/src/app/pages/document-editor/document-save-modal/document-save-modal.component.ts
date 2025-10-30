@@ -180,8 +180,8 @@ export class DocumentSaveModalComponent implements OnInit, OnChanges {
       formData.clientId = this.documentForm.value.clientId;
     }
 
-   
-   
+    console.log('Emitting save event with data:', formData);
+    console.log('Canvas state being preserved:', this.getPreservedCanvasState());
     this.save.emit(formData);
     
     // Note: Don't reset isSaving here - parent component will handle success/error

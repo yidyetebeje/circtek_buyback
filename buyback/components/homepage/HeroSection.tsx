@@ -18,7 +18,7 @@ export function HeroSection({ heroSection, primaryColor, shopId }: HeroSectionPr
   const currentLocale = currentLanguage?.code || 'en';
 
   const handleModelSelectFromHero = (model: Model) => {
-   
+    console.log("Model selected in HeroSection, navigating to estimation page:", model);
     if (model.sef_url) {
       router.push(`/${currentLocale}/sell/${model.sef_url}/estimate`);
     } else {

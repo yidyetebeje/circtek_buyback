@@ -38,17 +38,17 @@ async function receiveAllPurchases(tenantId: number, actorId: number, dryRun: bo
     errors: []
   }
 
- 
- 
- 
- 
- 
- 
- 
+  console.log(`\n${'='.repeat(60)}`)
+  console.log(`${dryRun ? '[DRY RUN] ' : ''}Receiving All Unreceived Purchases`)
+  console.log(`${'='.repeat(60)}`)
+  console.log(`Tenant ID: ${tenantId}`)
+  console.log(`Actor ID: ${actorId}`)
+  console.log(`${dryRun ? 'Mode: DRY RUN (no changes will be made)' : 'Mode: LIVE'}`)
+  console.log(`${'='.repeat(60)}\n`)
 
   try {
     // Fetch all purchases with items
-   
+    console.log('Fetching all purchases...')
     const result = await repo.findAllPurchasesWithItems({ 
       tenant_id: tenantId,
       limit: 1000, // Get a large batch
@@ -58,7 +58,7 @@ async function receiveAllPurchases(tenantId: number, actorId: number, dryRun: bo
     const allPurchases = result.rows
     stats.totalPurchases = allPurchases.length
     
-   
+    console.log(`Found ${allPurchases.length} total purchases\n`)
 
     // Filter for purchases that are not fully received
     const unreceived = allPurchases.filter(p => {
@@ -67,10 +67,10 @@ async function receiveAllPurchases(tenantId: number, actorId: number, dryRun: bo
       return totalReceived < totalItems
     })
 
-   
+    console.log(`Found ${unreceived.length} purchases with unreceived items\n`)
 
     if (unreceived.length === 0) {
-     
+      console.log('✓ All purchases are fully received!')
       return stats
     }
 
@@ -79,11 +79,11 @@ async function receiveAllPurchases(tenantId: number, actorId: number, dryRun: bo
       const purchase = purchaseData.purchase
       const items = purchaseData.items
 
-     
-     
-     
-     
-     
+      console.log(`\n${'─'.repeat(60)}`)
+      console.log(`Processing Purchase #${purchase.id}`)
+      console.log(`Order No: ${purchase.purchase_order_no}`)
+      console.log(`Supplier: ${purchase.supplier_name || 'N/A'}`)
+      console.log(`${'─'.repeat(60)}`)
 
       try {
         // Build the receive items payload
@@ -96,21 +96,21 @@ async function receiveAllPurchases(tenantId: number, actorId: number, dryRun: bo
           }))
 
         if (itemsToReceive.length === 0) {
-         
+          console.log('⊘ No items to receive (already fully received)')
           stats.skippedPurchases++
           continue
         }
 
-       
+        console.log(`\nItems to receive:`)
         itemsToReceive.forEach(item => {
-         
+          console.log(`  - SKU: ${item.sku}, Quantity: ${item.quantity_received}`)
         })
 
         const totalQuantity = itemsToReceive.reduce((sum, item) => sum + item.quantity_received, 0)
-       
+        console.log(`\nTotal items to receive: ${totalQuantity}`)
 
         if (dryRun) {
-         
+          console.log('⊘ [DRY RUN] Skipping actual receive operation')
           stats.processedPurchases++
           stats.totalItemsReceived += totalQuantity
         } else {
@@ -123,8 +123,8 @@ async function receiveAllPurchases(tenantId: number, actorId: number, dryRun: bo
           }, tenantId)
 
           if (receiveResult.status === 200 && receiveResult.data) {
-           
-           
+            console.log(`✓ Successfully received ${receiveResult.data.total_quantity_received} items`)
+            console.log(`✓ Created ${receiveResult.data.stock_movements_created} stock movements`)
             stats.processedPurchases++
             stats.totalItemsReceived += receiveResult.data.total_quantity_received
           } else {
@@ -143,26 +143,26 @@ async function receiveAllPurchases(tenantId: number, actorId: number, dryRun: bo
     }
 
     // Print summary
-   
-   
-   
-   
-   
-   
-   
-   
-   
+    console.log(`\n\n${'='.repeat(60)}`)
+    console.log('Summary')
+    console.log(`${'='.repeat(60)}`)
+    console.log(`Total purchases found: ${stats.totalPurchases}`)
+    console.log(`Purchases with unreceived items: ${unreceived.length}`)
+    console.log(`Successfully processed: ${stats.processedPurchases}`)
+    console.log(`Skipped: ${stats.skippedPurchases}`)
+    console.log(`Total items received: ${stats.totalItemsReceived}`)
+    console.log(`Errors: ${stats.errors.length}`)
     
     if (stats.errors.length > 0) {
-     
-     
-     
+      console.log(`\n${'─'.repeat(60)}`)
+      console.log('Errors:')
+      console.log(`${'─'.repeat(60)}`)
       stats.errors.forEach(err => {
-       
+        console.log(`Purchase #${err.purchaseId} (${err.purchaseOrderNo}): ${err.error}`)
       })
     }
     
-   
+    console.log(`${'='.repeat(60)}\n`)
 
     return stats
   } catch (error) {
@@ -195,7 +195,7 @@ async function main() {
 
   try {
     await receiveAllPurchases(tenantId, actorId, dryRun)
-   
+    console.log('\n✓ Script completed successfully')
     process.exit(0)
   } catch (error) {
     console.error('\n✗ Script failed:', error)

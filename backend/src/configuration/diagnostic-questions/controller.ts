@@ -135,9 +135,9 @@ export class DiagnosticQuestionsController {
     }
 
     async createQuestionSet(payload: QuestionSetCreateInput, tenantId: number): Promise<response<QuestionSetPublic | null>> {
-       
-       
-       
+        console.log('=== Controller.createQuestionSet ===')
+        console.log('Received payload:', JSON.stringify(payload, null, 2))
+        console.log('payload.status type:', typeof payload.status, 'value:', payload.status)
         
         // Ensure status is properly converted to boolean
         const normalizedPayload = {
@@ -145,8 +145,8 @@ export class DiagnosticQuestionsController {
             status: payload.status !== undefined ? Boolean(payload.status) : undefined,
             tenant_id: tenantId
         }
-       
-       
+        console.log('Normalized payload:', JSON.stringify(normalizedPayload, null, 2))
+        console.log('normalizedPayload.status type:', typeof normalizedPayload.status, 'value:', normalizedPayload.status)
         
         const created = await this.repo.createQuestionSet(normalizedPayload)
         return { data: created ?? null, message: 'Question set created', status: 201 }

@@ -18,7 +18,7 @@ export const emailModule = new Elysia()
       if (!resendApiKey) {
         console.warn("[Email Module] WARNING: RESEND_API_KEY not set in environment variables. Email sending will fail.");
       } else {
-       
+        console.log("[Email Module] Email service initialized with Resend provider");
       }
       
       // Now actually set the service in the store
@@ -26,7 +26,7 @@ export const emailModule = new Elysia()
       emailModule.store.emailService = emailServiceInstance;
     }
     
-   
+    console.log("[Email Module] Module started and email service initialized");
   });
 
 // Export default for easy importing

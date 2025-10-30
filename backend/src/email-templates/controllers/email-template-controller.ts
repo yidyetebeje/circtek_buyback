@@ -238,7 +238,7 @@ export class EmailTemplateController {
       const shopId = ctx.user?.shopId || 1;
       
       // Debug logging
-     
+      console.log("Populate template request:", {
         templateId: ctx.body.templateId,
         orderId: ctx.body.orderId,
         hasSubject: !!ctx.body.subject,
@@ -249,7 +249,7 @@ export class EmailTemplateController {
       const result = await emailTemplateService.populateTemplate(ctx.body, shopId);
 
       if (!result) {
-       
+        console.log("No result returned from service");
         ctx.set.status = 404;
         return {
           success: false,
@@ -257,7 +257,7 @@ export class EmailTemplateController {
         };
       }
 
-     
+      console.log("Preview generated successfully");
       return {
         success: true,
         data: result

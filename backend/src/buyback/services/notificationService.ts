@@ -40,7 +40,7 @@ export class NotificationService {
       // In production, this would make API calls to an email service
       // For this implementation, we'll simulate a successful email send
 
-     
+      console.log(`[NotificationService] Sending order confirmation email to ${recipientEmail} for order ${orderId}`);
       
       const emailContent = this.generateOrderConfirmationEmail(
         orderDetails.orderNumber,
@@ -52,9 +52,9 @@ export class NotificationService {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 300));
       
-     
-     
-     
+      console.log(`[NotificationService] Email content preview:`);
+      console.log(`Subject: Your Device Buyback Order #${orderDetails.orderNumber} Confirmation`);
+      console.log(`Email content length: ${emailContent.length} characters`);
       
       // In production, we would track email delivery status
       return true;
@@ -83,7 +83,7 @@ export class NotificationService {
     }
   ): Promise<boolean> {
     try {
-     
+      console.log(`[NotificationService] Sending status update email (${newStatus}) to ${recipientEmail} for order ${orderId}`);
       
       const emailContent = this.generateStatusUpdateEmail(
         newStatus,
@@ -95,9 +95,9 @@ export class NotificationService {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 300));
       
-     
-     
-     
+      console.log(`[NotificationService] Email content preview:`);
+      console.log(`Subject: Update on Your Device Buyback Order #${orderDetails.orderNumber}`);
+      console.log(`Email content length: ${emailContent.length} characters`);
       
       return true;
     } catch (error) {
@@ -122,11 +122,11 @@ export class NotificationService {
     }
   ): Promise<boolean> {
     try {
-     
+      console.log(`[NotificationService] Sending admin notification for new order ${orderId}`);
       
       // In a real implementation, we would send to all admin emails
       for (const adminEmail of this.adminEmails) {
-       
+        console.log(`[NotificationService] Sending admin notification to ${adminEmail}`);
         
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 100));

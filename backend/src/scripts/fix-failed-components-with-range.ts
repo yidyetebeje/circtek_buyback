@@ -34,7 +34,7 @@ const COMPONENTS_TO_REMOVE = [
 ];
 
 async function showRecentTestResults() {
- 
+  console.log('=== Recent Test Results ===\n');
   
   const recentResults = await db
     .select({
@@ -49,11 +49,11 @@ async function showRecentTestResults() {
     .limit(10);
 
   if (recentResults.length === 0) {
-   
+    console.log('No test results found in the database.\n');
     return;
   }
 
- 
+  console.log('Last 10 test results:');
   recentResults.forEach(result => {
     const hasProblematicComponents = result.failed_components 
       ? COMPONENTS_TO_REMOVE.some(comp => 
@@ -61,27 +61,27 @@ async function showRecentTestResults() {
         )
       : false;
     
-   
-   
-   
+    console.log(`  [ID: ${result.id}] ${result.created_at.toISOString()}`);
+    console.log(`    Device: IMEI=${result.imei || 'N/A'}, Serial=${result.serial_number || 'N/A'}`);
+    console.log(`    Failed: ${result.failed_components || '(none)'}`);
     if (hasProblematicComponents) {
-     
+      console.log(`    ⚠️  Contains problematic components!`);
     }
-   
+    console.log('');
   });
 }
 
 async function fixFailedComponents(daysBack: number = 7) {
   try {
-   
+    console.log('Starting failed components cleanup...\n');
 
     // Get test results from the last N days
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - daysBack);
     startDate.setHours(0, 0, 0, 0);
 
-   
-   
+    console.log(`Fetching test results from the last ${daysBack} days...`);
+    console.log(`Date range: ${startDate.toISOString()} to now\n`);
 
     // Show recent results first
     await showRecentTestResults();
@@ -92,10 +92,10 @@ async function fixFailedComponents(daysBack: number = 7) {
       .from(test_results)
       .where(sql`${test_results.created_at} >= ${startDate}`);
 
-   
+    console.log(`Found ${results.length} test result(s) in the date range.\n`);
 
     if (results.length === 0) {
-     
+      console.log('No test results to process. Exiting.');
       return;
     }
 
@@ -107,7 +107,7 @@ async function fixFailedComponents(daysBack: number = 7) {
       const { id, failed_components, imei, serial_number, created_at } = result;
       
       if (!failed_components || failed_components.trim() === '') {
-       
+        console.log(`[ID: ${id}] No failed components. Skipping.`);
         skippedCount++;
         continue;
       }
@@ -128,7 +128,7 @@ async function fixFailedComponents(daysBack: number = 7) {
 
       // Check if anything changed
       if (cleanedComponents.length === components.length) {
-       
+        console.log(`[ID: ${id}] No problematic components found. Skipping.`);
         skippedCount++;
         continue;
       }
@@ -161,31 +161,31 @@ async function fixFailedComponents(daysBack: number = 7) {
 
       updatedRecords.push(updateInfo);
 
-     
-     
-     
-     
-     
-     
-     
+      console.log(`[ID: ${id}] Updated successfully`);
+      console.log(`  Date: ${created_at.toISOString()}`);
+      console.log(`  Device: IMEI=${imei || 'N/A'}, Serial=${serial_number || 'N/A'}`);
+      console.log(`  Removed: ${removedComponents.join(', ')}`);
+      console.log(`  Before: ${components.length} components`);
+      console.log(`  After: ${cleanedComponents.length} components`);
+      console.log(`  New value: ${newFailedComponents || '(empty)'}\n`);
 
       updatedCount++;
     }
 
-   
-   
-   
-   
-   
+    console.log('\n=== Summary ===');
+    console.log(`Date range: Last ${daysBack} days (from ${startDate.toISOString()})`);
+    console.log(`Total test results found: ${results.length}`);
+    console.log(`Updated: ${updatedCount}`);
+    console.log(`Skipped (no changes needed): ${skippedCount}`);
     
     if (updatedRecords.length > 0) {
-     
+      console.log('\n=== Updated Records ===');
       updatedRecords.forEach(record => {
-       
+        console.log(`ID ${record.id}: Removed ${record.removed.length} problematic component(s)`);
       });
     }
     
-   
+    console.log('\nCleanup completed successfully!');
 
   } catch (error) {
     console.error('Error fixing failed components:', error);
@@ -204,7 +204,7 @@ if (isNaN(daysBack) || daysBack < 1) {
 // Run the script
 fixFailedComponents(daysBack)
   .then(() => {
-   
+    console.log('\n✓ Script execution completed');
     process.exit(0);
   })
   .catch((error) => {

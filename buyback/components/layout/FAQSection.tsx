@@ -52,7 +52,7 @@ const transformFaqItem = (faqItem: CatalogFAQ, languages: Language[], defaultLoc
 
 export function FAQSection({ shopConfig, shopId }: FAQSectionProps) {
   const t = useTranslations('FAQSection');
- 
+  console.log('[FAQSection Debug] t:', t('defaultTitle'));
   const nextIntlLocale = useLocale();
 
   const [expandedFAQ, setExpandedFAQ] = useState<number[]>([]);
@@ -73,7 +73,7 @@ export function FAQSection({ shopConfig, shopId }: FAQSectionProps) {
 
   // Determine title and subtitle
   const titleToDisplay =  t('defaultTitle');
- 
+  console.log('[FAQSection Debug] titleToDisplay:', titleToDisplay,  currentLocale, fallbackLocale);
 
   const subtitleToDisplay = t('defaultSubtitle'); // Show default only if subtitle field itself is not present in config
 

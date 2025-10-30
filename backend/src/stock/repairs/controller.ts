@@ -95,7 +95,7 @@ export class RepairsController {
       return { data, message: 'Repair created and items consumed successfully', status: 201 }
     } catch (error) {
     
-     
+      console.log("error",error);
       return { data: null, message: 'Failed to create repair with consumption', status: 500, error: (error as Error).message }
     }
   }
@@ -146,7 +146,7 @@ export class RepairsController {
 
       // Step 3: Persist repair items
       const persistResult = await this.persistRepairItems(allocations, repair_id, tenant_id)
-     
+      console.log("persistResult",persistResult);
       if (!persistResult.success) {
 
         await this.rollbackMovements(successfulMovements, payload.warehouse_id, repair_id, tenant_id, actor_id)
@@ -195,7 +195,7 @@ export class RepairsController {
         // Non-blocking: log in tests
         if (process.env.NODE_ENV === 'test') {
           console.error('Failed to create REPAIR_COMPLETED device event', e)
-         
+          console.log("Failed to create Repaired_complete ",e);
         }
       }
 
@@ -211,7 +211,7 @@ export class RepairsController {
 
     // Get device information to determine model-specific pricing
     const device = await this.repo.getDeviceById(device_id, tenant_id)
-   
+    console.log("device information", device)
     if (!device) {
       return { 
         success: false, 
@@ -404,7 +404,7 @@ export class RepairsController {
       await this.repo.addRepairItems(repair_id, repairItems, tenant_id)
       return { success: true, message: 'Repair items persisted successfully' }
     } catch (error) {
-     
+      console.log(error);
       return { success: false, message: 'Failed to persist repair items' }
     }
   }

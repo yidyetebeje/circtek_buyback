@@ -114,9 +114,9 @@ export default async function DeviceEstimatePage({ params }: DeviceEstimatePageP
   let errorFetching: string | null = null;
 
   try {
-   
+    console.log(`Fetching model details for shopId: ${shopId}, modelSefUrl: ${modelSefUrl}`);
     const response = await shopService.getPublishedModelDetailsBySefUrl(shopId, modelSefUrl);
-   
+    console.log('API Response structure:', {
       hasData: !!response.data,
       dataKeys: response.data ? Object.keys(response.data) : [],
       questionSetAssignments: response.data?.questionSetAssignments,
@@ -126,7 +126,7 @@ export default async function DeviceEstimatePage({ params }: DeviceEstimatePageP
     
     if (response.data) {
       deviceDetails = response.data;
-     
+      console.log('Device details loaded successfully:', {
         title: deviceDetails.title,
         sefUrl: deviceDetails.sef_url,
         basePrice: deviceDetails.base_price,
@@ -137,7 +137,7 @@ export default async function DeviceEstimatePage({ params }: DeviceEstimatePageP
              // Debug each question set assignment
        if (deviceDetails.questionSetAssignments) {
          deviceDetails.questionSetAssignments.forEach((qsa, index) => {
-          
+           console.log(`QuestionSetAssignment ${index}:`, {
              assignmentOrder: qsa.assignmentOrder,
              questionSetId: qsa.questionSet?.id,
              questionSetDisplayName: qsa.questionSet?.displayName,
@@ -147,7 +147,7 @@ export default async function DeviceEstimatePage({ params }: DeviceEstimatePageP
           
           // Debug each question
           qsa.questionSet?.questions?.forEach((question, qIndex) => {
-           
+            console.log(`  Question ${qIndex}:`, {
               id: question.id,
               key: question.key,
               title: question.title,
@@ -212,7 +212,7 @@ export default async function DeviceEstimatePage({ params }: DeviceEstimatePageP
   // The DeviceEstimationPageClient expects 'initialDevice' of type 'DeviceInformation'
   // We'll need to update DeviceEstimationPageClient props later.
   // For now, let's pass the full model and necessary simple props.
- 
+  console.log('deviceDetails', deviceDetails);
   return (
     <DeviceEstimationPageClient 
       // initialDevice={deviceDetails} // This will be of type Model from catalog

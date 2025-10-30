@@ -315,7 +315,7 @@ export class ListLayoutService {
             !evt.target.isAncestorOf &&
             !listGroup.isAncestorOf(evt.target))
         ) {
-         
+          console.log("Outside click detected, ungrouping list group");
           this.ungroupNodes(listGroup, layer);
           this.updateState({
             ...this.currentState,

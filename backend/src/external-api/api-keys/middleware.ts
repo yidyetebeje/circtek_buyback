@@ -14,7 +14,7 @@ export class ApiKeyMiddleware {
     return new Elysia()
       .derive(async (ctx) => {
         /* debug removed */
-       
+        console.log("debug mode called")
         const headers = (ctx as any)?.headers ?? {};
         const request = (ctx as any)?.request as Request;
         const startTime = Date.now();
@@ -206,7 +206,7 @@ export class ApiKeyMiddleware {
   static authenticateAndScope() {
     return new Elysia()
       .derive(async (ctx) => {
-       
+        console.log("debug mode called from this page")
         const headers = (ctx as any)?.headers ?? {};
         const request = (ctx as any)?.request as Request;
         const query = (ctx as any)?.query || {};
@@ -462,7 +462,7 @@ export const authenticateAndScope = () => (app: Elysia) =>
   app
     .derive(async (ctx) => {
       // Minimal debug to verify invocation
-     
+      console.log('[ApiKey] authenticateAndScope derive invoked');
 
       const headers = (ctx as any)?.headers ?? {};
       const request = (ctx as any)?.request as Request;

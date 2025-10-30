@@ -67,9 +67,9 @@ export class UserShopAccessController {
     try {
       const {currentTenantId, currentUserId} = ctx as any;
       // Extract requesting user ID from JWT token
-     
+      console.log('grant access', ctx.user);
       const requestingUserId = currentUserId;
-     
+      console.log('requestingUserId', requestingUserId);
       if (!requestingUserId) {
         ctx.set.status = 401;
         return { error: 'Authentication required' };

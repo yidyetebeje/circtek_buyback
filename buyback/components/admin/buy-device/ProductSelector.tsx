@@ -36,15 +36,15 @@ export function ProductSelector({ onProductSelected, onBack, shopId }: ProductSe
   // shopId is now passed as a prop from the server component
   
   // Debug logging
- 
+  console.log('ProductSelector shopId:', shopId);
 
   // Fetch categories for filtering
   const { data: categoriesData } = useQuery({
     queryKey: ['published-categories', shopId],
     queryFn: async () => {
-     
+      console.log('Fetching categories for shopId:', shopId);
       const result = await shopService.getPublishedCategories(shopId, { limit: 100 });
-     
+      console.log('Categories result:', result);
       return result;
     },
     enabled: !!shopId && shopId > 0,
@@ -56,7 +56,7 @@ export function ProductSelector({ onProductSelected, onBack, shopId }: ProductSe
   const { data: modelsData, isLoading, error } = useQuery({
     queryKey: ['published-models', shopId, searchTerm, selectedCategoryId, page],
     queryFn: async () => {
-     
+      console.log('Fetching models for shopId:', shopId, 'with params:', {
         search: searchTerm || undefined,
         categoryId: selectedCategoryId,
         page,
@@ -68,7 +68,7 @@ export function ProductSelector({ onProductSelected, onBack, shopId }: ProductSe
         page,
         limit: 12,
       });
-     
+      console.log('Models result:', result);
       return result;
     },
     enabled: !!shopId && shopId > 0,

@@ -95,7 +95,7 @@ export class EmailTemplateService {
    * Populate a template with actual order data
    */
   async populateTemplate(request: EmailTemplatePopulateRequest, shopId: number): Promise<EmailTemplatePopulatedResponse | null> {
-   
+    console.log("Service populateTemplate called with:", {
       templateId: request.templateId,
       orderId: request.orderId,
       hasSubject: !!request.subject,
@@ -105,13 +105,13 @@ export class EmailTemplateService {
     
     // Check if this is a preview request (orderId starts with 'preview-' or 'mock-')
     const isPreview = request.orderId.startsWith('preview-') || request.orderId.startsWith('mock-');
-   
+    console.log("Is preview request:", isPreview);
     
     let template;
     
     // Handle preview templates that might not exist in database yet
     if (request.templateId === 'preview-template' && (request.subject || request.content)) {
-     
+      console.log("Using preview template with provided subject and/or content");
       // Use the provided subject and content for preview (use defaults if empty)
       template = {
         id: 'preview-template',
@@ -121,7 +121,7 @@ export class EmailTemplateService {
         shopId
       };
     } else if (request.templateId === 'preview-template') {
-     
+      console.log("Preview template requested but missing both subject and content:", { 
         hasSubject: !!request.subject, 
         hasContent: !!request.content,
         subjectValue: request.subject,
@@ -129,11 +129,11 @@ export class EmailTemplateService {
       });
       return null;
     } else {
-     
+      console.log("Fetching template from database:", request.templateId);
       // Get existing template from database
       template = await this.repository.findById(request.templateId);
       if (!template || template.shopId !== shopId) {
-       
+        console.log("Template not found or shopId mismatch:", { found: !!template, shopId: template?.shopId, expectedShopId: shopId });
         return null;
       }
     }

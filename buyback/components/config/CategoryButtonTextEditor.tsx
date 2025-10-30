@@ -49,8 +49,8 @@ export function CategoryButtonTextEditor({
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isGeneratingBulk, setIsGeneratingBulk] = useState(false);
   const [aiLanguage, setAiLanguage] = useState<string | null>(null);
- 
- 
+  console.log("availableLocales", availableLocales);
+  console.log("selectedLocale", selectedLocale);
   
   useEffect(() => {
     setLocalConfig(categoryTextConfig || {});

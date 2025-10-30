@@ -253,7 +253,7 @@ export class TextEditorService {
 
     // Function to apply changes
     const applyChanges = () => {
-     
+      console.log(`[TextEdit] Applying changes to text node. New text: "${textarea.value}"`);
       
       textNode.text(textarea.value);
 
@@ -345,7 +345,7 @@ export class TextEditorService {
   }
 
   autoResizeTextNode(textNode: Konva.Text, adjustWidth: boolean = false): void {
-   
+    console.log(`[AutoResize] Starting auto-resize for text node. adjustWidth: ${adjustWidth}, current text: "${textNode.text()}"`);
     
     textNode.wrap('word');
     textNode.ellipsis(false);
@@ -369,7 +369,7 @@ export class TextEditorService {
         const finalWidth = Math.max(calculatedWidth, DEFAULT_VALUES.TEXT_MIN_WIDTH);
         
         textNode.width(finalWidth);
-       
+        console.log(`[AutoResize] Text node width set to ${finalWidth}px`);
       } else {
         const textLength = (textNode.text() || '').length;
         const fontSize = textNode.fontSize() || 16;

@@ -80,7 +80,7 @@ export class CanvasService {
       // Proceed anyway using calculated dimensions; we'll update size after first render
       console.warn(`[initializeKonva] Container reported zero size; proceeding with computed dimensions ${dimensions.canvasWidth}x${dimensions.canvasHeight}`);
     } else {
-     
+      console.log(`[initializeKonva] Container dimensions verified: ${container.offsetWidth}x${container.offsetHeight}`);
     }
     container.style.backgroundColor = '';
 
@@ -129,7 +129,7 @@ export class CanvasService {
     // Setup stage click handling
     this.setupStageEvents(stage, layer, transformer, background);
 
-   
+    console.log('Konva initialized successfully.');
     cdRef.detectChanges();
 
     return true;
@@ -221,7 +221,7 @@ export class CanvasService {
       }
       
       stage.batchDraw();
-     
+      console.log(`Konva Stage resized to: ${newWidth}px x ${newHeight}px`);
       this.updateContainerStyle();
     }
   }
@@ -241,7 +241,7 @@ export class CanvasService {
     container.style.height = `${scaledHeight}px`;
     container.style.margin = '0 auto';
     
-   
+    console.log(`Container style updated to: ${scaledWidth}px x ${scaledHeight}px`);
   }
 
   getContainerStyle() {
@@ -325,14 +325,14 @@ export class CanvasService {
         return !(isBackground || isTransformer);
       });
       const hasElements = elements.length > 0;
-     
+      console.log(`Canvas has ${elements.length} elements, setting hasElements to ${hasElements}`);
       this.hasElementsSubject.next(hasElements);
     }
   }
 
   // Force update the hasElements flag - useful after deserialization
   public forceUpdateHasElementsFlag(): void {
-   
+    console.log('Force updating hasElements flag');
     this.updateHasElementsFlag();
   }
 
@@ -389,7 +389,7 @@ export class CanvasService {
       return;
     }
 
-   
+    console.log('Deserializing nodes:', state.nodes);
 
     // Recreate elements
     if (state.nodes && Array.isArray(state.nodes)) {
@@ -401,7 +401,7 @@ export class CanvasService {
     // Update hasElements flag based on actual layer contents after recreation
     // Use a longer timeout to ensure all async operations (like image loading) are complete
     setTimeout(() => {
-     
+      console.log('Updating hasElements flag after deserialization');
       this.updateHasElementsFlag();
     }, 500);
 

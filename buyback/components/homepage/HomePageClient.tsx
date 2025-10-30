@@ -77,12 +77,12 @@ export function HomePageClient({ shopId }: HomePageClientProps) {
 
   // Debug: Log current language and translation values
   useEffect(() => {
-   
-   
-   
-   
-   
-   
+    console.log('🌍 Current Language Object:', currentLanguageObject);
+    console.log('🌍 Current Locale:', currentLocale);
+    console.log('🌍 Category Section Title:', displayConfig.categorySectionTitle);
+    console.log('🌍 Category Section Subtitle:', displayConfig.categorySectionSubtitle);
+    console.log('🌍 Localized Title:', getLocalizedText(displayConfig.categorySectionTitle, currentLocale, fallbackLocale));
+    console.log('🌍 Localized Subtitle:', getLocalizedText(displayConfig.categorySectionSubtitle, currentLocale, fallbackLocale));
   }, [currentLanguageObject, currentLocale, displayConfig.categorySectionTitle, displayConfig.categorySectionSubtitle, fallbackLocale]);
 
   // We no longer need the handleLivePreview and handleConfigChange methods
@@ -99,7 +99,7 @@ export function HomePageClient({ shopId }: HomePageClientProps) {
     if (shopOwnerId) {
       updateShopConfig(config, {
         onSuccess: () => {
-         
+          console.log('Shop configuration updated successfully');
           // Optionally refetch shopConfig or update shopConfigAtom if backend returns the new config
           // For now, we assume the local state is the source of truth after save for immediate UI update
           setShopConfig(config); // Ensure local atom is updated to match saved config
@@ -287,7 +287,7 @@ export function HomePageClient({ shopId }: HomePageClientProps) {
       order: sectionsOrder.globalEarth || 93, // Appears after step process but before feedback
       component: (
         <div className="relative">
-          <GlobalEarthSection shopConfig={displayConfig} />
+          <GlobalEarthSection />
           {canEdit && (
             <button 
               onClick={() => handleComponentEdit('globalEarth')}

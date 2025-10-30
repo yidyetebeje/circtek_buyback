@@ -72,13 +72,13 @@ export class ShopController {
 
   async getById(id: number, ctx: Context) {
     try {
-     
+      console.log("send request", id)
       const shop = await shopService.getShopById(id);
       return {
         data: shop,
       }
     } catch (error: any) {
-     
+      console.log("error", error)
       if (error instanceof BadRequestError) {
         ctx.set.status = 400;
         return { error: error.message };

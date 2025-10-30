@@ -25,10 +25,10 @@ function setupServerEnvVars() {
   });
 
   // Log important environment variables
- 
- 
- 
- 
+  console.log('[ENV] Environment setup complete');
+  console.log(`[ENV] NEXTAUTH_URL: ${process.env.NEXTAUTH_URL}`);
+  console.log(`[ENV] NEXTAUTH_SECRET: ${process.env.NEXTAUTH_SECRET ? '(set)' : '(not set)'}`);
+  console.log(`[ENV] NEXT_PUBLIC_API_URL: ${process.env.NEXT_PUBLIC_API_URL || '(not set)'}`);
 }
 
 // Run setup when this module is imported

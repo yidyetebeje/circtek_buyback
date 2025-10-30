@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAtom } from "jotai";
-import { HeroSection, TranslatableText, DeviceEstimationConfig, DeviceEstimationQuestion, ShopConfig, CategoryTextConfig, StepProcessConfig, HelpConfig, FeedbackConfig, ThePhoneLabHeaderConfig, GlobalEarthConfig } from "@/types/shop";
+import { HeroSection, TranslatableText, DeviceEstimationConfig, DeviceEstimationQuestion, ShopConfig, CategoryTextConfig, StepProcessConfig, HelpConfig, FeedbackConfig, ThePhoneLabHeaderConfig } from "@/types/shop";
 import { HeroVariantSelector, HeroVariantType } from "./HeroVariantSelector";
 import { CategoryVariantSelector } from "./CategoryVariantSelector";
 import { ModelListVariantSelector, ModelListVariantType } from './ModelListVariantSelector';
@@ -24,7 +24,6 @@ import { FooterLinksEditor } from './FooterLinksEditor';
 import { FooterVariant4LinksEditor } from './FooterVariant4LinksEditor';
 import { FooterVariant4Props } from '../layout/footer-variants/FooterVariant4';
 import { StepProcessTranslationEditor } from './StepProcessTranslationEditor';
-import { GlobalEarthTranslationEditor } from './GlobalEarthTranslationEditor';
 import { HelpTranslationEditor } from './HelpTranslationEditor';
 import FeedbackTranslationEditor from './FeedbackTranslationEditor';
 import { ThePhoneLabHeaderTranslationEditor } from './ThePhoneLabHeaderTranslationEditor';
@@ -88,7 +87,6 @@ type ComponentConfig =
   | CheckoutConfig
   | FooterConfig
   | StepProcessConfig
-  | GlobalEarthConfig
   | HelpConfig
   | FeedbackConfig
   | ThePhoneLabHeaderConfig;
@@ -204,13 +202,6 @@ export function ComponentEditor({ isOpen, onClose, onUpdateShopConfig }: Compone
         step3Title: { en: "Earn money" },
         step3Description: { en: "Paid directly in our stores, with no surprises. When sent within 24 hours" }
       });
-    } else if (componentType === 'globalEarth') {
-      setLocalConfig(shopConfig.globalEarthConfig || {
-        heading: { en: "Reduce e-waste, make money with your old device" },
-        subheading: { en: "Receive your personalized offer with a few clicks" },
-        imageUrl: "https://verkopen.thephonelab.nl/assets/images/domain-6-globe-icon.png?v=1",
-        imageAlt: { en: "Globe Icon" }
-      });
     } else if (componentType === 'help') {
       setLocalConfig(shopConfig.helpConfig || {
         title: { en: "Need help?" },
@@ -266,7 +257,6 @@ export function ComponentEditor({ isOpen, onClose, onUpdateShopConfig }: Compone
       case 'deviceEstimation': return 'Device Estimation Settings';
       case 'checkout': return 'Checkout Style';
       case 'stepProcess': return 'Step Process Settings';
-      case 'globalEarth': return 'Global Earth Section Settings';
       case 'help': return 'Help Section Settings';
       case 'feedback': return 'Feedback Section Settings';
       case 'thePhoneLabHeader': return 'ThePhoneLab Header Settings';
@@ -543,11 +533,6 @@ export function ComponentEditor({ isOpen, onClose, onUpdateShopConfig }: Compone
       updatedShopConfig = {
         ...updatedShopConfig,
         stepProcessConfig: localConfig as StepProcessConfig
-      };
-    } else if (componentType === 'globalEarth') {
-      updatedShopConfig = {
-        ...updatedShopConfig,
-        globalEarthConfig: localConfig as GlobalEarthConfig
       };
     } else if (componentType === 'help') {
       updatedShopConfig = {
@@ -1578,54 +1563,6 @@ export function ComponentEditor({ isOpen, onClose, onUpdateShopConfig }: Compone
                       return {
                         ...baseConfig,
                         stepProcessConfig: updatedConfig,
-                      };
-                    });
-                  }}
-                  availableLocales={['en', 'nl', 'de', 'es', 'fr', 'pt']}
-                />
-              </div>
-            )}
-            
-            {/* Global Earth Section Editor */}
-            {componentType === 'globalEarth' && (
-              <div className="space-y-6">
-                <div className="mb-4 p-4 bg-gradient-to-r from-green-50 to-cyan-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="flex-shrink-0">
-                      <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-semibold text-green-900">AI-Powered Global Earth Section ✨</h4>
-                      <p className="text-sm text-green-700">
-                        Generate compelling environmental messaging for your global earth section that emphasizes sustainability and e-waste reduction. 
-                        Perfect for creating localized content that resonates with environmentally conscious customers across different languages.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      🌍 Eco-Focused
-                    </span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800">
-                      🌱 Sustainability
-                    </span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      ⚡ Instant Generation
-                    </span>
-                  </div>
-                </div>
-
-                <GlobalEarthTranslationEditor
-                  globalEarthConfig={localConfig as GlobalEarthConfig}
-                  onChange={(updatedConfig) => {
-                    setLocalConfig(updatedConfig);
-                    setPreviewConfig(prevConfig => {
-                      const baseConfig = prevConfig || {...shopConfig};
-                      return {
-                        ...baseConfig,
-                        globalEarthConfig: updatedConfig,
                       };
                     });
                   }}

@@ -12,10 +12,10 @@ export class TesterAssignmentsController {
     async getAllAssignments(testerId: number, tenantId: number): Promise<response<TesterAssignments | null>> {
         const assignments = await this.repo.getAllAssignments(testerId, tenantId)
         if (!assignments) {
-           
+            console.log('Tester not found or no access', { testerId, tenantId })
             return { data: null, message: 'Tester not found or no access', status: 404 }
         }
-       
+        console.log('Assignments', { assignments })
         return { data: assignments, message: 'OK', status: 200 }
     }
 }

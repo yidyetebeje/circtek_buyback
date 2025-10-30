@@ -89,7 +89,7 @@ export class RepairFormComponent implements OnInit {
       return quantityValid && (hasSku || hasReason);
     });
     
-   
+    console.log({
       hasIdentifier,
       hasWarehouseId,
       hasDeviceId,
@@ -241,11 +241,11 @@ export class RepairFormComponent implements OnInit {
         if (device) {
           this.deviceFound.set(true);
           this.initializePartsWhenDeviceFound();
-         
+          console.log("device id", device);
           const deviceId = Number(device.id ?? device.device_id ?? 0);
-         
+          console.log("device id", deviceId);
           if (deviceId > 0) this.form().get('device_id')?.setValue(deviceId);
-         
+          console.log(this.form().value);
           
           // Fetch repair history for this device
           this.fetchRepairHistory(deviceId);
@@ -367,7 +367,7 @@ export class RepairFormComponent implements OnInit {
   }
 
   onSubmit() {
-   
+    console.log(this.form().value, "submitting");
     
     // Early validation check - must have at least one part
     if (this.deviceFound() && this.parts.length === 0) {
@@ -446,7 +446,7 @@ export class RepairFormComponent implements OnInit {
     const form = this.form();
     const missingFields: string[] = [];
     const deviceFoundStatus = this.deviceFound();
-   
+    console.log(form, "validated form")
     
     if (!form.get('identifier')?.value?.trim()) {
       missingFields.push('Device IMEI/Serial');

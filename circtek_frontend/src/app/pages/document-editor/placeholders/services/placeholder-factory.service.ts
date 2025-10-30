@@ -55,7 +55,7 @@ export class PlaceholderFactoryService {
       componentRef.instance.placeholderId = placeholderId;
       componentRef.instance.src = src;
 
-     
+      console.log(`Created placeholder component: ${componentType.name} for ID: ${placeholderId}`);
       return componentRef;
     } catch (error) {
       console.error(`Error creating placeholder component for ID ${placeholderId}:`, error);

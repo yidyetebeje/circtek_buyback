@@ -89,12 +89,12 @@ export class BarcodeScannerExampleComponent {
   protected readonly lastScanResult = signal<ScanResult | null>(null);
   
   onBasicScan(result: ScanResult): void {
-   
+    console.log('Basic scan result:', result);
     this.lastScanResult.set(result);
   }
   
   onPersistentScan(result: ScanResult): void {
-   
+    console.log('Persistent scan result:', result);
     this.lastScanResult.set(result);
   }
   

@@ -39,8 +39,8 @@ export function getTranslatedCategoryContent(
   meta_description?: string;
   meta_keywords?: string;
 } {
-   
-   
+    console.log('category', category);
+    console.log('currentLanguage', currentLanguage);
   // If no current language or no translations, return default content
   if (!currentLanguage || !category.translations || category.translations.length === 0) {
     return {

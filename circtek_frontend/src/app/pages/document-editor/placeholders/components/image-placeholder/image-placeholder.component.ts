@@ -35,7 +35,7 @@ export class ImagePlaceholderComponent extends BasePlaceholderComponent implemen
   }
 
   override createPlaceholder(): void {
-   
+    console.log('Creating image placeholder for ID:', this.placeholderId);
     this.setupPlaceholderImage();
     this.generateAndAddImage();
     this.setupEventListeners();
@@ -77,12 +77,12 @@ export class ImagePlaceholderComponent extends BasePlaceholderComponent implemen
     const newHeight = this.placeholderImage.height() * this.placeholderImage.scaleY();
 
     // Update position object
-   
+    console.log("onTransformEnd called", this.position)
     if (this.position) {
       this.position.width = newWidth;
       this.position.height = newHeight;
     }
-   
+    console.log("onTransformEnd new width called", this.position)
 
     // Reset scales on the image
     this.placeholderImage.width(newWidth);

@@ -179,8 +179,8 @@ function TemplateEditor() {
       });
 
       // result.data contains populated subject and content
-     
-     
+      console.log("Populated subject:", result.data.subject);
+      console.log("Populated content:", result.data.content);
     } catch (error) {
       console.error("Preview failed:", error);
     }

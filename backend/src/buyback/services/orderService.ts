@@ -88,7 +88,7 @@ export class OrderService {
             tenant_id: newOrder.tenant_id,
             order_id: Number(newOrder.id)
           });
-         
+          console.log(`[OrderService] Device with IMEI ${params.imei} added to inventory from admin order ${newOrder.id}`);
         } catch (deviceError) {
           // Log the error but don't fail the whole transaction for now
           console.error(`[OrderService] Error adding device to inventory for admin order:`, deviceError);
@@ -187,7 +187,7 @@ export class OrderService {
             order_id: Number(params.orderId)
           });
           
-         
+          console.log(`[OrderService] Device with IMEI ${params.imei} added to inventory from order ${params.orderId}`);
         } catch (deviceError) {
           // Log the error but don't fail the whole transaction
           console.error(`[OrderService] Error adding device to inventory:`, deviceError);
@@ -258,7 +258,7 @@ export class OrderService {
       // Generate the label
       const labelInfo = await shippingService.generateAndSaveShippingLabel(orderId, sellerAddress);
       
-     
+      console.log(`[OrderService] Shipping label generated for order ${orderId}:`, labelInfo.trackingNumber);
       
       // If needed, we could update the order or send an additional notification here
     } catch (error) {
@@ -342,7 +342,7 @@ export class OrderService {
       // For certain status changes, we might want to send admin notifications too
       if (newStatus === ORDER_STATUS.ARRIVED) {
         // Example: notify receiving department when a package arrives
-       
+        console.log(`[OrderService] Additional notification to receiving department for order ${orderId}`);
       }
     } catch (error) {
       console.error(`[OrderService] Error sending status update notification for order ${orderId}:`, error);

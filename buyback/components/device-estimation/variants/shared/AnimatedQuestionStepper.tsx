@@ -20,7 +20,7 @@ const getLocalizedText = (textObj: TranslatableText | string | undefined, locale
   if (!textObj) return '';
   if (typeof textObj === 'string') return textObj;
   
- 
+  console.log('getLocalizedText called with:', {
     textObj,
     locale,
     defaultLocale,
@@ -28,7 +28,7 @@ const getLocalizedText = (textObj: TranslatableText | string | undefined, locale
   });
   
   const result = textObj[locale] || textObj[defaultLocale] || '';
- 
+  console.log('getLocalizedText result:', result);
   
   return result;
 };

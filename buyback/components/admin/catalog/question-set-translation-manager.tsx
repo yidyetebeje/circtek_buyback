@@ -131,7 +131,7 @@ export function QuestionSetTranslationManager({
 
   // Initialize translations
   useEffect(() => {
-   
+    console.log('🔧 Initializing translations with:', { initialTranslations, availableLanguages, defaultLanguage });
     
     const languages = [defaultLanguage];
     const translationsMap: Record<string, QuestionSetTranslation> = {};
@@ -155,18 +155,18 @@ export function QuestionSetTranslationManager({
     };
     
     if (initialTranslations.length > 0) {
-     
+      console.log('🔧 Processing initial translations:', initialTranslations);
       
       initialTranslations.forEach((translation) => {
         const language = availableLanguages.find(l => l.id === translation.language_id);
-       
-       
+        console.log('🔧 Processing translation for language ID:', translation.language_id, 'Found language:', language);
+        console.log('🔧 Available languages for reference:', availableLanguages);
         
         if (language) {
           // Add language to selected list if not already there
           if (!languages.some(l => l.id === language.id)) {
             languages.push(language);
-           
+            console.log('🔧 Added language to list:', language);
           }
           
           // Store the complete translation, overriding default if it's the same language
@@ -186,15 +186,15 @@ export function QuestionSetTranslationManager({
               })),
             })),
           };
-         
+          console.log('🔧 Stored translation for language code:', language.code, translationsMap[language.code]);
         } else {
           console.warn('🔧 ❌ Language not found for ID:', translation.language_id, 'Available languages:', availableLanguages.map(l => `${l.id}=${l.name}`));
         }
       });
     }
     
-   
-   
+    console.log('🔧 Final selected languages:', languages);
+    console.log('🔧 Final translations map:', translationsMap);
     
     setSelectedLanguages(languages);
     setTranslations(translationsMap);
@@ -204,11 +204,11 @@ export function QuestionSetTranslationManager({
   // Load form data when editing language changes
   useEffect(() => {
     if (editingLanguage && Object.keys(translations).length > 0) {
-     
+      console.log('Loading form data for language:', editingLanguage);
       const translation = translations[editingLanguage];
       
       if (translation) {
-       
+        console.log('Loading translation data:', translation);
         form.setValue('displayName', translation.displayName || '');
         form.setValue('description', translation.description || '');
         
@@ -231,7 +231,7 @@ export function QuestionSetTranslationManager({
           form.trigger();
         }, 100);
       } else {
-       
+        console.log('No translation found for language:', editingLanguage);
         // Reset form for new language
         form.reset({
           displayName: "",
@@ -299,7 +299,7 @@ export function QuestionSetTranslationManager({
     setAiGenerationLanguage(editingLanguage);
 
     try {
-     
+      console.log('Requesting AI translation for question set:', {
         entityType: 'question_set',
         sourceLanguage: defaultLanguage.code,
         targetLanguage: editingLanguage,
@@ -313,7 +313,7 @@ export function QuestionSetTranslationManager({
         sourceData
       );
 
-     
+      console.log('AI Translation response:', translation);
 
       if (translation) {
         // Update form with AI-generated translation
@@ -322,17 +322,17 @@ export function QuestionSetTranslationManager({
         
         // Check if questions are included in the response
         if (translation.questions && Array.isArray(translation.questions) && translation.questions.length > 0) {
-         
+          console.log(`Processing ${translation.questions.length} translated questions`);
           
           // Update questions and options - use index-based matching since AI doesn't return IDs
           translation.questions.forEach((translatedQuestion, translatedIndex) => {
-           
+            console.log(`Processing question ${translatedIndex + 1}:`, translatedQuestion);
             
             // Use the index directly since questions are returned in the same order
             const formQuestionIndex = translatedIndex;
             
             if (formQuestionIndex < questionSet.questions.length) {
-             
+              console.log(`Updating question ${formQuestionIndex} title:`, translatedQuestion.title);
               
               // Update question fields
               if (translatedQuestion.title) {
@@ -349,19 +349,19 @@ export function QuestionSetTranslationManager({
               
               // Update option translations - also use index-based matching
               if (translatedQuestion.options && Array.isArray(translatedQuestion.options) && translatedQuestion.options.length > 0) {
-               
+                console.log(`Processing ${translatedQuestion.options.length} options for question ${formQuestionIndex}`);
                 
                 translatedQuestion.options.forEach((translatedOption, optionIndex) => {
-                 
+                  console.log(`Processing option ${optionIndex + 1}:`, translatedOption);
                   
                   // Use index-based matching for options too
                   if (optionIndex < questionSet.questions[formQuestionIndex].options.length && translatedOption.title) {
-                   
+                    console.log(`Updating option ${formQuestionIndex}.${optionIndex} title:`, translatedOption.title);
                     form.setValue(`questions.${formQuestionIndex}.options.${optionIndex}.title`, translatedOption.title);
                   }
                 });
               } else {
-               
+                console.log(`No options to translate for question ${formQuestionIndex}`);
               }
             } else {
               console.warn(`Question index ${translatedIndex} is out of bounds`);
@@ -370,7 +370,7 @@ export function QuestionSetTranslationManager({
           
           // Force form re-render by getting and setting values
           const currentValues = form.getValues();
-         
+          console.log('Final form values after AI translation:', currentValues);
           
           // Trigger form re-render
           setTimeout(() => {

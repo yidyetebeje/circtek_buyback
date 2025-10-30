@@ -2,11 +2,11 @@
 const API_BASE = "http://localhost:5500/api";
 
 async function demoEmailTemplateSystem() {
- 
+  console.log("🎬 Email Template System Demo\n");
 
   try {
     // Demo 1: Create a custom template
-   
+    console.log("1. Creating a custom welcome template...");
     const customTemplate = {
       name: "Welcome Email",
       subject: "Welcome to {{shop.name}}, {{customer.name}}!",
@@ -55,10 +55,10 @@ async function demoEmailTemplateSystem() {
 
     if (createResponse.ok) {
       const result = await createResponse.json();
-     
+      console.log("✅ Custom template created:", result.data.name);
 
       // Demo 2: Generate preview for the new template
-     
+      console.log("\n2. Generating preview for custom template...");
       const previewResponse = await fetch(
         `${API_BASE}/email-templates/populate`,
         {
@@ -73,9 +73,9 @@ async function demoEmailTemplateSystem() {
 
       if (previewResponse.ok) {
         const previewResult = await previewResponse.json();
-       
-       
-       
+        console.log("✅ Preview generated successfully!");
+        console.log("   Subject:", previewResult.data.subject);
+        console.log(
           "   Content length:",
           previewResult.data.content.length,
           "characters"
@@ -109,12 +109,12 @@ async function demoEmailTemplateSystem() {
 </html>`;
 
         fs.default.writeFileSync("email-preview-demo.html", previewHtml);
-       
+        console.log("   📄 Preview saved to: email-preview-demo.html");
       }
     }
 
     // Demo 3: Test different template types
-   
+    console.log("\n3. Testing different template scenarios...");
 
     const scenarios = [
       {
@@ -154,12 +154,12 @@ async function demoEmailTemplateSystem() {
 
       if (previewResponse.ok) {
         const result = await previewResponse.json();
-       
+        console.log(`   ✅ ${scenario.name}: "${result.data.subject}"`);
       }
     }
 
     // Demo 4: Show dynamic fields usage
-   
+    console.log("\n4. Available dynamic fields:");
     const fieldsResponse = await fetch(
       `${API_BASE}/email-templates/dynamic-fields`
     );
@@ -167,15 +167,15 @@ async function demoEmailTemplateSystem() {
     if (fieldsResponse.ok) {
       const fieldsResult = await fieldsResponse.json();
       fieldsResult.data.forEach((group) => {
-       
+        console.log(`   📁 ${group.category.toUpperCase()}:`);
         group.fields.forEach((field) => {
-         
+          console.log(`      {{${field.fieldKey}}} - ${field.displayName}`);
         });
       });
     }
 
     // Demo 5: Performance test
-   
+    console.log("\n5. Performance test - generating 5 previews...");
     const startTime = Date.now();
 
     const promises = Array.from({ length: 5 }, (_, i) =>
@@ -195,27 +195,27 @@ async function demoEmailTemplateSystem() {
 
     await Promise.all(promises);
     const endTime = Date.now();
-   
+    console.log(
       `   ⚡ Generated 5 previews in ${endTime - startTime}ms (avg: ${
         (endTime - startTime) / 5
       }ms per preview)`
     );
 
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
+    console.log("\n🎉 Demo completed successfully!");
+    console.log("\n📋 Summary:");
+    console.log("   ✅ Custom template created");
+    console.log("   ✅ Preview generated and saved to HTML file");
+    console.log("   ✅ Multiple scenarios tested");
+    console.log("   ✅ Dynamic fields demonstrated");
+    console.log("   ✅ Performance tested");
+    console.log("\n💡 Next steps:");
+    console.log("   1. Open email-preview-demo.html in your browser");
+    console.log("   2. Visit /admin/email-templates in your app");
+    console.log("   3. Try creating templates with the UI");
+    console.log("   4. Test the auto-preview feature");
   } catch (error) {
     console.error("❌ Demo failed:", error.message);
-   
+    console.log(
       "\n💡 Make sure the backend server is running on http://localhost:5500"
     );
   }

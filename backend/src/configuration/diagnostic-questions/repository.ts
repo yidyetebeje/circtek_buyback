@@ -268,9 +268,9 @@ export class DiagnosticQuestionsRepository {
     }
 
     async createQuestionSet(payload: QuestionSetCreateInput & { tenant_id: number }): Promise<QuestionSetPublic | undefined> {
-       
-       
-       
+        console.log('=== Repository.createQuestionSet ===')
+        console.log('Received payload:', JSON.stringify(payload, null, 2))
+        console.log('payload.status type:', typeof payload.status, 'value:', payload.status)
         
         // Convert boolean to 0/1 for MySQL TINYINT compatibility
         const statusValue = payload.status !== undefined ? (payload.status ? 1 : 0) : 1;
@@ -281,13 +281,13 @@ export class DiagnosticQuestionsRepository {
             status: statusValue,
             tenant_id: payload.tenant_id,
         }
-       
-       
-       
+        console.log('Final insertData:', JSON.stringify(insertData, null, 2))
+        console.log('insertData.status type:', typeof insertData.status, 'value:', insertData.status)
+        console.log('About to call database.insert()...')
         
         try {
             await this.database.insert(diagnostic_question_sets).values(insertData as any)
-           
+            console.log('Database insert successful!')
         } catch (error) {
             console.error('Database insert failed:', error)
             throw error

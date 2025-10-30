@@ -33,7 +33,7 @@ import { BarcodeScannerComponent } from './shared/components/barcode-scanner/bar
 })
 export class MyComponent {
   onScanResult(result: ScanResult): void {
-   
+    console.log('Scanned:', result);
     if (result.isValid) {
       // Handle valid scan
       this.processValidScan(result.value, result.type);

@@ -62,7 +62,7 @@ async function runMigration() {
 		// Optionally save errors to file
 		// const fs = require('fs')
 		// fs.writeFileSync('migration-errors.json', JSON.stringify(result.errors, null, 2))
-		//
+		// console.log('\n💾 Errors saved to migration-errors.json')
 	}
 
 	console.log('\n✨ Migration process finished!')

@@ -59,7 +59,7 @@ export function CheckoutPageClient({
     if (shopId) {
       updateShopConfig(config, {
         onSuccess: () => {
-         
+          console.log('Shop configuration updated successfully');
         },
         onError: (error) => {
           console.error('Failed to update shop configuration:', error);

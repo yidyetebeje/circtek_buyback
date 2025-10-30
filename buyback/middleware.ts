@@ -40,13 +40,13 @@ export async function middleware(request: NextRequest) {
 
     if (isAdminRootPath) {
       if (!session) {
-       
+        console.log(`Redirecting unauthenticated user from ${pathname} to ${currentLocale}/admin/login page`);
         const loginUrl = new URL(`/${currentLocale}/admin/login`, request.url);
         loginUrl.searchParams.set('callbackUrl', pathname);
         return NextResponse.redirect(loginUrl);
       }
       // Authenticated user, redirect to dashboards
-     
+      console.log(`Redirecting authenticated user from ${pathname} to ${currentLocale}/admin/dashboards`);
       const dashboardUrl = new URL(`/${currentLocale}/admin/dashboards`, request.url);
       return NextResponse.redirect(dashboardUrl);
     }
@@ -54,13 +54,13 @@ export async function middleware(request: NextRequest) {
     // Check for other admin routes, excluding /admin/login
     if (pathname.includes('/admin') && !pathname.includes('/admin/login')) {
       if (!session) {
-       
+        console.log(`Redirecting unauthenticated user from ${pathname} to ${currentLocale}/admin/login page`);
         const loginUrl = new URL(`/${currentLocale}/admin/login`, request.url);
         loginUrl.searchParams.set('callbackUrl', pathname);
         return NextResponse.redirect(loginUrl);
       }
       // Authenticated user, proceed with intl middleware for other admin pages
-     
+      console.log(`Authenticated user accessing ${pathname}, applying intl middleware`);
       return intlMiddleware(request);
     }
 

@@ -13,7 +13,7 @@ export class OrderController {
   createOrder = async (context: Context) => {
     try {
       const { body } = context;
-     
+      console.log("body sent from the frontend", body)
       
       const {
         deviceId,

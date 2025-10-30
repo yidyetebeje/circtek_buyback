@@ -105,7 +105,7 @@ export class AITranslationService {
 
     try {
       const contextualPrompt = this.buildContextualPrompt(request);
-     
+      console.log('contextualPrompt', contextualPrompt);
       
       // Use smaller token limit for question sets to prevent runaway generation
       const maxTokens = request.entityType === 'question_set' ? 1000 : 1500;
@@ -118,7 +118,7 @@ export class AITranslationService {
         schema: translationSchema,
       });
 
-     
+      console.log('Generated translation object:', object);
 
       // Validate and sanitize the response
       const validatedTranslation = translationSchema.parse(object);
@@ -134,7 +134,7 @@ export class AITranslationService {
       
       // Retry with a simpler prompt for question sets if it failed
       if (request.entityType === 'question_set' && (error instanceof Error && error.message.includes('could not parse'))) {
-       
+        console.log('Retrying question set translation with simplified prompt...');
         return this.generateSimpleQuestionSetTranslation(request);
       }
       
@@ -602,7 +602,7 @@ CRITICAL: Do not return an array. Return only the JSON object shown above with t
           schema: dynamicTextsSchema,
         });
 
-       
+        console.log('Generated component translation object:', object);
 
         // Check if the result is unexpectedly an array and try to extract the object
         let translationObject = object;

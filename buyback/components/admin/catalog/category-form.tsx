@@ -63,7 +63,7 @@ export function CategoryForm({
   });
 
   const handleSubmit = (values: CategoryFormValues) => {
-   
+    console.log("handle submit", values)
     if (!values.icon && initialIconUrl) {
       values.icon = initialIconUrl;
     }

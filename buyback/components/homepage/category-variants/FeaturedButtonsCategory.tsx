@@ -26,7 +26,7 @@ export function FeaturedButtonsCategory({ categories, primaryColor, title, subti
           {categories.map((category) => {
             // Get translated content for current language
             const translatedContent = getTranslatedCategoryContent(category, currentLanguage || { code: 'en', name: 'English' });
-           
+            console.log('translatedContent', translatedContent);
             const displayName = translatedContent.title;
             
             return (

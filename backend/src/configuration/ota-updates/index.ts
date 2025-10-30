@@ -60,9 +60,9 @@ export const ota_updates_routes = new Elysia({ prefix: '/ota-updates' })
     }, { detail: { tags: ['Configuration'], summary: 'Get OTA update assigned to a tester (tenant-scoped)' } })
     .post('/check-update', async (ctx) => {
         const { body, currentUserId, currentTenantId } = ctx as any
-       
-       
-       
+        console.log('body', body)
+        console.log('currentUserId', currentUserId)
+        console.log('currentTenantId', currentTenantId)
         return controller.checkForUpdate(Number(currentUserId), Number(currentTenantId), body as any)
     }, { 
         body: VersionCheckRequest, 

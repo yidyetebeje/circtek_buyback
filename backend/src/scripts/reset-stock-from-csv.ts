@@ -142,21 +142,21 @@ async function resetStock(
     errors: []
   }
   
- 
- 
- 
- 
- 
- 
- 
- 
+  console.log(`\n${'='.repeat(70)}`)
+  console.log(`${dryRun ? '[DRY RUN] ' : ''}Resetting Stock from CSV`)
+  console.log(`${'='.repeat(70)}`)
+  console.log(`CSV File: ${csvPath}`)
+  console.log(`Warehouse ID: ${warehouseId}`)
+  console.log(`Tenant ID: ${tenantId}`)
+  console.log(`${dryRun ? 'Mode: DRY RUN (no database changes will be made)' : 'Mode: LIVE'}`)
+  console.log(`${'='.repeat(70)}\n`)
   
   // Parse CSV
- 
+  console.log('📖 Parsing CSV file...')
   const items = await parseCSV(csvPath)
   stats.totalItems = items.length
   
- 
+  console.log(`✓ Found ${stats.totalItems} items\n`)
   
   // Process each item
   for (const item of items) {
@@ -166,10 +166,10 @@ async function resetStock(
       
       if (existingStock) {
         if (existingStock.quantity === item.quantity) {
-         
+          console.log(`⊘ ${item.sku}: Already ${item.quantity} (no change needed)`)
           stats.skipped++
         } else {
-         
+          console.log(`↻ ${item.sku}: ${existingStock.quantity} → ${item.quantity}`)
           
           if (!dryRun) {
             await updateStock(item.sku, item.quantity, warehouseId, tenantId)
@@ -178,7 +178,7 @@ async function resetStock(
           stats.updated++
         }
       } else {
-       
+        console.log(`+ ${item.sku}: Creating with quantity ${item.quantity}`)
         
         if (!dryRun) {
           await createStock(item.sku, item.quantity, warehouseId, tenantId)
@@ -197,25 +197,25 @@ async function resetStock(
   }
   
   // Print summary
- 
- 
- 
- 
- 
- 
- 
- 
+  console.log(`\n\n${'='.repeat(70)}`)
+  console.log('Summary')
+  console.log(`${'='.repeat(70)}`)
+  console.log(`Total Items: ${stats.totalItems}`)
+  console.log(`Created: ${stats.created}`)
+  console.log(`Updated: ${stats.updated}`)
+  console.log(`Skipped (no change): ${stats.skipped}`)
+  console.log(`Errors: ${stats.errors.length}`)
   
   if (stats.errors.length > 0) {
-   
-   
-   
+    console.log(`\n${'─'.repeat(70)}`)
+    console.log('Errors:')
+    console.log(`${'─'.repeat(70)}`)
     stats.errors.forEach(err => {
-     
+      console.log(`${err.sku}: ${err.error}`)
     })
   }
   
- 
+  console.log(`${'='.repeat(70)}\n`)
   
   return stats
 }
@@ -254,7 +254,7 @@ async function main() {
   
   try {
     await resetStock(csvPath, warehouseId, tenantId, dryRun)
-   
+    console.log('✓ Script completed successfully')
     process.exit(0)
   } catch (error) {
     console.error('\n✗ Script failed:', error)

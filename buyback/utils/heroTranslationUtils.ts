@@ -364,34 +364,14 @@ export function getTranslatedHeroContent(
 export function prepareHeroContentForAITranslation(heroSection: HeroSection): Record<string, string> {
   const texts: Record<string, string> = {};
   
-  // Get English translations if they exist, otherwise fallback to original properties
-  const englishTranslation = heroSection.translations?.['en'];
-  
-  // Use English translation if available, otherwise fallback to original hero properties
-  const getTextValue = (field: keyof HeroSection) => {
-    if (englishTranslation && englishTranslation[field as keyof typeof englishTranslation]) {
-      return englishTranslation[field as keyof typeof englishTranslation] as string;
-    }
-    return heroSection[field] as string;
-  };
-  
-  const title = getTextValue('title');
-  const subtitle = getTextValue('subtitle');
-  const description = getTextValue('description');
-  const buttonText = getTextValue('buttonText');
-  const tagline = getTextValue('tagline');
-  const trustBadge = getTextValue('trustBadge');
-  const liveBadgeText = getTextValue('liveBadgeText');
-  const taglineBefore = getTextValue('taglineBefore');
-  
-  if (title) texts.title = title;
-  if (subtitle) texts.subtitle = subtitle;
-  if (description) texts.description = description;
-  if (buttonText) texts.buttonText = buttonText;
-  if (tagline) texts.tagline = tagline;
-  if (trustBadge) texts.trustBadge = trustBadge;
-  if (liveBadgeText) texts.liveBadgeText = liveBadgeText;
-  if (taglineBefore) texts.taglineBefore = taglineBefore;
+  if (heroSection.title) texts.title = heroSection.title;
+  if (heroSection.subtitle) texts.subtitle = heroSection.subtitle;
+  if (heroSection.description) texts.description = heroSection.description;
+  if (heroSection.buttonText) texts.buttonText = heroSection.buttonText;
+  if (heroSection.tagline) texts.tagline = heroSection.tagline;
+  if (heroSection.trustBadge) texts.trustBadge = heroSection.trustBadge;
+  if (heroSection.liveBadgeText) texts.liveBadgeText = heroSection.liveBadgeText;
+  if (heroSection.taglineBefore) texts.taglineBefore = heroSection.taglineBefore;
   
   return texts;
 }

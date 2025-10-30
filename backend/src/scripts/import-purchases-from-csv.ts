@@ -173,22 +173,22 @@ async function importPurchases(
     errors: []
   }
   
- 
- 
- 
- 
- 
- 
- 
- 
- 
+  console.log(`\n${'='.repeat(70)}`)
+  console.log(`${dryRun ? '[DRY RUN] ' : ''}Importing Purchases from CSV`)
+  console.log(`${'='.repeat(70)}`)
+  console.log(`CSV File: ${csvPath}`)
+  console.log(`Tenant ID: ${tenantId}`)
+  console.log(`Warehouse ID: ${warehouseId}`)
+  console.log(`API URL: ${apiUrl}`)
+  console.log(`${dryRun ? 'Mode: DRY RUN (no API calls will be made)' : 'Mode: LIVE'}`)
+  console.log(`${'='.repeat(70)}\n`)
   
   // Parse CSV
- 
+  console.log('📖 Parsing CSV file...')
   const supplierGroups = await parseCSV(csvPath)
   stats.totalSuppliers = supplierGroups.size
   
- 
+  console.log(`✓ Found ${stats.totalSuppliers} suppliers\n`)
   
   // Process each supplier
   for (const [supplier, items] of supplierGroups.entries()) {
@@ -198,23 +198,23 @@ async function importPurchases(
     stats.totalItems += totalItems
     stats.totalValue += totalValue
     
-   
-   
-   
-   
-   
-   
-   
+    console.log(`\n${'─'.repeat(70)}`)
+    console.log(`Supplier: ${supplier}`)
+    console.log(`${'─'.repeat(70)}`)
+    console.log(`Items: ${items.length} unique SKUs`)
+    console.log(`Total Quantity: ${totalItems}`)
+    console.log(`Total Value: €${totalValue.toFixed(2)}`)
+    console.log(`\nItems:`)
     
     items.forEach(item => {
-     
+      console.log(`  • ${item.sku}: ${item.quantity} × €${item.price.toFixed(2)} = €${(item.quantity * item.price).toFixed(2)}`)
     })
     
     if (dryRun) {
-     
+      console.log(`\n⊘ [DRY RUN] Skipping API call`)
       stats.successfulPurchases++
     } else {
-     
+      console.log(`\n📤 Creating purchase order...`)
       const result = await createPurchaseOrder(
         supplier,
         items,
@@ -225,10 +225,10 @@ async function importPurchases(
       )
       
       if (result.success) {
-       
+        console.log(`✓ Successfully created purchase order ${result.purchaseId ? `#${result.purchaseId}` : ''}`)
         stats.successfulPurchases++
       } else {
-       
+        console.log(`✗ Failed to create purchase order: ${result.error}`)
         stats.failedPurchases++
         stats.errors.push({
           supplier,
@@ -239,25 +239,25 @@ async function importPurchases(
   }
   
   // Print summary
- 
- 
- 
- 
- 
- 
- 
- 
+  console.log(`\n\n${'='.repeat(70)}`)
+  console.log('Summary')
+  console.log(`${'='.repeat(70)}`)
+  console.log(`Total Suppliers: ${stats.totalSuppliers}`)
+  console.log(`Total Items: ${stats.totalItems}`)
+  console.log(`Total Value: €${stats.totalValue.toFixed(2)}`)
+  console.log(`Successful Purchases: ${stats.successfulPurchases}`)
+  console.log(`Failed Purchases: ${stats.failedPurchases}`)
   
   if (stats.errors.length > 0) {
-   
-   
-   
+    console.log(`\n${'─'.repeat(70)}`)
+    console.log('Errors:')
+    console.log(`${'─'.repeat(70)}`)
     stats.errors.forEach(err => {
-     
+      console.log(`${err.supplier}: ${err.error}`)
     })
   }
   
- 
+  console.log(`${'='.repeat(70)}\n`)
   
   return stats
 }
@@ -297,7 +297,7 @@ async function main() {
   
   try {
     await importPurchases(csvPath, tenantId, warehouseId, apiUrl, dryRun, authToken)
-   
+    console.log('\n✓ Script completed successfully')
     process.exit(0)
   } catch (error) {
     console.error('\n✗ Script failed:', error)

@@ -180,9 +180,6 @@ export interface StepProcessConfig {
   step2Description?: TranslatableText;
   step3Title?: TranslatableText;
   step3Description?: TranslatableText;
-  backgroundColor?: string;
-  textColor?: string;
-  numberColor?: string;
 }
 
 export interface HelpConfig {
@@ -224,15 +221,6 @@ export interface ThePhoneLabHeaderConfig {
   stores?: TranslatableText;
 }
 
-export interface GlobalEarthConfig {
-  heading?: TranslatableText;
-  subheading?: TranslatableText;
-  imageUrl?: string;
-  imageAlt?: TranslatableText;
-  backgroundColor?: string;
-  textColor?: string;
-}
-
 export interface ContactInfo {
   email?: string;
   phone?: string;
@@ -272,8 +260,6 @@ export interface ShopConfig {
   feedbackConfig?: FeedbackConfig;
   // ThePhoneLab header configuration
   thePhoneLabHeaderConfig?: ThePhoneLabHeaderConfig;
-  // Global Earth section configuration
-  globalEarthConfig?: GlobalEarthConfig;
   // Navigation configuration
   navigation?: NavigationConfig;
   contactInfo?: ContactInfo;

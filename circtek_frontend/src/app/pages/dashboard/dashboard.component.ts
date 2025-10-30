@@ -95,11 +95,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngAfterViewInit() {
     this.viewInitialized = true;
-   
+    console.log('ngAfterViewInit called, viewInitialized set to true');
     
     // Use requestAnimationFrame to ensure DOM is fully rendered
     requestAnimationFrame(() => {
-     
+      console.log('Canvas refs available after requestAnimationFrame:', {
         deviceType: !!this.deviceTypeChartRef?.nativeElement,
         monthlyTrends: !!this.monthlyTrendsChartRef?.nativeElement,
         warehouse: !!this.warehouseChartRef?.nativeElement
@@ -107,10 +107,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       
       // If data already loaded, create charts now
       if (this.overviewData() && this.monthlyTrends().length >= 0) {
-       
+        console.log('Data available in ngAfterViewInit, creating charts');
         this.createCharts();
       } else {
-       
+        console.log('No data available yet in ngAfterViewInit');
       }
     });
   }
@@ -133,7 +133,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       firstValueFrom(this.apiService.getDashboardWarehouseStats()),
       firstValueFrom(this.apiService.getDashboardRecentActivity())
     ]).then(([overview, warehouses, activity]) => {
-     
+      console.log('Dashboard data loaded:', { overview: overview?.data, warehouses: warehouses?.data, activity: activity?.data });
       this.overviewData.set(overview!.data);
       this.warehouseStats.set(warehouses!.data);
       this.recentActivity.set(activity!.data);
@@ -142,10 +142,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       // Create charts after data and view are ready
       if (this.viewInitialized) {
-       
+        console.log('Creating charts - view initialized');
         requestAnimationFrame(() => this.createCharts());
       } else {
-       
+        console.log('View not initialized yet, charts will be created in ngAfterViewInit');
       }
       this.isLoading.set(false);
       this.updateMonthlyTrendsChart(); // Load monthly trends after initial data
@@ -177,8 +177,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private createCharts() {
-   
-   
+    console.log('createCharts called');
+    console.log('Canvas elements check:', {
       deviceTypeCanvas: this.deviceTypeChartRef?.nativeElement,
       monthlyTrendsCanvas: this.monthlyTrendsChartRef?.nativeElement,
       warehouseCanvas: this.warehouseChartRef?.nativeElement
@@ -189,17 +189,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private setupDeviceTypeChart() {
-   
+    console.log('setupDeviceTypeChart called, overviewData:', this.overviewData());
     if (!this.overviewData()) {
-     
+      console.log('No overview data available for device type chart');
       return;
     }
 
     const testDeviceTypes = this.overviewData()!.test_devices_by_type;
-   
+    console.log('Test device types data:', testDeviceTypes);
 
     if (!testDeviceTypes || testDeviceTypes.length === 0) {
-     
+      console.log('No device types data available for chart');
       if (this.deviceTypeChartInstance) {
         this.deviceTypeChartInstance.destroy();
         this.deviceTypeChartInstance = undefined;
@@ -272,28 +272,28 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Instantiate chart
     if (this.deviceTypeChartRef?.nativeElement) {
-     
+      console.log('Creating device type chart instance');
       const canvas = this.deviceTypeChartRef.nativeElement;
       const ctx = canvas.getContext('2d');
-     
-     
-     
+      console.log('Canvas element:', canvas);
+      console.log('Canvas context:', ctx);
+      console.log('Chart config:', this.deviceTypeChart);
       this.deviceTypeChartInstance?.destroy();
       try {
         this.deviceTypeChartInstance = new Chart(ctx!, this.deviceTypeChart);
-       
+        console.log('Device type chart created successfully');
       } catch (error) {
         console.error('Error creating device type chart:', error);
       }
     } else {
-     
+      console.log('Device type chart canvas ref not available');
     }
   }
 
   private setupMonthlyTrendsChart() {
-   
+    console.log('setupMonthlyTrendsChart called, monthlyTrends:', this.monthlyTrends());
     if (!this.monthlyTrends() || this.monthlyTrends().length === 0) {
-     
+      console.log('No monthly trends data available');
       if (this.monthlyTrendsChartInstance) {
         this.monthlyTrendsChartInstance.destroy();
         this.monthlyTrendsChartInstance = undefined;
@@ -302,7 +302,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     const trends = this.monthlyTrends()!;
-   
+    console.log('Monthly trends data:', trends);
     
     this.monthlyTrendsChart = {
       type: 'line' as ChartType,
@@ -340,30 +340,30 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Instantiate chart
     if (this.monthlyTrendsChartRef?.nativeElement) {
-     
+      console.log('Creating monthly trends chart instance');
       const canvas = this.monthlyTrendsChartRef.nativeElement;
       const ctx = canvas.getContext('2d');
       this.monthlyTrendsChartInstance?.destroy();
       try {
         this.monthlyTrendsChartInstance = new Chart(ctx!, this.monthlyTrendsChart);
-       
+        console.log('Monthly trends chart created successfully');
       } catch (error) {
         console.error('Error creating monthly trends chart:', error);
       }
     } else {
-     
+      console.log('Monthly trends chart canvas ref not available');
     }
   }
 
   private setupWarehouseChart() {
-   
+    console.log('setupWarehouseChart called, warehouseStats:', this.warehouseStats());
     if (!this.warehouseStats() || this.warehouseStats().length === 0) {
-     
+      console.log('No warehouse stats data available');
       return;
     }
 
     const warehouses = this.warehouseStats()!;
-   
+    console.log('Warehouse stats data:', warehouses);
     
     // Collect all device types across warehouses
     const allDeviceTypes = new Set<string>();
@@ -411,18 +411,18 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Instantiate chart
     if (this.warehouseChartRef?.nativeElement) {
-     
+      console.log('Creating warehouse chart instance');
       const canvas = this.warehouseChartRef.nativeElement;
       const ctx = canvas.getContext('2d');
       this.warehouseChartInstance?.destroy();
       try {
         this.warehouseChartInstance = new Chart(ctx!, this.warehouseChart);
-       
+        console.log('Warehouse chart created successfully');
       } catch (error) {
         console.error('Error creating warehouse chart:', error);
       }
     } else {
-     
+      console.log('Warehouse chart canvas ref not available');
     }
   }
 
@@ -628,7 +628,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isDownloadingMap.update(map => ({ ...map, [id]: true }));
     
     try {
-     
+      console.log('Starting high-quality PDF generation for diagnostic:', row.id);
       
       // Use the shared diagnostic PDF service that renders the exact report component layout
       const blob = await this.diagnosticPdfService.generatePdf(row.id);
@@ -654,12 +654,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       // Cleanup blob URL
       setTimeout(() => window.URL.revokeObjectURL(url), 1000);
       
-     
+      console.log('High-quality PDF generated successfully from dashboard using shared service');
       
     } catch (error) {
       console.error('Error generating PDF from dashboard:', error);
       // Fallback to opening report page in new tab
-     
+      console.log('Falling back to opening report page in new tab');
       window.open(`${window.location.origin}/diagnostics/report/${row.id}`, '_blank');
     } finally {
       // Reset loading state for this diagnostic ID
@@ -747,7 +747,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       }, 100);
       
-     
+      console.log('Dashboard print dialog opened');
     } catch (error) {
       console.error('Error opening dashboard print dialog:', error);
       // Fallback: show message to user

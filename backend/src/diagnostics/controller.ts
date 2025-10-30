@@ -120,7 +120,7 @@ export class DiagnosticsController {
 			// 	}
 			// }
 
-			//
+			// console.log('Test authorized:', authResult.reason, 'Balance remaining:', authResult.balance_remaining)
 
 		// Step 2: Process the test upload
 		const created = await this.repo.upload(body, testerId, tenantId, warehouseId, customTimestamps)

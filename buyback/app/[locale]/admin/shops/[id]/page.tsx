@@ -21,7 +21,7 @@ export default function EditShopPage() {
   // Verify shop manager can only access their managed shop
   useEffect(() => {
     if (session?.user?.roleSlug === 'shop_manager') {
-     
+      console.log("session", session)
       const managedShopId = session.user.managed_shop_id;
       if (managedShopId !== shopId) {
         toast.error('You can only access your managed shop');
@@ -96,7 +96,7 @@ export default function EditShopPage() {
   
   const handleLogoUpload = async (file: File): Promise<string> => {
     setLogoFile(file);
-   
+    console.log('Logo file selected:', file.name, file.type, file.size);
     return Promise.resolve(URL.createObjectURL(file));
   };
   

@@ -86,7 +86,7 @@ export function FAQForm({
   const handleTranslationSave = async (updatedTranslations: FAQTranslation[]) => {
     if (!faqId) return;
     try {
-     
+      console.log("[FAQForm] Saving translations:", updatedTranslations);
       for (const translation of updatedTranslations) {
         const language = availableLanguages.find(l => l.id === translation.language_id);
         if (!language) {
@@ -103,7 +103,7 @@ export function FAQForm({
             answer: translation.answer,
           },
         };
-       
+        console.log("[FAQForm] Payload for upsert:", payloadToSend);
 
         await upsertFAQTranslation.mutateAsync(payloadToSend);
       }

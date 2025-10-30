@@ -64,7 +64,7 @@ async function main() {
   const filePath = path.resolve(__dirname, '../../reason.txt')
   const names = await readReasons(filePath)
   const { inserted, skipped } = await insertMissing(names, tenantId)
- 
+  console.log(`Processed ${names.length} reasons. Inserted ${inserted}, skipped (existing) ${skipped}.`)
 }
 
 main().catch((err) => {

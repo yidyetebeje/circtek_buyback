@@ -224,33 +224,33 @@ async function deletePurchasesBatch(
     details: []
   }
 
- 
- 
- 
- 
- 
- 
- 
- 
+  console.log(`\n${'='.repeat(70)}`)
+  console.log(`${dryRun ? '[DRY RUN] ' : ''}Batch Delete Purchases`)
+  console.log(`${'='.repeat(70)}`)
+  console.log(`Tenant ID: ${tenantId}`)
+  console.log(`Number of purchases: ${purchaseIds.length}`)
+  console.log(`Purchase IDs: ${purchaseIds.join(', ')}`)
+  console.log(`${dryRun ? 'Mode: DRY RUN (no changes will be made)' : 'Mode: LIVE'}`)
+  console.log(`${'='.repeat(70)}\n`)
 
   for (let i = 0; i < purchaseIds.length; i++) {
     const purchaseId = purchaseIds[i]
     
-   
-   
-   
+    console.log(`\n${'─'.repeat(70)}`)
+    console.log(`[${i + 1}/${purchaseIds.length}] Processing Purchase #${purchaseId}`)
+    console.log(`${'─'.repeat(70)}`)
 
     try {
       const stats = await deleteSinglePurchase(purchaseId, tenantId, dryRun)
       batchStats.details.push(stats)
 
       if (stats.success) {
-       
-       
-       
-       
-       
-       
+        console.log(`✓ Purchase: ${stats.purchaseOrderNo}`)
+        console.log(`  - Received items deleted: ${stats.receivedItemsDeleted}`)
+        console.log(`  - Purchase items deleted: ${stats.purchaseItemsDeleted}`)
+        console.log(`  - Stock movements reversed: ${stats.stockMovementsReversed}`)
+        console.log(`  - Device events deleted: ${stats.deviceEventsDeleted}`)
+        console.log(`  - Status: SUCCESS`)
 
         batchStats.successfulDeletions++
         batchStats.totalReceivedItemsDeleted += stats.receivedItemsDeleted
@@ -258,9 +258,9 @@ async function deletePurchasesBatch(
         batchStats.totalStockMovementsReversed += stats.stockMovementsReversed
         batchStats.totalDeviceEventsDeleted += stats.deviceEventsDeleted
       } else {
-       
-       
-       
+        console.log(`✗ Purchase #${purchaseId}`)
+        console.log(`  - Error: ${stats.error}`)
+        console.log(`  - Status: FAILED`)
         batchStats.failedDeletions++
       }
 
@@ -283,29 +283,29 @@ async function deletePurchasesBatch(
   }
 
   // Print final summary
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
+  console.log(`\n\n${'='.repeat(70)}`)
+  console.log('Batch Deletion Summary')
+  console.log(`${'='.repeat(70)}`)
+  console.log(`Total purchases processed: ${batchStats.totalPurchases}`)
+  console.log(`Successful deletions: ${batchStats.successfulDeletions}`)
+  console.log(`Failed deletions: ${batchStats.failedDeletions}`)
+  console.log(`Total received items deleted: ${batchStats.totalReceivedItemsDeleted}`)
+  console.log(`Total purchase items deleted: ${batchStats.totalPurchaseItemsDeleted}`)
+  console.log(`Total stock movements reversed: ${batchStats.totalStockMovementsReversed}`)
+  console.log(`Total device events deleted: ${batchStats.totalDeviceEventsDeleted}`)
 
   if (batchStats.failedDeletions > 0) {
-   
-   
-   
+    console.log(`\n${'─'.repeat(70)}`)
+    console.log('Failed Purchases:')
+    console.log(`${'─'.repeat(70)}`)
     batchStats.details
       .filter(d => !d.success)
       .forEach(detail => {
-       
+        console.log(`Purchase #${detail.purchaseId}: ${detail.error}`)
       })
   }
 
- 
+  console.log(`${'='.repeat(70)}\n`)
 
   return batchStats
 }
@@ -355,7 +355,7 @@ async function main() {
     const stats = await deletePurchasesBatch(purchaseIds, tenantId, dryRun)
     
     if (stats.failedDeletions === 0) {
-     
+      console.log('\n✓ Batch script completed successfully')
       process.exit(0)
     } else {
       console.error(`\n⚠ Batch script completed with ${stats.failedDeletions} failures`)

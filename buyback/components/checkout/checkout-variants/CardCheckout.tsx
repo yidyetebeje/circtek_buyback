@@ -252,7 +252,7 @@ export function CardCheckout({
     }
 
     if (!result && debugContext) {
-     
+      console.log(`[Language] No localized text found for ${debugContext}. Available locales:`, availableLocales);
     }
 
     return result;

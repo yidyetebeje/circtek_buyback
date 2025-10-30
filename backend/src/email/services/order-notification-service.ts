@@ -33,7 +33,7 @@ export class OrderNotificationService {
       
       // Skip if no template type is defined for this status
       if (!templateType) {
-       
+        console.log(`[OrderNotificationService] No template type defined for status: ${status}`);
         return { success: true };
       }
       
@@ -45,7 +45,7 @@ export class OrderNotificationService {
       
       // Skip if no active template is found
       if (!templates || templates.data.length === 0) {
-       
+        console.log(`[OrderNotificationService] No active ${templateType} template found for shop: ${shopId}`);
         return { success: true };
       }
       
@@ -96,7 +96,7 @@ export class OrderNotificationService {
         return { success: false, error: result.error };
       }
       
-     
+      console.log(`[OrderNotificationService] Email sent successfully for order: ${orderId}, status: ${status}`);
       return { success: true };
     } catch (error: any) {
       console.error(`[OrderNotificationService] Error sending notification:`, error);

@@ -89,7 +89,7 @@ export class DiagnosticReportComponent {
     try {
       // Skip base64 conversion to avoid CORS issues
       // html2canvas with allowTaint:true can handle external images directly
-     
+      console.log('Skipping image conversion - using allowTaint mode');
       
       // Small delay to ensure images are loaded
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -128,7 +128,7 @@ export class DiagnosticReportComponent {
       const fileName = datePart ? `${lpn}_${datePart}` : lpn;
       pdf.save(`${fileName}.pdf`);
       
-     
+      console.log('PDF generated successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Failed to generate PDF. Please try again.');

@@ -261,7 +261,7 @@ export class QuestionFormComponent {
 
   onActionClick(event: { action: string; data?: any }) {
     if (event.action === 'Cancel') {
-     
+      console.log("navigate back pressed")
       this.navigateBack();
     }
   }
