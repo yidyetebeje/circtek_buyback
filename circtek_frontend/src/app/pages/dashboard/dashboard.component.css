@@ -162,3 +162,19 @@ canvas {
     padding: 1rem;
   }
 }
+
+/* Override DaisyUI badge-success to use primary color */
+.badge-success {
+  background-color: #A7D48E !important;
+  color: #ffffff !important;
+  border-color: #A7D48E !important;
+}
+
+/* Higher specificity overrides for badges */
+:host .badge-success,
+:host ::ng-deep .badge-success,
+.badge.badge-success {
+  background-color: #A7D48E !important;
+  color: #ffffff !important;
+  border-color: #A7D48E !important;
+}

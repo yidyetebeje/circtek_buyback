@@ -1,0 +1,23 @@
+/* Override DaisyUI success elements to use primary color */
+.badge-success {
+  background-color: #A7D48E !important;
+  color: #ffffff !important;
+  border-color: #A7D48E !important;
+}
+
+.text-success {
+  color: #A7D48E !important;
+}
+
+/* Higher specificity overrides */
+:host .badge-success,
+:host ::ng-deep .badge-success {
+  background-color: #A7D48E !important;
+  color: #ffffff !important;
+  border-color: #A7D48E !important;
+}
+
+:host .text-success,
+:host ::ng-deep .text-success {
+  color: #A7D48E !important;
+}
