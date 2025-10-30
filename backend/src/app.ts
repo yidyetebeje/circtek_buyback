@@ -83,7 +83,7 @@ export const buildApp = () =>
 			jwt({
 				name: 'jwt',
 				secret: process.env.JWT_SECRET || 'dev_secret',
-				exp: '30d',
+				exp: '1d',
 			})
 		)
 		.use(catalogApi)
