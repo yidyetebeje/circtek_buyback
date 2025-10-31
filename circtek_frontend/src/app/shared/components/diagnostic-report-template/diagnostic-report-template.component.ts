@@ -49,7 +49,7 @@ export class DiagnosticReportTemplateComponent {
     if (!report?.iCloud) return '-';
     
     const iCloud = report.iCloud as any;
-    return iCloud.status || iCloud || '-';
+    return iCloud.status || iCloud || report.device_lock;
   });
   
   protected getCarrierLock = computed(() => {
