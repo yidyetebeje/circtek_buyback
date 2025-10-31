@@ -6,10 +6,11 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { GenericFormPageComponent, type FormField } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
 import { RepairWithItems } from '../../core/models/repair';
+import { AppCurrencyPipe } from '../../shared/pipes/app-currency.pipe';
 
 @Component({
   selector: 'app-repair-detail',
-  imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent],
+  imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent, AppCurrencyPipe],
   templateUrl: './repair-detail.component.html',
   styleUrl: './repair-detail.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

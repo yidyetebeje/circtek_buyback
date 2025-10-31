@@ -387,6 +387,33 @@ export const ota_update = mysqlTable('ota_update', {
 });
 
 // API Keys for external API access
+export const currency_symbols = mysqlTable('currency_symbols', {
+  id: serial('id').primaryKey(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  code: varchar('code', { length: 10 }).notNull(), // e.g., USD, EUR
+  symbol: varchar('symbol', { length: 10 }).notNull(), // e.g., $, €
+  label: varchar('label', { length: 100 }).notNull(), // e.g., US Dollar, Euro
+  is_default: boolean('is_default').default(false),
+  is_active: boolean('is_active').default(true),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  created_by: bigint('created_by', { mode: 'number', unsigned: true }).references(() => users.id),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_by: bigint('updated_by', { mode: 'number', unsigned: true }).references(() => users.id),
+}, (table) => [
+  index('idx_currency_symbols_tenant').on(table.tenant_id),
+  unique('uq_currency_symbols_tenant_code').on(table.tenant_id, table.code),
+]);
+
+export const user_currency_preferences = mysqlTable('user_currency_preferences', {
+  user_id: bigint('user_id', { mode: 'number', unsigned: true }).references(() => users.id).notNull(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  currency_code: varchar('currency_code', { length: 10 }).notNull(),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  primaryKey({ columns: [table.user_id, table.tenant_id] }),
+  index('idx_user_currency_preferences_tenant').on(table.tenant_id),
+]);
+
 export const api_keys = mysqlTable('api_keys', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),

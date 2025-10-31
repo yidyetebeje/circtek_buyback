@@ -155,7 +155,7 @@
           <lucide-icon [img]="DollarSignIcon" class="size-8"></lucide-icon>
         </div>
         <div class="stat-title">Total Spend</div>
-        <div class="stat-value text-success text-2xl">{{ formatCurrency(summary()!.total_cost) }}</div>
+        <div class="stat-value text-success text-2xl">{{ summary()!.total_cost | appCurrency }}</div>
         <div class="stat-desc">All repairs</div>
       </div>
 
@@ -165,7 +165,7 @@
           <lucide-icon [img]="DollarSignIcon" class="size-8"></lucide-icon>
         </div>
         <div class="stat-title">Avg Cost/Device</div>
-        <div class="stat-value text-warning text-2xl">{{ formatCurrency(summary()!.average_cost_per_repair) }}</div>
+        <div class="stat-value text-warning text-2xl">{{ summary()!.average_cost_per_repair | appCurrency }}</div>
         <div class="stat-desc">Per unique device</div>
       </div>
     </div>

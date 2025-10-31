@@ -152,8 +152,8 @@
                       <td class="whitespace-nowrap px-4 py-3">{{ item.ordered_quantity }}</td>
                       <td class="whitespace-nowrap px-4 py-3">{{ item.received_quantity }}</td>
                       <td class="whitespace-nowrap px-4 py-3 text-primary font-medium">{{ item.remaining_quantity }}</td>
-                      <td class="whitespace-nowrap px-4 py-3">{{ item.unit_price }}</td>
-                      <td class="whitespace-nowrap px-4 py-3 font-medium">{{ item.total_price }}</td>
+                      <td class="whitespace-nowrap px-4 py-3">{{ item.unit_price | appCurrency | async }}</td>
+                      <td class="whitespace-nowrap px-4 py-3 font-medium">{{ item.total_price | appCurrency | async }}</td>
                       <td class="whitespace-nowrap px-4 py-3">
                         <span class="badge {{ item.type === 'Part' ? 'badge-secondary' : 'badge-accent' }} badge-sm">
                           {{ item.type }}

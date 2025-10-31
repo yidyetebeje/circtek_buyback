@@ -7,6 +7,7 @@ import { GenericFormPageComponent, type FormField, type FormAction } from '../..
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { PurchaseItemModalComponent, type PurchaseItem } from './purchase-item-modal/purchase-item-modal.component';
+import { AppCurrencyPipe } from '../../shared/pipes/app-currency.pipe';
 
 
 interface PurchaseFormData {
@@ -27,7 +28,7 @@ interface PurchaseFormData {
 
 @Component({
   selector: 'app-purchase-form',
-  imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent, PurchaseItemModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent, PurchaseItemModalComponent, AppCurrencyPipe],
   templateUrl: './purchase-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

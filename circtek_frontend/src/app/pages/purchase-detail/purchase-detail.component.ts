@@ -2,17 +2,20 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
+import { CurrencyService } from '../../core/services/currency.service';
+import { CurrencyPipe } from '../../shared/pipes/currency.pipe';
 import { PurchaseWithItems } from '../../core/models/purchase';
 
 @Component({
   selector: 'app-purchase-detail',
-  imports: [CommonModule],
+  imports: [CommonModule, CurrencyPipe],
   templateUrl: './purchase-detail.component.html',
   styleUrls: ['./purchase-detail.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PurchaseDetailComponent {
   private readonly api = inject(ApiService);
+  private readonly currencyService = inject(CurrencyService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -75,8 +78,8 @@ export class PurchaseDetailComponent {
       ordered_quantity: item.quantity,
       received_quantity: item.received_quantity,
       remaining_quantity: item.remaining_quantity,
-      unit_price: `$${item.price.toFixed(2)}`,
-      total_price: `$${(item.quantity * item.price).toFixed(2)}`,
+      unit_price: item.price,
+      total_price: item.quantity * item.price,
       type: item.is_part ? 'Part' : 'Device',
       status: item.remaining_quantity === 0 ? 'Complete' : 
               item.received_quantity > 0 ? 'Partial' : 'Pending'

@@ -4,6 +4,7 @@ import { ThemeService } from '../../services/theme.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { LucideAngularModule } from 'lucide-angular';
+import { CurrencySelectorComponent } from '../currency-selector/currency-selector.component';
 import {
   LayoutDashboard,
   Stethoscope,
@@ -16,7 +17,7 @@ import {
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterModule, MatTooltipModule, LucideAngularModule],
+  imports: [RouterModule, MatTooltipModule, LucideAngularModule, CurrencySelectorComponent],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

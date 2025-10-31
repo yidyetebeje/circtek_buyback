@@ -52,6 +52,13 @@
   </ul>
   
   <div class="navbar-actions">
+    <!-- Currency selector -->
+    @if (isAuthenticated()) {
+      <div class="currency-selector-wrapper">
+        <app-currency-selector></app-currency-selector>
+      </div>
+    }
+    
     <!-- Theme toggle -->
     <button type="button" class="group rounded-md p-2 hover:bg-base-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       [attr.aria-pressed]="isDarkMode()" [matTooltip]="themeTooltip()"

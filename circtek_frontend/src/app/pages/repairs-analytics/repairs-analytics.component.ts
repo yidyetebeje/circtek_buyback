@@ -2,23 +2,26 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal, effect } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpParams } from '@angular/common/http';
-import { LucideAngularModule, TrendingUp, Package, DollarSign, Activity, Calendar, Warehouse, Search } from 'lucide-angular';
+import { LucideAngularModule, Activity, Package, TrendingUp, DollarSign, Warehouse, Calendar, Search } from 'lucide-angular';
+import { AppCurrencyPipe } from '../../shared/pipes/app-currency.pipe';
 
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { CurrencyService } from '../../core/services/currency.service';
 import { RepairAnalytics, WarehouseAnalytics, ModelAnalytics } from '../../core/models/repair';
 import { WarehouseListResponse } from '../../core/models/warehouse';
 
 @Component({
   selector: 'app-repairs-analytics',
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, AppCurrencyPipe],
   templateUrl: './repairs-analytics.component.html',
-  styleUrls: ['./repairs-analytics.component.css'],
+  styleUrl: './repairs-analytics.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RepairsAnalyticsComponent {
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
+  private readonly currencyService = inject(CurrencyService);
 
   // Icons
   protected readonly TrendingUpIcon = TrendingUp;
@@ -226,7 +229,9 @@ export class RepairsAnalyticsComponent {
   }
 
   protected formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+    const symbol = this.currencyService.getSymbolSync();
+    const formatted = value.toFixed(2);
+    return `${symbol}${formatted}`;
   }
 
   protected formatNumber(value: number): string {

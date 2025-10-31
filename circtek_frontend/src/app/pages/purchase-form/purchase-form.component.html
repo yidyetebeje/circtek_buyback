@@ -18,7 +18,7 @@
       <div>
         <h3 class="text-lg font-semibold text-base-content">Purchase Items</h3>
         <p class="text-sm text-base-content/60 mt-1">
-          {{ totalItems() }} items • Total: ${{ totalValue().toFixed(2) }}
+          {{ totalItems() }} items • Total: {{ totalValue() | appCurrency }}
         </p>
       </div>
       <button 
@@ -53,8 +53,8 @@
               <tr>
                 <td class="whitespace-nowrap px-4 py-3 font-medium">{{ item.sku }}</td>
                 <td class="whitespace-nowrap px-4 py-3">{{ item.quantity }}</td>
-                <td class="whitespace-nowrap px-4 py-3">${{ item.price.toFixed(2) }}</td>
-                <td class="whitespace-nowrap px-4 py-3 font-medium">${{ (item.quantity * item.price).toFixed(2) }}</td>
+                <td class="whitespace-nowrap px-4 py-3">{{ item.price | appCurrency }}</td>
+                <td class="whitespace-nowrap px-4 py-3 font-medium">{{ (item.quantity * item.price) | appCurrency }}</td>
                 <td class="whitespace-nowrap px-4 py-3">
                   @if (item.is_part) {
                     <span class="badge badge-primary badge-sm">Part</span>

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { GenericModalComponent, type ModalAction } from '../../../shared/components/generic-modal/generic-modal.component';
 import { SkuAutocompleteComponent, type SkuOption } from '../../../shared/components/sku-autocomplete/sku-autocomplete.component';
 import { SkuSpecsCreateModalComponent } from '../../../shared/components/sku-specs-create-modal/sku-specs-create-modal.component';
+import { CurrencyService } from '../../../core/services/currency.service';
 
 export interface PurchaseItem {
   id?: string;
@@ -22,6 +23,7 @@ export interface PurchaseItem {
 })
 export class PurchaseItemModalComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly currencyService = inject(CurrencyService);
 
   // Custom validators
   private static skuValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
@@ -99,9 +101,9 @@ export class PurchaseItemModalComponent {
       return { mustBeNonNegative: { message: 'Price cannot be negative' } };
     }
 
-    // Check for reasonable maximum (e.g., $1 million)
+    // Check for reasonable maximum (e.g., 1 million)
     if (numValue > 1000000) {
-      return { tooLarge: { message: 'Price cannot exceed $1,000,000' } };
+      return { tooLarge: { message: 'Price cannot exceed 1,000,000' } };
     }
 
     // Check for reasonable decimal places (max 2)
@@ -132,6 +134,7 @@ export class PurchaseItemModalComponent {
   // Computed
   title = computed(() => this.editingItem() ? 'Edit Item' : 'Add Item');
   submitLabel = computed(() => this.editingItem() ? 'Update Item' : 'Add Item');
+  currentCurrencySymbol = computed(() => this.currencyService.getSymbolSync());
   
   actions = computed<ModalAction[]>(() => [
     {

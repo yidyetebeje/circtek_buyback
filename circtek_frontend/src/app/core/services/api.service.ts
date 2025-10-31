@@ -25,6 +25,7 @@ import { OtaUpdate, OtaUpdateCreateRequest, OtaUpdateUpdateRequest, OtaUpdateLis
 import { SkuUsageAnalyticsResult, SkuUsageAnalyticsQuery } from '../models/analytics';
 import { ApiKey, ApiKeyCreated, ApiKeyCreateRequest, ApiKeyUpdateRequest, ApiKeyRevokeRequest, ApiKeyListResponse, ApiKeyUsageResponse } from '../models/api-key';
 import { DiagnosticQuestion, DiagnosticQuestionOption, DiagnosticQuestionSet, DiagnosticQuestionSetAssignment, DiagnosticQuestionWithOptions, DiagnosticQuestionSetWithQuestions } from '../models/diagnostic-question';
+import { CurrencySymbol, CurrencySymbolCreate, CurrencySymbolUpdate, CurrencyResolved, CurrencyPreferenceUpdate } from '../models/currency.model';
 
 @Injectable({
   providedIn: 'root',
@@ -58,6 +59,13 @@ export class ApiService {
   }
 
   put<T>(path: string, body: object = {}): Observable<T> {
+    console.log('PUT request:', {
+      url: `${this.apiUrl}${path}`,
+      body: body,
+      bodyType: typeof body,
+      bodyKeys: body ? Object.keys(body) : null
+    });
+    
     return this.http
       .put<T>(`${this.apiUrl}${path}`, body, { withCredentials: true })
       .pipe(catchError(this.handleError));
@@ -855,5 +863,34 @@ export class ApiService {
 
   deleteTranslation(translationId: number): Observable<ApiResponse<{ id: number } | null>> {
     return this.delete<ApiResponse<{ id: number } | null>>(`/configuration/diagnostic-questions/translations/${translationId}`);
+  }
+
+  // Currency Symbols and Preferences
+  getCurrencySymbols(params: HttpParams = new HttpParams()): Observable<ApiResponse<CurrencySymbol[]>> {
+    return this.get<ApiResponse<CurrencySymbol[]>>('/configuration/currency-symbols', params);
+  }
+
+  createCurrencySymbol(payload: CurrencySymbolCreate): Observable<ApiResponse<CurrencySymbol | null>> {
+    return this.post<ApiResponse<CurrencySymbol | null>>('/configuration/currency-symbols', payload);
+  }
+
+  getCurrencySymbol(id: number): Observable<ApiResponse<CurrencySymbol | null>> {
+    return this.get<ApiResponse<CurrencySymbol | null>>(`/configuration/currency-symbols/${id}`);
+  }
+
+  updateCurrencySymbol(id: number, payload: CurrencySymbolUpdate): Observable<ApiResponse<CurrencySymbol | null>> {
+    return this.put<ApiResponse<CurrencySymbol | null>>(`/configuration/currency-symbols/${id}`, payload);
+  }
+
+  deleteCurrencySymbol(id: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/configuration/currency-symbols/${id}`);
+  }
+
+  getCurrencyPreference(): Observable<ApiResponse<CurrencyResolved>> {
+    return this.get<ApiResponse<CurrencyResolved>>('/configuration/currency-preference');
+  }
+
+  setCurrencyPreference(payload: CurrencyPreferenceUpdate): Observable<ApiResponse<CurrencyResolved | null>> {
+    return this.put<ApiResponse<CurrencyResolved | null>>('/configuration/currency-preference', payload);
   }
 }
