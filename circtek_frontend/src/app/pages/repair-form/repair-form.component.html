@@ -33,6 +33,8 @@
               [required]="true"
               (scanned)="onImeiScanned($event)"
               (inputChanged)="onImeiInputChanged($event)"
+              (keydown.enter)="onImeiKey($event)"
+              (keydown.tab)="onImeiKey($event)"
               [disabled]="isImeiScannerDisabled()"
             ></app-barcode-scanner>
           </div>
@@ -80,14 +82,15 @@
             @for (partGroup of parts.controls; track $index) {
 
               <div [formGroupName]="$index" class="grid grid-cols-12 items-start px-3 py-2 relative" [style.z-index]="parts.length - $index">
-                <!-- SKU field (optional; if empty and reason is fixed-price, treated as service) -->
+                <!-- SKU field: user types the SKU directly -->
                 <div class="col-span-5 pr-3">
-                  <app-sku-autocomplete 
-                    [isPart]="true"
-                    [placeholder]="'Search for part SKU...'"
-                    [showAddButton]="false"
-                    (valueChange)="onSkuSelected($event, $index)"
-                  ></app-sku-autocomplete>
+                  <input 
+                    type="text" 
+                    class="input input-bordered w-full" 
+                    formControlName="sku" 
+                    placeholder="Enter part SKU" 
+                    autocomplete="off"
+                  />
                 </div>
 
                 <div class="col-span-1 pr-3">

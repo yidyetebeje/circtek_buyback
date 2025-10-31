@@ -11,13 +11,12 @@ import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { RepairCreateInput, RepairConsumeItemsInput, RepairCreateWithConsumeInput, RepairRecord } from '../../core/models/repair';
 import { BarcodeScannerComponent, ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
-import { SkuAutocompleteComponent } from '../../shared/components/sku-autocomplete/sku-autocomplete.component';
 import { RepairReasonAutocompleteComponent } from '../../shared/components/repair-reason-autocomplete/repair-reason-autocomplete.component';
 import { RepairReasonRecord } from '../../core/models/repair-reason';
 
 @Component({
   selector: 'app-repair-form',
-  imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent, BarcodeScannerComponent, SkuAutocompleteComponent, RepairReasonAutocompleteComponent, LucideAngularModule],
+  imports: [CommonModule, ReactiveFormsModule, GenericFormPageComponent, BarcodeScannerComponent, RepairReasonAutocompleteComponent, LucideAngularModule],
   templateUrl: './repair-form.component.html',
   styleUrls: ['./repair-form.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -321,6 +320,16 @@ export class RepairFormComponent implements OnInit {
     this.form().get('identifier')?.setValue(value);
   }
 
+  onImeiKey(event: Event) {
+    const keyboardEvent = event as KeyboardEvent;
+    const value = this.form().get('identifier')?.value?.toString().trim();
+    if (!value) return;
+    if (keyboardEvent.key === 'Enter') {
+      keyboardEvent.preventDefault();
+    }
+    this.fetchDeviceDetails();
+  }
+
   onSkuScanned(result: ScanResult) {
     if (result.isValid) {
       this.parts.at(this.parts.length - 1)?.get('sku')?.setValue(result.value);
@@ -330,9 +339,7 @@ export class RepairFormComponent implements OnInit {
 
 
 
-  onSkuSelected(sku: string, index: number) {
-    this.parts.at(index)?.get('sku')?.setValue(sku);
-  }
+  
 
   onItemTypeChange(index: number, isFixedPrice: boolean) {
     const partGroup = this.parts.at(index);
