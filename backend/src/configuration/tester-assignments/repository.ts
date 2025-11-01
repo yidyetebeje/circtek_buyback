@@ -1,6 +1,16 @@
 import { and, eq } from 'drizzle-orm'
 import { db } from '../../db'
-import { users, wifi_profile, workflows, label_templates, ota_update, tenants, diagnostic_question_sets } from '../../db/circtek.schema'
+import type { Grade } from './types'
+import { 
+    users, 
+    wifi_profile, 
+    workflows, 
+    label_templates, 
+    ota_update, 
+    tenants, 
+    diagnostic_question_sets,
+    grades
+} from '../../db/circtek.schema'
 import type { TesterAssignments } from './types'
 import { DiagnosticQuestionsRepository } from '../diagnostic-questions/repository'
 
@@ -27,13 +37,15 @@ export class TesterAssignmentsRepository {
 
         if (!testerRow) return null
 
+        // Initialize result with empty grades array
         const result: TesterAssignments = {
             tester_id: testerId,
             wifi_profile: null,
             workflow: null,
             label_template: null,
             ota_update: null,
-            diagnostic_question_set: null
+            diagnostic_question_set: null,
+            grades: []
         }
 
         // Get WiFi Profile if assigned
@@ -160,6 +172,26 @@ export class TesterAssignmentsRepository {
                 }
             }
         }
+        // Get grades for the tenant
+        const tenantGrades = await this.database
+            .select({
+                id: grades.id,
+                name: grades.name,
+                color: grades.color,
+                created_at: grades.created_at
+            })
+            .from(grades)
+            .where(eq(grades.tenant_id, tenantId))
+            .orderBy(grades.name)
+
+        // Map to Grade interface and ensure created_at is never null
+        // Since grades table doesn't have updated_at, we'll use created_at for both
+        result.grades = tenantGrades.map(grade => ({
+            ...grade,
+            status: true,
+            created_at: grade.created_at ?? new Date(0), // Use epoch if null
+            updated_at: grade.created_at ?? new Date(0)  // Use same as created_at
+        } as Grade))
 
         return result
     }
