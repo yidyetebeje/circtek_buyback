@@ -87,7 +87,7 @@
           </thead>
           <tbody>
             <tr>
-              <td>{{ getICloudStatus() }}</td>
+              <td>{{ report().device_lock || '-' }}</td>
               <td>-</td>
               <td class="text-center">-</td>
               <td class="text-center">{{ report().ESN || '-' }}</td>
