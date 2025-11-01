@@ -176,6 +176,7 @@ export class WorkflowEditorComponent
     { id: "activate_device", label: "Activate the device", color: "#2196F3" },
     { id: "push_wifi", label: "Push a WiFi profile", color: "#9C27B0" },
     { id: "erase_device", label: "Erase the device", color: "#F44336" },
+    { id: "grade_device", label: "Grade Device", color: "#FF5722" },
     { id: "use_app", label: "Use the app", color: "#00BCD4", type: "decision" },
     {
       id: "check_if_locked",
