@@ -211,6 +211,7 @@ export class DiagnosticsRepository {
 			storage: input.device.storage,
 			memory: input.device.memory,
 			color: input.device.color,
+			grade: input.test.grade,
 		}
 		
 		const conditionsForDevice: any[] = [eq(devices.tenant_id, tenantId)]
@@ -264,6 +265,9 @@ export class DiagnosticsRepository {
 			eSIM_erasure: input.test.eSIM_erasure as any,
 			serial_number: input.test.serial_number ?? deviceToInsert.serial,
 			imei: input.test.imei ?? deviceToInsert.imei,
+			rooted: input.test.rooted as any,
+			erased: input.test.erased as any,
+			grade: input.test.grade as any,
 			// Use custom timestamps if provided, otherwise let database use defaults
 			...(customTimestamps?.created_at && { created_at: new Date(customTimestamps.created_at) }),
 			...(customTimestamps?.updated_at && { updated_at: new Date(customTimestamps.updated_at) }),

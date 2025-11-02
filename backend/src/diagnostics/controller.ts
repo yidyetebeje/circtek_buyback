@@ -169,10 +169,10 @@ export class DiagnosticsController {
 				console.log('Finished processing question answers')
 			}
 		}
-		console.log('created', created)
+		
 		
 		const returned = { data: created ?? null, message: 'Uploaded', status: 201 }
-		console.log('returned', returned)
+		
 		return returned
 		} catch (e) {
 			console.log('error', e)

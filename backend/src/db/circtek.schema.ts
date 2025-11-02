@@ -83,6 +83,9 @@ export const test_results = mysqlTable('test_results', {
   iCloud: json('iCloud'),
   eSIM: boolean('eSIM'),
   eSIM_erasure: boolean('eSIM_erasure'),
+  rooted: boolean('rooted'),
+  erased: boolean('erased'),
+  grade: varchar('grade', { length: 255 }),
   serial_number: varchar('serial_number', { length: 255 }),
   imei: varchar('imei', { length: 255 }),
 }, (table) => [
@@ -99,6 +102,7 @@ export const devices = mysqlTable('devices', {
   lpn: varchar('lpn', { length: 255 }),
   make: varchar('make', { length: 255 }),
   model_no: varchar('model_no', { length: 255 }),
+  grade: varchar('grade', { length: 255 }),
   model_name: varchar('model_name', { length: 255 }),
   storage: varchar('storage', { length: 255 }),
   memory: varchar('memory', { length: 255 }),

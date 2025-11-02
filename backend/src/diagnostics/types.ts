@@ -102,6 +102,9 @@ export type DiagnosticPublic = {
 		answer_text: string
 		created_at: Date | null
 	}>
+	rooted: boolean | null
+	erased: boolean | null
+	grade: string | null
 }
 
 export type DiagnosticListResult = {
@@ -148,6 +151,9 @@ export const DiagnosticUploadBody = t.Object({
 		eSIM_erasure: t.Optional(t.Boolean()),
 		serial_number: t.Optional(t.String()),
 		imei: t.Optional(t.String()),
+		rooted: t.Optional(t.Boolean()),
+		erased: t.Optional(t.Boolean()),
+		grade: t.Optional(t.String()),
 	}),
 	// Question answers (optional)
 	answers: t.Optional(t.Array(t.Object({
