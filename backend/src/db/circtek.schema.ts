@@ -408,16 +408,14 @@ export const currency_symbols = mysqlTable('currency_symbols', {
   unique('uq_currency_symbols_tenant_code').on(table.tenant_id, table.code),
 ]);
 
-export const user_currency_preferences = mysqlTable('user_currency_preferences', {
-  user_id: bigint('user_id', { mode: 'number', unsigned: true }).references(() => users.id).notNull(),
+export const tenant_currency_preferences = mysqlTable('tenant_currency_preferences', {
   tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
   currency_code: varchar('currency_code', { length: 10 }).notNull(),
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
-  primaryKey({ columns: [table.user_id, table.tenant_id] }),
-  index('idx_user_currency_preferences_tenant').on(table.tenant_id),
+  primaryKey({ columns: [table.tenant_id] }),
+  index('idx_tenant_currency_preferences').on(table.tenant_id),
 ]);
-
 export const api_keys = mysqlTable('api_keys', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),

@@ -41,7 +41,7 @@ export const currency_preference_routes = new Elysia({ prefix: '/currency-prefer
     // User Currency Preference
     .get('/', async (ctx) => {
         const { currentTenantId, currentUserId } = ctx as any
-        return controller.getUserPreference(Number(currentTenantId), Number(currentUserId))
+        return controller.getTenantPreference(Number(currentTenantId))
     }, { detail: { tags: ['Currency Preference'], summary: 'Get current user currency preference' } })
     .put('/', async (ctx) => {
         const { body, currentTenantId, currentUserId } = ctx as any

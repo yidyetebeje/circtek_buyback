@@ -69,15 +69,8 @@ export type CurrencySymbolPublic = {
     updated_by: number | null
 }
 
-export type UserCurrencyPreferencePublic = {
-    user_id: number
+export type TenantCurrencyPreferencePublic = {
     tenant_id: number
-    currency_code: string
-    updated_at: string | null
-}
-
-export type CurrencyResolvedPublic = {
     code: string
-    symbol: string
-    source: 'user' | 'tenant_default' | 'system_default'
+    updated_at: string | null
 }

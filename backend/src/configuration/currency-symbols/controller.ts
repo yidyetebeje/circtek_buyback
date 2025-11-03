@@ -5,8 +5,7 @@ import type {
     CurrencySymbolPublic, 
     CurrencySymbolUpdateInput,
     CurrencyPreferenceUpdateInput,
-    UserCurrencyPreferencePublic,
-    CurrencyResolvedPublic
+    TenantCurrencyPreferencePublic
 } from './types'
 
 export class CurrencySymbolsController {
@@ -95,15 +94,15 @@ export class CurrencySymbolsController {
     }
 
     // User Preferences
-    async getUserPreference(tenantId: number, userId: number): Promise<response<CurrencyResolvedPublic>> {
+    async getTenantPreference(tenantId: number): Promise<response<TenantCurrencyPreferencePublic | null>> {
         try {
-            const resolved = await this.repo.resolveForUser(tenantId, userId)
+            const resolved = await this.repo.getTenantPreference(tenantId)
             return { data: resolved, message: 'OK', status: 200 }
         } catch (error: any) {
             console.error('Failed to get user currency preference:', error)
             // Fallback to system default
             return { 
-                data: { code: 'USD', symbol: '$', source: 'system_default' }, 
+                data: { code: 'EUR', updated_at: null, tenant_id: tenantId }, 
                 message: 'OK', 
                 status: 200 
             }
@@ -114,7 +113,7 @@ export class CurrencySymbolsController {
         payload: CurrencyPreferenceUpdateInput, 
         tenantId: number, 
         userId: number
-    ): Promise<response<CurrencyResolvedPublic | null>> {
+    ): Promise<response<TenantCurrencyPreferencePublic | null>> {
         try {
             console.log('setUserPreference called with:', {
                 payload,
@@ -130,7 +129,7 @@ export class CurrencySymbolsController {
             }
             
             await this.repo.upsertUserPreference(tenantId, userId, payload.code)
-            const resolved = await this.repo.resolveForUser(tenantId, userId)
+            const resolved = await this.repo.getTenantPreference(tenantId)
             return { data: resolved, message: 'Currency preference updated', status: 200 }
         } catch (error: any) {
             console.error('Failed to set user currency preference:', error)

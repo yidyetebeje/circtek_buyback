@@ -1,12 +1,12 @@
 import { and, asc, desc, eq, like, or, sql } from 'drizzle-orm'
 import { db } from '../../db'
-import { currency_symbols, user_currency_preferences } from '../../db/circtek.schema'
+import { currency_symbols, tenant_currency_preferences } from '../../db/circtek.schema'
 import type { 
     CurrencySymbolCreateInput, 
     CurrencySymbolPublic, 
     CurrencySymbolUpdateInput,
-    UserCurrencyPreferencePublic,
-    CurrencyResolvedPublic
+   
+    TenantCurrencyPreferencePublic
 } from './types'
 
 const currencySymbolSelection = {
@@ -23,11 +23,10 @@ const currencySymbolSelection = {
     updated_by: currency_symbols.updated_by,
 }
 
-const userPreferenceSelection = {
-    user_id: user_currency_preferences.user_id,
-    tenant_id: user_currency_preferences.tenant_id,
-    currency_code: user_currency_preferences.currency_code,
-    updated_at: user_currency_preferences.updated_at,
+const tenantPreferenceSelection = {
+    tenant_id: tenant_currency_preferences.tenant_id,
+    code: tenant_currency_preferences.currency_code,
+    updated_at: tenant_currency_preferences.updated_at,
 }
 
 export class CurrencySymbolsRepository {
@@ -135,19 +134,19 @@ export class CurrencySymbolsRepository {
         }
 
         // Check if any users have this as their preference
-        const [userWithPreference] = await this.database
-            .select({ user_id: user_currency_preferences.user_id })
-            .from(user_currency_preferences)
+        const [tenantWithPreference] = await this.database
+            .select({ tenant_id: tenant_currency_preferences.tenant_id })
+            .from(tenant_currency_preferences)
             .where(and(
-                eq(user_currency_preferences.tenant_id, tenantId),
-                eq(user_currency_preferences.currency_code, existing.code)
+                eq(tenant_currency_preferences.tenant_id, tenantId),
+                eq(tenant_currency_preferences.currency_code, existing.code)
             ))
             .limit(1)
 
-        if (userWithPreference) {
+        if (tenantWithPreference) {
             return { 
                 success: false, 
-                error: 'Cannot delete currency symbol. It is currently set as preference by one or more users.' 
+                error: 'Cannot delete currency symbol. It is currently set as preference by one or more tenants.' 
             }
         }
 
@@ -183,19 +182,17 @@ export class CurrencySymbolsRepository {
     }
 
     // User Preference operations
-    async getUserPreference(tenantId: number, userId: number): Promise<UserCurrencyPreferencePublic | null> {
+    async getTenantPreference(tenantId: number): Promise<TenantCurrencyPreferencePublic | null> {
         const [row] = await this.database
-            .select(userPreferenceSelection)
-            .from(user_currency_preferences)
-            .where(and(
-                eq(user_currency_preferences.tenant_id, tenantId),
-                eq(user_currency_preferences.user_id, userId)
-            ))
+            .select(tenantPreferenceSelection)
+            .from(tenant_currency_preferences)
+            .where(eq(tenantPreferenceSelection.tenant_id, tenantId))
         
-        return row ? row as UserCurrencyPreferencePublic : null
+        
+        return row ? row as TenantCurrencyPreferencePublic : null
     }
 
-    async upsertUserPreference(tenantId: number, userId: number, code: string): Promise<UserCurrencyPreferencePublic> {
+    async upsertUserPreference(tenantId: number, userId: number, code: string): Promise<TenantCurrencyPreferencePublic> {
         // Check if the currency code exists and is active for this tenant
         const currencySymbol = await this.getByCode(tenantId, code)
         if (!currencySymbol || !currencySymbol.is_active) {
@@ -205,35 +202,33 @@ export class CurrencySymbolsRepository {
         console.log('Upserting user preference for:', { tenantId, userId, code });
         
         // Check if preference already exists
-        const existing = await this.getUserPreference(tenantId, userId);
+        const existing = await this.getTenantPreference(tenantId);
         
         if (existing) {
             // Update existing preference
             console.log('Updating existing preference');
             await this.database
-                .update(user_currency_preferences)
+                .update(tenant_currency_preferences)
                 .set({ 
                     currency_code: code,
                     updated_at: sql`CURRENT_TIMESTAMP`
                 })
                 .where(and(
-                    eq(user_currency_preferences.tenant_id, tenantId),
-                    eq(user_currency_preferences.user_id, userId)
+                    eq(tenant_currency_preferences.tenant_id, tenantId),
                 ));
         } else {
             // Insert new preference
             console.log('Inserting new preference');
             await this.database
-                .insert(user_currency_preferences)
+                .insert(tenant_currency_preferences)
                 .values({
                     tenant_id: tenantId,
-                    user_id: userId,
                     currency_code: code,
-                });
+                } as any);
         }
 
         // Return the updated preference
-        const preference = await this.getUserPreference(tenantId, userId)
+        const preference = await this.getTenantPreference(tenantId)
         if (!preference) {
             throw new Error('Failed to create or update user preference')
         }
@@ -241,35 +236,5 @@ export class CurrencySymbolsRepository {
         return preference
     }
 
-    async resolveForUser(tenantId: number, userId: number): Promise<CurrencyResolvedPublic> {
-        // 1. Check user preference
-        const userPreference = await this.getUserPreference(tenantId, userId)
-        if (userPreference) {
-            const currencySymbol = await this.getByCode(tenantId, userPreference.currency_code)
-            if (currencySymbol && currencySymbol.is_active) {
-                return {
-                    code: currencySymbol.code,
-                    symbol: currencySymbol.symbol,
-                    source: 'user'
-                }
-            }
-        }
-
-        // 2. Check tenant default
-        const tenantDefault = await this.getDefault(tenantId)
-        if (tenantDefault) {
-            return {
-                code: tenantDefault.code,
-                symbol: tenantDefault.symbol,
-                source: 'tenant_default'
-            }
-        }
-
-        // 3. System fallback
-        return {
-            code: 'USD',
-            symbol: '$',
-            source: 'system_default'
-        }
-    }
+    
 }
