@@ -26,6 +26,7 @@ const currencySymbolSelection = {
 const tenantPreferenceSelection = {
     tenant_id: tenant_currency_preferences.tenant_id,
     code: tenant_currency_preferences.currency_code,
+    symbol: currency_symbols.symbol,
     updated_at: tenant_currency_preferences.updated_at,
 }
 
@@ -187,6 +188,7 @@ export class CurrencySymbolsRepository {
             .select(tenantPreferenceSelection)
             .from(tenant_currency_preferences)
             .where(eq(tenantPreferenceSelection.tenant_id, tenantId))
+            .leftJoin(currency_symbols, eq(tenant_currency_preferences.currency_code, currency_symbols.code))
         
         
         return row ? row as TenantCurrencyPreferencePublic : null
