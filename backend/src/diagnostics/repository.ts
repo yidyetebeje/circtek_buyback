@@ -48,6 +48,9 @@ const diagnosticSelection = {
 	device_status: devices.status,
 	warehouse_name: warehousesTable.name,
 	tester_username: usersTable.user_name,
+	rooted: test_results.rooted,
+	erased: test_results.erased,
+	grade: test_results.grade,
 }
 
 export class DiagnosticsRepository {
