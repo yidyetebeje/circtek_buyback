@@ -87,12 +87,12 @@
           </thead>
           <tbody>
             <tr>
-              <td>{{ report().device_lock || '-' }}</td>
-              <td>-</td>
-              <td class="text-center">-</td>
+              <td>{{ (report().device_lock == 'iCloud' || report().device_lock == 'On') ? 'On' : report().device_lock || '-' }}</td>
+              <td>{{ report().rooted ? 'Yes' : 'No' }}</td>
+              <td class="text-center">{{ report().grade || '-' }}</td>
               <td class="text-center">{{ report().ESN || '-' }}</td>
-              <td class="text-center">{{ report().device_lock || 'Off' }}</td>
-              <td class="text-center">{{ report().eSIM_erasure ? 'Yes' : 'No' }}</td>
+              <td class="text-center">{{ report().device_lock == 'MDM' ? 'On' : report().device_lock || '-' }}</td>
+              <td class="text-center">{{ report().erased ? 'Yes' : 'No' }}</td>
             </tr>
           </tbody>
         </table>

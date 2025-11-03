@@ -52,6 +52,9 @@ export interface Diagnostic {
   device_status: boolean | null;
   warehouse_name: string | null;
   tester_username: string | null;
+  rooted: boolean | null;
+  erased: boolean | null;
+  grade: string | null;
   answers?: DiagnosticAnswer[];
 }
 
