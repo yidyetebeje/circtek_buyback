@@ -26,6 +26,7 @@ import { SkuUsageAnalyticsResult, SkuUsageAnalyticsQuery } from '../models/analy
 import { ApiKey, ApiKeyCreated, ApiKeyCreateRequest, ApiKeyUpdateRequest, ApiKeyRevokeRequest, ApiKeyListResponse, ApiKeyUsageResponse } from '../models/api-key';
 import { DiagnosticQuestion, DiagnosticQuestionOption, DiagnosticQuestionSet, DiagnosticQuestionSetAssignment, DiagnosticQuestionWithOptions, DiagnosticQuestionSetWithQuestions } from '../models/diagnostic-question';
 import { CurrencySymbol, CurrencySymbolCreate, CurrencySymbolUpdate, CurrencyResolved, CurrencyPreferenceUpdate } from '../models/currency.model';
+import { SkuMapping, CreateSkuMappingRequest, UpdateSkuMappingRequest, SkuMappingListResponse } from '../models/sku-mapping';
 
 @Injectable({
   providedIn: 'root',
@@ -892,5 +893,26 @@ export class ApiService {
 
   setCurrencyPreference(payload: CurrencyPreferenceUpdate): Observable<ApiResponse<CurrencyResolved | null>> {
     return this.put<ApiResponse<CurrencyResolved | null>>('/configuration/currency-preference', payload);
+  }
+
+  // ===== SKU Mappings =====
+  getSkuMappings(params: HttpParams = new HttpParams()): Observable<SkuMappingListResponse> {
+    return this.get<SkuMappingListResponse>('/stock/sku-mappings', params);
+  }
+
+  getSkuMapping(id: string): Observable<ApiResponse<SkuMapping | null>> {
+    return this.get<ApiResponse<SkuMapping | null>>(`/stock/sku-mappings/${id}`);
+  }
+
+  createSkuMapping(payload: CreateSkuMappingRequest): Observable<ApiResponse<SkuMapping | null>> {
+    return this.post<ApiResponse<SkuMapping | null>>('/stock/sku-mappings', payload);
+  }
+
+  updateSkuMapping(id: string, payload: UpdateSkuMappingRequest): Observable<ApiResponse<SkuMapping | null>> {
+    return this.put<ApiResponse<SkuMapping | null>>(`/stock/sku-mappings/${id}`, payload);
+  }
+
+  deleteSkuMapping(id: string): Observable<ApiResponse<{ id: string } | null>> {
+    return this.delete<ApiResponse<{ id: string } | null>>(`/stock/sku-mappings/${id}`);
   }
 }

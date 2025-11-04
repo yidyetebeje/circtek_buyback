@@ -11,12 +11,13 @@ import { StockWithWarehouse } from '../../core/models/stock';
 import { PurchaseRecord } from '../../core/models/purchase';
 import { TransferWithDetails } from '../../core/models/transfer';
 import { SkuSpecsRecord } from '../../core/models/sku-specs';
+import { SkuMappingsComponent } from './sku-mappings/sku-mappings.component';
 // Union type for table rows across tabs
 export type StockMgmtRow = StockWithWarehouse | PurchaseRecord | TransferWithDetails | SkuSpecsRecord;
 
 @Component({
   selector: 'app-stock-management',
-  imports: [CommonModule, GenericPageComponent],
+  imports: [CommonModule, GenericPageComponent, SkuMappingsComponent],
   templateUrl: './stock-management.component.html',
   styleUrls: ['./stock-management.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,7 +34,7 @@ export class StockManagementComponent {
   total = signal(0);
 
   // Tabs & pagination
-  activeTab = signal<'stock' | 'purchases' | 'transfers' | 'sku-specs' | 'stock-in'>('stock');
+  activeTab = signal<'stock' | 'purchases' | 'transfers' | 'sku-specs' | 'sku-mappings' | 'stock-in'>('stock');
   pageIndex = signal(0);
   pageSize = signal(10);
 
@@ -82,6 +83,7 @@ export class StockManagementComponent {
     { key: 'purchases', label: 'Purchases' },
     { key: 'transfers', label: 'Transfers' },
     { key: 'sku-specs', label: 'SKU Specs' },
+    { key: 'sku-mappings', label: 'SKU Mappings' },
   ]);
 
   // Header
@@ -97,6 +99,8 @@ export class StockManagementComponent {
       return { label: 'Add Transfer' };
     } else if (tab === 'sku-specs') {
       return { label: 'Add SKU Specs' };
+    } else if (tab === 'sku-mappings') {
+      return null; // SKU mappings component handles its own primary action
     }
     return null;
   });
@@ -312,7 +316,7 @@ export class StockManagementComponent {
     const str = (k: string, d = '') => qp.get(k) ?? d;
 
     const tab = str('tab', 'stock');
-    if (tab === 'stock' || tab === 'purchases' || tab === 'transfers' || tab === 'sku-specs' || tab === 'stock-in') this.activeTab.set(tab as any);
+    if (tab === 'stock' || tab === 'purchases' || tab === 'transfers' || tab === 'sku-specs' || tab === 'sku-mappings' || tab === 'stock-in') this.activeTab.set(tab as any);
     else this.activeTab.set('stock');
 
     this.pageIndex.set(Math.max(0, num('page', 1) - 1));
@@ -425,8 +429,15 @@ export class StockManagementComponent {
 
   private fetchData() {
     const seq = ++this.requestSeq;
-    this.loading.set(true);
     const tab = this.activeTab();
+    
+    // SKU mappings tab handles its own data loading
+    if (tab === 'sku-mappings') {
+      this.loading.set(false);
+      return;
+    }
+    
+    this.loading.set(true);
 
     if (tab === 'stock') {
       let params = new HttpParams()
@@ -568,7 +579,7 @@ export class StockManagementComponent {
   }
 
   onTabChange(key: string | null) {
-    const k = (key ?? 'stock') as 'stock' | 'purchases' | 'transfers' | 'sku-specs' | 'stock-in';
+    const k = (key ?? 'stock') as 'stock' | 'purchases' | 'transfers' | 'sku-specs' | 'sku-mappings' | 'stock-in';
     if (k !== this.activeTab()) {
       this.activeTab.set(k);
       // reset filters per tab

@@ -1,0 +1,66 @@
+// Custom styles for SKU mapping form
+.conditions-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.condition-card {
+  transition: all 0.2s ease-in-out;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.property-select,
+.value-select {
+  transition: border-color 0.2s ease-in-out;
+  
+  &:focus {
+    border-color: hsl(var(--p));
+    box-shadow: 0 0 0 2px hsla(var(--p), 0.2);
+  }
+}
+
+.preview-card {
+  background: linear-gradient(135deg, hsla(var(--p), 0.1), hsla(var(--p), 0.05));
+  border: 1px solid hsla(var(--p), 0.2);
+}
+
+.sku-preview {
+  background: hsla(var(--b1), 0.8);
+  border: 1px solid hsla(var(--p), 0.3);
+  color: hsl(var(--p));
+}
+
+// Animation for adding/removing conditions
+.condition-enter {
+  animation: slideInUp 0.3s ease-out;
+}
+
+.condition-leave {
+  animation: slideOutDown 0.2s ease-in;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOutDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}

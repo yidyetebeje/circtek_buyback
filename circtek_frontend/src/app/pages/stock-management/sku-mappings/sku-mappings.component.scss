@@ -1,0 +1,49 @@
+// SKU mappings component styles
+.empty-state {
+  min-height: 400px;
+  
+  svg {
+    @apply mx-auto;
+  }
+  
+  h3 {
+    @apply text-xl font-medium text-base-content mb-2;
+  }
+  
+  p {
+    @apply text-base-content/60 mb-6 max-w-md mx-auto;
+  }
+}
+
+// Ensure monospace font for SKU column
+:host ::ng-deep {
+  .font-mono {
+    font-family: 'Courier New', Courier, monospace;
+  }
+  
+  // Style for conditions column with proper wrapping
+  .conditions-cell {
+    @apply max-w-md;
+    word-break: break-word;
+    line-height: 1.4;
+  }
+}
+
+// Delete confirmation modal specific styles
+.delete-confirmation {
+  .mapping-preview {
+    @apply mt-4 p-4 bg-base-200 rounded-lg text-sm;
+    
+    .label {
+      @apply font-medium mb-1;
+    }
+    
+    .value {
+      @apply text-base-content/70;
+    }
+    
+    code {
+      @apply font-mono text-sm;
+    }
+  }
+}

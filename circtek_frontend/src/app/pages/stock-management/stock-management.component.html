@@ -1,25 +1,35 @@
-<app-generic-page
-  [title]="title"
-  [subtitle]="subtitle"
-  [loading]="loading()"
-  [tabs]="tabs()"
-  [activeTabKeyInput]="activeTab()"
-  [searchQueryInput]="search()"
-  [facets]="facets()"
-  [columns]="columns()"
-  [data]="data()"
-  [total]="total()"
-  [pageIndexInput]="pageIndex()"
-  [pageSizeInput]="pageSize()"
-  [searchPlaceholder]="searchPlaceholder()"
-  [primaryAction]="primaryAction()"
-  (primaryActionClick)="onPrimaryActionClick()"
-  (pageChange)="onPageChange($event)"
-  (filtersChange)="onFiltersChange($event)"
-  (sortingChange)="onSortingChange($event)"
-  (tabChange)="onTabChange($event)"
-  (cellAction)="onCellAction($event)"
-></app-generic-page>
+<!-- SKU Mappings Tab Content -->
+@if (activeTab() === 'sku-mappings') {
+  <app-sku-mappings
+    [tabs]="tabs()"
+    [activeTab]="activeTab()"
+    (tabChange)="onTabChange($event)"
+  ></app-sku-mappings>
+} @else {
+  <!-- Other tabs use generic page -->
+  <app-generic-page
+    [title]="title"
+    [subtitle]="subtitle"
+    [loading]="loading()"
+    [tabs]="tabs()"
+    [activeTabKeyInput]="activeTab()"
+    [searchQueryInput]="search()"
+    [facets]="facets()"
+    [columns]="columns()"
+    [data]="data()"
+    [total]="total()"
+    [pageIndexInput]="pageIndex()"
+    [pageSizeInput]="pageSize()"
+    [searchPlaceholder]="searchPlaceholder()"
+    [primaryAction]="primaryAction()"
+    (primaryActionClick)="onPrimaryActionClick()"
+    (pageChange)="onPageChange($event)"
+    (filtersChange)="onFiltersChange($event)"
+    (sortingChange)="onSortingChange($event)"
+    (tabChange)="onTabChange($event)"
+    (cellAction)="onCellAction($event)"
+  ></app-generic-page>
+}
 
 @if (adjustModalOpen()) {
   <div class="modal modal-open">

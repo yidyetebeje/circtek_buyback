@@ -1,0 +1,68 @@
+<app-generic-page
+  [title]="title"
+  [subtitle]="subtitle"
+  [primaryAction]="primaryAction()"
+  [loading]="loading()"
+  [data]="data()"
+  [columns]="columns()"
+  [total]="total()"
+  [tabs]="tabs()"
+  [activeTabKeyInput]="activeTab()"
+  [searchPlaceholder]="'Search mappings...'"
+  (primaryActionClick)="onPrimaryActionClick()"
+  (cellAction)="onCellAction($event)"
+  (tabChange)="tabChange.emit($event)"
+>
+  <!-- Empty State -->
+  @if (!loading() && data().length === 0) {
+    <div class="empty-state flex flex-col items-center justify-center py-16 text-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-base-content/20 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+      </svg>
+      <h3 class="text-xl font-medium text-base-content mb-2">No SKU mappings defined</h3>
+      <p class="text-base-content/60 mb-6 max-w-md">
+        Create your first mapping rule to automatically assign SKUs based on device properties like make, model, storage, and grade.
+      </p>
+      <button 
+        class="btn btn-primary"
+        (click)="onPrimaryActionClick()"
+      >
+        Add New Mapping
+      </button>
+    </div>
+  }
+</app-generic-page>
+
+<!-- Delete Confirmation Modal -->
+<app-generic-modal
+  [isOpen]="deleteConfirmOpen()"
+  [title]="'Delete SKU Mapping'"
+  [actions]="deleteModalActions()"
+  [size]="'md'"
+  (close)="onDeleteModalAction('cancel')"
+  (actionClick)="onDeleteModalAction($event)"
+>
+  <div class="space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="flex-shrink-0 w-10 h-10 rounded-full bg-error/10 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.08 16.5c-.77.833.192 2.5 1.732 2.5z" />
+        </svg>
+      </div>
+      <p class="text-base-content/80">
+        Are you sure you want to delete this SKU mapping? This action cannot be undone.
+      </p>
+    </div>
+    
+    @if (deletingMapping()) {
+      <div class="p-4 bg-base-200 rounded-lg">
+        <div class="text-sm">
+          <div class="font-medium mb-1">Conditions:</div>
+          <div class="text-base-content/70 mb-3">{{ renderConditions(deletingMapping()!.conditions) }}</div>
+          <div class="font-medium mb-1">Resulting SKU:</div>
+          <code class="font-mono text-sm bg-base-100 px-2 py-1 rounded">{{ deletingMapping()!.sku }}</code>
+        </div>
+      </div>
+    }
+  </div>
+</app-generic-modal>

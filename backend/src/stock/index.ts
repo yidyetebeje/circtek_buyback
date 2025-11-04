@@ -11,6 +11,7 @@ import { repair_reasons_routes } from "./repair-reasons";
 import { device_events_routes } from "./device-events/index";
 import { analytics_routes } from "./analytics";
 import { stock_in_routes } from "./stock-in";
+import { sku_mappings_routes } from "./sku-mappings";
 
 // Main stock management routes that combines all submodules
 export const stock_management_routes = new Elysia({ prefix: '/stock' })
@@ -49,6 +50,9 @@ export const stock_management_routes = new Elysia({ prefix: '/stock' })
 
   // Stock analytics and reporting
   .use(analytics_routes)
+
+  // SKU mapping rules management
+  .use(sku_mappings_routes)
 
   // Global stock dashboard endpoint
   .get('/dashboard', async (ctx: any) => {
@@ -114,6 +118,7 @@ export const stock_management_routes = new Elysia({ prefix: '/stock' })
           'consumption',
           'repairs',
           'sku-specs',
+          'sku-mappings',
           'repair-reasons',
           'device-events',
           'stock-in',
@@ -140,6 +145,7 @@ export { transfersController, transfersRepository } from './transfers'
 export { adjustmentsController } from './adjustments'
 export { consumptionController } from './consumption'
 export { analyticsController, analyticsRepository } from './analytics'
+export { skuMappingsController } from './sku-mappings'
 
 // Export the main routes
 export default stock_management_routes;

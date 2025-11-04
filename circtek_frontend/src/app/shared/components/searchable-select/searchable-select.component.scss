@@ -1,0 +1,91 @@
+.searchable-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.dropdown-panel {
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.options-list {
+  max-height: 320px; // Fixed height for scrolling
+  overflow-y: auto;
+  overflow-x: hidden;
+  
+  // Custom scrollbar styling
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: hsl(var(--b2));
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: hsl(var(--bc) / 0.2);
+    border-radius: 4px;
+    
+    &:hover {
+      background: hsl(var(--bc) / 0.3);
+    }
+  }
+}
+
+.option-item {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: hsl(var(--bc));
+  
+  &:hover,
+  &.option-highlighted {
+    background-color: hsl(var(--b2));
+  }
+  
+  &.option-selected {
+    background-color: hsl(var(--p) / 0.1);
+    color: hsl(var(--p));
+    font-weight: 500;
+  }
+  
+  &:active {
+    background-color: hsl(var(--p) / 0.15);
+  }
+  
+  &:first-child {
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+  }
+  
+  &:last-child {
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+  }
+}
+
+// Animation for dropdown appearance
+.dropdown-panel {
+  animation: slideDown 0.15s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

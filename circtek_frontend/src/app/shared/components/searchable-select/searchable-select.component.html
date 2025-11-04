@@ -1,0 +1,106 @@
+<div class="searchable-select-wrapper">
+  @if (label()) {
+    <label class="label">
+      <span class="label-text font-medium">
+        {{ label() }}
+        @if (required()) {
+          <span class="text-error">*</span>
+        }
+      </span>
+    </label>
+  }
+
+  <div class="relative">
+    <!-- Select Button -->
+    <button
+      type="button"
+      class="select select-bordered w-full flex items-center justify-between"
+      [class.select-error]="error()"
+      [disabled]="disabled()"
+      (click)="toggleDropdown()"
+      [attr.aria-expanded]="isOpen()"
+      [attr.aria-haspopup]="true"
+    >
+      <span [class.text-base-content/50]="!value()">
+        {{ displayValue() }}
+      </span>
+      <div class="flex items-center gap-1">
+        @if (value() && !disabled()) {
+          <button
+            type="button"
+            class="btn btn-ghost btn-xs btn-circle"
+            (click)="clearSelection($event)"
+            title="Clear selection"
+          >
+            <lucide-icon [img]="X" class="size-3"></lucide-icon>
+          </button>
+        }
+        <lucide-icon 
+          [img]="ChevronDown" 
+          class="size-4 transition-transform"
+          [class.rotate-180]="isOpen()"
+        ></lucide-icon>
+      </div>
+    </button>
+
+    <!-- Dropdown -->
+    @if (isOpen()) {
+      <div class="dropdown-panel absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-xl">
+        <!-- Search Input -->
+        <div class="p-3 border-b border-base-300">
+          <div class="relative">
+            <lucide-icon [img]="Search" class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-base-content/50"></lucide-icon>
+            <input
+              #searchInput
+              type="text"
+              class="input input-bordered input-sm w-full pl-9"
+              placeholder="Search..."
+              [value]="searchQuery()"
+              (input)="onSearchInput($event)"
+              (keydown)="onKeyDown($event)"
+            />
+          </div>
+        </div>
+
+        <!-- Options List -->
+        <div class="options-list">
+          @if (filteredOptions().length > 0) {
+            @for (option of filteredOptions(); track option; let i = $index) {
+              <button
+                type="button"
+                class="option-item"
+                [class.option-selected]="option === value()"
+                [class.option-highlighted]="i === highlightedIndex()"
+                (click)="selectOption(option)"
+                (mouseenter)="highlightedIndex.set(i)"
+              >
+                {{ option }}
+                @if (option === value()) {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="size-4 ml-auto text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                }
+              </button>
+            }
+          } @else {
+            <div class="p-4 text-center text-base-content/60 text-sm">
+              No options found
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Backdrop to close on click outside -->
+      <div 
+        class="fixed inset-0 z-40"
+        (click)="closeDropdown()"
+      ></div>
+    }
+  </div>
+
+  @if (error()) {
+    <label class="label">
+      <span class="label-text-alt text-error">{{ error() }}</span>
+    </label>
+  }
+</div>

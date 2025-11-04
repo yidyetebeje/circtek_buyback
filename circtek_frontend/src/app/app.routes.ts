@@ -255,6 +255,20 @@ export const routes: Routes = [
       import('./pages/sku-specs-form/sku-specs-form.component').then((m) => m.SkuSpecsFormComponent),
   },
 
+  // SKU Mapping form routes
+  {
+    path: 'stock-management/sku-mappings/add',
+    canMatch: [authGuard],
+    loadComponent: () =>
+      import('./pages/stock-management/sku-mapping-form/sku-mapping-form.component').then((m) => m.SkuMappingFormComponent),
+  },
+  {
+    path: 'stock-management/sku-mappings/:id/edit',
+    canMatch: [authGuard],
+    loadComponent: () =>
+      import('./pages/stock-management/sku-mapping-form/sku-mapping-form.component').then((m) => m.SkuMappingFormComponent),
+  },
+
   // Dead IMEI form routes
   {
     path: 'repair/dead-imei/add',

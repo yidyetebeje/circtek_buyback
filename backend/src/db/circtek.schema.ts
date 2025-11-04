@@ -409,11 +409,11 @@ export const currency_symbols = mysqlTable('currency_symbols', {
 ]);
 
 export const tenant_currency_preferences = mysqlTable('tenant_currency_preferences', {
-  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  id: serial('id').primaryKey(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull().unique(),
   currency_code: varchar('currency_code', { length: 10 }).notNull(),
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
-  primaryKey({ columns: [table.tenant_id] }),
   index('idx_tenant_currency_preferences').on(table.tenant_id),
 ]);
 export const api_keys = mysqlTable('api_keys', {
@@ -623,5 +623,20 @@ export const diagnostic_translations = mysqlTable('diag_translations', {
   index('idx_diag_translations_entity').on(table.entity_type, table.entity_id),
   index('idx_diag_translations_lang').on(table.language_code),
   unique('uq_diag_translation').on(table.entity_type, table.entity_id, table.language_code),
+]);
+
+// SKU Mapping Rules - Dynamic mapping from device properties to SKU codes
+export const sku_mappings = mysqlTable('sku_mappings', {
+  id: varchar('id', { length: 36 }).primaryKey(), // UUID
+  sku: varchar('sku', { length: 255 }).notNull(),
+  conditions: json('conditions').notNull(), // Dynamic conditions as JSON object
+  canonical_key: varchar('canonical_key', { length: 512 }).notNull(), // Normalized key for uniqueness
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex('uq_sku_mappings_canonical_tenant').on(table.canonical_key, table.tenant_id),
+  index('idx_sku_mappings_sku').on(table.sku),
+  index('idx_sku_mappings_tenant').on(table.tenant_id),
 ]);
 

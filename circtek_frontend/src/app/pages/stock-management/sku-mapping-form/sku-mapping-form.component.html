@@ -1,0 +1,184 @@
+<app-generic-form-page
+  [title]="title()"
+  [subtitle]="subtitle()"
+  [form]="form"
+  [fields]="fields()"
+  [actions]="actions()"
+  [loading]="loading()"
+  [submitting]="submitting()"
+  [error]="errorMessage()"
+  [showBackButton]="true"
+  [hideSubmitButton]="true"
+  backUrl="/stock-management"
+  (formSubmit)="onFormSubmit($event)"
+  (actionClick)="onActionClick($event)"
+  (backClick)="onBackClick()"
+>
+  <!-- Custom form content -->
+  <div [formGroup]="form" class="space-y-8">
+
+    <!-- Conditions Section -->
+    <div class="space-y-6">
+      <div>
+        <h3 class="text-lg font-medium">Mapping Conditions <span class="text-error">*</span></h3>
+        <p class="text-sm text-base-content/60 mt-1">Define the device properties that must match for this SKU to be assigned</p>
+      </div>
+
+      <!-- Global conditions error -->
+      @if (getConditionsError()) {
+        <div class="text-error text-sm mb-4">{{ getConditionsError() }}</div>
+      }
+
+      <!-- Add Condition Form -->
+      <div class="card bg-base-50 border border-base-300">
+        <div class="card-body p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-medium text-base-content/80">Add New Condition</h4>
+            <div class="text-xs text-base-content/60">
+              <svg xmlns="http://www.w3.org/2000/svg" class="inline h-3.5 w-3.5 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Adding an existing property will replace its value
+            </div>
+          </div>
+          <div [formGroup]="newConditionForm" class="flex items-end gap-4">
+              <!-- Property Selector -->
+              <div class="form-control flex-1">
+                <label class="label">
+                  <span class="label-text font-medium">Device Property</span>
+                </label>
+                <select
+                  formControlName="propertyKey"
+                  class="select select-bordered w-full"
+                >
+                  <option value="">Select property...</option>
+                  @for (key of availablePropertyKeys(); track key) {
+                    <option [value]="key">
+                      {{ getPropertyLabel(key) }}
+                    </option>
+                  }
+                </select>
+              </div>
+
+              <!-- Value Selector -->
+              <div class="form-control flex-1">
+                @if (newConditionForm.get('propertyKey')?.value) {
+                  @if (isNewConditionNumberProperty()) {
+                    <label class="label">
+                      <span class="label-text font-medium">Condition</span>
+                    </label>
+                    <div class="flex gap-2">
+                      <select formControlName="operator" class="select select-bordered w-32">
+                        <option value=">">Greater than</option>
+                        <option value=">=">Greater or equal</option>
+                        <option value="<">Less than</option>
+                        <option value="<=">Less or equal</option>
+                        <option value="=">Equal to</option>
+                      </select>
+                      <input
+                        type="number"
+                        formControlName="propertyValue"
+                        class="input input-bordered flex-1"
+                        placeholder="Enter number..."
+                      />
+                    </div>
+                  } @else {
+                    <app-searchable-select
+                      [label]="'Required Value'"
+                      [options]="getNewConditionValueOptions()"
+                      [value]="newConditionPropertyValue()"
+                      [placeholder]="'Select value...'"
+                      [required]="true"
+                      (valueChange)="newConditionForm.get('propertyValue')?.setValue($event)"
+                    ></app-searchable-select>
+                  }
+                } @else {
+                  <label class="label">
+                    <span class="label-text font-medium">Required Value</span>
+                  </label>
+                  <select
+                    class="select select-bordered w-full"
+                    disabled
+                  >
+                    <option>Select property first</option>
+                  </select>
+                }
+              </div>
+
+              <!-- Add Button -->
+              <div class="form-control">
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  [disabled]="!canAddCurrentCondition()"
+                  (click)="addCurrentCondition()"
+                >
+                  <lucide-icon [img]="Plus" class="size-4"></lucide-icon>
+                  Add
+                </button>
+              </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mapping Preview -->
+    @if (conditionsArray().length > 0 || form.value.sku) {
+      <div class="card bg-primary/10 border border-primary/20">
+        <div class="card-body p-6">
+          <h4 class="font-medium text-primary mb-4 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Mapping Preview
+          </h4>
+          
+          @if (conditionsArray().length > 0) {
+            <div class="mb-4">
+              <p class="text-sm text-base-content/80 font-medium mb-3">When a device matches all of these conditions:</p>
+              <div class="flex flex-wrap gap-2">
+                @for (condition of conditionsArray().controls; track $index) {
+                  @if (condition.get('propertyKey')?.value && condition.get('propertyValue')?.value) {
+                    <div class="flex items-center gap-2 py-2 px-3 bg-base-100 border border-base-300 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium text-base-content">{{ getPropertyLabel(condition.get('propertyKey')?.value) }}:</span>
+                        <span class="badge badge-primary">{{ condition.get('propertyValue')?.value }}</span>
+                      </div>
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-xs btn-circle text-error hover:bg-error/10 ml-1"
+                        (click)="removeCondition($index)"
+                        title="Remove this condition"
+                      >
+                        <lucide-icon [img]="X" class="size-3"></lucide-icon>
+                      </button>
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="text-sm text-base-content/60 mb-4 text-center py-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-8 w-8 mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <p>No conditions added yet</p>
+            </div>
+          }
+          
+          @if (form.value.sku) {
+            <div class="pt-3 border-t border-primary/20">
+              <p class="text-sm text-base-content/80 font-medium mb-2">Will be assigned SKU:</p>
+              <code class="font-mono bg-base-100 border border-base-300 px-3 py-2 rounded text-primary font-semibold text-sm block max-w-fit">{{ form.value.sku }}</code>
+            </div>
+          } @else {
+            <div class="pt-3 border-t border-primary/20 text-sm text-base-content/60">
+              <p>Enter a SKU above to see the complete mapping preview</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</app-generic-form-page>
