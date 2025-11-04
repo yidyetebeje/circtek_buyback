@@ -157,6 +157,14 @@ export const stock = mysqlTable('stock', {
 }, (stock) => [
  uniqueIndex('stock_unique').on(stock.sku, stock.warehouse_id),
 ]);
+export const stock_device_ids = mysqlTable('stock_device_ids', {
+  id: serial('id').primaryKey(),
+  stock_id: bigint('stock_id', { mode: 'number', unsigned: true }).references(() => stock.id).notNull(),
+  device_id: bigint('device_id', { mode: 'number', unsigned: true }).references(() => devices.id).notNull(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
 
 export const stock_movements = mysqlTable('stock_movements', {
   id: serial('id').primaryKey(),
@@ -241,7 +249,7 @@ export const transfer_items = mysqlTable('transfer_items', {
   id: serial('id').primaryKey(),
   transfer_id: bigint('transfer_id', { mode: 'number', unsigned: true }).references(() => transfers.id).notNull(),
   sku: varchar('sku', { length: 255 }).notNull(),
-  device_id: bigint('device_id', { mode: 'number', unsigned: true }).references(() => devices.id).notNull(),
+  device_id: bigint('device_id', { mode: 'number', unsigned: true }).references(() => devices.id).default(sql`NULL`),
   is_part: boolean('is_part').default(false),
   quantity: int('quantity').default(1),
   status: boolean('status').default(true),

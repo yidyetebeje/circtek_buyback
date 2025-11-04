@@ -37,6 +37,9 @@ export class TransferFormComponent {
   items = signal<TransferItem[]>([]);
   isModalOpen = signal(false);
   editingItem = signal<TransferItem | null>(null);
+  scanInput = signal('');
+  scanLoading = signal(false);
+  scanError = signal<string | null>(null);
   
   // Computed validation error message
   warehouseValidationError = computed(() => {
@@ -233,6 +236,57 @@ export class TransferFormComponent {
   removeItem(itemId: string): void {
     const currentItems = this.items();
     this.items.set(currentItems.filter(item => item.id !== itemId));
+  }
+
+  onScanInputChange(value: string): void {
+    this.scanInput.set(value);
+    this.scanError.set(null);
+  }
+
+  addItemByScan(): void {
+    const input = this.scanInput().trim();
+    if (!input) {
+      return;
+    }
+
+    this.scanError.set(null);
+
+    // Check if input is IMEI (numeric, 15 digits) or SKU
+    const isIMEI = /^\d{15}$/.test(input);
+
+    if (isIMEI) {
+      // Add device by IMEI/Serial directly
+      const newItem: TransferItem = {
+        id: crypto.randomUUID(),
+        sku: input, // Use IMEI as identifier
+        device_id: 0,
+        is_part: false,
+        quantity: 1
+      };
+      this.items.set([...this.items(), newItem]);
+      this.scanInput.set(''); // Clear input
+    } else {
+      // Add product/part by SKU directly
+      const newItem: TransferItem = {
+        id: crypto.randomUUID(),
+        sku: input,
+        device_id: 0,
+        is_part: true, // Assume it's a part when SKU is entered
+        quantity: 1
+      };
+      this.items.set([...this.items(), newItem]);
+      this.scanInput.set(''); // Clear input
+    }
+  }
+
+  updateItemQuantity(itemId: string, quantity: number): void {
+    if (quantity < 1) {
+      return;
+    }
+    const updatedItems = this.items().map(item =>
+      item.id === itemId ? { ...item, quantity } : item
+    );
+    this.items.set(updatedItems);
   }
 
   onSubmit(): void {

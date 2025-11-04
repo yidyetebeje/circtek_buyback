@@ -3,3 +3,4 @@ ALTER TABLE `tenant_currency_preferences`
   ADD PRIMARY KEY (`tenant_id`);
 
 
+

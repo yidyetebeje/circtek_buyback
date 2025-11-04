@@ -1,5 +1,5 @@
 import { and, count, eq, like, or, SQL, gte, lte, desc, asc, sum, sql } from "drizzle-orm";
-import { transfers, transfer_items, warehouses, devices, stock } from "../../db/circtek.schema";
+import { transfers, transfer_items, warehouses, devices, stock, stock_device_ids } from "../../db/circtek.schema";
 import { 
   TransferCreateInput, 
   TransferItemCreateInput, 
@@ -26,18 +26,26 @@ export class TransfersRepository {
   async createTransferItems(transfer_id: number, items: TransferItemCreateInput[], tenant_id: number, from_warehouse_id: number, to_warehouse_id: number): Promise<TransferItemRecord[]> {
     // Validate stock availability in sender warehouse for all items
     for (const item of items) {
-      await this.validateStockForTransfer(item.sku, item.quantity || 1, from_warehouse_id, tenant_id);
+      // If is_part is false and device_id is not provided, try to find device by IMEI/serial from SKU
+      if (item.is_part === false && !item.device_id) {
+        const device = await this.findDeviceByImeiOrSerial(item.sku, tenant_id);
+        if (device) {
+          item.device_id = device.id;
+        }
+      }
+      await this.validateStockForTransfer(item.sku, item.quantity || 1, from_warehouse_id, tenant_id, item.is_part);
     }
 
     // Ensure stock records exist in receiver warehouse to satisfy FK constraints
     for (const item of items) {
-      await this.ensureStockExistsForTransfer(item.sku, to_warehouse_id, tenant_id);
+      await this.ensureStockExistsForTransfer(item.sku, to_warehouse_id, tenant_id, item.is_part);
     }
 
     const itemsToInsert = items.map(item => ({
       ...item,
       transfer_id,
       tenant_id,
+      device_id: item.device_id || null,
     }));
 
     await this.database.insert(transfer_items).values(itemsToInsert);
@@ -52,51 +60,42 @@ export class TransfersRepository {
       ));
   }
 
+  /**
+   * Creates a transfer with items in a single atomic transaction.
+   * 
+   * Flow:
+   * 1. Resolve device information and prepare items
+   * 2. Validate stock availability in source warehouse
+   * 3. Create transfer record
+   * 4. Ensure stock records exist in destination warehouse
+   * 5. Create transfer item records
+   * 6. Validate device mappings
+   */
   async createTransferWithItemsTransaction(
     transferData: TransferCreateInput & { tenant_id: number; created_by: number },
     items: TransferItemCreateInput[],
     tenant_id: number
   ): Promise<TransferWithDetails | undefined> {
     return await this.database.transaction(async (tx) => {
-      // First, validate stock availability for all items before creating anything
-      for (const item of items) {
-        await this.validateStockForTransferInTransaction(
-          tx, 
-          item.sku, 
-          item.quantity || 1, 
-          transferData.from_warehouse_id, 
-          tenant_id
-        );
-      }
+      // Step 1: Prepare items (resolve devices, validate SKUs)
+      const preparedItems = await this.prepareTransferItems(items, tenant_id);
 
-      // Create the transfer
-      const [transferResult] = await tx.insert(transfers).values(transferData);
-      if (!transferResult.insertId) {
-        throw new Error('Failed to create transfer');
-      }
+      // Step 2: Validate stock availability for all items
+      await this.validateItemsStockAvailability(tx, preparedItems, transferData.from_warehouse_id, tenant_id);
 
-      const transfer_id = Number(transferResult.insertId);
+      // Step 3: Create the transfer record
+      const transfer_id = await this.createTransferRecord(tx, transferData);
 
-      // Ensure stock records exist in receiver warehouse for FK constraints
-      for (const item of items) {
-        await this.ensureStockExistsForTransferInTransaction(
-          tx, 
-          item.sku, 
-          transferData.to_warehouse_id, 
-          tenant_id
-        );
-      }
+      // Step 4: Ensure destination warehouse has stock records
+      await this.ensureDestinationStockRecords(tx, preparedItems, transferData.to_warehouse_id, tenant_id);
 
-      // Create transfer items
-      const itemsToInsert = items.map(item => ({
-        ...item,
-        transfer_id,
-        tenant_id,
-      }));
+      // Step 5: Create transfer item records
+      await this.createTransferItemRecords(tx, preparedItems, transfer_id, tenant_id);
 
-      await tx.insert(transfer_items).values(itemsToInsert);
+      // Step 6: Validate device mappings for devices (non-parts)
+      await this.validateDeviceMappings(tx, preparedItems, transferData.from_warehouse_id, tenant_id);
 
-      // Return the full transfer with details
+      // Return the complete transfer with details
       return this.findTransferWithDetails(transfer_id, tenant_id);
     });
   }
@@ -404,7 +403,142 @@ export class TransfersRepository {
     return { id };
   }
 
-  private async ensureStockExistsForTransfer(sku: string, warehouse_id: number, tenant_id: number): Promise<void> {
+  /**
+   * Prepares transfer items by resolving device information and validating SKUs.
+   * For non-part items without device_id, attempts to find device by IMEI/serial.
+   */
+  private async prepareTransferItems(
+    items: TransferItemCreateInput[], 
+    tenant_id: number
+  ): Promise<TransferItemCreateInput[]> {
+    const prepared: TransferItemCreateInput[] = [];
+
+    for (const item of items) {
+      const preparedItem = { ...item };
+
+      // Resolve device information for non-part items
+      if (preparedItem.is_part === false && (!preparedItem.device_id || preparedItem.device_id === 0)) {
+        const device = await this.findDeviceByImeiOrSerial(preparedItem.sku, tenant_id);
+        if (device) {
+          preparedItem.device_id = device.id;
+          // Update SKU to device's actual SKU if available
+          if (device.sku && device.sku.trim() !== '') {
+            preparedItem.sku = device.sku;
+          }
+        }
+      }
+
+      // Validate SKU is not empty
+      if (!preparedItem.sku || preparedItem.sku.trim() === '') {
+        throw new Error('SKU cannot be empty');
+      }
+
+      prepared.push(preparedItem);
+    }
+
+    return prepared;
+  }
+
+  /**
+   * Validates stock availability for all items in the source warehouse.
+   */
+  private async validateItemsStockAvailability(
+    tx: any,
+    items: TransferItemCreateInput[],
+    from_warehouse_id: number,
+    tenant_id: number
+  ): Promise<void> {
+    for (const item of items) {
+      await this.validateStockInTransaction(
+        tx,
+        item.sku,
+        item.quantity || 1,
+        from_warehouse_id,
+        tenant_id
+      );
+    }
+  }
+
+  /**
+   * Creates the transfer record and returns its ID.
+   */
+  private async createTransferRecord(
+    tx: any,
+    transferData: TransferCreateInput & { tenant_id: number; created_by: number }
+  ): Promise<number> {
+    const [result] = await tx.insert(transfers).values(transferData);
+    if (!result.insertId) {
+      throw new Error('Failed to create transfer record');
+    }
+    return Number(result.insertId);
+  }
+
+  /**
+   * Ensures stock records exist in destination warehouse for all items.
+   */
+  private async ensureDestinationStockRecords(
+    tx: any,
+    items: TransferItemCreateInput[],
+    to_warehouse_id: number,
+    tenant_id: number
+  ): Promise<void> {
+    for (const item of items) {
+      await this.ensureStockExistsInTransaction(
+        tx,
+        item.sku,
+        to_warehouse_id,
+        tenant_id,
+        item.is_part
+      );
+    }
+  }
+
+  /**
+   * Creates transfer item records in the database.
+   * Note: Only explicitly specify fields that need transformation to avoid type issues.
+   */
+  private async createTransferItemRecords(
+    tx: any,
+    items: TransferItemCreateInput[],
+    transfer_id: number,
+    tenant_id: number
+  ): Promise<void> {
+    const itemsToInsert = items.map(item => ({
+      sku: item.sku,
+      transfer_id,
+      tenant_id,
+      device_id: (item.device_id && item.device_id !== 0) ? item.device_id : null,
+      is_part: item.is_part ?? false,
+      quantity: item.quantity ?? 1,
+    }));
+    console.log(itemsToInsert, "itemsToInsert");
+
+    await tx.insert(transfer_items).values(itemsToInsert);
+  }
+
+  /**
+   * Validates device-to-stock mappings for non-part items with device IDs.
+   */
+  private async validateDeviceMappings(
+    tx: any,
+    items: TransferItemCreateInput[],
+    from_warehouse_id: number,
+    tenant_id: number
+  ): Promise<void> {
+    for (const item of items) {
+      if (item.device_id && !item.is_part) {
+        await this.validateDeviceStockMapping(
+          tx,
+          item.device_id,
+          item.sku,
+          from_warehouse_id,
+          tenant_id
+        );
+      }
+    }
+  }
+
+  private async ensureStockExistsForTransfer(sku: string, warehouse_id: number, tenant_id: number, is_part?: boolean): Promise<void> {
     // Check if stock record exists for this SKU in the specified warehouse
     const [existing] = await this.database
       .select({ id: stock.id })
@@ -425,7 +559,7 @@ export class TransfersRepository {
         warehouse_id,
         quantity: 0,
         tenant_id,
-        is_part: false,
+        is_part: is_part ?? false,
       });
     } catch (error: any) {
       // Handle unique constraint - stock might exist but in different warehouse
@@ -439,9 +573,10 @@ export class TransfersRepository {
   }
 
   /**
-   * Validates that the SKU exists in the sender warehouse with sufficient quantity
+   * Validates that the SKU exists in the warehouse with sufficient quantity.
+   * Used for non-transactional operations.
    */
-  private async validateStockForTransfer(sku: string, quantity: number, from_warehouse_id: number, tenant_id: number): Promise<void> {
+  private async validateStockForTransfer(sku: string, quantity: number, from_warehouse_id: number, tenant_id: number, is_part?: boolean): Promise<void> {
     const [stockRecord] = await this.database
       .select({ 
         id: stock.id,
@@ -467,9 +602,16 @@ export class TransfersRepository {
   }
 
   /**
-   * Transaction-aware version of validateStockForTransfer
+   * Validates stock availability within a transaction context.
+   * Checks if SKU exists and has sufficient quantity in the specified warehouse.
    */
-  private async validateStockForTransferInTransaction(tx: any, sku: string, quantity: number, from_warehouse_id: number, tenant_id: number): Promise<void> {
+  private async validateStockInTransaction(
+    tx: any, 
+    sku: string, 
+    quantity: number, 
+    warehouse_id: number, 
+    tenant_id: number
+  ): Promise<void> {
     const [stockRecord] = await tx
       .select({ 
         id: stock.id,
@@ -480,7 +622,7 @@ export class TransfersRepository {
       .leftJoin(warehouses, eq(stock.warehouse_id, warehouses.id))
       .where(and(
         eq(stock.sku, sku),
-        eq(stock.warehouse_id, from_warehouse_id),
+        eq(stock.warehouse_id, warehouse_id),
         eq(stock.tenant_id, tenant_id)
       ))
       .limit(1);
@@ -495,9 +637,10 @@ export class TransfersRepository {
   }
 
   /**
-   * Transaction-aware version of ensureStockExistsForTransfer
+   * Ensures a stock record exists in the warehouse within a transaction.
+   * Creates the record with zero quantity if it doesn't exist.
    */
-  private async ensureStockExistsForTransferInTransaction(tx: any, sku: string, warehouse_id: number, tenant_id: number): Promise<void> {
+  private async ensureStockExistsInTransaction(tx: any, sku: string, warehouse_id: number, tenant_id: number, is_part?: boolean): Promise<void> {
     // Check if stock record exists for this SKU in the specified warehouse
     const [existing] = await tx
       .select({ id: stock.id })
@@ -518,7 +661,7 @@ export class TransfersRepository {
         warehouse_id,
         quantity: 0,
         tenant_id,
-        is_part: false,
+        is_part: is_part ?? false,
       });
     } catch (error: any) {
       // Handle unique constraint - stock might exist but in different warehouse
@@ -559,6 +702,103 @@ export class TransfersRepository {
       .limit(1);
 
     return device;
+  }
+
+  /**
+   * Validates that a device is mapped to stock in the specified warehouse
+   */
+  private async validateDeviceStockMapping(tx: any, device_id: number, sku: string, warehouse_id: number, tenant_id: number): Promise<void> {
+    // Get stock record for this SKU in the warehouse
+    const [stockRecord] = await tx
+      .select({ id: stock.id })
+      .from(stock)
+      .where(and(
+        eq(stock.sku, sku),
+        eq(stock.warehouse_id, warehouse_id),
+        eq(stock.tenant_id, tenant_id)
+      ))
+      .limit(1);
+
+    if (!stockRecord) {
+      throw new Error(`Stock record for SKU "${sku}" not found in warehouse`);
+    }
+
+    // Check if device is mapped to this stock
+    const [mapping] = await tx
+      .select({ id: stock_device_ids.id })
+      .from(stock_device_ids)
+      .where(and(
+        eq(stock_device_ids.stock_id, stockRecord.id),
+        eq(stock_device_ids.device_id, device_id),
+        eq(stock_device_ids.tenant_id, tenant_id)
+      ))
+      .limit(1);
+
+    if (!mapping) {
+      throw new Error(`Device ${device_id} is not mapped to stock in the source warehouse`);
+    }
+  }
+
+  /**
+   * Moves device mapping from source warehouse stock to destination warehouse stock
+   */
+  async moveDeviceStockMapping(device_id: number, sku: string, from_warehouse_id: number, to_warehouse_id: number, tenant_id: number): Promise<void> {
+    return await this.database.transaction(async (tx) => {
+      // Get source stock record
+      const [sourceStock] = await tx
+        .select({ id: stock.id })
+        .from(stock)
+        .where(and(
+          eq(stock.sku, sku),
+          eq(stock.warehouse_id, from_warehouse_id),
+          eq(stock.tenant_id, tenant_id)
+        ))
+        .limit(1);
+
+      if (!sourceStock) {
+        throw new Error(`Source stock not found for SKU "${sku}"`);
+      }
+
+      // Get destination stock record
+      const [destStock] = await tx
+        .select({ id: stock.id })
+        .from(stock)
+        .where(and(
+          eq(stock.sku, sku),
+          eq(stock.warehouse_id, to_warehouse_id),
+          eq(stock.tenant_id, tenant_id)
+        ))
+        .limit(1);
+
+      if (!destStock) {
+        throw new Error(`Destination stock not found for SKU "${sku}"`);
+      }
+
+      // Delete mapping from source stock
+      await tx
+        .delete(stock_device_ids)
+        .where(and(
+          eq(stock_device_ids.stock_id, sourceStock.id),
+          eq(stock_device_ids.device_id, device_id),
+          eq(stock_device_ids.tenant_id, tenant_id)
+        ));
+
+      // Create mapping to destination stock
+      await tx.insert(stock_device_ids).values({
+        stock_id: destStock.id,
+        device_id: device_id,
+        tenant_id: tenant_id,
+      });
+
+      // Update device warehouse_id
+      await tx
+        .update(devices)
+        .set({ warehouse_id: to_warehouse_id })
+        .where(and(
+          eq(devices.id, device_id),
+          eq(devices.tenant_id, tenant_id)
+        ));
+    });
   }
 
   private getSortColumn(sortBy?: string): any {

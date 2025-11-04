@@ -44,50 +44,83 @@ export class TransfersController {
     }
   }
 
-  async createTransferWithItems(payload: TransferWithItemsInput & { created_by: number }, tenant_id: number): Promise<response<TransferWithDetails | null>> {
+  /**
+   * Creates a transfer with its associated items in a single atomic operation.
+   * 
+   * This operation:
+   * - Validates warehouse differences
+   * - Resolves device information for non-part items
+   * - Validates stock availability in source warehouse
+   * - Creates transfer and item records
+   * - Ensures destination warehouse stock records exist
+   * 
+   * All operations are performed within a transaction - either all succeed or all fail.
+   */
+  async createTransferWithItems(
+    payload: TransferWithItemsInput & { created_by: number }, 
+    tenant_id: number
+  ): Promise<response<TransferWithDetails | null>> {
     try {
-      // Validate that source and destination warehouses are different
+      // Validate warehouse configuration
       if (payload.transfer.from_warehouse_id === payload.transfer.to_warehouse_id) {
-        return { 
-          data: null, 
-          message: 'Source and destination warehouses must be different', 
-          status: 400 
-        }
+        return this.createErrorResponse(
+          'Source and destination warehouses must be different', 
+          400
+        );
       }
 
-      // Use transaction to ensure atomicity - either everything succeeds or everything fails
+      // Create transfer with items in atomic transaction
       const result = await this.repo.createTransferWithItemsTransaction(
         { ...payload.transfer, tenant_id, created_by: payload.created_by },
         payload.items,
         tenant_id
-      )
+      );
       
       return { 
         data: result ?? null, 
         message: 'Transfer with items created successfully', 
         status: 201 
-      }
+      };
     } catch (error) {
-      const errorMessage = (error as Error).message;
-      
-      // Check if it's a validation error (stock availability)
-      if (errorMessage.includes('does not exist in the sender warehouse') || 
-          errorMessage.includes('Insufficient quantity for SKU')) {
-        return { 
-          data: null, 
-          message: errorMessage, 
-          status: 400 
-        }
-      }
-      
-      // Generic error
-      return { 
-        data: null, 
-        message: 'Failed to create transfer with items', 
-        status: 500, 
-        error: errorMessage 
-      }
+      return this.handleTransferCreationError(error);
     }
+  }
+
+  /**
+   * Handles errors from transfer creation, categorizing them appropriately.
+   */
+  private handleTransferCreationError(error: unknown): response<null> {
+    const errorMessage = (error as Error).message;
+
+    // Stock validation errors (user error - 400)
+    const isValidationError = [
+      'does not exist in the sender warehouse',
+      'Insufficient quantity for SKU',
+      'SKU cannot be empty',
+    ].some(msg => errorMessage.includes(msg));
+
+    if (isValidationError) {
+      return this.createErrorResponse(errorMessage, 400);
+    }
+
+    // Generic server error (500)
+    return this.createErrorResponse(
+      'Failed to create transfer with items', 
+      500, 
+      errorMessage
+    );
+  }
+
+  /**
+   * Helper method to create consistent error responses.
+   */
+  private createErrorResponse(message: string, status: number, error?: string): response<null> {
+    return { 
+      data: null, 
+      message, 
+      status, 
+      ...(error && { error })
+    };
   }
 
   async getTransferById(id: number, tenant_id?: number): Promise<response<TransferWithDetails | null>> {
@@ -162,6 +195,7 @@ export class TransfersController {
       for (const item of transfer.items) {
         const quantity = item.quantity || 1
         
+        
         // Movement 1: Stock Out from Source Warehouse
         const outMovement = await movementsController.create({
           sku: item.sku,
@@ -193,6 +227,22 @@ export class TransfersController {
         if (outMovement.status === 201 && inMovement.status === 201) {
           totalItemsTransferred++
           totalQuantityTransferred += quantity
+          
+          // Move device stock mapping if this is a device (not a part)
+          if (!item.is_part && item.device_id) {
+            try {
+              await this.repo.moveDeviceStockMapping(
+                item.device_id,
+                item.sku,
+                transfer.from_warehouse_id,
+                transfer.to_warehouse_id,
+                tenant_id
+              )
+            } catch (error) {
+              console.error(`Failed to move device stock mapping for device ${item.device_id}:`, error)
+              // Don't fail the transfer if mapping fails, but log it
+            }
+          }
         }
 
         // Create device events for TRANSFER_OUT and TRANSFER_IN if not a part

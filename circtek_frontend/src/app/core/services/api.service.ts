@@ -469,6 +469,14 @@ export class ApiService {
     return this.get<ApiResponse<any | null>>(`/stock/transfers/device-lookup/${encodeURIComponent(identifier)}`);
   }
 
+  getDeviceByIMEI(imei: string): Observable<ApiResponse<any | null>> {
+    return this.get<ApiResponse<any | null>>(`/stock/transfers/device-lookup/${encodeURIComponent(imei)}`);
+  }
+
+  getProductBySKU(sku: string): Observable<ApiResponse<any | null>> {
+    return this.get<ApiResponse<any | null>>(`/stock/sku-specs/sku/${encodeURIComponent(sku)}`);
+  }
+
   // ===== Repairs =====
   getRepairs(params: HttpParams = new HttpParams()): Observable<ApiResponse<RepairRecord[]>> {
     return this.get<ApiResponse<RepairRecord[]>>('/stock/repairs', params);

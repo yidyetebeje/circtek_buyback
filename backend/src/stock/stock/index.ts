@@ -14,7 +14,9 @@ export const stock_routes = new Elysia({ prefix: '/stock' })
   // List stock with filtering and pagination
   .get('/', async (ctx) => {
     const { query, currentRole, currentTenantId } = ctx as any
+    console.log(query, currentRole, currentTenantId);
     const tenantScoped = currentRole === 'super_admin' ? undefined : currentTenantId
+    console.log(tenantScoped, "tenantScoped");
     return controller.list(query as any, tenantScoped)
   }, { 
     query: StockQuery, 

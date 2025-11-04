@@ -14,24 +14,56 @@
 >
   <!-- Transfer Items Section -->
   <div class="mt-8">
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h3 class="text-lg font-semibold text-base-content">Transfer Items</h3>
-        <p class="text-sm text-base-content/60 mt-1">
-          {{ totalItems() }} items • Total quantity: {{ totalQuantity() }}
-        </p>
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold text-base-content mb-2">Transfer Items</h3>
+      <p class="text-sm text-base-content/60 mb-4">
+        {{ totalItems() }} items • Total quantity: {{ totalQuantity() }}
+      </p>
+
+      <!-- Scan/Add Input -->
+      <div class="flex gap-2">
+        <div class="flex-1">
+          <input
+            type="text"
+            class="input input-bordered w-full"
+            [class.input-error]="scanError()"
+            placeholder="Scan or enter IMEI (15 digits) or SKU"
+            [value]="scanInput()"
+            (input)="onScanInputChange($any($event.target).value)"
+            (keydown.enter)="$event.preventDefault(); addItemByScan()"
+            [disabled]="loading() || submitting() || scanLoading()"
+          />
+          @if (scanError()) {
+            <p class="text-error text-sm mt-1">{{ scanError() }}</p>
+          }
+        </div>
+        <button 
+          type="button" 
+          class="btn btn-accent"
+          (click)="addItemByScan()"
+          [disabled]="loading() || submitting() || scanLoading() || !scanInput()"
+        >
+          @if (scanLoading()) {
+            <span class="loading loading-spinner loading-sm"></span>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          }
+          Add
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-ghost"
+          (click)="openAddItemModal()"
+          [disabled]="loading() || submitting()"
+          title="Add manually"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
       </div>
-      <button 
-        type="button" 
-        class="btn btn-accent btn-sm"
-        (click)="openAddItemModal()"
-        [disabled]="loading() || submitting()"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Add Item
-      </button>
     </div>
 
     <!-- Items Table -->
@@ -40,10 +72,9 @@
         <table class="w-full table">
           <thead>
             <tr>
-              <th class="px-4 py-3 max-w-[200px]">SKU</th>
-              <th class="whitespace-nowrap px-4 py-3">Device ID</th>
-              <th class="whitespace-nowrap px-4 py-3">Quantity</th>
+              <th class="px-4 py-3 max-w-[200px]">SKU / IMEI</th>
               <th class="whitespace-nowrap px-4 py-3">Type</th>
+              <th class="whitespace-nowrap px-4 py-3 w-32">Quantity</th>
               <th class="whitespace-nowrap px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -51,13 +82,25 @@
             @for (item of items(); track item.id) {
               <tr>
                 <td class="px-4 py-3 font-medium max-w-[200px] truncate" title="{{ item.sku }}">{{ item.sku || 'N/A' }}</td>
-                <td class="whitespace-nowrap px-4 py-3">{{ item.is_part ? 'N/A' : (item.device_id || '0') }}</td>
-                <td class="whitespace-nowrap px-4 py-3">{{ item.quantity || 0 }}</td>
                 <td class="whitespace-nowrap px-4 py-3">
                   @if (item.is_part) {
                     <span class="badge badge-primary badge-sm">Part</span>
                   } @else {
                     <span class="badge badge-ghost badge-sm">Product</span>
+                  }
+                </td>
+                <td class="whitespace-nowrap px-4 py-3">
+                  @if (item.is_part) {
+                    <input
+                      type="number"
+                      class="input input-bordered input-sm w-20"
+                      [value]="item.quantity"
+                      (change)="updateItemQuantity(item.id!, +$any($event.target).value)"
+                      min="1"
+                      [disabled]="loading() || submitting()"
+                    />
+                  } @else {
+                    {{ item.quantity || 0 }}
                   }
                 </td>
                 <td class="whitespace-nowrap px-4 py-3">
@@ -97,15 +140,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
         </svg>
         <h3 class="text-lg font-medium text-base-content/60 mb-2">No items added</h3>
-        <p class="text-base-content/40 mb-4">Add items to your transfer order to get started.</p>
-        <button 
-          type="button" 
-          class="btn btn-accent btn-sm"
-          (click)="openAddItemModal()"
-          [disabled]="loading() || submitting()"
-        >
-          Add First Item
-        </button>
+        <p class="text-base-content/40">Scan or enter IMEI/SKU in the field above to add items.</p>
       </div>
     }
   </div>

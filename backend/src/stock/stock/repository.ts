@@ -117,6 +117,7 @@ export class StockRepository {
     const conditions: any[] = [];
     
     if (typeof filters.tenant_id === 'number') {
+     
       conditions.push(eq(stock.tenant_id, filters.tenant_id));
     }
     if (typeof filters.warehouse_id === 'number') {
@@ -155,16 +156,17 @@ export class StockRepository {
     } else {
       [totalRow] = await this.database.select({ total: count() }).from(stock);
     }
-
+    
     // Get paginated results
     let rows;
     if (conditions.length) {
-      const finalCondition = and(...conditions as any);
+      console.log("condition entered")
+      const finalCondition = and(...conditions);
       rows = await this.database
         .select(stockWithWarehouseSelection)
         .from(stock)
         .leftJoin(warehouses, eq(stock.warehouse_id, warehouses.id))
-        .where(finalCondition as any)
+        .where(finalCondition)
         .orderBy(sortDirection(sortColumn))
         .limit(limit)
         .offset(offset);

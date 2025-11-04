@@ -10,7 +10,7 @@ export const TransferCreate = t.Object({
 
 export const TransferItemCreate = t.Object({
   sku: t.String(),
-  device_id: t.Number(),
+  device_id: t.Optional(t.Number()),
   is_part: t.Optional(t.Boolean()),
   quantity: t.Optional(t.Number({ default: 1 })),
 })
@@ -61,7 +61,7 @@ export type TransferItemRecord = {
   id: number
   transfer_id: number
   sku: string
-  device_id: number
+  device_id: number | null
   is_part: boolean | null
   quantity: number | null
   status: boolean | null
