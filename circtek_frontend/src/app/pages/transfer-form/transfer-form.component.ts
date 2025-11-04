@@ -6,6 +6,7 @@ import { HttpParams } from '@angular/common/http';
 
 import { GenericFormPageComponent, type FormField, type FormAction } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { TransferItemModalComponent, type TransferItem } from './transfer-item-modal/transfer-item-modal.component';
 
@@ -26,6 +27,7 @@ interface TransferFormData {
 export class TransferFormComponent {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
@@ -121,6 +123,8 @@ export class TransferFormComponent {
     effect(() => {
       this.loadWarehouses();
     });
+    // Set user's warehouse as default "from" warehouse
+    this.setUserWarehouse();
   }
 
   private createForm(): FormGroup {
@@ -183,6 +187,13 @@ export class TransferFormComponent {
     }
     
     return null;
+  }
+
+  private setUserWarehouse(): void {
+    const currentUser = this.auth.currentUser();
+    if (currentUser?.warehouse_id) {
+      this.form().get('from_warehouse_id')?.setValue(String(currentUser.warehouse_id));
+    }
   }
 
   private loadWarehouses(): void {
