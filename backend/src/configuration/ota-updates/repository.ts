@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, like, or, sql } from 'drizzle-orm'
 import { db } from '../../db'
-import { ota_update, users, tenants } from '../../db/circtek.schema'
+import { ota_update, users } from '../../db/circtek.schema'
 import type { OtaUpdateCreateInput, OtaUpdatePublic, OtaUpdateUpdateInput } from './types'
 
 const otaUpdateSelection = {
@@ -10,8 +10,6 @@ const otaUpdateSelection = {
     target_os: ota_update.target_os,
     target_architecture: ota_update.target_architecture,
     release_channel: ota_update.release_channel,
-    tenant_id: ota_update.tenant_id,
-    tenant_name: tenants.name,
     created_at: ota_update.created_at,
     updated_at: ota_update.updated_at,
 }
@@ -29,9 +27,6 @@ export class OtaUpdatesRepository {
     ): Promise<{ data: OtaUpdatePublic[]; total: number }> {
         // Build where conditions
         const conditions: any[] = []
-        if (tenantId != null) {
-            conditions.push(eq(ota_update.tenant_id, tenantId))
-        }
         if (search) {
             conditions.push(
                 or(
@@ -57,7 +52,6 @@ export class OtaUpdatesRepository {
         const countQuery = this.database
             .select({ count: sql<number>`count(*)` })
             .from(ota_update)
-            .leftJoin(tenants, eq(ota_update.tenant_id, tenants.id))
         
         if (whereClause) {
             countQuery.where(whereClause as any)
@@ -71,7 +65,6 @@ export class OtaUpdatesRepository {
         const dataQuery = this.database
             .select(otaUpdateSelection)
             .from(ota_update)
-            .leftJoin(tenants, eq(ota_update.tenant_id, tenants.id))
             .limit(limit)
             .offset(offset)
             .orderBy(orderByFn(orderByColumn))
@@ -88,37 +81,34 @@ export class OtaUpdatesRepository {
         }
     }
 
-    async create(payload: OtaUpdateCreateInput & { tenant_id: number }): Promise<OtaUpdatePublic | undefined> {
+    async create(payload: OtaUpdateCreateInput): Promise<OtaUpdatePublic | undefined> {
         await this.database.insert(ota_update).values(payload as any)
         const [created] = await this.database
             .select(otaUpdateSelection)
             .from(ota_update)
-            .leftJoin(tenants, eq(ota_update.tenant_id, tenants.id))
-            .where(and(
-                eq(ota_update.version, payload.version),
-                eq(ota_update.tenant_id, payload.tenant_id)
-            ) as any)
+            .where(eq(ota_update.version, payload.version) as any)
+            .orderBy(desc(ota_update.id))
+            .limit(1)
         return created as any
     }
 
-    async get(id: number, tenantId: number): Promise<OtaUpdatePublic | undefined> {
+    async get(id: number): Promise<OtaUpdatePublic | undefined> {
         const [row] = await this.database
             .select(otaUpdateSelection)
             .from(ota_update)
-            .leftJoin(tenants, eq(ota_update.tenant_id, tenants.id))
-            .where(and(eq(ota_update.id, id), eq(ota_update.tenant_id, tenantId)) as any)
+            .where(eq(ota_update.id, id) as any)
         return row as any
     }
 
-    async update(id: number, payload: OtaUpdateUpdateInput, tenantId: number): Promise<OtaUpdatePublic | undefined> {
-        const { tenant_id, ...body } = payload as any
-        await this.database.update(ota_update).set(body as any).where(and(eq(ota_update.id, id), eq(ota_update.tenant_id, tenantId)) as any)
-        return this.get(id, tenantId)
+    async update(id: number, payload: OtaUpdateUpdateInput): Promise<OtaUpdatePublic | undefined> {
+        const body = payload as any
+        await this.database.update(ota_update).set(body as any).where(eq(ota_update.id, id) as any)
+        return this.get(id)
     }
 
-    async delete(id: number, tenantId: number): Promise<{ success: boolean; error?: string }> {
-        const [existing] = await this.database.select({ id: ota_update.id }).from(ota_update).where(and(eq(ota_update.id, id), eq(ota_update.tenant_id, tenantId)) as any)
-        if (!existing) return { success: false, error: 'OTA update not found or access denied' }
+    async delete(id: number): Promise<{ success: boolean; error?: string }> {
+        const [existing] = await this.database.select({ id: ota_update.id }).from(ota_update).where(eq(ota_update.id, id) as any)
+        if (!existing) return { success: false, error: 'OTA update not found' }
         
         // Check if any users are assigned to this OTA update
         const [assignedUser] = await this.database
@@ -149,8 +139,7 @@ export class OtaUpdatesRepository {
     // Assignment methods
     async ensureSameTenantForUserAndOta(userId: number, otaUpdateId: number, tenantId: number): Promise<boolean> {
         const [userRow] = await this.database.select({ tenant_id: users.tenant_id }).from(users).where(eq(users.id, userId))
-        const [otaRow] = await this.database.select({ tenant_id: ota_update.tenant_id }).from(ota_update).where(eq(ota_update.id, otaUpdateId))
-        return Boolean(userRow && otaRow && userRow.tenant_id === tenantId && otaRow.tenant_id === tenantId)
+        return Boolean(userRow && userRow.tenant_id === tenantId)
     }
 
     async setUserOtaUpdate(userId: number, otaUpdateId: number | null): Promise<void> {
@@ -169,13 +158,11 @@ export class OtaUpdatesRepository {
         const [row] = await this.database
             .select(otaUpdateSelection)
             .from(ota_update)
-            .leftJoin(tenants, eq(ota_update.tenant_id, tenants.id))
             .innerJoin(users, and(
                 eq(users.ota_update_id, ota_update.id),
                 eq(users.id, testerId),
                 eq(users.tenant_id, tenantId)
             ))
-            .where(eq(ota_update.tenant_id, tenantId))
         return row as any ?? null
     }
 
@@ -186,14 +173,12 @@ export class OtaUpdatesRepository {
         const [row] = await this.database
             .select(otaUpdateSelection)
             .from(ota_update)
-            .leftJoin(tenants, eq(ota_update.tenant_id, tenants.id))
             .innerJoin(users, and(
                 eq(users.ota_update_id, ota_update.id),
                 eq(users.id, testerId),
                 eq(users.tenant_id, tenantId)
             ))
             .where(and(
-                eq(ota_update.tenant_id, tenantId),
                 eq(ota_update.target_os, targetOs as any),
                 eq(ota_update.target_architecture, targetArchitecture as any)
             ))

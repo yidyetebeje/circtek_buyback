@@ -115,6 +115,8 @@ export class ManagementComponent {
   // Header primary action per tab
   primaryAction = computed(() => {
     const t = this.activeTab();
+    // For non-super_admin, hide add action for OTA Updates completely
+    if (t === 'ota-updates' && !this.isSuperAdmin()) return null;
     const label = t === 'tenants'
       ? 'Add Tenant'
       : t === 'tenant-profile'
@@ -136,7 +138,7 @@ export class ManagementComponent {
                       : t === 'api-keys'
                         ? 'Create API Key'
                         : 'Add WiFi Profile';
-    return { label } as { label: string };
+    return { label } as { label: string } | null;
   });
 
   // Facets vary by tab
@@ -732,7 +734,7 @@ export class ManagementComponent {
             enableSorting: false as any,
             meta: {
               actions: [
-                { key: 'edit', label: 'Edit', class: 'text-primary' },
+                ...(this.isSuperAdmin() ? [{ key: 'edit', label: 'Edit', class: 'text-primary' }] : []),
                 { key: 'assign', label: 'Assign tester', class: 'text-secondary' },
                 { key: 'view-assigned', label: 'View assigned testers' },
                 { key: 'delete', label: 'Delete', class: 'text-error' },
@@ -1257,7 +1259,9 @@ export class ManagementComponent {
     } else if (t === 'questions') {
       this.router.navigate(['/questions/new']);
     } else if (t === 'ota-updates') {
-      this.openOtaUpdateModal();
+      if (this.isSuperAdmin()) {
+        this.openOtaUpdateModal();
+      }
     } else if (t === 'api-keys') {
       this.openApiKeyCreateModal();
     }
@@ -1290,6 +1294,7 @@ export class ManagementComponent {
       } else if (tab === 'questions') {
         this.router.navigate(['/questions', (row as any).id, 'edit']);
       } else if (tab === 'ota-updates') {
+        if (!this.isSuperAdmin()) return;
         this.openOtaUpdateModal(row as OtaUpdate);
       }
       return;
@@ -1952,7 +1957,7 @@ export class ManagementComponent {
       {
         label: this.selectedOtaUpdate() ? 'Update' : 'Create',
         variant: 'primary',
-        disabled: !hasVersion || !hasFile || hasErrors,
+        disabled: !this.isSuperAdmin() || !hasVersion || !hasFile || hasErrors,
         action: 'save'
       }
     ];

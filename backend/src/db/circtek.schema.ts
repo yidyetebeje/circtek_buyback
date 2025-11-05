@@ -393,7 +393,6 @@ export const ota_update = mysqlTable('ota_update', {
   target_os: mysqlEnum('target_os', ['window', 'macos']).notNull(),
   target_architecture: mysqlEnum('target_architecture', ['x86', 'arm']).notNull(),
   release_channel: mysqlEnum('release_channel', ['stable', 'beta', 'dev']).notNull(),
-  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
   created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });

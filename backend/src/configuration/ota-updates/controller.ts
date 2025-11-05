@@ -15,9 +15,7 @@ export class OtaUpdatesController {
         sortField?: string,
         sortOrder: 'asc' | 'desc' = 'desc'
     ): Promise<response<OtaUpdatePublic[]>> {
-        const hasValidQueryTenant = typeof queryTenantId === 'number' && Number.isFinite(queryTenantId)
-        const resolvedTenantId = currentRole === 'super_admin' ? (hasValidQueryTenant ? queryTenantId! : null) : currentTenantId
-        const result = await this.repo.list(resolvedTenantId, page, limit, search, sortField, sortOrder)
+        const result = await this.repo.list(null, page, limit, search, sortField, sortOrder)
         return {
             data: result.data,
             message: 'OK',
@@ -31,24 +29,24 @@ export class OtaUpdatesController {
     }
 
     async create(payload: OtaUpdateCreateInput, tenantId: number): Promise<response<OtaUpdatePublic | null>> {
-        const created = await this.repo.create({ ...payload, tenant_id: tenantId })
+        const created = await this.repo.create(payload)
         return { data: created ?? null, message: 'OTA update created', status: 201 }
     }
 
     async get(id: number, tenantId: number): Promise<response<OtaUpdatePublic | null>> {
-        const found = await this.repo.get(id, tenantId)
+        const found = await this.repo.get(id)
         if (!found) return { data: null, message: 'Not found', status: 404 }
         return { data: found, message: 'OK', status: 200 }
     }
 
     async update(id: number, payload: OtaUpdateUpdateInput, tenantId: number): Promise<response<OtaUpdatePublic | null>> {
-        const updated = await this.repo.update(id, payload, tenantId)
+        const updated = await this.repo.update(id, payload)
         if (!updated) return { data: null, message: 'Not found or forbidden', status: 404 }
         return { data: updated, message: 'Updated', status: 200 }
     }
 
     async delete(id: number, tenantId: number): Promise<response<{ id: number } | null>> {
-        const result = await this.repo.delete(id, tenantId)
+        const result = await this.repo.delete(id)
         if (!result.success) {
             return { data: null, message: result.error || 'Failed to delete', status: 400 }
         }

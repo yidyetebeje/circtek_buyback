@@ -42,8 +42,6 @@ export type OtaUpdatePublic = {
     target_os: 'window' | 'macos'
     target_architecture: 'x86' | 'arm' | 'aarch64' | 'arm64' | 'x64'
     release_channel: 'stable' | 'beta' | 'dev'
-    tenant_id: number
-    tenant_name?: string | null
     created_at: string | null
     updated_at: string | null
 }
