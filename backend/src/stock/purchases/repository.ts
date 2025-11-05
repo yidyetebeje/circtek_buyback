@@ -546,8 +546,6 @@ export class PurchasesRepository {
         eq(purchase_items.sku, skuValue),
         eq(purchase_items.tenant_id, tenant_id),
         eq(purchase_items.status, true as any),
-        eq(purchases.warehouse_id, warehouse_id)
-
       ))
       .groupBy(purchase_items.id)
       .orderBy(desc(purchase_items.created_at));
@@ -575,24 +573,16 @@ export class PurchasesRepository {
 
     const batches = await this.getSkuBatchesWithAvailability(skuValue, tenant_id,warehouse_id)
     let remaining = quantityNeeded
-    const allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }> = []
-
-    for (const batch of batches) {
-      if (remaining <= 0) break
-      const take = Math.min(remaining, batch.available_quantity)
-      if (take > 0) {
-        // increment used for repair
-        await this.database
-          .update(purchase_items)
-          .set({ quantity_used_for_repair: sql`${purchase_items.quantity_used_for_repair} + ${take}` as any })
-          .where(and(eq(purchase_items.id, batch.id), eq(purchase_items.tenant_id, tenant_id)))
-
-        allocations.push({ purchase_item_id: batch.id, quantity: take, unit_price: Number(batch.price) })
-        remaining -= take
-      }
+    const stockResult = await this.database.select().from(stock).where(and(eq(stock.sku, skuValue), eq(stock.tenant_id, tenant_id), eq(stock.warehouse_id, warehouse_id)));
+    if (stockResult.length > 0 && batches.length > 0){
+        let sku_stock = stockResult[0];
+        let batch = batches[0];
+        let allocated = Math.min(remaining, sku_stock.quantity);
+        return { total_allocated: allocated, allocations: [{ purchase_item_id: batch.id, quantity: allocated, unit_price: Number(batch.price) }] }
     }
-
-    return { total_allocated: quantityNeeded - remaining, allocations }
+    else{
+      return { total_allocated: 0, allocations: [] }
+    }
   }
 
   async deallocateAllocations(

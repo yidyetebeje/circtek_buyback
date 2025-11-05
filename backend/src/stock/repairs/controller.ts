@@ -150,7 +150,6 @@ export class RepairsController {
       if (!persistResult.success) {
 
         await this.rollbackMovements(successfulMovements, payload.warehouse_id, repair_id, tenant_id, actor_id)
-        await this.rollbackAllocations(allocations, tenant_id)
         return { data: null, message: 'Failed to record repair items; operation reverted', status: 500 }
       }
 
