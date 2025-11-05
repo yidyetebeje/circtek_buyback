@@ -398,28 +398,52 @@
       </div>
     </div>
     
+    <!-- File Upload Section -->
     <div class="form-control w-full">
       <label class="block mb-2">
-        <span class="text-sm font-medium">Download URL <span class="text-error ml-0.5">*</span></span>
+        <span class="text-sm font-medium">Upload ZIP File</span>
       </label>
       <input 
-        type="url" 
-        class="input input-accent w-full" 
-        placeholder="https://example.com/update.zip"
-        [value]="otaUpdateForm().url"
-        (input)="onOtaUpdateUrlChange($event)"
+        #otaFileInput
+        type="file" 
+        class="file-input file-input-bordered file-input-accent w-full" 
+        accept=".zip,application/zip,application/x-zip-compressed"
+        (change)="onOtaUpdateFileChange($event)"
         [disabled]="loading()"
-        [class.input-error]="otaUpdateUrlError()"
+        [class.file-input-error]="otaUpdateFileError()"
       />
-      @if (otaUpdateUrlError()) {
+      @if (otaUpdateFileError()) {
         <div class="mt-1">
-          <span class="text-xs text-error">{{ otaUpdateUrlError() }}</span>
+          <span class="text-xs text-error">{{ otaUpdateFileError() }}</span>
         </div>
       }
       <div class="label mt-2">
-        <span class="label-text-alt text-base-content/60">Enter the full URL where the update file can be downloaded</span>
+        
       </div>
+      @if (otaUpdateForm().file) {
+        <div class="mt-2 p-2 bg-base-200 rounded-lg">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span class="text-sm font-medium">{{ otaUpdateForm().file?.name }}</span>
+              <span class="text-xs text-base-content/60">({{ (otaUpdateForm().file?.size || 0) / 1024 / 1024 | number:'1.2-2' }} MB)</span>
+            </div>
+            <button 
+              type="button"
+              class="btn btn-ghost btn-xs text-error"
+              (click)="removeOtaUpdateFile(otaFileInput)"
+              [disabled]="loading()"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      }
     </div>
+    
+    
   </div>
 </app-generic-modal>
 

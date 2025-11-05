@@ -1929,50 +1929,57 @@ export class ManagementComponent {
   selectedOtaUpdate = signal<OtaUpdate | null>(null);
   otaUpdateForm = signal({
     version: '',
-    url: '',
     target_os: 'window' as 'window' | 'macos',
     target_architecture: 'x86' as 'x86' | 'arm',
-    release_channel: 'stable' as 'stable' | 'beta' | 'dev'
+    release_channel: 'stable' as 'stable' | 'beta' | 'dev',
+    file: null as File | null
   });
   otaUpdateVersionError = signal<string | null>(null);
-  otaUpdateUrlError = signal<string | null>(null);
+  otaUpdateFileError = signal<string | null>(null);
   
-  otaUpdateModalActions = computed<ModalAction[]>(() => [
-    {
-      label: 'Cancel',
-      variant: 'ghost',
-      action: 'cancel'
-    },
-    {
-      label: this.selectedOtaUpdate() ? 'Update' : 'Create',
-      variant: 'primary',
-      disabled: !this.otaUpdateForm().version.trim() || !this.otaUpdateForm().url.trim() || !!this.otaUpdateVersionError() || !!this.otaUpdateUrlError(),
-      action: 'save'
-    }
-  ]);
+  otaUpdateModalActions = computed<ModalAction[]>(() => {
+    const form = this.otaUpdateForm();
+    const hasVersion = form.version.trim();
+    const hasFile = form.file !== null;
+    const hasErrors = !!this.otaUpdateVersionError() || !!this.otaUpdateFileError();
+    
+    return [
+      {
+        label: 'Cancel',
+        variant: 'ghost',
+        action: 'cancel'
+      },
+      {
+        label: this.selectedOtaUpdate() ? 'Update' : 'Create',
+        variant: 'primary',
+        disabled: !hasVersion || !hasFile || hasErrors,
+        action: 'save'
+      }
+    ];
+  });
 
   openOtaUpdateModal(otaUpdate?: OtaUpdate) {
     if (otaUpdate) {
       this.selectedOtaUpdate.set(otaUpdate);
       this.otaUpdateForm.set({
         version: otaUpdate.version,
-        url: otaUpdate.url,
         target_os: otaUpdate.target_os,
         target_architecture: otaUpdate.target_architecture,
-        release_channel: otaUpdate.release_channel
+        release_channel: otaUpdate.release_channel,
+        file: null
       });
     } else {
       this.selectedOtaUpdate.set(null);
       this.otaUpdateForm.set({
         version: '',
-        url: '',
         target_os: 'window',
         target_architecture: 'x86',
-        release_channel: 'stable'
+        release_channel: 'stable',
+        file: null
       });
     }
     this.otaUpdateVersionError.set(null);
-    this.otaUpdateUrlError.set(null);
+    this.otaUpdateFileError.set(null);
     this.isOtaUpdateModalOpen.set(true);
   }
 
@@ -1981,13 +1988,13 @@ export class ManagementComponent {
     this.selectedOtaUpdate.set(null);
     this.otaUpdateForm.set({
       version: '',
-      url: '',
       target_os: 'window',
       target_architecture: 'x86',
-      release_channel: 'stable'
+      release_channel: 'stable',
+      file: null
     });
     this.otaUpdateVersionError.set(null);
-    this.otaUpdateUrlError.set(null);
+    this.otaUpdateFileError.set(null);
   }
 
   onOtaUpdateModalAction(action: string): void {
@@ -2000,35 +2007,59 @@ export class ManagementComponent {
 
   saveOtaUpdate() {
     const form = this.otaUpdateForm();
-    if (!form.version.trim() || !form.url.trim() || this.otaUpdateVersionError() || this.otaUpdateUrlError()) return;
+    if (!form.version.trim() || this.otaUpdateVersionError() || this.otaUpdateFileError()) return;
+
+    // File is mandatory
+    if (!form.file) {
+      this.otaUpdateFileError.set('Please upload a ZIP file');
+      return;
+    }
 
     this.loading.set(true);
     const isUpdate = !!this.selectedOtaUpdate();
-    const payload = {
-      version: form.version.trim(),
-      url: form.url.trim(),
-      target_os: form.target_os,
-      target_architecture: form.target_architecture,
-      release_channel: form.release_channel
-    };
 
-    const saveObservable = isUpdate
-      ? this.api.updateOtaUpdate(this.selectedOtaUpdate()!.id, payload)
-      : this.api.createOtaUpdate(payload);
+    // Always upload file first, then save using uploaded URL
+    this.api.uploadFile(form.file, 'ota-updates').subscribe({
+      next: (uploadResponse) => {
+        const fileUrl = uploadResponse.data?.url;
+        if (!fileUrl) {
+          this.loading.set(false);
+          this.toast.error('Failed to upload file. Please try again.', 'Upload Failed');
+          return;
+        }
 
-    saveObservable.subscribe({
-      next: () => {
-        this.loading.set(false);
-        this.closeOtaUpdateModal();
-        this.fetchData(); // Refresh the data
-        const action = isUpdate ? 'updated' : 'created';
-        this.toast.saveSuccess('OTA Update', action);
+        const payload = {
+          version: form.version.trim(),
+          url: fileUrl,
+          target_os: form.target_os,
+          target_architecture: form.target_architecture,
+          release_channel: form.release_channel
+        };
+
+        const saveObservable = isUpdate
+          ? this.api.updateOtaUpdate(this.selectedOtaUpdate()!.id, payload)
+          : this.api.createOtaUpdate(payload);
+
+        saveObservable.subscribe({
+          next: () => {
+            this.loading.set(false);
+            this.closeOtaUpdateModal();
+            this.fetchData();
+            const action = isUpdate ? 'updated' : 'created';
+            this.toast.saveSuccess('OTA Update', action);
+          },
+          error: (error: any) => {
+            console.error('Failed to save OTA update:', error);
+            this.loading.set(false);
+            const action = isUpdate ? 'update' : 'create';
+            this.toast.saveError('OTA Update', action);
+          }
+        });
       },
       error: (error: any) => {
-        console.error('Failed to save OTA update:', error);
+        console.error('Failed to upload file:', error);
         this.loading.set(false);
-        const action = isUpdate ? 'update' : 'create';
-        this.toast.saveError('OTA Update', action);
+        this.toast.error('Failed to upload file. Please try again.', 'Upload Failed');
       }
     });
   }
@@ -2050,29 +2081,6 @@ export class ManagementComponent {
     this.otaUpdateForm.update(form => ({ ...form, version: value }));
   }
 
-  onOtaUpdateUrlChange(event: Event) {
-    const target = event.target as HTMLInputElement;
-    const value = target.value;
-    
-    // Validate URL format
-    if (value.trim()) {
-      try {
-        const url = new URL(value.trim());
-        if (!url.protocol.startsWith('http')) {
-          this.otaUpdateUrlError.set('URL must start with http:// or https://');
-        } else {
-          this.otaUpdateUrlError.set(null);
-        }
-      } catch {
-        this.otaUpdateUrlError.set('Please enter a valid URL (e.g., https://example.com/update.zip)');
-      }
-    } else {
-      this.otaUpdateUrlError.set(null);
-    }
-    
-    this.otaUpdateForm.update(form => ({ ...form, url: value }));
-  }
-
   onOtaUpdateTargetOsChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     this.otaUpdateForm.update(form => ({ ...form, target_os: target.value as 'window' | 'macos' }));
@@ -2086,6 +2094,42 @@ export class ManagementComponent {
   onOtaUpdateChannelChange(event: Event) {
     const target = event.target as HTMLSelectElement;
     this.otaUpdateForm.update(form => ({ ...form, release_channel: target.value as 'stable' | 'beta' | 'dev' }));
+  }
+
+  onOtaUpdateFileChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0] || null;
+    
+    // Validate file type (must be zip)
+    if (file) {
+      const isValidZip = file.name.toLowerCase().endsWith('.zip') || file.type === 'application/zip' || file.type === 'application/x-zip-compressed';
+      if (!isValidZip) {
+        this.otaUpdateFileError.set('Please upload a ZIP file');
+        this.otaUpdateForm.update(form => ({ ...form, file: null }));
+        // Reset the file input
+        target.value = '';
+        return;
+      }
+      
+      // Validate file size (e.g., max 100MB)
+      const maxSize = 100 * 1024 * 1024; // 100MB
+      if (file.size > maxSize) {
+        this.otaUpdateFileError.set('File size must be less than 100MB');
+        this.otaUpdateForm.update(form => ({ ...form, file: null }));
+        target.value = '';
+        return;
+      }
+      
+      this.otaUpdateFileError.set(null);
+    }
+    
+    this.otaUpdateForm.update(form => ({ ...form, file }));
+  }
+
+  removeOtaUpdateFile(fileInput: HTMLInputElement) {
+    this.otaUpdateForm.update(form => ({ ...form, file: null }));
+    this.otaUpdateFileError.set(null);
+    fileInput.value = '';
   }
 
   // Tenant Profile Modal Methods
