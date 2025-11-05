@@ -47,6 +47,8 @@ export const PurchaseQuery = t.Object({
   supplier_name: t.Optional(t.String()),
   purchase_order_no: t.Optional(t.String()),
   status: t.Optional(t.String()),
+  // Filter by receiving status of the purchase (derived from received_items vs ordered quantities)
+  receiving_status: t.Optional(t.Union([t.Literal('pending'), t.Literal('completed')])),
   date_from: t.Optional(t.String()),
   date_to: t.Optional(t.String()),
   search: t.Optional(t.String()),

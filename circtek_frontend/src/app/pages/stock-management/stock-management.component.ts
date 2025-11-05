@@ -52,6 +52,7 @@ export class StockManagementComponent {
   fromWarehouseId = signal<number | null>(null); // transfers
   toWarehouseId = signal<number | null>(null); // transfers
   transferStatus = signal<'any' | 'pending' | 'completed'>('any'); // transfers
+  purchaseReceivingStatus = signal<'all' | 'pending' | 'completed'>('all'); // purchases
 
   // Options
   warehouseOptions = signal<Array<{ label: string; value: string }>>([]);
@@ -177,6 +178,13 @@ export class StockManagementComponent {
       list.push({ key: 'group_by_batch', label: 'Group by Batch', type: 'select', options: [
         { label: 'No (Show individual SKUs)', value: 'false' },
         { label: 'Yes (Group by base SKU)', value: 'true' }
+      ] });
+    }
+    if (tab === 'purchases') {
+      // Omit the explicit 'All' option to avoid duplication; the generic selector provides it
+      list.push({ key: 'receiving_status', label: 'Receiving Status', type: 'select', options: [
+        { label: 'Pending', value: 'pending' },
+        { label: 'Completed', value: 'completed' },
       ] });
     }
     if (tab === 'transfers') {
@@ -339,6 +347,7 @@ export class StockManagementComponent {
     this.fromWarehouseId.set(optNum('from_warehouse_id'));
     this.toWarehouseId.set(optNum('to_warehouse_id'));
     const ts = str('status', 'any'); this.transferStatus.set(ts === 'pending' || ts === 'completed' ? (ts as any) : 'any');
+    const prs = str('receiving_status', 'all'); this.purchaseReceivingStatus.set(prs === 'pending' || prs === 'completed' ? (prs as any) : 'all');
     
 
     this.initialized.set(true);
@@ -400,6 +409,9 @@ export class StockManagementComponent {
         if (this.selectedIsPart() !== 'any') query['is_part'] = this.selectedIsPart();
         const lst = this.lowStockThreshold(); if (lst != null) query['low_stock_threshold'] = String(lst);
         if (this.groupByBatch()) query['group_by_batch'] = 'true';
+      }
+      if (this.activeTab() === 'purchases') {
+        if (this.purchaseReceivingStatus() !== 'all') query['receiving_status'] = this.purchaseReceivingStatus();
       }
       if (this.activeTab() === 'transfers') {
         const fw = this.fromWarehouseId(); if (fw != null) query['from_warehouse_id'] = String(fw);
@@ -471,6 +483,7 @@ export class StockManagementComponent {
       const sb = this.sortBy(); const sd = this.sortDir();
       if (sb) params = params.set('sort_by', sb);
       if (sd) params = params.set('sort_dir', sd);
+      const rs = this.purchaseReceivingStatus(); if (rs !== 'all') params = params.set('receiving_status', rs);
       this.api.getPurchases(params).subscribe({
         next: (res) => {
           if (seq !== this.requestSeq) return;
@@ -560,6 +573,10 @@ export class StockManagementComponent {
       const ts = f['status']; this.transferStatus.set(ts === 'pending' || ts === 'completed' ? (ts as any) : 'any');
     }
 
+    if (this.activeTab() === 'purchases') {
+      const rs = f['receiving_status']; this.purchaseReceivingStatus.set(rs === 'pending' || rs === 'completed' ? (rs as any) : 'all');
+    }
+
     
 
     this.pageIndex.set(0); // reset
@@ -588,6 +605,8 @@ export class StockManagementComponent {
       // reset sorting when tab changes
       this.sortBy.set(null);
       this.sortDir.set(null);
+      // reset purchases filter
+      if (k === 'purchases') this.purchaseReceivingStatus.set('all');
     }
   }
 

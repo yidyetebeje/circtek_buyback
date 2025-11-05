@@ -177,7 +177,12 @@ export class PurchasesRepository {
         or(
           like(purchases.purchase_order_no, pattern),
           like(purchases.supplier_name, pattern),
-          like(purchases.supplier_order_no, pattern)
+          like(purchases.supplier_order_no, pattern),
+          sql`EXISTS (
+            SELECT 1 FROM ${purchase_items} pi
+            WHERE pi.purchase_id = ${purchases.id}
+            AND pi.sku LIKE ${pattern}
+          )` as any
         )
       );
     }
@@ -190,7 +195,37 @@ export class PurchasesRepository {
     const sortColumn = this.getSortColumn(filters.sort_by);
     const sortDirection = filters.sort_dir === 'asc' ? asc : desc; // Default to desc
 
-    // Get total count
+    // Apply receiving_status filter (pending/completed) using correlated subqueries
+    const receivingStatus = (filters as any).receiving_status as 'pending' | 'completed' | undefined;
+    if (receivingStatus === 'pending') {
+      conditions.push(sql`
+        (
+          SELECT COALESCE(SUM(ri.quantity), 0)
+          FROM ${purchase_items} pi
+          LEFT JOIN ${received_items} ri ON pi.id = ri.purchase_item_id
+          WHERE pi.purchase_id = ${purchases.id}
+        ) < (
+          SELECT COALESCE(SUM(pi2.quantity), 0)
+          FROM ${purchase_items} pi2
+          WHERE pi2.purchase_id = ${purchases.id}
+        )
+      ` as any);
+    } else if (receivingStatus === 'completed') {
+      conditions.push(sql`
+        (
+          SELECT COALESCE(SUM(ri.quantity), 0)
+          FROM ${purchase_items} pi
+          LEFT JOIN ${received_items} ri ON pi.id = ri.purchase_item_id
+          WHERE pi.purchase_id = ${purchases.id}
+        ) >= (
+          SELECT COALESCE(SUM(pi2.quantity), 0)
+          FROM ${purchase_items} pi2
+          WHERE pi2.purchase_id = ${purchases.id}
+        )
+      ` as any);
+    }
+
+    // Get total count with potential join and conditions
     let totalRow: { total: number } | undefined;
     if (conditions.length) {
       const finalCondition = and(...conditions as any);
@@ -202,7 +237,7 @@ export class PurchasesRepository {
       [totalRow] = await this.database.select({ total: count() }).from(purchases);
     }
 
-    // Get paginated results
+    // Get paginated results (join totals if filtering)
     let rows;
     if (conditions.length) {
       const finalCondition = and(...conditions as any);
@@ -249,7 +284,12 @@ export class PurchasesRepository {
         or(
           like(purchases.purchase_order_no, pattern),
           like(purchases.supplier_name, pattern),
-          like(purchases.supplier_order_no, pattern)
+          like(purchases.supplier_order_no, pattern),
+          sql`EXISTS (
+            SELECT 1 FROM ${purchase_items} pi
+            WHERE pi.purchase_id = ${purchases.id}
+            AND pi.sku LIKE ${pattern}
+          )` as any
         )
       );
     }
@@ -274,7 +314,37 @@ export class PurchasesRepository {
       [totalRow] = await this.database.select({ total: count() }).from(purchases);
     }
 
-    // Get paginated purchases
+    // Apply receiving_status filter with correlated subqueries (no joins in selection to preserve shape)
+    const receivingStatus2 = (filters as any).receiving_status as 'pending' | 'completed' | undefined;
+    if (receivingStatus2 === 'pending') {
+      conditions.push(sql`
+        (
+          SELECT COALESCE(SUM(ri.quantity), 0)
+          FROM ${purchase_items} pi
+          LEFT JOIN ${received_items} ri ON pi.id = ri.purchase_item_id
+          WHERE pi.purchase_id = ${purchases.id}
+        ) < (
+          SELECT COALESCE(SUM(pi2.quantity), 0)
+          FROM ${purchase_items} pi2
+          WHERE pi2.purchase_id = ${purchases.id}
+        )
+      ` as any);
+    } else if (receivingStatus2 === 'completed') {
+      conditions.push(sql`
+        (
+          SELECT COALESCE(SUM(ri.quantity), 0)
+          FROM ${purchase_items} pi
+          LEFT JOIN ${received_items} ri ON pi.id = ri.purchase_item_id
+          WHERE pi.purchase_id = ${purchases.id}
+        ) >= (
+          SELECT COALESCE(SUM(pi2.quantity), 0)
+          FROM ${purchase_items} pi2
+          WHERE pi2.purchase_id = ${purchases.id}
+        )
+      ` as any);
+    }
+
+    // Get paginated purchases (no joins in result set)
     let purchaseRows;
     if (conditions.length) {
       const finalCondition = and(...conditions as any);
