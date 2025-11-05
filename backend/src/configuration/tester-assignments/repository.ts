@@ -133,13 +133,10 @@ export class TesterAssignmentsRepository {
                     target_os: ota_update.target_os,
                     target_architecture: ota_update.target_architecture,
                     release_channel: ota_update.release_channel,
-                    tenant_id: ota_update.tenant_id,
-                    tenant_name: tenants.name,
                     created_at: ota_update.created_at,
                     updated_at: ota_update.updated_at,
                 })
                 .from(ota_update)
-                .leftJoin(tenants, eq(ota_update.tenant_id, tenants.id))
                 .where(eq(ota_update.id, testerRow.ota_update_id))
             result.ota_update = otaUpdateRow as any
         }
