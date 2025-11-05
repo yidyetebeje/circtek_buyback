@@ -138,7 +138,7 @@ export class RepairsController {
       // Step 2: Create stock movements for each item
       const movementsResult = await this.createStockMovements(allocations, payload.warehouse_id, repair_id, tenant_id, actor_id)
       if (!movementsResult.success || !movementsResult.data) {
-        await this.rollbackAllocations(allocations, tenant_id)
+   
         return { data: null, message: 'Failed to create stock movement; operation reverted', status: 500 }
       }
 
