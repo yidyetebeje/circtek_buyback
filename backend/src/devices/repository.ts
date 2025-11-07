@@ -60,8 +60,8 @@ export class DevicesRepository {
       .select()
       .from(devices)
       .where(and(
-        eq(devices.imei, imei),
-        eq(devices.serial, imei),
+        or(eq(devices.imei, imei),
+        eq(devices.serial, imei)),
         eq(devices.tenant_id, tenantId),
       ))
       .limit(1)
