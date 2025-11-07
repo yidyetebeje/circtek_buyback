@@ -313,7 +313,7 @@ export class SkuMappingsController {
         // map through the conditions
         for (const [key, value] of conditions) {
           // check if the condition matches the test result
-          if (key === 'grade' && value !== grade_name) {
+          if (key === 'grade' && value.toLowerCase() !== grade_name.toLowerCase()) {
             match = false
             break
           }
@@ -321,7 +321,7 @@ export class SkuMappingsController {
             match = false
             break
           }
-          if (key === 'color' && value !== test_result.device_color) {
+          if (key === 'color' && value.toLowerCase() !== test_result.device_color?.toLowerCase()) {
             match = false
             break
           }
@@ -329,7 +329,7 @@ export class SkuMappingsController {
             match = false
             break
           }
-          if (key === 'model_name' && value !== test_result.model_name) {
+          if (key === 'model_name' && value.toLowerCase() !== test_result.model_name?.toLowerCase()) {
             match = false
             break
           }
@@ -358,6 +358,8 @@ export class SkuMappingsController {
   private compareBattery(batteryHealth: string, batteryHealthUpload: number) {
     // current the battery health formated ">90", "<90", ">=90", "<=90", "=90"
     const batteryHealthNumber = batteryHealth.replace(/>/g, '').replace(/</g, '').replace(/=/g, '')
+    console.log(batteryHealthNumber, batteryHealthUpload)
+    console.log("battery heal condition", batteryHealth)
     if (batteryHealth.includes('>')) {
       return parseInt(batteryHealthNumber) < batteryHealthUpload
     }
