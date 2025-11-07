@@ -350,6 +350,7 @@ export class PowerBIRepository {
         imei: devices.imei,
         serial: devices.serial,
         lpn: devices.lpn,
+        created_at: devices.created_at,
       })
       .from(devices)
       .where(whereClause)
