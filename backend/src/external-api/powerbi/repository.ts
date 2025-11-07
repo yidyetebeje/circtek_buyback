@@ -126,7 +126,7 @@ export class PowerBIRepository {
           created_at: repair_items.created_at,
         })
         .from(repair_items)
-        .innerJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
+        .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
         .where(inArray(repair_items.repair_id, repairIds))
        console.log(repairItemsData, "repair items")
     }
