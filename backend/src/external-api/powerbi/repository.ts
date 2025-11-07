@@ -355,8 +355,8 @@ export class PowerBIRepository {
       .from(devices)
       .where(whereClause)
       .limit(limitNum)
-      .offset(offset);
-
+      .offset(offset)
+      .orderBy(desc(devices.created_at));
     return {
       data: devicesData,
       total,
