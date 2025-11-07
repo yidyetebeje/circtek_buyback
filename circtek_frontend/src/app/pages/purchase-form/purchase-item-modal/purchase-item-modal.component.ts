@@ -202,9 +202,15 @@ export class PurchaseItemModalComponent {
   }
 
   onSubmit(): void {
-    if (this.form().invalid) return;
+    const currentForm = this.form();
+    currentForm.markAllAsTouched();
+    this.updateFormValidity();
 
-    const formValue = this.form().value;
+    if (currentForm.invalid) {
+      return;
+    }
+
+    const formValue = currentForm.value;
     const item: PurchaseItem = {
       id: this.editingItem()?.id || crypto.randomUUID(),
       sku: formValue.sku,
@@ -214,7 +220,6 @@ export class PurchaseItemModalComponent {
     };
 
     this.save.emit(item);
-    this.onClose();
   }
 
   onClose(): void {

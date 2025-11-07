@@ -212,6 +212,15 @@ export class PurchaseFormComponent implements OnInit {
 
   saveItem(item: PurchaseItem): void {
     const currentItems = this.items();
+    const hasDuplicateSku = currentItems.some(existing =>
+      existing.id !== item.id && this.normalizeSku(existing.sku) === this.normalizeSku(item.sku)
+    );
+
+    if (hasDuplicateSku) {
+      this.toast.validationError('This SKU has already been added to the purchase. Update the existing entry instead.');
+      return;
+    }
+
     const existingIndex = currentItems.findIndex(i => i.id === item.id);
     
     if (existingIndex >= 0) {
@@ -223,6 +232,9 @@ export class PurchaseFormComponent implements OnInit {
       // Add new item
       this.items.set([...currentItems, item]);
     }
+
+    this.error.set(null);
+    this.closeModal();
   }
 
   removeItem(itemId: string): void {
@@ -485,5 +497,9 @@ export class PurchaseFormComponent implements OnInit {
     Object.keys(this.form().controls).forEach(key => {
       this.form().get(key)?.markAsTouched();
     });
+  }
+
+  private normalizeSku(value: string): string {
+    return value.trim().toLowerCase();
   }
 }
