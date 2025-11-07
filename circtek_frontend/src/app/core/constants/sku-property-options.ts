@@ -60,12 +60,12 @@ export const SKU_PROPERTY_OPTIONS: Record<Exclude<SkuPropertyKey, 'grade' | 'bat
     'iPhone SE (4th generation)'
   ],
   storage: [
-    '32GB',
-    '64GB',
-    '128GB',
-    '256GB',
-    '512GB',
-    '1TB'
+    '32',
+    '64',
+    '128',
+    '256',
+    '512',
+    '1024'
   ],
   original_color: [
     // Standard Colors

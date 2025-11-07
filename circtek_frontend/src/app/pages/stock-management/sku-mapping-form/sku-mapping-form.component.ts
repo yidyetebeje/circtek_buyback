@@ -301,6 +301,10 @@ export class SkuMappingFormComponent {
         const operator = this.newConditionOperator();
         value = `${operator}${value}`;
       }
+      // For storage property, extract numeric value (remove " GB" suffix)
+      else if (key === 'storage') {
+        value = this.extractStorageValue(value);
+      }
       
       this.addCondition(key as SkuPropertyKey, value);
       // Reset the form and signals
@@ -333,11 +337,43 @@ export class SkuMappingFormComponent {
     return SKU_PROPERTY_OPTIONS[propertyKey as Exclude<SkuPropertyKey, 'grade' | 'battery_cycle_count' | 'battery_health'>] || [];
   }
   
-  // Get value options for the new condition form
+  // Format storage value for display (add " GB" suffix)
+  formatStorageValue(value: string): string {
+    return `${value} GB`;
+  }
+  
+  // Get display options for a property key (formatted for UI)
+  getDisplayOptions(propertyKey: SkuPropertyKey): string[] {
+    const options = this.getValueOptions(propertyKey);
+    if (propertyKey === 'storage') {
+      return options.map(opt => this.formatStorageValue(opt));
+    }
+    return options;
+  }
+  
+  // Get display value for a property (formats storage with " GB")
+  getDisplayValue(propertyKey: SkuPropertyKey | string | null | undefined, value: string | null | undefined): string {
+    if (!value) return '';
+    if (propertyKey === 'storage') {
+      // If value already has GB, return as-is, otherwise add " GB"
+      if (value.includes('GB') || value.includes('TB')) {
+        return value;
+      }
+      return this.formatStorageValue(value);
+    }
+    return value;
+  }
+  
+  // Get value options for the new condition form (formatted for display)
   getNewConditionValueOptions(): string[] {
     const key = this.newConditionForm.get('propertyKey')?.value;
     if (!key) return [];
-    return this.getValueOptions(key as SkuPropertyKey);
+    return this.getDisplayOptions(key as SkuPropertyKey);
+  }
+  
+  // Extract storage value from display format (remove " GB" suffix)
+  extractStorageValue(displayValue: string): string {
+    return displayValue.replace(/\s*GB\s*$/i, '').replace(/\s*TB\s*$/i, '');
   }
   
   // Check if property uses number input instead of select
