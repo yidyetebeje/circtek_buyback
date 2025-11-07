@@ -359,19 +359,19 @@ export class SkuMappingsController {
     // current the battery health formated ">90", "<90", ">=90", "<=90", "=90"
     const batteryHealthNumber = batteryHealth.replace(/>/g, '').replace(/</g, '').replace(/=/g, '')
     if (batteryHealth.includes('>')) {
-      return parseInt(batteryHealthNumber) > batteryHealthUpload
+      return parseInt(batteryHealthNumber) < batteryHealthUpload
     }
     if (batteryHealth.includes('<')) {
-      return parseInt(batteryHealthNumber) < batteryHealthUpload
+      return parseInt(batteryHealthNumber) > batteryHealthUpload
     }
     if (batteryHealth.includes('=')) {
       return parseInt(batteryHealthNumber) == batteryHealthUpload
     }
     if (batteryHealth.includes('>=')) {
-      return parseInt(batteryHealthNumber) >= batteryHealthUpload
+      return parseInt(batteryHealthNumber) <= batteryHealthUpload
     }
     if (batteryHealth.includes('<=')) {
-      return parseInt(batteryHealthNumber) <= batteryHealthUpload
+      return parseInt(batteryHealthNumber) >= batteryHealthUpload
     }
     return parseInt(batteryHealthNumber) == batteryHealthUpload
   }
