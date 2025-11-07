@@ -11,6 +11,7 @@ import type { response } from '../../types/response'
 import { GradesController } from '../../configuration/grades/controller'
 import { GradesRepository } from '../../configuration/grades/repository'
 import { db } from '../../db'
+import { DiagnosticPublic, DiagnosticUploadInput } from '../../diagnostics/types'
 
 export class SkuMappingsController {
   private repository: SkuMappingsRepository
@@ -40,10 +41,10 @@ export class SkuMappingsController {
       }
       
       // Fallback if API call fails
-      return ['AGRA', 'BGRA', 'CGRA', 'DGRA']
+      return []
     } catch (error) {
       console.warn('Failed to fetch grades from API, using fallback list:', error)
-      return ['AGRA', 'BGRA', 'CGRA', 'DGRA']
+      return []
     }
   }
 
@@ -295,5 +296,83 @@ export class SkuMappingsController {
         error: (error as Error).message
       }
     }
+  }
+  async findByConditionsFromTest(
+    test_result: DiagnosticPublic,
+    grade_name: string,
+    tenantId: number
+  ): Promise<string | null> {
+     try {
+       // get all the sku_mapping from the tenant
+       const sku_mappings = await this.repository.findAll({ }, tenantId)
+      // map through the sku_mapping
+      for (const sku_mapping of sku_mappings.rows) {
+        // destrut the conditions to an pair array
+        const conditions = Object.entries(sku_mapping.conditions)
+        let match = true
+        // map through the conditions
+        for (const [key, value] of conditions) {
+          // check if the condition matches the test result
+          if (key === 'grade' && value !== grade_name) {
+            match = false
+            break
+          }
+          if (key === 'storage' && value !== test_result.device_storage) {
+            match = false
+            break
+          }
+          if (key === 'color' && value !== test_result.device_color) {
+            match = false
+            break
+          }
+          if (key === 'make' && value.toLowerCase() !== test_result.make?.toLowerCase()) {
+            match = false
+            break
+          }
+          if (key === 'model_name' && value !== test_result.model_name) {
+            match = false
+            break
+          }
+          if (key == 'battery_health' && !this.compareBattery(value, test_result.battery_info?.battery_health)) {
+            match = false
+            break
+          }
+          if (key == 'battery_cycle_count' && !this.compareBattery(value, test_result.battery_info?.battery_cycle_count)) {
+            match = false
+            break
+          }
+          if (!match) {
+            break
+          }
+        }
+        if (match) {
+          return sku_mapping.sku
+        }
+      }
+      return null
+     } catch (error) {
+      console.error('Failed to find SKU mapping by conditions from test:', error)
+      return null
+    }
+  } 
+  private compareBattery(batteryHealth: string, batteryHealthUpload: number) {
+    // current the battery health formated ">90", "<90", ">=90", "<=90", "=90"
+    const batteryHealthNumber = batteryHealth.replace(/>/g, '').replace(/</g, '').replace(/=/g, '')
+    if (batteryHealth.includes('>')) {
+      return parseInt(batteryHealthNumber) > batteryHealthUpload
+    }
+    if (batteryHealth.includes('<')) {
+      return parseInt(batteryHealthNumber) < batteryHealthUpload
+    }
+    if (batteryHealth.includes('=')) {
+      return parseInt(batteryHealthNumber) == batteryHealthUpload
+    }
+    if (batteryHealth.includes('>=')) {
+      return parseInt(batteryHealthNumber) >= batteryHealthUpload
+    }
+    if (batteryHealth.includes('<=')) {
+      return parseInt(batteryHealthNumber) <= batteryHealthUpload
+    }
+    return parseInt(batteryHealthNumber) == batteryHealthUpload
   }
 }

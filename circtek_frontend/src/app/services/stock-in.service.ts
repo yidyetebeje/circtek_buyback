@@ -31,6 +31,7 @@ export interface StockInRequest {
   imei: string;
   grade_id: number;
   warehouse_id: number;
+  sku?: string;
   remarks?: string;
 }
 
@@ -95,5 +96,12 @@ export class StockInService {
    */
   getDeviceGradeHistory(imei: string): Observable<ApiResponse<GradeHistoryRecord[]>> {
     return this.apiService.getDeviceGradeHistory(imei);
+  }
+
+  /**
+   * Find SKU by grade and IMEI
+   */
+  findSkuByGradeAndImei(imei: string, gradeId: number): Observable<ApiResponse<{ sku: string | null }>> {
+    return this.apiService.get<ApiResponse<{ sku: string | null }>>(`/stock/stock-in/find-sku/${imei}/${gradeId}`);
   }
 }

@@ -5,9 +5,12 @@ import { DiagnosticListQueryInput, DiagnosticPublic, DiagnosticUploadInput } fro
 import { licensingService } from '../licensing'
 import { DiagnosticQuestionsRepository } from '../configuration/diagnostic-questions/repository'
 import { db } from '../db'
+import { sku_mappings } from '../db/circtek.schema'
+import { SkuMappingsController } from '../stock/sku-mappings/controller'
 
 export class DiagnosticsController {
 	private readonly questionsRepo: DiagnosticQuestionsRepository
+	
 
 	constructor(private readonly repo: DiagnosticsRepository) {
 		this.questionsRepo = new DiagnosticQuestionsRepository(db)
@@ -94,6 +97,7 @@ export class DiagnosticsController {
 			if (!deviceIdentifier) {
 				return { data: null, message: 'Device must have IMEI, Serial, or GUID', status: 400 }
 			}
+			
 
 			// Determine license type based on device type and test type
 			const productCategory = body.device.device_type // e.g., "iPhone", "MacBook", "Airpods"
@@ -124,6 +128,7 @@ export class DiagnosticsController {
 
 		// Step 2: Process the test upload
 		const created = await this.repo.upload(body, testerId, tenantId, warehouseId, customTimestamps)
+		
 		if (created?.device_id) {
 			
 			await deviceEventsService.createDeviceEvent({

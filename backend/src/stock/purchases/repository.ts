@@ -429,15 +429,7 @@ export class PurchasesRepository {
                 quantity: 1,
                 tenant_id,
               });
-              const stockresult = await this.database.select().from(stock).where(eq(stock.sku, item.sku))
-              if (stockresult.length > 0) {
-                await this.database.insert(stock_device_ids).values({
-                  stock_id: stockresult[0].id,
-                  device_id: deviceId,
-                  tenant_id,
-                });
-              }
-
+              
               if (result.insertId) {
                 const [received] = await this.database
                   .select()
@@ -708,7 +700,7 @@ export class PurchasesRepository {
     return created.id
   }
 
-  private async ensureStockExistsForSku(skuValue: string, tenant_id: number, warehouse_id: number, is_part: boolean): Promise<void> {
+  async ensureStockExistsForSku(skuValue: string, tenant_id: number, warehouse_id: number, is_part: boolean): Promise<void> {
     const [existing] = await this.database
       .select({ id: stock.id })
       .from(stock)

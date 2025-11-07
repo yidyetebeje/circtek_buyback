@@ -58,5 +58,34 @@ export const stock_in_routes = new Elysia({ prefix: '/stock-in' })
       description: 'Retrieve the grading history for a device by its IMEI.'
     }
   })
+  .get('/find-sku/:imei/:gradeId', async (ctx) => {
+    const { params, currentTenantId } = ctx as any
+    
+    if (!currentTenantId) {
+      return {
+        data: null,
+        message: 'Missing authentication context',
+        status: 401
+      }
+    }
+
+    const result = await stockInController.findSkuByGradeAndImei(
+      params.imei,
+      Number(params.gradeId),
+      currentTenantId
+    )
+
+    return result
+  }, {
+    params: t.Object({
+      imei: t.String({ description: 'Device IMEI' }),
+      gradeId: t.String({ description: 'Grade ID' })
+    }),
+    detail: {
+      tags: ['Stock Management'],
+      summary: 'Find SKU by grade and IMEI',
+      description: 'Find matching SKU based on device test results and selected grade.'
+    }
+  })
 
 export default stock_in_routes

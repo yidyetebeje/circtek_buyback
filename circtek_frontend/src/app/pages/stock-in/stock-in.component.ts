@@ -158,6 +158,67 @@ import { BarcodeScannerComponent, ScanResult } from '../../shared/components/bar
                 }
               </div>
 
+              <!-- SKU Section -->
+              @if (selectedGradeId()) {
+                <div class="mb-6">
+                  <h3 class="text-lg font-semibold text-base-content mb-4">SKU</h3>
+                  
+                  @if (isLoadingSku()) {
+                    <div class="flex items-center gap-2 p-4 bg-base-100 rounded-lg border border-base-300">
+                      <span class="loading loading-spinner loading-sm"></span>
+                      <span class="text-base-content/70">Looking up SKU...</span>
+                    </div>
+                  } @else if (suggestedSku() && !useManualSku()) {
+                    <div class="bg-success/10 border border-success rounded-lg p-4">
+                      <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                          <span class="text-success font-bold">✓</span>
+                          <span class="font-medium text-base-content">Suggested SKU:</span>
+                        </div>
+                        <button 
+                          type="button"
+                          class="btn btn-ghost btn-sm"
+                          (click)="toggleManualSku()"
+                        >
+                          Enter manually
+                        </button>
+                      </div>
+                      <code class="text-lg font-mono text-success font-bold">{{ suggestedSku() }}</code>
+                    </div>
+                  } @else {
+                    <div class="space-y-3">
+                      @if (skuError()) {
+                        <div class="alert alert-warning">
+                          <span>⚠️</span>
+                          <span>{{ skuError() }}</span>
+                        </div>
+                      }
+                      <div>
+                        <label for="manualSku" class="block text-sm font-medium text-base-content mb-2">
+                          Enter SKU manually
+                        </label>
+                        <input
+                          id="manualSku"
+                          type="text"
+                          class="input input-bordered w-full max-w-md"
+                          [(ngModel)]="manualSku"
+                          placeholder="Enter SKU..."
+                        />
+                      </div>
+                      @if (suggestedSku()) {
+                        <button 
+                          type="button"
+                          class="btn btn-outline btn-sm"
+                          (click)="toggleManualSku()"
+                        >
+                          Use suggested SKU: {{ suggestedSku() }}
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+
               <!-- Warehouse Selection -->
               <div class="mb-6">
                 <h3 class="text-lg font-semibold text-base-content mb-4">Select Warehouse</h3>
@@ -260,6 +321,13 @@ export class StockInComponent {
   protected readonly isLoadingGrades = signal(false);
   protected readonly selectedGradeId = signal<number | null>(null);
 
+  // SKU state
+  protected readonly suggestedSku = signal<string | null>(null);
+  protected readonly manualSku = signal('');
+  protected readonly isLoadingSku = signal(false);
+  protected readonly skuError = signal('');
+  protected readonly useManualSku = signal(false);
+
   // Warehouses state
   protected readonly warehouses = signal<Warehouse[]>([]);
   protected readonly selectedWarehouseId = signal<number | null>(null);
@@ -272,9 +340,11 @@ export class StockInComponent {
 
   // Computed properties
   protected readonly canSubmit = computed(() => {
+    const hasSku = this.useManualSku() ? this.manualSku().trim() !== '' : this.suggestedSku() !== null;
     return this.selectedDevice() && 
            this.selectedGradeId() && 
            this.selectedWarehouseId() &&
+           hasSku &&
            !this.isSubmitting();
   });
 
@@ -320,6 +390,10 @@ export class StockInComponent {
     this.selectedDevice.set(null);
     this.selectedGradeId.set(null);
     this.selectedWarehouseId.set(null);
+    this.suggestedSku.set(null);
+    this.manualSku.set('');
+    this.useManualSku.set(false);
+    this.skuError.set('');
     this.remarks.set('');
     this.searchError.set('');
     this.submitError.set('');
@@ -328,16 +402,32 @@ export class StockInComponent {
 
   protected selectGrade(gradeId: number) {
     this.selectedGradeId.set(gradeId);
+    this.findSku();
+  }
+
+  protected toggleManualSku() {
+    this.useManualSku.set(!this.useManualSku());
+    if (!this.useManualSku()) {
+      this.manualSku.set('');
+    }
   }
 
   protected submitStockIn() {
     if (!this.canSubmit()) return;
 
     const device = this.selectedDevice()!;
+    const sku = this.useManualSku() ? this.manualSku().trim() : this.suggestedSku();
+    
+    if (!sku) {
+      this.submitError.set('Please provide a SKU');
+      return;
+    }
+
     const request: StockInRequest = {
       imei: device.imei,
       grade_id: this.selectedGradeId()!,
       warehouse_id: this.selectedWarehouseId()!,
+      sku: sku,
       remarks: this.remarks().trim() || undefined
     };
 
@@ -362,6 +452,36 @@ export class StockInComponent {
         console.error('Stock in failed:', error);
         this.submitError.set(error.error?.message || 'An error occurred while processing the request');
         this.isSubmitting.set(false);
+      }
+    });
+  }
+
+  private findSku() {
+    const device = this.selectedDevice();
+    const gradeId = this.selectedGradeId();
+    
+    if (!device || !gradeId) return;
+
+    this.isLoadingSku.set(true);
+    this.skuError.set('');
+    this.suggestedSku.set(null);
+    this.useManualSku.set(false);
+
+    this.stockInService.findSkuByGradeAndImei(device.imei, gradeId).subscribe({
+      next: (response) => {
+        if (response.data?.sku) {
+          this.suggestedSku.set(response.data.sku);
+        } else {
+          this.skuError.set('No matching SKU found. Please enter SKU manually.');
+          this.useManualSku.set(true);
+        }
+        this.isLoadingSku.set(false);
+      },
+      error: (error) => {
+        console.error('SKU lookup failed:', error);
+        this.skuError.set('Failed to lookup SKU. Please enter manually.');
+        this.useManualSku.set(true);
+        this.isLoadingSku.set(false);
       }
     });
   }

@@ -86,6 +86,29 @@ export class StockInController {
       }
     }
   }
+
+  async findSkuByGradeAndImei(
+    imei: string,
+    gradeId: number,
+    tenantId: number
+  ): Promise<response<{ sku: string | null }>> {
+    try {
+      const sku = await this.repo.findSkuByGradeAndImei(imei, gradeId, tenantId)
+      
+      return {
+        data: { sku },
+        message: sku ? 'SKU found' : 'No matching SKU found',
+        status: 200
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      return {
+        data: { sku: null },
+        message: errorMessage,
+        status: 500
+      }
+    }
+  }
 }
 
 export const stockInController = new StockInController(stockInRepository)

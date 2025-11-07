@@ -55,4 +55,19 @@ export class DevicesRepository {
     return null
   }
 
+  async find(imei: string, tenantId: number) {
+    const [device] = await this.database
+      .select()
+      .from(devices)
+      .where(and(
+        eq(devices.imei, imei),
+        eq(devices.serial, imei),
+        eq(devices.tenant_id, tenantId),
+      ))
+      .limit(1)
+    if (device) {
+      return device
+    }
+    return null
+  }
 }

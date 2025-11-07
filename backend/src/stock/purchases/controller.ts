@@ -190,7 +190,9 @@ export class PurchasesController {
         const delta = identifiers && identifiers.length > 0
           ? identifiers.length
           : item.quantity_received
-
+        if (identifiers && identifiers.length > 0){
+          continue;
+        }
         if (delta > 0) {
           const movementResult = await movementsController.create({
             sku: item.sku,
