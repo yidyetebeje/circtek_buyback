@@ -333,7 +333,7 @@ export class SkuMappingsController {
             match = false
             break
           }
-          if (key == 'battery_health' && !this.compareBattery(value, test_result.battery_info?.battery_health)) {
+          if (key == 'battery_health' && !this.compareBattery(value, test_result.battery_info?.health_percentage)) {
             match = false
             break
           }
