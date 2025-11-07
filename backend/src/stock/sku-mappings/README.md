@@ -65,7 +65,7 @@ The system generates a canonical key for each mapping to prevent duplicates:
 #### 2. Validation System
 Comprehensive validation includes:
 - **SKU validation**: Required, non-empty, max 255 characters
-- **Property keys**: Must be from allowed list (make, model_name, storage, original_color, grade)
+- **Property keys**: Must be from allowed list (make, model_name, storage, color, grade)
 - **Property values**: Validated against static lists or dynamic grade API
 - **Duplicate prevention**: No duplicate properties in single mapping
 - **Unique rules**: No duplicate mappings across the system
@@ -131,7 +131,7 @@ Static property values are defined in `utils.ts`:
 - **make**: Apple, Samsung, Google, etc.
 - **model_name**: iPhone 11, Galaxy S22, etc.
 - **storage**: 32GB, 64GB, 128GB, etc.
-- **original_color**: Black, White, Silver, etc.
+- **color**: Black, White, Silver, etc.
 
 These can be modified in the `ALLOWED_PROPERTY_VALUES` constant.
 

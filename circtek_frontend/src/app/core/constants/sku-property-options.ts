@@ -67,7 +67,7 @@ export const SKU_PROPERTY_OPTIONS: Record<Exclude<SkuPropertyKey, 'grade' | 'bat
     '512',
     '1024'
   ],
-  original_color: [
+  color: [
     // Standard Colors
     'Black',
     'White',
@@ -123,7 +123,7 @@ export const SKU_PROPERTY_LABELS: Record<SkuPropertyKey, string> = {
   make: 'Make',
   model_name: 'Model Name',
   storage: 'Storage',
-  original_color: 'Original Color',
+  color: 'Color',
   grade: 'Grade',
   battery_cycle_count: 'Battery Cycle Count',
   battery_health: 'Battery Health'
@@ -133,7 +133,7 @@ export const SKU_PROPERTY_KEYS: SkuPropertyKey[] = [
   'make',
   'model_name', 
   'storage',
-  'original_color',
+  'color',
   'grade',
   'battery_cycle_count',
   'battery_health'

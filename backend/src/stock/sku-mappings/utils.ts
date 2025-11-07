@@ -1,14 +1,14 @@
 import type { ValidationResult, ValidationError, SkuPropertyKey } from './types'
 
 // Allowed property keys for SKU mapping conditions
-export const ALLOWED_PROPERTY_KEYS: SkuPropertyKey[] = ['make', 'model_name', 'storage', 'original_color', 'grade']
+export const ALLOWED_PROPERTY_KEYS: SkuPropertyKey[] = ['make', 'model_name', 'storage', 'color', 'grade']
 
 // Static property value validation (in a real app, these could come from config)
 export const ALLOWED_PROPERTY_VALUES: Record<Exclude<SkuPropertyKey, 'grade'>, string[]> = {
   make: ['Apple', 'Samsung', 'Google', 'OnePlus', 'Huawei', 'Xiaomi', 'Sony', 'LG', 'Motorola', 'Nokia'],
   model_name: ['iPhone 11', 'iPhone 12', 'iPhone 13', 'iPhone 14', 'iPhone 15', 'Galaxy S22', 'Galaxy S23', 'Galaxy S24', 'Pixel 6', 'Pixel 7', 'Pixel 8'],
   storage: ['32GB', '64GB', '128GB', '256GB', '512GB', '1TB'],
-  original_color: ['Black', 'White', 'Silver', 'Gold', 'Rose Gold', 'Space Gray', 'Blue', 'Green', 'Red', 'Purple', 'Yellow']
+  color: ['Black', 'White', 'Silver', 'Gold', 'Rose Gold', 'Space Gray', 'Blue', 'Green', 'Red', 'Purple', 'Yellow']
 }
 
 /**

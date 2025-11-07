@@ -1,7 +1,7 @@
 import { t, type Static } from "elysia"
 
 // Allowed property keys for SKU mapping conditions
-export const SkuPropertyKeys = ['make', 'model_name', 'storage', 'original_color', 'grade'] as const
+export const SkuPropertyKeys = ['make', 'model_name', 'storage', 'color', 'grade'] as const
 export type SkuPropertyKey = typeof SkuPropertyKeys[number]
 
 // SKU mapping create/update schema

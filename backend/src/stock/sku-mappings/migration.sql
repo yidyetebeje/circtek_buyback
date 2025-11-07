@@ -46,8 +46,8 @@ INSERT IGNORE INTO sku_mappings (id, sku, conditions, canonical_key, tenant_id) 
 (
     UUID(),
     'SAMSUNG-256-B', 
-    '{"make": "Samsung", "storage": "256GB", "grade": "BGRA", "original_color": "Black"}',
-    'grade=bgra|make=samsung|original_color=black|storage=256gb',
+    '{"make": "Samsung", "storage": "256GB", "grade": "BGRA", "color": "Black"}',
+    'color=black|grade=bgra|make=samsung|storage=256gb',
     1
 );
 

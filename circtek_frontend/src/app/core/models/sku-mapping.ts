@@ -1,4 +1,4 @@
-export type SkuPropertyKey = 'make' | 'model_name' | 'storage' | 'original_color' | 'grade' | 'battery_cycle_count' | 'battery_health';
+export type SkuPropertyKey = 'make' | 'model_name' | 'storage' | 'color' | 'grade' | 'battery_cycle_count' | 'battery_health';
 
 export interface SkuMappingCondition {
   propertyKey: SkuPropertyKey;
