@@ -13,9 +13,7 @@
   <!-- Auto-selection message -->
   @if (autoSelectionMessage()) {
     <div class="alert alert-success mb-6">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-      </svg>
+      <lucide-icon [img]="CheckCircle2" class="size-5"></lucide-icon>
       <span>{{ autoSelectionMessage() }}</span>
     </div>
   }
@@ -31,212 +29,346 @@
   <!-- Custom form content -->
   <div class="space-y-6" [formGroup]="form">
     <!-- Purchase Order Selection -->
-    <div class="max-w-md">
-      <div>
-        <label class="label">
-          <span class="label-text font-medium">Supplier Order No<span class="text-error">*</span></span>
-        </label>
-        <select 
-          formControlName="purchase_id"
-          class="select select-accent w-full"
-          [class.select-error]="form.get('purchase_id')?.invalid && form.get('purchase_id')?.touched"
-          [disabled]="loading() || loadingSpecificPurchase() || submitting()"
-          size="1"
-        >
-          <option value="">Select Supplier Order</option>
-          @for (option of purchaseOptions(); track option.value) {
-            <option [value]="option.value" [title]="option.label">{{ option.label }}</option>
+    <div class="card bg-base-100 border border-base-300">
+      <div class="card-body">
+        <h3 class="card-title text-lg">Select Purchase Order</h3>
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-medium">Supplier Order No<span class="text-error">*</span></span>
+          </label>
+          <select 
+            formControlName="purchase_id"
+            class="select select-bordered select-accent w-full"
+            [class.select-error]="form.get('purchase_id')?.invalid && form.get('purchase_id')?.touched"
+            [disabled]="loading() || loadingSpecificPurchase() || submitting()"
+          >
+            <option value="">Select Supplier Order</option>
+            @for (option of purchaseOptions(); track option.value) {
+              <option [value]="option.value" [title]="option.label">{{ option.label }}</option>
+            }
+          </select>
+          @if (form.get('purchase_id')?.invalid && form.get('purchase_id')?.touched) {
+            <div class="label">
+              <span class="label-text-alt text-error">Supplier Order is required</span>
+            </div>
           }
-        </select>
-        @if (form.get('purchase_id')?.invalid && form.get('purchase_id')?.touched) {
-          <div class="label">
-            <span class="label-text-alt text-error">Supplier Order is required</span>
+        </div>
+
+        <!-- Purchase Information -->
+        @if (selectedPurchase()) {
+          <div class="divider"></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <span class="text-base-content/60">Supplier:</span>
+              <p class="font-medium">{{ selectedPurchase()!.purchase.supplier_name }}</p>
+            </div>
+            <div>
+              <span class="text-base-content/60">Warehouse:</span>
+              <p class="font-medium">Warehouse {{ selectedPurchase()!.purchase.warehouse_id }}</p>
+            </div>
           </div>
         }
       </div>
     </div>
 
-    <!-- Purchase Information -->
-    @if (selectedPurchase()) {
-      <div class="bg-base-100 rounded-xl border border-base-300/20 p-6">
-        <h3 class="text-lg font-semibold mb-4">Purchase Details</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-          <div>
-            <span class="text-base-content/60">Supplier Order No:</span>
-            <p class="font-medium">{{ selectedPurchase()!.purchase.supplier_order_no }}</p>
-          </div>
-          <div>
-            <span class="text-base-content/60">Supplier:</span>
-            <p class="font-medium">{{ selectedPurchase()!.purchase.supplier_name }}</p>
-          </div>
-          <div>
-            <span class="text-base-content/60">Receiving Warehouse:</span>
-            <p class="font-medium">Warehouse {{ selectedPurchase()!.purchase.warehouse_id }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- SKU Selection -->
-      <div>
-        <label class="label">
-          <span class="label-text font-medium">SKUs<span class="text-error">*</span></span>
-        </label>
-        <select 
-          class="select select-accent w-full"
-          [disabled]="loading() || loadingSpecificPurchase() || submitting()"
-          (change)="onSkuSelected(($any($event.target)).value || ''); ($any($event.target)).value = ''"
-        >
-          <option value="">Select SKU to add</option>
-          @for (sku of availableSkus(); track sku.value) {
-            <option [value]="sku.value">{{ sku.label }}</option>
-          }
-        </select>
-        @if (form.get('items')?.invalid && form.get('items')?.touched && itemsFormArray().length === 0) {
-          <div class="label">
-            <span class="label-text-alt text-error">Please select at least one SKU</span>
-          </div>
-        }
-      </div>
-    }
-
-    <!-- Selected Items -->
-    @if (itemsFormArray().length > 0) {
-      <div class="space-y-4" formArrayName="items">
-        <h3 class="text-lg font-semibold">Selected Items</h3>
-        
-        @for (itemControl of itemsFormArray().controls; track $index; let i = $index) {
-          <div class="card bg-base-100 border border-base-300 p-4" [formGroupName]="i">
-            <div class="flex justify-between items-start mb-4">
-              <div>
-                <h4 class="font-medium">{{ itemControl.get('sku')?.value }}</h4>
-                <p class="text-sm text-base-content/60">
-                  Remaining: {{ itemControl.get('remaining_quantity')?.value }}
-                  | Type: {{ itemControl.get('is_part')?.value ? 'Part' : 'Device' }}
-                </p>
-              </div>
+    <!-- Items to Receive -->
+    @if (selectedPurchase() && allItems().length > 0) {
+      <div class="card bg-base-100 border border-base-300">
+        <div class="card-body">
+          <!-- Header with Progress -->
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-4">
+            <h3 class="card-title text-lg">Items to Receive</h3>
+            <div class="flex items-center gap-4">
               <button 
                 type="button"
-                class="btn btn-ghost btn-sm text-error"
-                (click)="removeItem(i)"
+                class="btn btn-sm"
+                [class.btn-outline]="!anyItemsSelected()"
+                [class.btn-error]="anyItemsSelected() && allItemsSelected()"
+                [class.btn-accent]="anyItemsSelected() && !allItemsSelected()"
+                (click)="toggleSelectAll()"
                 [disabled]="loading() || loadingSpecificPurchase() || submitting()"
               >
-                <lucide-icon [img]="Trash2" class="size-4"></lucide-icon>
-              </button>
-            </div>
-
-            <!-- Quantity (for parts only) -->
-            @if (itemControl.get('is_part')?.value) {
-              <div class="mb-4">
-                <label class="label">
-                  <span class="label-text font-medium">Quantity<span class="text-error">*</span></span>
-                </label>
-                <input 
-                  type="number"
-                  formControlName="quantity_received"
-                  class="input input-bordered w-full"
-                  [class.input-error]="itemControl.get('quantity_received')?.invalid && itemControl.get('quantity_received')?.touched"
-                  placeholder="0"
-                  min="1"
-                  [max]="itemControl.get('remaining_quantity')?.value"
-                />
-                @if (itemControl.get('quantity_received')?.invalid && itemControl.get('quantity_received')?.touched) {
-                  <div class="label">
-                    <span class="label-text-alt text-error">
-                      @if (itemControl.get('quantity_received')?.errors?.['required']) {
-                        Quantity is required
-                      } @else if (itemControl.get('quantity_received')?.errors?.['min']) {
-                        Minimum quantity is 1
-                      } @else if (itemControl.get('quantity_received')?.errors?.['max']) {
-                        Cannot exceed remaining quantity
-                      } @else if (itemControl.get('quantity_received')?.errors?.['invalidFormat']) {
-                        Please enter a valid positive number
-                      }
-                    </span>
-                  </div>
+                @if (allItemsSelected()) {
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                  Unselect All
+                } @else if (anyItemsSelected()) {
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  Select All ({{ receiveProgress().total - selectedItemsCount() }} more)
+                } @else {
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                  </svg>
+                  Select All
                 }
+              </button>
+              <div class="text-sm text-base-content/60">
+                Selected: 
+                <span class="font-semibold" [class.text-error]="selectedItemsCount() === 0" [class.text-success]="selectedItemsCount() === receiveProgress().total">
+                  {{ selectedItemsCount() }}
+                </span>
+                /{{ receiveProgress().total }} | 
+                Progress: 
+                <span class="font-semibold" [class.text-success]="receiveProgress().completed === selectedItemsCount() && selectedItemsCount() > 0">
+                  {{ receiveProgress().completed }}
+                </span>
+                /{{ selectedItemsCount() }}
               </div>
-            } @else {
-              <!-- IMEI/Serial Scanner for devices -->
-              <div class="space-y-4">
-                <!-- Info banner -->
-                <div class="alert alert-info">
-                  <lucide-icon [img]="QrCode" class="size-4"></lucide-icon>
-                  <span>Serial numbers are required for this purchase order.</span>
+              @if (selectedItemsCount() > 0) {
+                <div class="radial-progress text-accent" [style.--value]="receiveProgress().percentage" [style.--size]="'3rem'">
+                  {{ receiveProgress().percentage }}%
                 </div>
-
-                <!-- IMEI/Serial Scanner -->
-                <div>
-                  <app-barcode-scanner
-                    label="Scan IMEI/Serial"
-                    placeholder="Scan or enter IMEI/Serial number..."
-                    [disabled]="loading() || loadingSpecificPurchase() || submitting()"
-                    [autoClear]="true"
-                    [enableCamera]="true"
-                    (scanned)="onScanResult(i, $event)"
-                  ></app-barcode-scanner>
-                  <p class="text-sm text-base-content/60 mt-1">
-                    Scan identifiers using the barcode scanner, or enter manually and press Enter to add.
-                    Scanner will automatically validate IMEI/Serial format.
-                  </p>
+              } @else {
+                <div class="radial-progress text-base-300" [style.--value]="0" [style.--size]="'3rem'">
+                  0%
                 </div>
+              }
+            </div>
+          </div>
 
-                <!-- Scanned Identifiers -->
-                @if (getIdentifiersArray(i).length > 0) {
-                  <div>
-                    <label class="label">
-                      <span class="label-text font-medium">
-                        Scanned Identifiers ({{ getIdentifiersArray(i).length }})
-                      </span>
+          
+
+          <!-- Items Table -->
+          <div class="overflow-x-auto" formArrayName="items">
+            <table class="table table-zebra w-full">
+              <thead>
+                <tr>
+                  <th class="w-12">
+                    <label class="cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        class="checkbox checkbox-sm checkbox-accent"
+                        [checked]="allItemsSelected()"
+                        [indeterminate]="anyItemsSelected() && !allItemsSelected()"
+                        (change)="toggleSelectAll()"
+                        [disabled]="loading() || loadingSpecificPurchase() || submitting()"
+                      />
                     </label>
-                    <div class="space-y-2 max-h-32 overflow-y-auto">
-                      @for (identifierControl of getIdentifiersArray(i).controls; track $index; let j = $index) {
-                        <div class="flex items-center justify-between bg-base-200 p-2 rounded">
-                          <span class="font-mono text-sm">{{ identifierControl.value }}</span>
+                  </th>
+                  <th class="w-12"></th>
+                  <th>Type</th>
+                  <th>SKU</th>
+                  <th class="text-center">Remaining</th>
+                  <th class="text-center">To Receive</th>
+                  <th class="w-12"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (itemControl of allItems(); track getItemIndex(itemControl); let idx = $index) {
+                  @let itemIndex = getItemIndex(itemControl);
+                  @let isPart = itemControl.get('is_part')?.value;
+                  @let isExpanded = isDeviceExpanded(itemIndex);
+                  @let identifiersCount = getIdentifiersArray(itemIndex).length;
+                  @let quantity = itemControl.get('quantity_received')?.value || 0;
+                  @let isComplete = isPart ? quantity > 0 : identifiersCount > 0;
+                  @let isSelected = itemControl.get('selected')?.value;
+
+                  <tr [formGroupName]="itemIndex" class="hover" [class.bg-success/10]="isComplete && isSelected" [class.opacity-50]="!isSelected">
+                    <!-- Checkbox -->
+                    <td>
+                      <input 
+                        type="checkbox"
+                        formControlName="selected"
+                        class="checkbox checkbox-sm checkbox-accent"
+                        [disabled]="loading() || loadingSpecificPurchase() || submitting()"
+                      />
+                    </td>
+
+                    <!-- Status Icon -->
+                    <td>
+                      @if (isComplete) {
+                        <lucide-icon [img]="CheckCircle2" class="size-5 text-success"></lucide-icon>
+                      } @else {
+                        <div class="size-5 rounded-full border-2 border-base-300"></div>
+                      }
+                    </td>
+
+                    <!-- Type Icon & Badge -->
+                    <td>
+                      <div class="flex items-center gap-2">
+                        @if (isPart) {
+                          <lucide-icon [img]="Package" class="size-4 text-info"></lucide-icon>
+                          <span class="badge badge-info badge-sm">Part</span>
+                        } @else {
+                          <lucide-icon [img]="Smartphone" class="size-4 text-warning"></lucide-icon>
+                          <span class="badge badge-warning badge-sm">Device</span>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- SKU -->
+                    <td>
+                      <span class="font-mono font-medium">{{ itemControl.get('sku')?.value }}</span>
+                    </td>
+
+                    <!-- Remaining -->
+                    <td class="text-center">
+                      <span class="badge badge-ghost">{{ itemControl.get('remaining_quantity')?.value }}</span>
+                    </td>
+
+                    <!-- To Receive Input/Display -->
+                    <td class="text-center">
+                      @if (isPart) {
+                        <!-- Part: Direct quantity input -->
+                        <div class="flex flex-col items-center">
+                          <input 
+                            type="number"
+                            formControlName="quantity_received"
+                            class="input input-bordered input-sm w-24 text-center"
+                            [class.input-success]="quantity > 0 && !itemControl.get('quantity_received')?.errors && isSelected"
+                            [class.input-error]="itemControl.get('quantity_received')?.invalid && itemControl.get('quantity_received')?.touched"
+                            placeholder="0"
+                            min="0"
+                            [max]="itemControl.get('remaining_quantity')?.value"
+                            [disabled]="loading() || loadingSpecificPurchase() || submitting() || !isSelected"
+                          />
+                          @if (itemControl.get('quantity_received')?.invalid && itemControl.get('quantity_received')?.touched) {
+                            <div class="text-xs text-error mt-1 text-center">
+                              @if (itemControl.get('quantity_received')?.errors?.['exceedsRemaining']) {
+                                Max: {{ itemControl.get('remaining_quantity')?.value }}
+                              } @else if (itemControl.get('quantity_received')?.errors?.['max']) {
+                                Max: {{ itemControl.get('remaining_quantity')?.value }}
+                              } @else if (itemControl.get('quantity_received')?.errors?.['invalidFormat']) {
+                                Invalid number
+                              } @else if (itemControl.get('quantity_received')?.errors?.['required']) {
+                                Required
+                              }
+                            </div>
+                          }
+                        </div>
+                      } @else {
+                        <!-- Device: Show identifier count and expand button -->
+                        <div class="flex items-center justify-center gap-2">
+                          <span class="font-medium" [class.text-success]="identifiersCount > 0 && isSelected">
+                            {{ identifiersCount }}
+                          </span>
                           <button 
                             type="button"
-                            class="btn btn-ghost btn-xs text-error"
-                            (click)="removeIdentifier(i, j)"
-                            [disabled]="loading() || loadingSpecificPurchase() || submitting()"
+                            class="btn btn-sm btn-ghost"
+                            (click)="toggleDeviceExpanded(itemIndex)"
+                            [disabled]="loading() || loadingSpecificPurchase() || submitting() || !isSelected"
                           >
-                            <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
+                            @if (isExpanded) {
+                              <lucide-icon [img]="ChevronUp" class="size-4"></lucide-icon>
+                            } @else {
+                              <lucide-icon [img]="ChevronDown" class="size-4"></lucide-icon>
+                            }
+                            {{ isExpanded ? 'Hide' : 'Scan' }}
                           </button>
                         </div>
                       }
-                    </div>
-                  </div>
-                }
+                    </td>
 
-                <!-- Quantity Display for devices -->
-                <div>
-                  <label class="label">
-                    <span class="label-text font-medium">Quantity</span>
-                  </label>
-                  <input 
-                    type="number"
-                    [value]="getIdentifiersArray(i).length"
-                    class="input input-bordered w-full"
-                    disabled
-                    readonly
-                  />
-                  <div class="label">
-                    <span class="label-text-alt">Automatically calculated from scanned identifiers</span>
-                  </div>
-                </div>
-              </div>
-            }
+                    <!-- Actions -->
+                    <td>
+                      <!-- Optional: Add remove button if needed -->
+                    </td>
+                  </tr>
+
+                  <!-- Device Expansion Row -->
+                  @if (!isPart && isExpanded) {
+                    <tr [formGroupName]="itemIndex">
+                      <td colspan="7" class="bg-base-200/50">
+                        <div class="p-4 space-y-4">
+                          <!-- Progress Bar -->
+                          @let remaining = itemControl.get('remaining_quantity')?.value || 0;
+                          
+                          <div class="flex items-center gap-4">
+                            <div class="flex-1">
+                              <div class="flex justify-between text-sm mb-1">
+                                <span class="font-medium">Scanned: {{ identifiersCount }} / {{ remaining }}</span>
+                                @if (identifiersCount >= remaining) {
+                                  <span class="text-success font-medium">✓ Complete</span>
+                                } @else {
+                                  <span class="text-base-content/60">{{ remaining - identifiersCount }} remaining</span>
+                                }
+                              </div>
+                              <progress 
+                                class="progress w-full" 
+                                [class.progress-success]="identifiersCount >= remaining"
+                                [class.progress-accent]="identifiersCount < remaining"
+                                [value]="identifiersCount" 
+                                [max]="remaining"
+                              ></progress>
+                            </div>
+                          </div>
+
+                          <!-- Scanner -->
+                          <app-barcode-scanner
+                            label="Scan IMEI/Serial"
+                            placeholder="Scan or enter IMEI/Serial number..."
+                            [disabled]="loading() || loadingSpecificPurchase() || submitting() || identifiersCount >= remaining || !isSelected"
+                            [autoClear]="true"
+                            [enableCamera]="true"
+                            (scanned)="onScanResult(itemIndex, $event)"
+                          ></app-barcode-scanner>
+
+                          @if (identifiersCount >= remaining) {
+                            <div class="alert alert-success">
+                              <lucide-icon [img]="CheckCircle2" class="size-4"></lucide-icon>
+                              <span>All required identifiers have been scanned for this device</span>
+                            </div>
+                          }
+
+                          <!-- Scanned Identifiers -->
+                          @if (identifiersCount > 0) {
+                            <div>
+                              <label class="label">
+                                <span class="label-text font-medium">
+                                  Scanned Identifiers ({{ identifiersCount }})
+                                </span>
+                              </label>
+                              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                                @for (identifierControl of getIdentifiersArray(itemIndex).controls; track $index; let j = $index) {
+                                  <div class="flex items-center justify-between bg-base-100 p-2 rounded border border-base-300">
+                                    <span class="font-mono text-sm">{{ identifierControl.value }}</span>
+                                    <button 
+                                      type="button"
+                                      class="btn btn-ghost btn-xs text-error"
+                                      (click)="removeIdentifier(itemIndex, j)"
+                                      [disabled]="loading() || loadingSpecificPurchase() || submitting()"
+                                    >
+                                      <lucide-icon [img]="Trash2" class="size-3"></lucide-icon>
+                                    </button>
+                                  </div>
+                                }
+                              </div>
+                            </div>
+                          } @else {
+                            <div class="alert alert-warning">
+                              <lucide-icon [img]="QrCode" class="size-4"></lucide-icon>
+                              <span>Scan at least one IMEI/Serial number for this device</span>
+                            </div>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
           </div>
-        }
+        </div>
       </div>
     }
 
-    <!-- Instructions -->
+    <!-- Empty State -->
     @if (!selectedPurchase()) {
       <div class="alert alert-info">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
         <span>Please select a supplier order to begin receiving items.</span>
       </div>
-    } @else if (itemsFormArray().length === 0) {
-      <div class="alert alert-info">
-        <span>Select SKUs from the dropdown above to start receiving items.</span>
+    } @else if (allItems().length === 0) {
+      <div class="alert alert-warning">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+        <span>This purchase order has no items with remaining quantities to receive.</span>
       </div>
     }
   </div>

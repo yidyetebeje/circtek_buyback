@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
-import { LucideAngularModule, QrCode, Plus, Trash2 } from 'lucide-angular';
+import { LucideAngularModule, QrCode, Plus, Trash2, ChevronDown, ChevronUp, Package, Smartphone, CheckCircle2 } from 'lucide-angular';
 import { GenericFormPageComponent } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { BarcodeScannerComponent, ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 import { ApiService } from '../../core/services/api.service';
@@ -40,14 +40,30 @@ export class ProductReceiveComponent {
     const stringValue = String(value);
     
     // Check for invalid characters like '+' at the beginning or other invalid patterns
+    // Allow 0 or positive integers
     if (stringValue.startsWith('+') || stringValue.startsWith('-') || 
         stringValue.includes('e') || stringValue.includes('E') || 
         stringValue.includes('.') || isNaN(Number(value)) || 
-        Number(value) <= 0 || !Number.isInteger(Number(value))) {
+        Number(value) < 0 || !Number.isInteger(Number(value))) {
       return { invalidFormat: true };
     }
     
     return null;
+  }
+
+  static maxRemainingValidator(remainingQuantity: number) {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control.value;
+      if (value === null || value === undefined || value === '') {
+        return null;
+      }
+      
+      if (Number(value) > remainingQuantity) {
+        return { exceedsRemaining: { max: remainingQuantity, actual: value } };
+      }
+      
+      return null;
+    };
   }
   
   static imeiSerialValidator(control: AbstractControl): ValidationErrors | null {
@@ -75,6 +91,11 @@ export class ProductReceiveComponent {
   readonly QrCode = QrCode;
   readonly Plus = Plus;
   readonly Trash2 = Trash2;
+  readonly ChevronDown = ChevronDown;
+  readonly ChevronUp = ChevronUp;
+  readonly Package = Package;
+  readonly Smartphone = Smartphone;
+  readonly CheckCircle2 = CheckCircle2;
 
   // Signals
   protected readonly loading = signal(false);
@@ -84,6 +105,8 @@ export class ProductReceiveComponent {
   protected readonly purchases = signal<PurchaseWithItems[]>([]);
   protected readonly selectedPurchase = signal<PurchaseWithItems | null>(null);
   protected readonly loadingMessage = signal<string>('Loading...');
+  // Signal to force reactivity when form changes
+  private readonly formChangesTrigger = signal(0);
 
   // Form
   protected readonly form = this.fb.group({
@@ -109,22 +132,125 @@ export class ProductReceiveComponent {
     }));
   });
 
-  protected readonly availableSkus = computed(() => {
-    const purchase = this.selectedPurchase();
-    if (!purchase) return [];
-    
-    return purchase.items
-      .filter(item => item.remaining_quantity > 0)
-      .map(item => ({
-        label: `${item.sku} (${item.remaining_quantity} remaining)`,
-        value: item.sku,
-        item: item
-      }));
-  });
 
   protected readonly itemsFormArray = computed(() => {
     return this.form.get('items') as FormArray;
   });
+
+  // Separate parts and devices for better UI organization
+  protected readonly partsItems = computed(() => {
+    return this.itemsFormArray().controls.filter(
+      control => control.get('is_part')?.value === true
+    );
+  });
+
+  protected readonly deviceItems = computed(() => {
+    return this.itemsFormArray().controls.filter(
+      control => control.get('is_part')?.value === false
+    );
+  });
+
+  // All items sorted: parts first, then devices
+  protected readonly allItems = computed(() => {
+    const parts = this.partsItems();
+    const devices = this.deviceItems();
+    return [...parts, ...devices];
+  });
+
+  // Progress tracking
+  protected readonly receiveProgress = computed(() => {
+    this.formChangesTrigger(); // Include trigger in dependencies
+    const items = this.itemsFormArray().controls;
+    const selectedItems = items.filter(control => control.get('selected')?.value === true);
+    
+    if (selectedItems.length === 0) return { completed: 0, total: items.length, percentage: 0 };
+    
+    const completed = selectedItems.filter(control => {
+      const isPart = control.get('is_part')?.value;
+      const quantity = control.get('quantity_received')?.value;
+      const identifiers = (control.get('identifiers') as FormArray).length;
+      
+      if (isPart) {
+        return quantity > 0;
+      } else {
+        return identifiers > 0;
+      }
+    }).length;
+    
+    return {
+      completed,
+      total: items.length,
+      percentage: Math.round((completed / selectedItems.length) * 100)
+    };
+  });
+
+  // Check if all items are selected
+  protected readonly allItemsSelected = computed(() => {
+    this.formChangesTrigger(); // Include trigger in dependencies
+    const items = this.itemsFormArray().controls;
+    if (items.length === 0) return false;
+    return items.every(control => control.get('selected')?.value === true);
+  });
+
+  // Check if any items are selected
+  protected readonly anyItemsSelected = computed(() => {
+    this.formChangesTrigger(); // Include trigger in dependencies
+    const items = this.itemsFormArray().controls;
+    if (items.length === 0) return false;
+    return items.some(control => control.get('selected')?.value === true);
+  });
+
+  // Get count of selected items
+  protected readonly selectedItemsCount = computed(() => {
+    this.formChangesTrigger(); // Include trigger in dependencies
+    const items = this.itemsFormArray().controls;
+    return items.filter(control => control.get('selected')?.value === true).length;
+  });
+
+  // Trigger form change detection
+  private triggerFormChange() {
+    this.formChangesTrigger.update(v => v + 1);
+  }
+
+  // Select/Unselect all items
+  protected selectAllItems() {
+    this.itemsFormArray().controls.forEach(control => {
+      control.get('selected')?.setValue(true);
+    });
+    this.triggerFormChange();
+  }
+
+  protected unselectAllItems() {
+    this.itemsFormArray().controls.forEach(control => {
+      control.get('selected')?.setValue(false);
+    });
+    this.triggerFormChange();
+  }
+
+  protected toggleSelectAll() {
+    if (this.allItemsSelected()) {
+      this.unselectAllItems();
+    } else {
+      this.selectAllItems();
+    }
+  }
+
+  // Expanded device rows tracking
+  protected readonly expandedDevices = signal<Set<number>>(new Set());
+
+  protected toggleDeviceExpanded(index: number) {
+    const expanded = new Set(this.expandedDevices());
+    if (expanded.has(index)) {
+      expanded.delete(index);
+    } else {
+      expanded.add(index);
+    }
+    this.expandedDevices.set(expanded);
+  }
+
+  protected isDeviceExpanded(index: number): boolean {
+    return this.expandedDevices().has(index);
+  }
 
   // Computed value to show auto-selection status
   protected readonly autoSelectionMessage = computed(() => {
@@ -257,71 +383,91 @@ export class ProductReceiveComponent {
         
         // Clear existing items when purchase changes
         this.clearItems();
+        
+        // Auto-populate all parts with remaining quantities
+        if (purchase) {
+          this.autoPopulateParts(purchase);
+        }
       } else {
         this.selectedPurchase.set(null);
         this.clearItems();
       }
     });
+
+    // Watch for items form array changes (including selection changes)
+    this.itemsFormArray().valueChanges.subscribe(() => {
+      this.triggerFormChange();
+    });
   }
 
-  protected onSkuSelected(sku: string) {
-    const purchase = this.selectedPurchase();
-    if (!purchase) return;
-
-    const purchaseItem = purchase.items.find(item => item.sku === sku);
-    if (!purchaseItem) return;
-
-    // Check if this SKU is already added
-    const existingIndex = this.itemsFormArray().controls.findIndex(
-      control => control.get('sku')?.value === sku
+  private autoPopulateParts(purchase: PurchaseWithItems) {
+    // Get all items (both parts and devices) with remaining quantity > 0
+    const itemsToReceive = purchase.items.filter(item => 
+      item.remaining_quantity > 0
     );
 
-    if (existingIndex >= 0) {
-      this.error.set('This SKU is already selected');
-      return;
-    }
+    // Add each item to the form array
+    itemsToReceive.forEach(purchaseItem => {
+      let quantityControl;
+      
+      if (purchaseItem.is_part) {
+        // For parts: pre-fill with remaining quantity
+        quantityControl = this.fb.control(
+          purchaseItem.remaining_quantity,
+          [
+            Validators.required, 
+            Validators.min(0), // Allow 0 so users can skip items
+            Validators.max(purchaseItem.remaining_quantity),
+            ProductReceiveComponent.positiveNumberValidator,
+            ProductReceiveComponent.maxRemainingValidator(purchaseItem.remaining_quantity)
+          ]
+        );
+      } else {
+        // For devices: start with 0 and disable (calculated from identifiers)
+        quantityControl = this.fb.control(
+          { value: 0, disabled: true }
+        );
+      }
 
-    // Add new item form group
-    const quantityControl = this.fb.control(
-      0, // Always start with enabled control and value 0
-      purchaseItem.is_part ? [
-        Validators.required, 
-        Validators.min(1), 
-        Validators.max(purchaseItem.remaining_quantity),
-        ProductReceiveComponent.positiveNumberValidator
-      ] : []
-    );
-    
-    // For devices, disable the quantity control since it's calculated from identifiers
-    if (!purchaseItem.is_part) {
-      quantityControl.disable();
-    }
+      const itemGroup = this.fb.group({
+        purchase_item_id: [purchaseItem.id, [Validators.required]],
+        sku: [purchaseItem.sku, [Validators.required]],
+        quantity_received: quantityControl,
+        is_part: [purchaseItem.is_part],
+        remaining_quantity: [purchaseItem.remaining_quantity],
+        identifiers: this.fb.array([]),
+        selected: [true] // Default to selected; users can unselect items if needed
+      });
 
-    const itemGroup = this.fb.group({
-      purchase_item_id: [purchaseItem.id, [Validators.required]],
-      sku: [sku, [Validators.required]],
-      quantity_received: quantityControl,
-      is_part: [purchaseItem.is_part],
-      remaining_quantity: [purchaseItem.remaining_quantity],
-      identifiers: this.fb.array([])
+      this.itemsFormArray().push(itemGroup);
     });
 
-    this.itemsFormArray().push(itemGroup);
-    this.error.set(null);
+    // Trigger change detection after populating
+    this.triggerFormChange();
   }
 
   protected removeItem(index: number) {
     this.itemsFormArray().removeAt(index);
+    // Also remove from expanded devices if it was expanded
+    const expanded = new Set(this.expandedDevices());
+    expanded.delete(index);
+    this.expandedDevices.set(expanded);
   }
 
   protected clearItems() {
     while (this.itemsFormArray().length !== 0) {
       this.itemsFormArray().removeAt(0);
     }
+    // Clear expanded devices when clearing items
+    this.expandedDevices.set(new Set());
   }
 
   protected getIdentifiersArray(itemIndex: number): FormArray {
     return this.itemsFormArray().at(itemIndex).get('identifiers') as FormArray;
+  }
+
+  protected getItemIndex(itemControl: AbstractControl): number {
+    return this.itemsFormArray().controls.indexOf(itemControl);
   }
 
   protected addIdentifier(itemIndex: number, identifier: string) {
@@ -345,6 +491,14 @@ export class ProductReceiveComponent {
 
     const identifiersArray = this.getIdentifiersArray(itemIndex);
     const itemGroup = this.itemsFormArray().at(itemIndex);
+    const remainingQuantity = itemGroup.get('remaining_quantity')?.value || 0;
+    const sku = itemGroup.get('sku')?.value || '';
+    
+    // Check if we've reached the remaining quantity limit
+    if (identifiersArray.length >= remainingQuantity) {
+      this.error.set(`Cannot scan more than ${remainingQuantity} identifiers for SKU: ${sku}. Remaining quantity limit reached.`);
+      return;
+    }
     
     // Check for duplicates
     const existing = identifiersArray.controls.find(
@@ -414,9 +568,17 @@ export class ProductReceiveComponent {
         const isPartControl = itemGroup.get('is_part');
         const identifiersArray = itemGroup.get('identifiers') as FormArray;
         const skuValue = itemGroup.get('sku')?.value;
+        const remainingQuantity = itemGroup.get('remaining_quantity')?.value;
         
         if (isPartControl?.value && quantityControl?.invalid) {
-          this.error.set(`Please enter a valid quantity for SKU: ${skuValue}`);
+          // Check specific error types for better messages
+          if (quantityControl?.errors?.['exceedsRemaining'] || quantityControl?.errors?.['max']) {
+            this.error.set(`Quantity for SKU ${skuValue} exceeds remaining quantity (${remainingQuantity})`);
+          } else if (quantityControl?.errors?.['invalidFormat']) {
+            this.error.set(`Invalid quantity format for SKU: ${skuValue}`);
+          } else {
+            this.error.set(`Please enter a valid quantity for SKU: ${skuValue}`);
+          }
           return;
         }
         
@@ -446,12 +608,28 @@ export class ProductReceiveComponent {
         throw new Error('No purchase selected');
       }
 
-      const items: ReceiveItemsRequestItem[] = formValue.items!.map((item: any) => ({
-        purchase_item_id: item.purchase_item_id,
-        sku: item.sku,
-        quantity_received: item.identifiers?.length > 0 ? item.identifiers.length : (item.quantity_received || 0),
-        ...(item.identifiers?.length > 0 && { identifiers: item.identifiers })
-      }));
+      // Filter out unselected items and items with 0 quantity
+      const items: ReceiveItemsRequestItem[] = formValue.items!
+        .filter((item: any) => {
+          // Only include selected items
+          if (!item.selected) return false;
+          
+          const quantity = item.identifiers?.length > 0 ? item.identifiers.length : (item.quantity_received || 0);
+          return quantity > 0;
+        })
+        .map((item: any) => ({
+          purchase_item_id: item.purchase_item_id,
+          sku: item.sku,
+          quantity_received: item.identifiers?.length > 0 ? item.identifiers.length : (item.quantity_received || 0),
+          ...(item.identifiers?.length > 0 && { identifiers: item.identifiers })
+        }));
+
+      // Check if there are any items to receive
+      if (items.length === 0) {
+        this.error.set('Please select at least one item to receive with quantity greater than 0');
+        this.submitting.set(false);
+        return;
+      }
 
       const payload: ReceiveItemsRequest = {
         purchase_id: Number(formValue.purchase_id),

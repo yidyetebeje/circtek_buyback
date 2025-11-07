@@ -178,6 +178,51 @@ export class PurchasesController {
         return { data: null, message: 'Forbidden: cross-tenant access denied', status: 403 }
       }
 
+      // Get purchase with items to validate remaining quantities
+      const purchaseWithItems = await this.repo.findPurchaseWithItems(payload.purchase_id, tenant_id)
+      if (!purchaseWithItems) {
+        return { data: null, message: 'Purchase order details not found', status: 404 }
+      }
+
+      // Validate that received quantities don't exceed remaining quantities
+      for (const receiveItem of payload.items) {
+        const purchaseItem = purchaseWithItems.items.find(
+          pi => pi.id === receiveItem.purchase_item_id
+        )
+        
+        if (!purchaseItem) {
+          return { 
+            data: null, 
+            message: `Purchase item ID ${receiveItem.purchase_item_id} not found in purchase order`, 
+            status: 400 
+          }
+        }
+
+        // Calculate actual quantity being received (either from identifiers or quantity_received)
+        const identifiers = (receiveItem as any).identifiers as string[] | undefined
+        const quantityToReceive = identifiers && identifiers.length > 0 
+          ? identifiers.length 
+          : receiveItem.quantity_received
+
+        // Check if quantity exceeds remaining
+        if (quantityToReceive > purchaseItem.remaining_quantity) {
+          return { 
+            data: null, 
+            message: `Cannot receive ${quantityToReceive} of SKU ${receiveItem.sku}. Only ${purchaseItem.remaining_quantity} remaining to receive (ordered: ${purchaseItem.quantity}, already received: ${purchaseItem.received_quantity})`, 
+            status: 400 
+          }
+        }
+
+        // Validate that quantity is positive
+        if (quantityToReceive <= 0) {
+          return { 
+            data: null, 
+            message: `Quantity to receive must be greater than 0 for SKU ${receiveItem.sku}`, 
+            status: 400 
+          }
+        }
+      }
+
       // Record the received items (also handles device creation from identifiers)
       const receivedItems = await this.repo.receiveItems(payload, tenant_id)
 
