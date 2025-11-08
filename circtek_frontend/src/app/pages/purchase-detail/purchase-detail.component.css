@@ -461,6 +461,15 @@
   white-space: nowrap;
 }
 
+.sku-cell {
+  min-width: 200px;
+  max-width: 340px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+}
+
 /* Tooltip-style expansion */
 .expandable-text {
   position: relative;
@@ -498,6 +507,11 @@
   
   .table-cell-truncate {
     max-width: 100px;
+  }
+
+  .sku-cell {
+    min-width: 160px;
+    max-width: 280px;
   }
 }
 

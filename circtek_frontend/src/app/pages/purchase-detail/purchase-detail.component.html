@@ -148,7 +148,7 @@
                 <tbody>
                   @for (item of tableData(); track item.id) {
                     <tr>
-                      <td class="px-4 py-3 font-medium table-cell-truncate">{{ item.sku }}</td>
+                      <td class="px-4 py-3 font-medium sku-cell">{{ item.sku }}</td>
                       <td class="whitespace-nowrap px-4 py-3">{{ item.ordered_quantity }}</td>
                       <td class="whitespace-nowrap px-4 py-3">{{ item.received_quantity }}</td>
                       <td class="whitespace-nowrap px-4 py-3 text-primary font-medium">{{ item.remaining_quantity }}</td>
