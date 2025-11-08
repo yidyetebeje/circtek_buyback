@@ -43,8 +43,8 @@ const diagnosticSelection = {
 	device_description: devices.description,
 	device_storage: devices.storage,
 	device_memory: devices.memory,
-	device_color: devices.edited_color || devices.color,
-	device_original_color: devices.color,
+	device_color: devices.color,
+	device_edited_color: devices.edited_color,
 	device_created_at: devices.created_at,
 	device_status: devices.status,
 	warehouse_name: warehousesTable.name,
@@ -141,6 +141,7 @@ export class DiagnosticsRepository {
 				
 				return {
 					...row,
+					device_color: row.device_edited_color || row.device_color,
 					answers: answers.length > 0 ? answers : []
 				}
 			})

@@ -397,8 +397,6 @@ export class RepairsRepository {
     const results = await this.database
       .select({
         model_name: devices.model_name,
-        warehouse_id: warehouses.id,
-        warehouse_name: warehouses.name,
         total_repairs: sql<number>`COUNT(DISTINCT ${repairs.id})`,
         unique_devices: sql<number>`COUNT(DISTINCT ${repairs.device_id})`,
         total_parts_used: sql<number>`COUNT(${repair_items.id})`,
@@ -408,9 +406,8 @@ export class RepairsRepository {
       .from(repairs)
       .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
       .leftJoin(devices, eq(repairs.device_id, devices.id))
-      .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
       .where(and(...conditions))
-      .groupBy(devices.model_name, warehouses.id, warehouses.name)
+      .groupBy(devices.model_name)
       .orderBy(desc(sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`))
 
     // For each model, get the most common parts
@@ -423,7 +420,6 @@ export class RepairsRepository {
         
         if (filters.date_from) partsConditions.push(gte(repairs.created_at, new Date(filters.date_from)))
         if (filters.date_to) partsConditions.push(lte(repairs.created_at, new Date(filters.date_to)))
-        if (r.warehouse_id) partsConditions.push(eq(repairs.warehouse_id, r.warehouse_id))
         if (filters.reason_id) partsConditions.push(eq(repair_items.reason_id, filters.reason_id))
 
         // Get regular parts (non-fixed_price)
@@ -480,8 +476,6 @@ export class RepairsRepository {
 
         return {
           model_name: r.model_name || 'Unknown',
-          warehouse_id: r.warehouse_id,
-          warehouse_name: r.warehouse_name,
           total_repairs: Number(r.total_repairs),
           unique_devices: Number(r.unique_devices),
           total_parts_used: Number(r.total_parts_used),

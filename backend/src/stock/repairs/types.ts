@@ -144,8 +144,8 @@ export type WarehouseAnalytics = {
 
 // Reason-level analytics
 export type ReasonAnalytics = {
-  reason_id: number
-  reason_name: string
+  reason_id: number | null
+  reason_name: string | null
   total_repairs: number
   total_parts_used: number
   total_quantity_consumed: number
@@ -164,8 +164,6 @@ export type SkuUsage = {
 // Model-level analytics (per warehouse or overall)
 export type ModelAnalytics = {
   model_name: string
-  warehouse_id: number | null
-  warehouse_name: string | null
   total_repairs: number
   unique_devices: number
   total_parts_used: number

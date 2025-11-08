@@ -20,7 +20,7 @@ export type StockInResponse = {
   device_grade_id: number
   event_id: number
   warehouse_id: number
-  warehouse_name: string
+  warehouse_name: string,
   actor_id: number
   actor_name: string
   message: string
