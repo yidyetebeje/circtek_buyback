@@ -129,6 +129,7 @@ export const DiagnosticUploadBody = t.Object({
 		storage: t.Optional(t.String()),
 		memory: t.Optional(t.String()),
 		color: t.Optional(t.String()),
+		edited_color: t.Optional(t.String()),
 		description: t.Optional(t.String()),
 		guid: t.Optional(t.String()),
 	}),
