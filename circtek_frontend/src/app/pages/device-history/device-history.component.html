@@ -11,6 +11,32 @@
       <div class="flex flex-col space-y-4">
         <!-- Search Input Row -->
         <div class="flex flex-col sm:flex-row gap-4">
+          @if (isSuperAdmin()) {
+            <div class="sm:w-64">
+              <label for="tenant" class="block text-sm font-medium text-base-content mb-2">
+                Tenant
+              </label>
+              <select
+                id="tenant"
+                class="select select-bordered w-full"
+                [disabled]="tenantLoading()"
+                [ngModel]="selectedTenantId()"
+                (ngModelChange)="onTenantSelected($event)"
+              >
+                <option value="">Select tenant...</option>
+                @for (tenant of tenants(); track tenant.id) {
+                  <option [ngValue]="tenant.id">{{ tenant.name }}</option>
+                }
+              </select>
+              @if (tenantLoading()) {
+                <div class="text-xs text-base-content/50 mt-1">Loading tenants...</div>
+              }
+              @if (tenantError()) {
+                <div class="text-sm text-error mt-2">{{ tenantError() }}</div>
+              }
+            </div>
+          }
+
           <div class="flex-1">
             <label for="search" class="block text-sm font-medium text-base-content mb-2">
               Device Identifier (IMEI or Serial Number)
@@ -27,7 +53,7 @@
             <button
               type="button"
               (click)="onSearchSubmit()"
-              [disabled]="loading() || !searchValue().trim()"
+              [disabled]="isSearchDisabled()"
               class="btn btn-accent flex items-center gap-2"
             >
               @if (loading()) {
