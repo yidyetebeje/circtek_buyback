@@ -49,6 +49,7 @@ export class WarehousesRepository {
 		const conditions: SQL<unknown>[] = []
 		if (typeof filters.tenant_id === 'number') conditions.push(eq(warehouses.tenant_id, filters.tenant_id))
 		if (filters.search) conditions.push(like(warehouses.name, `%${filters.search}%`))
+		conditions.push(eq(warehouses.status, true))
 
 		const page = Math.max(1, filters.page ?? 1)
 		const limit = Math.max(1, Math.min(100, filters.limit ?? 10))
@@ -59,7 +60,7 @@ export class WarehousesRepository {
 			? sortableFields[filters.sort as keyof typeof sortableFields]
 			: warehouses.id // default sort by id
 		const sortOrder = filters.order === 'desc' ? desc : asc
-
+	
 		const whereCond = conditions.length ? and(...conditions) : undefined
 		const [totalRow] = await (whereCond
 			? this.database.select({ total: count() }).from(warehouses).where(whereCond)
