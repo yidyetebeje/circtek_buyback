@@ -516,4 +516,42 @@ export class PurchasesController {
       }
     }
   }
+
+  async deletePurchaseItem(
+    purchase_item_id: number,
+    tenant_id: number
+  ): Promise<response<{ id: number } | null>> {
+    try {
+      // Get the purchase item with received quantity
+      const purchaseItem = await this.repo.getPurchaseItemWithReceived(purchase_item_id, tenant_id)
+      if (!purchaseItem) {
+        return { data: null, message: 'Purchase item not found', status: 404 }
+      }
+
+      // Check if any items have been received
+      if (purchaseItem.received_quantity > 0) {
+        return {
+          data: null,
+          message: `Cannot delete purchase item. ${purchaseItem.received_quantity} item(s) have already been received.`,
+          status: 400
+        }
+      }
+
+      // Delete the item
+      const result = await this.repo.deletePurchaseItem(purchase_item_id, tenant_id)
+      
+      return {
+        data: result,
+        message: 'Purchase item deleted successfully',
+        status: 200
+      }
+    } catch (error) {
+      return {
+        data: null,
+        message: 'Failed to delete purchase item',
+        status: 500,
+        error: (error as Error).message
+      }
+    }
+  }
 }

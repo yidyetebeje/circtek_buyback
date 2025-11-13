@@ -160,6 +160,18 @@ export const purchases_routes = new Elysia({ prefix: '/purchases' })
     } 
   })
 
+  // Delete purchase item
+  .delete('/items/:item_id', async (ctx) => {
+    const { params, currentTenantId } = ctx as any
+    return controller.deletePurchaseItem(Number(params.item_id), currentTenantId)
+  }, { 
+    detail: { 
+      tags: ['Stock Purchases'], 
+      summary: 'Delete purchase item',
+      description: 'Delete a purchase item. Cannot delete if any items have been received.'
+    } 
+  })
+
   // Delete purchase order
   .delete('/:id', async (ctx) => {
     const { params, currentRole, currentTenantId } = ctx as any

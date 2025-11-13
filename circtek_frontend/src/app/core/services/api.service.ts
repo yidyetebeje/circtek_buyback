@@ -432,6 +432,10 @@ export class ApiService {
     return this.post<ApiResponse<any[]>>(`/stock/purchases/${purchaseId}/items`, items);
   }
 
+  deletePurchaseItem(itemId: number): Observable<ApiResponse<{ id: number } | null>> {
+    return this.delete<ApiResponse<{ id: number } | null>>(`/stock/purchases/items/${itemId}`);
+  }
+
   deletePurchase(id: number): Observable<ApiResponse<{ id: number } | null>> {
     return this.delete<ApiResponse<{ id: number } | null>>(`/stock/purchases/${id}`);
   }

@@ -37,6 +37,10 @@ export class PurchaseDetailComponent {
   showAddItemModal = signal<boolean>(false);
   addingItem = signal<PurchaseItem | null>(null);
   updatingQuantity = signal<boolean>(false);
+  
+  // Delete state
+  deletingItemId = signal<number | null>(null);
+  deletingPurchase = signal<boolean>(false);
 
   // Computed
   title = computed(() => {
@@ -58,6 +62,13 @@ export class PurchaseDetailComponent {
     const totalItems = this.totalItems();
     const totalReceived = this.totalReceived();
     return totalItems > 0 && totalReceived >= totalItems;
+  });
+
+  canDeletePurchase = computed(() => {
+    const p = this.purchase();
+    if (!p) return false;
+    // Can delete purchase if all items have 0 received quantity
+    return p.items.every(item => item.received_quantity === 0);
   });
 
   progressPercentage = computed(() => {
@@ -307,6 +318,74 @@ export class PurchaseDetailComponent {
         this.error.set(errorMessage);
         this.toast.error(errorMessage);
         console.error('Add item error:', err);
+      }
+    });
+  }
+
+  // Delete item methods
+  deleteItem(itemId: number): void {
+    if (!confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
+      return;
+    }
+
+    this.deletingItemId.set(itemId);
+    this.api.deletePurchaseItem(itemId).subscribe({
+      next: (response) => {
+        this.deletingItemId.set(null);
+        if (response.status === 200) {
+          this.toast.deleteSuccess('Purchase item');
+          // Reload purchase data
+          const id = this.route.snapshot.paramMap.get('id');
+          if (id) {
+            this.loadPurchase(parseInt(id));
+          }
+        } else {
+          const errorMessage = response.message || 'Failed to delete item';
+          this.error.set(errorMessage);
+          this.toast.error(errorMessage);
+        }
+      },
+      error: (err) => {
+        this.deletingItemId.set(null);
+        const errorMessage = err.error?.message || 'Failed to delete item';
+        this.error.set(errorMessage);
+        this.toast.error(errorMessage);
+        console.error('Delete item error:', err);
+      }
+    });
+  }
+
+  // Delete purchase methods
+  deletePurchaseOrder(): void {
+    const purchaseId = this.purchase()?.purchase.id;
+    if (!purchaseId) return;
+
+    if (!confirm('Are you sure you want to delete this entire purchase order? This action cannot be undone.')) {
+      return;
+    }
+
+    this.deletingPurchase.set(true);
+    this.api.deletePurchase(purchaseId).subscribe({
+      next: (response) => {
+        this.deletingPurchase.set(false);
+        if (response.status === 200) {
+          this.toast.deleteSuccess('Purchase order');
+          // Navigate back to purchases list
+          this.router.navigate(['/stock-management'], { 
+            queryParams: { tab: 'purchases' } 
+          });
+        } else {
+          const errorMessage = response.message || 'Failed to delete purchase order';
+          this.error.set(errorMessage);
+          this.toast.error(errorMessage);
+        }
+      },
+      error: (err) => {
+        this.deletingPurchase.set(false);
+        const errorMessage = err.error?.message || 'Failed to delete purchase order';
+        this.error.set(errorMessage);
+        this.toast.error(errorMessage);
+        console.error('Delete purchase error:', err);
       }
     });
   }

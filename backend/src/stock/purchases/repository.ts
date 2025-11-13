@@ -662,6 +662,17 @@ export class PurchasesRepository {
     return this.createPurchaseItems(purchase_id, items, tenant_id);
   }
 
+  async deletePurchaseItem(purchase_item_id: number, tenant_id: number): Promise<{ id: number }> {
+    await this.database
+      .delete(purchase_items)
+      .where(and(
+        eq(purchase_items.id, purchase_item_id),
+        eq(purchase_items.tenant_id, tenant_id)
+      ));
+    
+    return { id: purchase_item_id };
+  }
+
   async deletePurchase(id: number, tenant_id?: number): Promise<{ id: number }> {
     // First delete related items
     await this.database
