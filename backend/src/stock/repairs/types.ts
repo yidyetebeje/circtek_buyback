@@ -153,6 +153,17 @@ export type ReasonAnalytics = {
   average_cost_per_repair: number
 }
 
+// User-level analytics
+export type UserAnalytics = {
+  user_id: number
+  user_name: string
+  total_repairs: number
+  total_parts_used: number
+  total_quantity_consumed: number
+  total_cost: number
+  average_cost_per_repair: number
+}
+
 // SKU usage details
 export type SkuUsage = {
   sku: string
@@ -185,6 +196,7 @@ export type RepairAnalytics = {
   by_warehouse: WarehouseAnalytics[]
   by_model: ModelAnalytics[]
   by_reason: ReasonAnalytics[]
+  by_user: UserAnalytics[]
 }
 
 // IMEI analytics query

@@ -209,6 +209,17 @@
         <button
           role="tab"
           class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
+          [class.bg-primary]="activeTab() === 'by-user'"
+          [class.text-white]="activeTab() === 'by-user'"
+          [class.text-base-content]="activeTab() !== 'by-user'"
+          [class.hover:bg-primary/10]="activeTab() !== 'by-user'"
+          (click)="activeTab.set('by-user')"
+        >
+          <span>By Repairer</span>
+        </button>
+        <button
+          role="tab"
+          class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
           [class.bg-primary]="activeTab() === 'by-imei'"
           [class.text-white]="activeTab() === 'by-imei'"
           [class.text-base-content]="activeTab() !== 'by-imei'"
@@ -394,6 +405,51 @@
                     <td class="text-right">{{ formatNumber(reason.total_quantity_consumed) }}</td>
                     <td class="text-right font-semibold">{{ formatCurrency(reason.total_cost) }}</td>
                     <td class="text-right">{{ formatCurrency(reason.average_cost_per_repair) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        </div>
+      </div>
+    }
+
+    <!-- By User Tab: Repairer Analytics -->
+    @if (activeTab() === 'by-user') {
+      <div class="card bg-base-100 shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title">
+            <lucide-icon [img]="ActivityIcon" class="size-5"></lucide-icon>
+            Per Repairer Statistics
+          </h2>
+        
+        @if (userData().length === 0) {
+          <div class="alert alert-info">
+            <span>No user data available for the selected filters.</span>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table class="table table-zebra">
+              <thead>
+                <tr>
+                  <th>Repairer Name</th>
+                  <th class="text-right">Total Repairs</th>
+                  <th class="text-right">Parts Used</th>
+                  <th class="text-right">Quantity</th>
+                  <th class="text-right">Total Spend</th>
+                  <th class="text-right">Avg Spend/Device</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (user of userData(); track user.user_id) {
+                  <tr class="hover">
+                    <td class="font-semibold">{{ user.user_name }}</td>
+                    <td class="text-right">{{ formatNumber(user.total_repairs) }}</td>
+                    <td class="text-right">{{ formatNumber(user.total_parts_used) }}</td>
+                    <td class="text-right">{{ formatNumber(user.total_quantity_consumed) }}</td>
+                    <td class="text-right font-semibold">{{ formatCurrency(user.total_cost) }}</td>
+                    <td class="text-right">{{ formatCurrency(user.average_cost_per_repair) }}</td>
                   </tr>
                 }
               </tbody>

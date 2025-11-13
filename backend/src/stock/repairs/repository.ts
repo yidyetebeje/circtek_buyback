@@ -542,6 +542,46 @@ export class RepairsRepository {
     }))
   }
 
+  async getUserAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number }) {
+    const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
+    
+    if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
+    if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
+    if (filters.reason_id) conditions.push(eq(repair_items.reason_id, filters.reason_id))
+
+    const results = await this.database
+      .select({
+        user_id: users.id,
+        user_name: users.name,
+        total_repairs: sql<number>`COUNT(DISTINCT ${repairs.id})`,
+        unique_devices: sql<number>`COUNT(DISTINCT ${repairs.device_id})`,
+        total_parts_used: sql<number>`COUNT(${repair_items.id})`,
+        total_quantity_consumed: sql<number>`COALESCE(SUM(${repair_items.quantity}), 0)`,
+        total_cost: sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`,
+      })
+      .from(repairs)
+      .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+      .leftJoin(users, eq(repairs.actor_id, users.id))
+      .leftJoin(devices, eq(repairs.device_id, devices.id))
+      .where(and(...conditions))
+      .groupBy(users.id, users.name)
+      .orderBy(desc(sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`))
+
+    return results
+      .filter(r => r.user_id !== null)
+      .map(r => ({
+        user_id: r.user_id as number,
+        user_name: r.user_name || 'Unknown',
+        total_repairs: Number(r.total_repairs),
+        total_parts_used: Number(r.total_parts_used),
+        total_quantity_consumed: Number(r.total_quantity_consumed),
+        total_cost: Number(r.total_cost),
+        average_cost_per_repair: Number(r.unique_devices) > 0 ? Number(r.total_cost) / Number(r.unique_devices) : 0,
+      }))
+  }
+
   async getIMEIAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number; search?: string; page: number; limit: number }) {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
     
@@ -709,11 +749,12 @@ export class RepairsRepository {
         : 0,
     }
 
-    // Get warehouse, model, and reason analytics
-    const [by_warehouse, by_model, by_reason] = await Promise.all([
+    // Get warehouse, model, reason, and user analytics
+    const [by_warehouse, by_model, by_reason, by_user] = await Promise.all([
       this.getWarehouseAnalytics(filters),
       this.getModelAnalytics(filters),
       this.getReasonAnalytics(filters),
+      this.getUserAnalytics(filters),
     ])
 
     return {
@@ -721,6 +762,7 @@ export class RepairsRepository {
       by_warehouse,
       by_model,
       by_reason,
+      by_user,
     }
   }
  

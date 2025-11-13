@@ -140,6 +140,16 @@ export interface ReasonAnalytics {
   average_cost_per_repair: number;
 }
 
+export interface UserAnalytics {
+  user_id: number;
+  user_name: string;
+  total_repairs: number;
+  total_parts_used: number;
+  total_quantity_consumed: number;
+  total_cost: number;
+  average_cost_per_repair: number;
+}
+
 export interface SkuUsage {
   sku: string;
   usage_count: number;
@@ -171,6 +181,7 @@ export interface RepairAnalytics {
   by_warehouse: WarehouseAnalytics[];
   by_model: ModelAnalytics[];
   by_reason: ReasonAnalytics[];
+  by_user: UserAnalytics[];
 }
 
 export interface IMEIAnalyticsQueryInput {

@@ -47,7 +47,7 @@ export class RepairsAnalyticsComponent {
   protected readonly selectedReason = signal<number | null>(null);
 
   // Tabs
-  protected readonly activeTab = signal<'overview' | 'by-model' | 'by-reason' | 'by-imei'>('overview');
+  protected readonly activeTab = signal<'overview' | 'by-model' | 'by-reason' | 'by-user' | 'by-imei'>('overview');
   
   // IMEI analytics state
   protected readonly imeiData = signal<any[]>([]);
@@ -62,6 +62,7 @@ export class RepairsAnalyticsComponent {
   protected readonly warehouseData = computed(() => this.analytics()?.by_warehouse || []);
   protected readonly modelData = computed(() => this.analytics()?.by_model || []);
   protected readonly reasonData = computed(() => this.analytics()?.by_reason || []);
+  protected readonly userData = computed(() => this.analytics()?.by_user || []);
 
   // Expanded state for model details
   protected readonly expandedModels = signal<Set<string>>(new Set());

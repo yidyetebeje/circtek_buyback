@@ -44,3 +44,40 @@
 .table-sm td {
   @apply px-3 py-2;
 }
+
+/* Tab styling for proper contrast in all themes */
+.tabs-boxed .tab-active,
+.tab.bg-primary {
+  color: #1a1a1a !important;
+  font-weight: 600;
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure inactive tabs have good contrast */
+.tabs-boxed .tab:not(.tab-active):not(.bg-primary) {
+  color: oklch(var(--bc)) !important;
+}
+
+/* Dark theme specific adjustments - use dark text for better contrast */
+[data-theme="dim"] .tabs-boxed .tab-active,
+[data-theme="dim"] .tab.bg-primary {
+  color: #1a1a1a !important;
+  font-weight: 600;
+  text-shadow: none;
+}
+
+[data-theme="dim"] .tabs-boxed .tab:not(.tab-active):not(.bg-primary) {
+  color: oklch(var(--bc) / 0.9) !important;
+}
+
+/* Light theme specific adjustments */
+[data-theme="light"] .tabs-boxed .tab-active,
+[data-theme="light"] .tab.bg-primary {
+  color: #1a1a1a !important;
+  font-weight: 600;
+  text-shadow: none;
+}
+
+[data-theme="light"] .tabs-boxed .tab:not(.tab-active):not(.bg-primary) {
+  color: oklch(var(--bc) / 0.8) !important;
+}
