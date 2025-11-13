@@ -43,6 +43,10 @@ export const ReceiveItemsRequest = t.Object({
   actor_id: t.Number(),
 })
 
+export const PurchaseItemUpdate = t.Object({
+  quantity: t.Number(),
+})
+
 export const PurchaseQuery = t.Object({
   supplier_name: t.Optional(t.String()),
   purchase_order_no: t.Optional(t.String()),
@@ -60,6 +64,7 @@ export const PurchaseQuery = t.Object({
 
 export type PurchaseCreateInput = Static<typeof PurchaseCreate>
 export type PurchaseItemCreateInput = Static<typeof PurchaseItemCreate>
+export type PurchaseItemUpdateInput = Static<typeof PurchaseItemUpdate>
 export type PurchaseWithItemsInput = Static<typeof PurchaseWithItems>
 export type ReceiveItemsRequestInput = Static<typeof ReceiveItemsRequest>
 export type PurchaseQueryInput = Static<typeof PurchaseQuery>

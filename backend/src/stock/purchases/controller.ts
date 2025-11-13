@@ -5,6 +5,8 @@ import {
   PurchaseWithItemsInput,
   PurchaseQueryInput, 
   ReceiveItemsRequestInput,
+  PurchaseItemCreateInput,
+  PurchaseItemUpdateInput,
   PurchaseRecord,
   PurchaseWithItemsAndReceived,
   PurchaseListResult,
@@ -391,6 +393,124 @@ export class PurchasesController {
       return { 
         data: null, 
         message: 'Failed to get receiving status', 
+        status: 500, 
+        error: (error as Error).message 
+      }
+    }
+  }
+
+  async updatePurchaseItemQuantity(
+    purchase_item_id: number, 
+    payload: PurchaseItemUpdateInput, 
+    tenant_id: number
+  ): Promise<response<any>> {
+    try {
+      // Get the purchase item with received quantity
+      const purchaseItem = await this.repo.getPurchaseItemWithReceived(purchase_item_id, tenant_id)
+      if (!purchaseItem) {
+        return { data: null, message: 'Purchase item not found', status: 404 }
+      }
+
+      // Validate that new quantity is not less than received quantity
+      if (payload.quantity < purchaseItem.received_quantity) {
+        return { 
+          data: null, 
+          message: `Cannot set quantity to ${payload.quantity}. Already received ${purchaseItem.received_quantity} items. New quantity must be at least ${purchaseItem.received_quantity}.`, 
+          status: 400 
+        }
+      }
+
+      // Validate that quantity is positive
+      if (payload.quantity <= 0) {
+        return { 
+          data: null, 
+          message: 'Quantity must be greater than 0', 
+          status: 400 
+        }
+      }
+
+      // Update the quantity
+      const updated = await this.repo.updatePurchaseItemQuantity(purchase_item_id, payload.quantity, tenant_id)
+      
+      if (!updated) {
+        return { data: null, message: 'Failed to update purchase item', status: 500 }
+      }
+
+      return { 
+        data: updated, 
+        message: 'Purchase item quantity updated successfully', 
+        status: 200 
+      }
+    } catch (error) {
+      return { 
+        data: null, 
+        message: 'Failed to update purchase item quantity', 
+        status: 500, 
+        error: (error as Error).message 
+      }
+    }
+  }
+
+  async addItemsToPurchase(
+    purchase_id: number, 
+    items: PurchaseItemCreateInput[], 
+    tenant_id: number
+  ): Promise<response<any[]>> {
+    try {
+      // Validate that the purchase exists and belongs to tenant
+      const purchase = await this.repo.findPurchaseById(purchase_id, tenant_id)
+      if (!purchase) {
+        return { data: [], message: 'Purchase order not found', status: 404 }
+      }
+
+      if (purchase.tenant_id !== tenant_id) {
+        return { data: [], message: 'Forbidden: cross-tenant access denied', status: 403 }
+      }
+
+      // Validate items
+      if (!items || items.length === 0) {
+        return { data: [], message: 'No items provided', status: 400 }
+      }
+
+      // Validate each item
+      for (const item of items) {
+        if (!item.sku || item.sku.trim() === '') {
+          return { data: [], message: 'SKU is required for all items', status: 400 }
+        }
+        if (item.quantity <= 0) {
+          return { data: [], message: `Quantity must be greater than 0 for SKU ${item.sku}`, status: 400 }
+        }
+        if (item.price < 0) {
+          return { data: [], message: `Price cannot be negative for SKU ${item.sku}`, status: 400 }
+        }
+      }
+
+      // Check for duplicate SKUs in existing purchase items
+      const existingItems = await this.repo.getPurchaseItems(purchase_id, tenant_id)
+      const existingSkus = new Set(existingItems.map(item => item.sku?.toLowerCase()))
+      
+      for (const item of items) {
+        if (existingSkus.has(item.sku.toLowerCase())) {
+          return { 
+            data: [], 
+            message: `SKU ${item.sku} already exists in this purchase order`, 
+            status: 400 
+          }
+        }
+      }
+
+      // Add the items
+      const addedItems = await this.repo.addItemsToPurchase(purchase_id, items, tenant_id)
+      
+      return { 
+        data: addedItems, 
+        message: `Successfully added ${addedItems.length} item(s) to purchase order`, 
+        status: 201 
+      }
+    } catch (error) {
+      return { 
+        data: [], 
+        message: 'Failed to add items to purchase order', 
         status: 500, 
         error: (error as Error).message 
       }

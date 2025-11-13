@@ -1,0 +1,100 @@
+@if (isOpen && item) {
+  <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-base-100 rounded-2xl max-w-md w-full shadow-2xl border border-base-300/20">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-base-300/30">
+        <div>
+          <h2 class="text-xl font-bold text-base-content">Edit Quantity</h2>
+          <p class="text-sm text-base-content/60 mt-1">SKU: {{ item.sku }}</p>
+        </div>
+        <button 
+          type="button" 
+          class="btn btn-ghost btn-circle hover:bg-base-200"
+          (click)="onClose()"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Modal Content -->
+      <div class="p-6">
+        <!-- Current Status -->
+        <div class="bg-base-200/50 rounded-lg p-4 mb-6">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm text-base-content/60">Current Quantity</p>
+              <p class="text-lg font-semibold text-base-content">{{ item.ordered_quantity }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-base-content/60">Received</p>
+              <p class="text-lg font-semibold text-primary">{{ item.received_quantity }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- New Quantity Input -->
+        <div class="form-control">
+          <label class="label">
+            <span class="label-text font-medium">New Quantity</span>
+            <span class="label-text-alt text-base-content/60">Min: {{ minQuantity() }}</span>
+          </label>
+          <input 
+            type="number" 
+            class="input input-bordered w-full"
+            [value]="quantity()"
+            (input)="onQuantityChange($any($event.target).value)"
+            [min]="minQuantity()"
+            [class.input-error]="!isValid() && quantity() > 0"
+          />
+          @if (!isValid() && quantity() > 0) {
+            <label class="label">
+              <span class="label-text-alt text-error">
+                Quantity must be at least {{ minQuantity() }}
+              </span>
+            </label>
+          }
+        </div>
+
+        <!-- Error Alert -->
+        @if (error()) {
+          <div class="alert alert-error mt-4">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>{{ error() }}</span>
+          </div>
+        }
+
+        <!-- Info -->
+        <div class="alert alert-info mt-4">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span class="text-sm">New quantity must be at least equal to the received quantity ({{ item.received_quantity }})</span>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-end gap-3 p-6 border-t border-base-300/30">
+        <button 
+          type="button" 
+          class="btn btn-ghost"
+          (click)="onClose()"
+        >
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-primary"
+          (click)="onSave()"
+          [disabled]="!isValid()"
+        >
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

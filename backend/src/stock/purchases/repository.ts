@@ -589,6 +589,79 @@ export class PurchasesRepository {
     }
   }
 
+  async updatePurchaseItemQuantity(
+    purchase_item_id: number, 
+    new_quantity: number, 
+    tenant_id: number
+  ): Promise<PurchaseItemRecord | undefined> {
+    // Update the quantity
+    await this.database
+      .update(purchase_items)
+      .set({ quantity: new_quantity })
+      .where(and(
+        eq(purchase_items.id, purchase_item_id),
+        eq(purchase_items.tenant_id, tenant_id)
+      ));
+
+    // Return the updated item
+    const [updated] = await this.database
+      .select()
+      .from(purchase_items)
+      .where(and(
+        eq(purchase_items.id, purchase_item_id),
+        eq(purchase_items.tenant_id, tenant_id)
+      ));
+
+    if (updated) {
+      return { ...updated, price: Number(updated.price) };
+    }
+    return undefined;
+  }
+
+  async getPurchaseItemWithReceived(
+    purchase_item_id: number,
+    tenant_id: number
+  ): Promise<(PurchaseItemRecord & { received_quantity: number }) | undefined> {
+    const [item] = await this.database
+      .select({
+        id: purchase_items.id,
+        purchase_id: purchase_items.purchase_id,
+        sku: purchase_items.sku,
+        quantity: purchase_items.quantity,
+        quantity_used_for_repair: purchase_items.quantity_used_for_repair,
+        price: purchase_items.price,
+        is_part: purchase_items.is_part,
+        status: purchase_items.status,
+        tenant_id: purchase_items.tenant_id,
+        created_at: purchase_items.created_at,
+        received_quantity: sql`COALESCE(SUM(${received_items.quantity}), 0)`.as('received_quantity'),
+      })
+      .from(purchase_items)
+      .leftJoin(received_items, eq(purchase_items.id, received_items.purchase_item_id))
+      .where(and(
+        eq(purchase_items.id, purchase_item_id),
+        eq(purchase_items.tenant_id, tenant_id)
+      ))
+      .groupBy(purchase_items.id);
+
+    if (item) {
+      return {
+        ...item,
+        price: Number(item.price),
+        received_quantity: Number(item.received_quantity),
+      };
+    }
+    return undefined;
+  }
+
+  async addItemsToPurchase(
+    purchase_id: number,
+    items: PurchaseItemCreateInput[],
+    tenant_id: number
+  ): Promise<PurchaseItemRecord[]> {
+    return this.createPurchaseItems(purchase_id, items, tenant_id);
+  }
+
   async deletePurchase(id: number, tenant_id?: number): Promise<{ id: number }> {
     // First delete related items
     await this.database

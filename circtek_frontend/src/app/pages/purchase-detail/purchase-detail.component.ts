@@ -5,10 +5,13 @@ import { ApiService } from '../../core/services/api.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { CurrencyPipe } from '../../shared/pipes/currency.pipe';
 import { PurchaseWithItems } from '../../core/models/purchase';
+import { EditQuantityModalComponent, type PurchaseItemForEdit } from './edit-quantity-modal/edit-quantity-modal.component';
+import { PurchaseItemModalComponent, type PurchaseItem } from '../purchase-form/purchase-item-modal/purchase-item-modal.component';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-purchase-detail',
-  imports: [CommonModule, CurrencyPipe],
+  imports: [CommonModule, CurrencyPipe, EditQuantityModalComponent, PurchaseItemModalComponent],
   templateUrl: './purchase-detail.component.html',
   styleUrls: ['./purchase-detail.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -18,12 +21,22 @@ export class PurchaseDetailComponent {
   private readonly currencyService = inject(CurrencyService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   // State
   purchase = signal<PurchaseWithItems | null>(null);
   loading = signal<boolean>(true);
   error = signal<string>('');
   showDocuments = signal<boolean>(false);
+  
+  // Edit quantity state
+  showEditQuantityModal = signal<boolean>(false);
+  editingItem = signal<PurchaseItemForEdit | null>(null);
+  
+  // Add items state
+  showAddItemModal = signal<boolean>(false);
+  addingItem = signal<PurchaseItem | null>(null);
+  updatingQuantity = signal<boolean>(false);
 
   // Computed
   title = computed(() => {
@@ -208,5 +221,93 @@ export class PurchaseDetailComponent {
       case 'confirmation': return 'Confirmation';
       default: return 'Document';
     }
+  }
+
+  // Edit quantity methods
+  openEditQuantityModal(item: any): void {
+    this.editingItem.set({
+      id: item.id,
+      sku: item.sku,
+      ordered_quantity: item.ordered_quantity,
+      received_quantity: item.received_quantity,
+      remaining_quantity: item.remaining_quantity
+    });
+    this.showEditQuantityModal.set(true);
+  }
+
+  closeEditQuantityModal(): void {
+    this.showEditQuantityModal.set(false);
+    this.editingItem.set(null);
+  }
+
+  saveQuantity(event: { itemId: number; newQuantity: number }): void {
+    this.updatingQuantity.set(true);
+    this.api.updatePurchaseItemQuantity(event.itemId, event.newQuantity).subscribe({
+      next: (response) => {
+        this.updatingQuantity.set(false);
+        if (response.status === 200) {
+          this.toast.saveSuccess('Purchase item quantity', 'updated');
+          this.closeEditQuantityModal();
+          // Reload purchase data
+          const id = this.route.snapshot.paramMap.get('id');
+          if (id) {
+            this.loadPurchase(parseInt(id));
+          }
+        } else {
+          this.error.set(response.message || 'Failed to update quantity');
+        }
+      },
+      error: (err) => {
+        this.updatingQuantity.set(false);
+        const errorMessage = err.error?.message || 'Failed to update quantity';
+        this.error.set(errorMessage);
+        console.error('Update quantity error:', err);
+      }
+    });
+  }
+
+  // Add items methods
+  openAddItemModal(): void {
+    this.addingItem.set(null);
+    this.showAddItemModal.set(true);
+  }
+
+  closeAddItemModal(): void {
+    this.showAddItemModal.set(false);
+    this.addingItem.set(null);
+  }
+
+  saveNewItem(item: PurchaseItem): void {
+    const purchaseId = this.purchase()?.purchase.id;
+    if (!purchaseId) return;
+
+    this.loading.set(true);
+    const itemPayload = {
+      sku: item.sku,
+      quantity: item.quantity,
+      price: item.price,
+      is_part: item.is_part
+    };
+
+    this.api.addItemsToPurchase(purchaseId, [itemPayload]).subscribe({
+      next: (response) => {
+        this.loading.set(false);
+        if (response.status === 201 && response.data) {
+          this.toast.saveSuccess('Purchase item', 'created');
+          this.closeAddItemModal();
+          // Reload purchase data
+          this.loadPurchase(purchaseId);
+        } else {
+          this.error.set(response.message || 'Failed to add item');
+        }
+      },
+      error: (err) => {
+        this.loading.set(false);
+        const errorMessage = err.error?.message || 'Failed to add item';
+        this.error.set(errorMessage);
+        this.toast.error(errorMessage);
+        console.error('Add item error:', err);
+      }
+    });
   }
 }

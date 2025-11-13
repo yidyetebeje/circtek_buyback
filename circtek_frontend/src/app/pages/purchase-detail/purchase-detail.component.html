@@ -30,6 +30,18 @@
           
           <!-- Action Buttons -->
           <div class="flex gap-3">
+            @if (purchase()) {
+              <button 
+                type="button" 
+                class="btn btn-outline btn-accent gap-2"
+                (click)="openAddItemModal()"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Add Item
+              </button>
+            }
             @if (purchase() && availableDocuments().length > 0) {
               <button 
                 type="button" 
@@ -143,6 +155,7 @@
                     <th class="whitespace-nowrap px-4 py-3">Total Price</th>
                     <th class="whitespace-nowrap px-4 py-3">Type</th>
                     <th class="whitespace-nowrap px-4 py-3">Status</th>
+                    <th class="whitespace-nowrap px-4 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -163,6 +176,21 @@
                         <span class="badge {{ getStatusBadgeClass(item.status) }} badge-sm">
                           {{ item.status }}
                         </span>
+                      </td>
+                      <td class="whitespace-nowrap px-4 py-3">
+                        <div class="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            class="btn btn-ghost btn-xs"
+                            title="Edit quantity"
+                            (click)="openEditQuantityModal(item)"
+                            [disabled]="loading()"
+                          >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   }
@@ -295,3 +323,19 @@
     </div>
   </div>
 }
+
+<!-- Edit Quantity Modal -->
+<app-edit-quantity-modal
+  [isOpen]="showEditQuantityModal()"
+  [item]="editingItem()"
+  (close)="closeEditQuantityModal()"
+  (save)="saveQuantity($event)"
+></app-edit-quantity-modal>
+
+<!-- Add Item Modal -->
+<app-purchase-item-modal
+  [isOpen]="showAddItemModal()"
+  [editingItem]="addingItem()"
+  (close)="closeAddItemModal()"
+  (save)="saveNewItem($event)"
+></app-purchase-item-modal>

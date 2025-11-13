@@ -424,6 +424,14 @@ export class ApiService {
     return this.post<ApiResponse<ReceivingResult | null>>(`/stock/purchases/${payload.purchase_id}/receive`, payload);
   }
 
+  updatePurchaseItemQuantity(itemId: number, quantity: number): Observable<ApiResponse<any>> {
+    return this.patch<ApiResponse<any>>(`/stock/purchases/items/${itemId}/quantity`, { quantity });
+  }
+
+  addItemsToPurchase(purchaseId: number, items: any[]): Observable<ApiResponse<any[]>> {
+    return this.post<ApiResponse<any[]>>(`/stock/purchases/${purchaseId}/items`, items);
+  }
+
   deletePurchase(id: number): Observable<ApiResponse<{ id: number } | null>> {
     return this.delete<ApiResponse<{ id: number } | null>>(`/stock/purchases/${id}`);
   }

@@ -1,7 +1,7 @@
-import Elysia from "elysia";
+import Elysia, { t } from "elysia";
 import { PurchasesRepository } from "./repository";
 import { PurchasesController } from "./controller";
-import { PurchaseCreate, PurchaseWithItems, ReceiveItemsRequest, PurchaseQuery } from "./types";
+import { PurchaseCreate, PurchaseWithItems, PurchaseItemCreate, PurchaseItemUpdate, ReceiveItemsRequest, PurchaseQuery } from "./types";
 import { db } from "../../db";
 import { requireRole } from "../../auth";
 
@@ -131,6 +131,32 @@ export const purchases_routes = new Elysia({ prefix: '/purchases' })
       tags: ['Stock Purchases'], 
       summary: 'Receive purchase items',
       description: 'Record received items from a purchase order. This creates stock movements and updates inventory levels.'
+    } 
+  })
+
+  // Update purchase item quantity
+  .patch('/items/:item_id/quantity', async (ctx) => {
+    const { params, body, currentTenantId } = ctx as any
+    return controller.updatePurchaseItemQuantity(Number(params.item_id), body as any, currentTenantId)
+  }, { 
+    body: PurchaseItemUpdate,
+    detail: { 
+      tags: ['Stock Purchases'], 
+      summary: 'Update purchase item quantity',
+      description: 'Update the quantity of a purchase item. New quantity must be at least equal to the received quantity.'
+    } 
+  })
+
+  // Add items to existing purchase
+  .post('/:id/items', async (ctx) => {
+    const { params, body, currentTenantId } = ctx as any
+    return controller.addItemsToPurchase(Number(params.id), body as any, currentTenantId)
+  }, { 
+    body: t.Array(PurchaseItemCreate),
+    detail: { 
+      tags: ['Stock Purchases'], 
+      summary: 'Add items to purchase order',
+      description: 'Add new items to an existing purchase order'
     } 
   })
 
