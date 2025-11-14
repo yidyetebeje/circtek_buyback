@@ -204,9 +204,15 @@ export class RepairFormComponent implements OnInit {
   }
 
   loadRepairReasons() {
-    const params = new HttpParams().set('limit', '500');
+    const params = new HttpParams()
+      .set('limit', '500')
+      .set('status', 'true'); // Only fetch active repair reasons
     this.api.getRepairReasons(params).subscribe({ 
-      next: (res) => { this.repairReasons.set(res.data ?? []); },
+      next: (res) => { 
+        // Additional client-side filter to ensure only active reasons are shown
+        const activeReasons = (res.data ?? []).filter(r => r.status === true);
+        this.repairReasons.set(activeReasons); 
+      },
       error: () => { this.repairReasons.set([]); }
     });
   }

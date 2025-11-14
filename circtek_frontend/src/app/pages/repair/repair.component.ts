@@ -238,11 +238,22 @@ export class RepairComponent {
           } },
           { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '250px' } },
+          { header: 'Status', id: 'status' as any, accessorFn: (r: any) => r.status ? 'Active' : 'Inactive', 
+            meta: { 
+              cellClass: (r: any) => r.status ? 'text-success font-medium' : 'text-error font-medium'
+            } 
+          },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
-              actions: [
-                { key: 'edit', label: 'Edit', class: 'text-primary' },
+              actions: (row: any) => [
+                { key: 'edit', label: 'Edit', class: 'text-primary', icon: 'edit' },
+                { 
+                  key: 'toggle-status', 
+                  label: row.status ? 'Disable' : 'Enable', 
+                  class: row.status ? 'text-warning' : 'text-success',
+                  icon: row.status ? 'x' : 'check'
+                },
               ],
               cellClass: () => 'text-right'
             }
@@ -683,6 +694,11 @@ export class RepairComponent {
       return;
     }
 
+    if (tab === 'repair-reasons' && event.action === 'toggle-status') {
+      this.toggleRepairReasonStatus(row);
+      return;
+    }
+
     if (tab === 'dead-imei' && event.action === 'detail') {
       // Add detail view for dead IMEI if needed
       return;
@@ -731,6 +747,34 @@ export class RepairComponent {
       error: (err) => {
         this.loading.set(false);
         this.toast.error(err.error?.message || 'Failed to delete repair', 'Delete Failed');
+      },
+    });
+  }
+
+  toggleRepairReasonStatus(reason: RepairReasonRecord) {
+    const newStatus = !reason.status;
+    const actionText = newStatus ? 'enable' : 'disable';
+    
+    this.loading.set(true);
+    this.api.updateRepairReason(reason.id, { status: newStatus }).subscribe({
+      next: (res) => {
+        this.loading.set(false);
+        if (res.status === 200) {
+          this.fetchData(); // Refresh the list
+          this.toast.success(
+            `Repair reason ${newStatus ? 'enabled' : 'disabled'} successfully`, 
+            'Status Updated'
+          );
+        } else {
+          this.toast.error(res.message || `Failed to ${actionText} repair reason`, 'Update Failed');
+        }
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.toast.error(
+          err.error?.message || `Failed to ${actionText} repair reason`, 
+          'Update Failed'
+        );
       },
     });
   }

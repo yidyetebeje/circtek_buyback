@@ -10,6 +10,7 @@ export interface RepairReasonOption {
   name: string;
   description?: string | null;
   fixed_price?: number | null;
+  status?: boolean;
 }
 
 @Component({
@@ -94,7 +95,11 @@ export class RepairReasonAutocompleteComponent {
     ).subscribe((res: any) => {
       this.loading.set(false);
       const data: RepairReasonOption[] = Array.isArray(res) ? [] : (res?.data ?? []);
-      const filtered = this.onlyFixedPrice() ? data.filter(r => (r.fixed_price ?? 0) > 0) : data;
+      // Filter for active reasons and optionally fixed price
+      let filtered = data.filter((r: any) => r.status === true);
+      if (this.onlyFixedPrice()) {
+        filtered = filtered.filter(r => (r.fixed_price ?? 0) > 0);
+      }
       this.options.set(filtered);
       this.showDropdown.set(filtered.length > 0);
       this.highlightedIndex.set(-1);
@@ -115,7 +120,11 @@ export class RepairReasonAutocompleteComponent {
     ).subscribe((res: any) => {
       this.loading.set(false);
       const data: RepairReasonOption[] = Array.isArray(res) ? [] : (res?.data ?? []);
-      const filtered = this.onlyFixedPrice() ? data.filter(r => (r.fixed_price ?? 0) > 0) : data;
+      // Filter for active reasons and optionally fixed price
+      let filtered = data.filter((r: any) => r.status === true);
+      if (this.onlyFixedPrice()) {
+        filtered = filtered.filter(r => (r.fixed_price ?? 0) > 0);
+      }
       this.options.set(filtered);
     });
   }
@@ -123,7 +132,8 @@ export class RepairReasonAutocompleteComponent {
   private fetchReasons(search: string, limit: number) {
     let params = new HttpParams()
       .set('page', '1')
-      .set('limit', String(limit));
+      .set('limit', String(limit))
+      .set('status', 'true'); // Only fetch active repair reasons
     if (search) params = params.set('search', search);
     return this.api.getRepairReasons(params);
   }
