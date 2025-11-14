@@ -1390,18 +1390,28 @@ export class ManagementComponent {
     let params = new HttpParams().set('limit', '1000');
     // Load all active users (including both testers and admins) for assignment
     params = params.set('is_active', 'true');
-    const rid = this.testerRoleId();
-    const admin = this.adminRoleId();
-    if (rid != null) params = params.set('role_id', String(rid));
-    if (admin != null) params = params.set('role_id', String(admin));
+    
+    // Filter to include only tester and admin roles
+    const testerRoleId = this.testerRoleId();
+    const adminRoleId = this.adminRoleId();
+    
     if (this.isSuperAdmin()) {
       const tid = this.selectedTenantId();
       if (tid != null) params = params.set('tenant_id', String(tid));
     }
+    
     this.api.getUsers(params).subscribe({
       next: (res) => {
+        // Filter users to only include testers and admins
+        let users = res.data ?? [];
+        if (testerRoleId != null || adminRoleId != null) {
+          users = users.filter(u => 
+            u.role_id === testerRoleId || u.role_id === adminRoleId
+          );
+        }
+        
         // Include role name in the label for clarity
-        const opts = (res.data ?? []).map(u => ({ 
+        const opts = users.map(u => ({ 
           label: `${u.name || u.user_name}`, 
           value: String(u.id) 
         }));
