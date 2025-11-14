@@ -52,8 +52,8 @@ export class AuthController {
 		
 		// Check if user has tester role
 		const roleName = await this.authRepo.getRoleName(user.role_id ?? null)
-		if (roleName !== 'tester') {
-			return { data: null as any, message: 'Access denied. Only tester role allowed', status: 403 }
+		if (roleName !== 'tester' && roleName !== 'admin') {
+			return { data: null as any, message: 'Access denied. Only tester and admin roles allowed', status: 403 }
 		}
 		const match = await bcrypt.compare(payload.password, (user as any).password)
 		if (!match) return { data: null as any, message: 'Invalid credentials', status: 401 }

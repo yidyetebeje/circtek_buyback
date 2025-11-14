@@ -587,7 +587,7 @@ export class ManagementComponent {
           { header: 'SSID', accessorKey: 'ssid' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
-          // Actions: assign tester, view assigned testers
+          // Actions: assign user, view assigned users
           {
             header: 'Actions',
             id: 'actions' as any,
@@ -595,8 +595,8 @@ export class ManagementComponent {
             meta: {
               actions: [
                 { key: 'edit', label: 'Edit', class: 'text-primary' },
-                { key: 'assign', label: 'Assign tester', class: 'text-secondary' },
-                { key: 'view-assigned', label: 'View assigned testers' },
+                { key: 'assign', label: 'Assign user', class: 'text-secondary' },
+                { key: 'view-assigned', label: 'View assigned users' },
                 { key: 'delete', label: 'Delete', class: 'text-error' },
               ],
               cellClass: () => 'text-right'
@@ -620,8 +620,8 @@ export class ManagementComponent {
             meta: {
               actions: [
                 { key: 'edit', label: 'Edit', class: 'text-primary' },
-                { key: 'assign', label: 'Assign tester', class: 'text-secondary' },
-                { key: 'view-assigned', label: 'View assigned testers' },
+                { key: 'assign', label: 'Assign user', class: 'text-secondary' },
+                { key: 'view-assigned', label: 'View assigned users' },
                 { key: 'delete', label: 'Delete', class: 'text-error' },
               ],
               cellClass: () => 'text-right'
@@ -645,8 +645,8 @@ export class ManagementComponent {
             meta: {
               actions: [
                 { key: 'edit', label: 'Edit', class: 'text-primary' },
-                { key: 'assign', label: 'Assign tester', class: 'text-secondary' },
-                { key: 'view-assigned', label: 'View assigned testers' },
+                { key: 'assign', label: 'Assign user', class: 'text-secondary' },
+                { key: 'view-assigned', label: 'View assigned users' },
                 { key: 'delete', label: 'Delete', class: 'text-error' },
               ],
               cellClass: () => 'text-right'
@@ -702,7 +702,7 @@ export class ManagementComponent {
             meta: {
               actions: [
                 { key: 'assign', label: 'Assign', class: 'text-accent' },
-                { key: 'view-assigned', label: 'View assigned testers', class: 'text-secondary' },
+                { key: 'view-assigned', label: 'View assigned users', class: 'text-secondary' },
                 { key: 'edit', label: 'Edit', class: 'text-primary' },
                 { key: 'delete', label: 'Delete', class: 'text-error' },
               ],
@@ -735,8 +735,8 @@ export class ManagementComponent {
             meta: {
               actions: [
                 ...(this.isSuperAdmin() ? [{ key: 'edit', label: 'Edit', class: 'text-primary' }] : []),
-                { key: 'assign', label: 'Assign tester', class: 'text-secondary' },
-                { key: 'view-assigned', label: 'View assigned testers' },
+                { key: 'assign', label: 'Assign user', class: 'text-secondary' },
+                { key: 'view-assigned', label: 'View assigned users' },
                 { key: 'delete', label: 'Delete', class: 'text-error' },
               ],
               cellClass: () => 'text-right'
@@ -1380,25 +1380,38 @@ export class ManagementComponent {
       action: 'assign'
     }
   ]);
-
+  private adminRoleId = computed<number | null>(() => {
+    const match = this.roleOptions().find(r => r.label.toLowerCase() === 'admin');
+    if (!match) return null;
+    const n = Number(match.value);
+    return Number.isFinite(n) ? n : null;
+  });
   private loadTesterOptionsForTenant() {
     let params = new HttpParams().set('limit', '1000');
+    // Load all active users (including both testers and admins) for assignment
+    params = params.set('is_active', 'true');
     const rid = this.testerRoleId();
+    const admin = this.adminRoleId();
     if (rid != null) params = params.set('role_id', String(rid));
+    if (admin != null) params = params.set('role_id', String(admin));
     if (this.isSuperAdmin()) {
       const tid = this.selectedTenantId();
       if (tid != null) params = params.set('tenant_id', String(tid));
     }
     this.api.getUsers(params).subscribe({
       next: (res) => {
-        const opts = (res.data ?? []).map(u => ({ label: u.user_name || u.name, value: String(u.id) }));
+        // Include role name in the label for clarity
+        const opts = (res.data ?? []).map(u => ({ 
+          label: `${u.name || u.user_name}`, 
+          value: String(u.id) 
+        }));
         this.testerOptions.set(opts);
         // Don't auto-select any tester - require explicit selection
       },
       error: (error) => {
-        console.error('Failed to load tester options:', error);
+        console.error('Failed to load user options:', error);
         this.testerOptions.set([]);
-        this.toast.loadingError('available testers');
+        this.toast.loadingError('available users');
       }
     });
   }
@@ -1464,7 +1477,7 @@ export class ManagementComponent {
   submitAssign() {
     const testerId = this.selectedAssignTesterId();
     if (testerId == null) {
-      this.toast.validationError('Please select a tester before assigning');
+      this.toast.validationError('Please select a user before assigning');
       return;
     }
     this.loading.set(true);
