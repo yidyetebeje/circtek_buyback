@@ -171,6 +171,9 @@ export class PurchasesRepository {
     if (filters.date_to) {
       conditions.push(lte(purchases.created_at, new Date(filters.date_to)));
     }
+    if ((filters as any).warehouse_id) {
+      conditions.push(eq(purchases.warehouse_id, (filters as any).warehouse_id));
+    }
     if (filters.search) {
       const pattern = `%${filters.search}%`;
       conditions.push(

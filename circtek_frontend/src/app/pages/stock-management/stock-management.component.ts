@@ -52,6 +52,7 @@ export class StockManagementComponent {
   fromWarehouseId = signal<number | null>(null); // transfers
   toWarehouseId = signal<number | null>(null); // transfers
   transferStatus = signal<'any' | 'pending' | 'completed'>('any'); // transfers
+  purchaseWarehouseId = signal<number | null>(null); // purchases
   purchaseReceivingStatus = signal<'all' | 'pending' | 'completed'>('all'); // purchases
 
   // Options
@@ -181,6 +182,7 @@ export class StockManagementComponent {
       ] });
     }
     if (tab === 'purchases') {
+      list.push({ key: 'warehouse_id', label: 'Warehouse', type: 'select', options: this.warehouseOptions() });
       // Omit the explicit 'All' option to avoid duplication; the generic selector provides it
       list.push({ key: 'receiving_status', label: 'Receiving Status', type: 'select', options: [
         { label: 'Pending', value: 'pending' },
@@ -233,6 +235,12 @@ export class StockManagementComponent {
           } },
           { header: 'Supplier Order No.', accessorKey: 'supplier_order_no' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Supplier', accessorKey: 'supplier_name' as any, meta: { truncateText: true, truncateMaxWidth: '180px' } },
+          { header: 'Warehouse', id: 'warehouse_name', accessorFn: (r: any) => {
+            const wid = r.warehouse_id;
+            if (wid == null) return '-';
+            const opt = this.warehouseOptions().find(o => Number(o.value) === wid);
+            return opt?.label ?? `WH ${wid}`;
+          } },
           { header: 'Expected', id: 'expected_delivery_date', accessorFn: (r: any) => {
             if (!r.expected_delivery_date) return '-';
             const date = new Date(r.expected_delivery_date);
@@ -339,14 +347,23 @@ export class StockManagementComponent {
     this.sortBy.set(sb ?? null);
     this.sortDir.set(sd ?? null);
 
-    this.selectedWarehouseId.set(optNum('warehouse_id'));
+    // Stock filters
+    if (this.activeTab() === 'stock') {
+      this.selectedWarehouseId.set(optNum('warehouse_id'));
+    }
     const ip = str('is_part', 'any'); this.selectedIsPart.set(ip === 'true' || ip === 'false' ? (ip as any) : 'any');
     this.lowStockThreshold.set(optNum('low_stock_threshold'));
     this.groupByBatch.set(str('group_by_batch') === 'true');
 
+    // Transfer filters
     this.fromWarehouseId.set(optNum('from_warehouse_id'));
     this.toWarehouseId.set(optNum('to_warehouse_id'));
     const ts = str('status', 'any'); this.transferStatus.set(ts === 'pending' || ts === 'completed' ? (ts as any) : 'any');
+    
+    // Purchase filters
+    if (this.activeTab() === 'purchases') {
+      this.purchaseWarehouseId.set(optNum('warehouse_id'));
+    }
     const prs = str('receiving_status', 'all'); this.purchaseReceivingStatus.set(prs === 'pending' || prs === 'completed' ? (prs as any) : 'all');
     
 
@@ -384,6 +401,9 @@ export class StockManagementComponent {
       this.selectedIsPart();
       this.lowStockThreshold();
       this.groupByBatch();
+      // purchases
+      this.purchaseWarehouseId();
+      this.purchaseReceivingStatus();
       // transfers
       this.fromWarehouseId();
       this.toWarehouseId();
@@ -411,6 +431,7 @@ export class StockManagementComponent {
         if (this.groupByBatch()) query['group_by_batch'] = 'true';
       }
       if (this.activeTab() === 'purchases') {
+        const pwid = this.purchaseWarehouseId(); if (pwid != null) query['warehouse_id'] = String(pwid);
         if (this.purchaseReceivingStatus() !== 'all') query['receiving_status'] = this.purchaseReceivingStatus();
       }
       if (this.activeTab() === 'transfers') {
@@ -483,6 +504,7 @@ export class StockManagementComponent {
       const sb = this.sortBy(); const sd = this.sortDir();
       if (sb) params = params.set('sort_by', sb);
       if (sd) params = params.set('sort_dir', sd);
+      const pwid = this.purchaseWarehouseId(); if (pwid != null) params = params.set('warehouse_id', String(pwid));
       const rs = this.purchaseReceivingStatus(); if (rs !== 'all') params = params.set('receiving_status', rs);
       this.api.getPurchases(params).subscribe({
         next: (res) => {
@@ -574,6 +596,7 @@ export class StockManagementComponent {
     }
 
     if (this.activeTab() === 'purchases') {
+      this.purchaseWarehouseId.set(parseNum(f['warehouse_id']));
       const rs = f['receiving_status']; this.purchaseReceivingStatus.set(rs === 'pending' || rs === 'completed' ? (rs as any) : 'all');
     }
 
@@ -605,8 +628,11 @@ export class StockManagementComponent {
       // reset sorting when tab changes
       this.sortBy.set(null);
       this.sortDir.set(null);
-      // reset purchases filter
-      if (k === 'purchases') this.purchaseReceivingStatus.set('all');
+      // reset purchases filters
+      if (k === 'purchases') {
+        this.purchaseWarehouseId.set(null);
+        this.purchaseReceivingStatus.set('all');
+      }
     }
   }
 

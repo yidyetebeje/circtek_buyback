@@ -50,6 +50,7 @@ export const PurchaseItemUpdate = t.Object({
 export const PurchaseQuery = t.Object({
   supplier_name: t.Optional(t.String()),
   purchase_order_no: t.Optional(t.String()),
+  warehouse_id: t.Optional(t.String()),
   status: t.Optional(t.String()),
   // Filter by receiving status of the purchase (derived from received_items vs ordered quantities)
   receiving_status: t.Optional(t.Union([t.Literal('pending'), t.Literal('completed')])),
