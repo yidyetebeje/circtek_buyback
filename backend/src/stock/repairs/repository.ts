@@ -567,7 +567,7 @@ export class RepairsRepository {
       .leftJoin(devices, eq(repairs.device_id, devices.id))
       .where(and(...conditions))
       .groupBy(users.id, users.name)
-      .orderBy(desc(sql<string>`COALESCE(SUM(${repair_items.cost} * ${repair_items.quantity}), 0)`))
+      .orderBy(desc(sql<number>`COUNT(DISTINCT ${repairs.id})`))
 
     return results
       .filter(r => r.user_id !== null)
