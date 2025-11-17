@@ -148,19 +148,19 @@ export function SplitCheckout({
         return;
     }
 
-    const clientIdString = process.env.NEXT_PUBLIC_CLIENT_ID;
+    const tenantIdString = process.env.NEXT_PUBLIC_TENANT_ID;
     const shopIdString = process.env.NEXT_PUBLIC_SHOP_ID;
 
-    if (!clientIdString || !shopIdString) {
+    if (!tenantIdString || !shopIdString) {
       console.error("Client ID or Shop ID is not configured in environment variables.");
       alert(t('messages.configurationError'));
       return;
     }
 
-    const clientId = parseInt(clientIdString, 10);
+    const tenantId = parseInt(tenantIdString, 10);
     const shopId = parseInt(shopIdString, 10);
 
-    if (isNaN(clientId) || isNaN(shopId)) {
+    if (isNaN(tenantId) || isNaN(shopId)) {
         console.error("Client ID or Shop ID from env is not a valid number.");
         alert(t('messages.invalidConfigError'));
         return;
@@ -209,7 +209,7 @@ export function SplitCheckout({
         phoneNumber: data.phoneNumber,
         email: data.email,
       },
-      clientId: clientId,
+      tenantId: tenantId,
       shopId: shopId,
     };
 

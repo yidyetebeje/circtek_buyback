@@ -112,12 +112,12 @@ export const featuredDeviceController = {
       return { data: [], total: 0, page, limit };
     }
 
-    let filterClientId: number | undefined;
+    let filterTenantId: number | undefined;
     if (currentRole === 'super_admin') {
-      filterClientId = query.tenantId;
+      filterTenantId = query.tenantId;
     } else {
       // Public requests may optionally filter by tenantId via query params
-      filterClientId = query.tenantId;
+      filterTenantId = query.tenantId;
     }
 
     // For unauthenticated requests, always enforce published items
@@ -127,7 +127,7 @@ export const featuredDeviceController = {
       shopIds: shopIdsToFilter,
       modelId: query.modelId,
       modelTitle: query.modelTitle,
-      tenantId: filterClientId,
+      tenantId: filterTenantId,
       isPublished: effectiveIsPublished,
       orderBy: query.orderBy || 'createdAt',
       orderDirection: query.order || 'desc',

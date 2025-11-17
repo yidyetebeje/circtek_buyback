@@ -30,11 +30,11 @@ export const useCategory = (id: number) => {
 /**
  * Hook for retrieving a category by its slug
  */
-export const useCategoryBySlug = (slug: string, clientId: number) => {
+export const useCategoryBySlug = (slug: string, tenant_id: number) => {
   return useQuery({
-    queryKey: ['category', 'slug', slug, clientId],
-    queryFn: () => categoryService.getCategoryBySlug(slug, clientId),
-    enabled: !!slug && !!clientId,
+    queryKey: ['category', 'slug', slug, tenant_id],
+    queryFn: () => categoryService.getCategoryBySlug(slug, tenant_id),
+    enabled: !!slug && !!tenant_id,
   });
 };
 

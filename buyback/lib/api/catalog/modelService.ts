@@ -36,8 +36,8 @@ export class ModelService {
   /**
    * Get a model by slug and client ID
    */
-  async getModelBySlug(slug: string, clientId: number): Promise<ApiResponse<Model>> {
-    return this.apiClient.get<ApiResponse<Model>>(`${this.baseEndpoint}/slug/${slug}/client/${clientId}`);
+  async getModelBySlug(slug: string, tenantId: number): Promise<ApiResponse<Model>> {
+    return this.apiClient.get<ApiResponse<Model>>(`${this.baseEndpoint}/slug/${slug}/client/${tenantId}`);
   }
 
   /**

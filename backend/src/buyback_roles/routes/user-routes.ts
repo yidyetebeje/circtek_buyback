@@ -1,4 +1,4 @@
-import { Elysia, error, t } from 'elysia';
+import { Elysia, t } from 'elysia';
 import { UserController, type HandlerContext } from '../controllers/user-controller';
 import { requireRole } from '../../auth';
 import { UserService } from '../services/user-service'; // Import UserService
@@ -23,7 +23,7 @@ export const userRoutes = new Elysia({ prefix: '' })
   .decorate('userService', userService) // Decorate with userService instance
   .group('/users', (group) =>
     group
-      .use(requireRole(['admin', 'user']))
+      .use(requireRole(['admin', 'shop_manager']))
       .get('/', (context) => userController.listUsersHandler({
         ...context,
         userService,

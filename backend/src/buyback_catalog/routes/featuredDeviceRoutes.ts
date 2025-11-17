@@ -22,7 +22,7 @@ const publicFeaturedDeviceApi = new Elysia()
         order: t.Optional(t.Enum({ asc: 'asc', desc: 'desc' }, { default: 'desc' })),
         shopId: t.Optional(t.Numeric()),
         modelId: t.Optional(t.Numeric()),
-        clientId: t.Optional(t.Numeric()), // This might be used for public filtering
+        tenantId: t.Optional(t.Numeric()), // This might be used for public filtering
         isPublished: t.Optional(t.Boolean({ default: true })) // Default to true for public view
       }),
       detail: {
@@ -96,7 +96,7 @@ const authenticatedFeaturedDeviceApi = new Elysia()
         order: t.Optional(t.Enum({ asc: 'asc', desc: 'desc' }, { default: 'desc' })),
         shopId: t.Optional(t.Numeric()),
         modelId: t.Optional(t.Numeric()),
-        clientId: t.Optional(t.Numeric()), // Allows super-admin to filter by client
+        tenantId: t.Optional(t.Numeric()), // Allows super-admin to filter by client
         isPublished: t.Optional(t.Boolean()), // Authenticated users can filter by true, false, or omit for all
         modelTitle: t.Optional(t.String()),
         shopName: t.Optional(t.String())

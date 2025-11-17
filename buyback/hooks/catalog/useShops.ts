@@ -147,7 +147,7 @@ export const usePublishedModelsByCategorySlug = (
     search?: string;
     brandId?: number;
     modelSeriesId?: number;
-    clientId?: number;
+    tenantId?: number;
   }
 ) => {
   return useQuery({

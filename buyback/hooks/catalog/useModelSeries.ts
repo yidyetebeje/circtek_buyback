@@ -30,11 +30,11 @@ export const useModelSeriesById = (id: number) => {
 /**
  * Hook for retrieving a model series by its slug
  */
-export const useModelSeriesBySlug = (slug: string, clientId: number) => {
+export const useModelSeriesBySlug = (slug: string, tenantId: number) => {
   return useQuery({
-    queryKey: ['modelSeries', 'slug', slug, clientId],
-    queryFn: () => modelSeriesService.getModelSeriesBySlug(slug, clientId),
-    enabled: !!slug && !!clientId,
+    queryKey: ['modelSeries', 'slug', slug, tenantId],
+    queryFn: () => modelSeriesService.getModelSeriesBySlug(slug, tenantId),
+    enabled: !!slug && !!tenantId,
   });
 };
 

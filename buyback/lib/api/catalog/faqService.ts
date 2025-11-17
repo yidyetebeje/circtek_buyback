@@ -67,7 +67,7 @@ export class FAQService {
     order_no?: number;
     is_published?: boolean;
     shop_id: number;
-    client_id: number;
+    tenant_id: number;
     translations: {
       language_id: number;
       question: string;

@@ -13,7 +13,7 @@ export interface ApiCategory {
   meta_keywords?: string | null;
   meta_canonical_url?: string | null;
   order_no?: number | null;
-  client_id?: number;
+  tenant_id?: number;
   createdAt?: string;
   updatedAt?: string;
   is_published?: number;

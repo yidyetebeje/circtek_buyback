@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       shopInfo = {
         id: 0,
         name: "Default Shop",
-        client_id: 0,
+        tenant_id: 0,
         owner_id: 0,
         logo: "",
         icon: "",
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     shopInfo = {
       id: 0,
       name: "Default Shop",
-      client_id: 0,
+      tenant_id: 0,
       owner_id: 0,
       logo: "",
       icon: "",

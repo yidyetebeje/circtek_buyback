@@ -30,11 +30,11 @@ export const useBrand = (id: number) => {
 /**
  * Hook for retrieving a brand by its slug
  */
-export const useBrandBySlug = (slug: string, clientId: number) => {
+export const useBrandBySlug = (slug: string, tenantId: number) => {
   return useQuery({
-    queryKey: ['brand', 'slug', slug, clientId],
-    queryFn: () => brandService.getBrandBySlug(slug, clientId),
-    enabled: !!slug && !!clientId,
+    queryKey: ['brand', 'slug', slug, tenantId],
+    queryFn: () => brandService.getBrandBySlug(slug, tenantId),
+    enabled: !!slug && !!tenantId,
   });
 };
 

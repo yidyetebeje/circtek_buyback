@@ -16,13 +16,15 @@ export default function CreateModelSeriesPage() {
 
   // State for image preview
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const tenant_id = parseInt(process.env.NEXT_PUBLIC_TENANT_ID || '1', 10);
+  
 
   const handleCreateModelSeries = async (values: ModelSeriesFormValues) => {
     try {
       // Prepare payload without image (image will be uploaded separately if needed)
-      const modelSeriesPayload: Omit<ModelSeries, 'client_id'> & { tenant_id: number } = {
+      const modelSeriesPayload: Omit<ModelSeries, 'tenant_id'> & { tenant_id: number } = {
         id: undefined,
-        tenant_id: 1,
+        tenant_id: tenant_id,
         title: values.name,
         image: null, // initial image is handled separately
         description: values.description || null,

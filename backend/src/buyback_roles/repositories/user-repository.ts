@@ -13,7 +13,6 @@ export class UserRepository {
         id: users.id,
         name: users.name,
         user_name: users.user_name,
-        email: users.email,
         role_id: users.role_id,
         status: users.status,
         tenant_id: users.tenant_id,
@@ -43,19 +42,19 @@ export class UserRepository {
     return result[0] || null;
   }
 
-  async findByEmail(email: string) {
+  async findByUserName(userName: string) {
     const result = await db
       .select({
         id: users.id,
       })
       .from(users)
-      .where(eq(users.email, email))
+      .where(eq(users.user_name, userName))
       .limit(1);
 
     return result[0] || null;
   }
 
-  async findByUserName(userName: string) {
+  async findByEmail(userName: string) {
     const result = await db
       .select({
         id: users.id,
@@ -86,16 +85,15 @@ export class UserRepository {
     return await bcrypt.hash(password, salt);
   }
 
-  async createUserWithRole(userData: CreateUserWithRoleDTO, roleId: number, clientId: number) {
+  async createUserWithRole(userData: CreateUserWithRoleDTO, roleId: number, tenantId: number) {
     const hashedPassword = await this.hashPassword(userData.password);
     
     await db.insert(users).values({
       name: userData.fName + ' ' + (userData.lName || ''),
       user_name: userData.userName,
-      email: userData.email,
       password: hashedPassword,
       role_id: roleId,
-      tenant_id: clientId,
+      tenant_id: tenantId,
       warehouse_id: userData.warehouseId,
       managed_shop_id: userData.managed_shop_id,
       created_at: new Date(),
@@ -107,7 +105,7 @@ export class UserRepository {
         id: users.id,
       })
       .from(users)
-      .where(eq(users.email, userData.email))
+      .where(eq(users.user_name, userData.userName))
       .limit(1);
 
     if (result.length === 0) return null;
@@ -136,7 +134,6 @@ export class UserRepository {
       id: currentUser.id,
       name: currentUser.name || '',
       user_name: currentUser.user_name || '',
-      email: currentUser.email || '',
     };
   }
 
@@ -158,15 +155,15 @@ export class UserRepository {
     }
 
     // Check for unique constraints if updating email or username
-    if (updateData.email && updateData.email !== existingUser.email) {
-      const emailExists = await db
+    if (updateData.user_name && updateData.user_name !== existingUser.user_name) {
+      const userNameExists = await db
         .select({ id: users.id })
         .from(users)
-        .where(and(eq(users.email, updateData.email), ne(users.id, userId)))
+        .where(and(eq(users.user_name, updateData.user_name), ne(users.id, userId)))
         .limit(1);
       
-      if (emailExists.length > 0) {
-        throw new Error('Email is already in use by another user.');
+      if (userNameExists.length > 0) {
+        throw new Error('User name is already in use by another user.');
       }
     }
 
@@ -228,7 +225,6 @@ export class UserRepository {
       const searchableStringColumns = [
         users.name,
         users.user_name,
-        users.email,
       ];
       
       const searchSqlConditions = searchableStringColumns
@@ -265,7 +261,7 @@ export class UserRepository {
     const baseQuery = db
       .select({
         id: users.id, name: users.name, user_name: users.user_name,
-        email: users.email, status: users.status, created_at: users.created_at, updated_at: users.updated_at,
+        status: users.status, created_at: users.created_at, updated_at: users.updated_at,
         role_id: users.role_id, roleName: roles.name,
         tenant_id: users.tenant_id, 
       })

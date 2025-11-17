@@ -7,7 +7,7 @@ export interface Warehouse {
   name: string;
   location: string;
   active: boolean;
-  clientId: number;
+  tenantId: number;
   timeZone?: string;
   shopId?: number;
   publishedInShops?: { shop_id: number }[];
@@ -19,7 +19,7 @@ export interface PaginatedWarehouseResponse {
 }
 
 export interface WarehouseListParams {
-  clientId?: number;
+  tenantId?: number;
   shopId?: number;
   page?: number;
   pageSize?: number;
@@ -62,7 +62,7 @@ class WarehouseService {
 
   async createWarehouse(data: {
     warehouseName: string;
-    clientId?: number;
+    tenantId?: number;
     timeZone?: string;
     status?: boolean;
   }): Promise<ApiResponse<Warehouse>> {

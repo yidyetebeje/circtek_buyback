@@ -13,7 +13,7 @@ export interface SortParams {
 }
 
 export interface ClientFilter {
-  clientId?: number;
+  tenantId?: number;
 }
 
 export interface QueryParams extends PaginationParams, SortParams, ClientFilter {

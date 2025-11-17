@@ -18,7 +18,7 @@ export interface PublishedModelsParams extends QueryParams {
   categoryId?: number;
   brandId?: number;
   modelSeriesId?: number;
-  clientId?: number;
+  tenantId?: number;
 }
 
 export class ShopService {
@@ -155,7 +155,7 @@ export class ShopService {
       search?: string;
       brandId?: number;
       modelSeriesId?: number;
-      clientId?: number;
+      tenantId?: number;
     }
   ): Promise<PaginatedResponse<Model>> {
     return this.apiClient.get<PaginatedResponse<Model>>(

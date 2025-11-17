@@ -75,7 +75,7 @@ const createAdminOrderSchema = {
   body: t.Object({
     ...baseOrderObject,
     shopId: t.Number({ minimum: 1, error: "Shop ID is required" }),
-    clientId: t.Optional(t.Number({ minimum: 1 })), // Optional for admin creation, will be determined by service
+    tenantId: t.Optional(t.Number({ minimum: 1 })), // Optional for admin creation, will be determined by service
     
     status: t.Optional(t.Enum(ORDER_STATUS)),
     finalPrice: t.Number({ minimum: 0, error: "Final price is required" }),
@@ -109,7 +109,7 @@ const listOrdersQueryBaseSchema = {
 // Following warehouse pattern - single query schema that handles all user types
 const listOrdersQuerySchema = t.Object({
   ...listOrdersQueryBaseSchema,
-  clientId: t.Optional(t.Numeric()), // For admin filtering by specific client
+  tenantId: t.Optional(t.Numeric()), // For admin filtering by specific client
 });
 
 const deviceEligibilityQuerySchema = t.Object({
@@ -145,7 +145,7 @@ export const orderRoutes = new Elysia({ prefix: "/orders" })
       query: listOrdersQuerySchema,
       detail: { 
         summary: "List orders with role-based filtering", 
-        description: "Retrieves a list of buyback orders. Access is filtered based on user role and shop permissions. Admin users can optionally filter by clientId. Supports filtering by status, date range, and pagination.",
+        description: "Retrieves a list of buyback orders. Access is filtered based on user role and shop permissions. Admin users can optionally filter by tenantId. Supports filtering by status, date range, and pagination.",
         tags: ["Orders"] 
       }
     })

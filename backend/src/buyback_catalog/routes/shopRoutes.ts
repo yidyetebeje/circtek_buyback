@@ -116,7 +116,7 @@ const publicShopApi = new Elysia()
       const orderBy = String(ctx.query.orderBy || 'title');
       const order = String(ctx.query.order || 'asc') as 'asc' | 'desc';
       const search = ctx.query.search ? String(ctx.query.search) : undefined;
-      const clientId = ctx.query.clientId ? parseInt(String(ctx.query.clientId), 10) : undefined;
+      const tenantId = ctx.query.tenantId ? parseInt(String(ctx.query.tenantId), 10) : undefined;
       
       const simplifiedCtx = { set: ctx.set };
       
@@ -126,7 +126,7 @@ const publicShopApi = new Elysia()
         orderBy,
         order,
         search,
-        clientId
+        tenantId
       }, simplifiedCtx as Context);
     },
     {
@@ -137,7 +137,7 @@ const publicShopApi = new Elysia()
         orderBy: t.Optional(t.String({ default: 'title' })),
         order: t.Optional(t.Enum({ asc: 'asc', desc: 'desc' }, { default: 'asc' })),
         search: t.Optional(t.String()),
-        clientId: t.Optional(t.Numeric())
+        tenantId: t.Optional(t.Numeric())
       }),
       detail: {
         summary: 'Get Published Model Series in Shop',
@@ -163,7 +163,7 @@ const publicShopApi = new Elysia()
       const categoryId = ctx.query.categoryId ? parseInt(String(ctx.query.categoryId), 10) : undefined;
       const brandId = ctx.query.brandId ? parseInt(String(ctx.query.brandId), 10) : undefined;
       const modelSeriesId = ctx.query.modelSeriesId ? parseInt(String(ctx.query.modelSeriesId), 10) : undefined;
-      const clientId = ctx.query.clientId ? parseInt(String(ctx.query.clientId), 10) : undefined;
+      const tenantId = ctx.query.tenantId ? parseInt(String(ctx.query.tenantId), 10) : undefined;
       
       const simplifiedCtx = { set: ctx.set };
       
@@ -176,7 +176,7 @@ const publicShopApi = new Elysia()
         categoryId,
         brandId,
         modelSeriesId,
-        clientId
+        tenantId
       }, simplifiedCtx as Context);
     },
     {
@@ -190,7 +190,7 @@ const publicShopApi = new Elysia()
         categoryId: t.Optional(t.Numeric()),
         brandId: t.Optional(t.Numeric()),
         modelSeriesId: t.Optional(t.Numeric()),
-        clientId: t.Optional(t.Numeric())
+        tenantId: t.Optional(t.Numeric())
       }),
       detail: {
         summary: 'Get Published Models in Shop',
@@ -221,7 +221,7 @@ const publicShopApi = new Elysia()
       const search = ctx.query.search ? String(ctx.query.search) : undefined;
       const brandId = ctx.query.brandId ? parseInt(String(ctx.query.brandId), 10) : undefined;
       const modelSeriesId = ctx.query.modelSeriesId ? parseInt(String(ctx.query.modelSeriesId), 10) : undefined;
-      const clientId = ctx.query.clientId ? parseInt(String(ctx.query.clientId), 10) : undefined;
+      const tenantId = ctx.query.tenantId ? parseInt(String(ctx.query.tenantId), 10) : undefined;
       
       const simplifiedCtx = { set: ctx.set };
       
@@ -233,7 +233,7 @@ const publicShopApi = new Elysia()
         search,
         brandId,
         modelSeriesId,
-        clientId
+        tenantId
       }, simplifiedCtx as Context);
     },
     {
@@ -249,7 +249,7 @@ const publicShopApi = new Elysia()
         search: t.Optional(t.String()),
         brandId: t.Optional(t.Numeric()),
         modelSeriesId: t.Optional(t.Numeric()),
-        clientId: t.Optional(t.Numeric())
+        tenantId: t.Optional(t.Numeric())
       }),
       detail: {
         summary: 'Get Published Models by Category Slug in Shop',
@@ -447,7 +447,7 @@ const authenticatedShopApi = new Elysia()
       ctx.set.status = 400;
       return { error: 'Tenant ID could not be determined from user information' };
     }
-    // For admin users, clientId filtering is optional via query params
+    // For admin users, tenantId filtering is optional via query params
     return shopController.getAll({ 
       ...ctx, 
       query: queryParams as Record<string, string>
@@ -458,7 +458,7 @@ const authenticatedShopApi = new Elysia()
         limit: t.Optional(t.Numeric({ minimum: 1, default: 20 })),
         orderBy: t.Optional(t.String({ default: 'name' })),
         order: t.Optional(t.Enum({ asc: 'asc', desc: 'desc' }, { default: 'asc' })),
-        clientId: t.Optional(t.Numeric()),
+        tenantId: t.Optional(t.Numeric()),
         ownerId: t.Optional(t.Numeric()),
         active: t.Optional(t.Boolean()),
         search: t.Optional(t.String())

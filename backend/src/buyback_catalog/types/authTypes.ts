@@ -6,7 +6,7 @@ export interface JwtUser {
   lName?: string;
   userName?: string;
   email?: string;
-  clientId?: number;
+  tenantId?: number;
   roleId?: number;
   roleName?: string;
   roleSlug?: string;

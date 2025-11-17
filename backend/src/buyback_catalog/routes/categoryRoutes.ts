@@ -49,7 +49,7 @@ export const categoryRoutes = new Elysia({ prefix: '/categories' })
   )
   
   // GET category by slug
-  .get('/slug/:slug/client/:clientId', 
+  .get('/slug/:slug/client/:tenantId', 
     async (ctx) => {
       return await categoryController.getCategoryBySlug(ctx as any);
     }, {

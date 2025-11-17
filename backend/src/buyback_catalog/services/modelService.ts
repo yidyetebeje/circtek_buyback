@@ -34,10 +34,10 @@ export class ModelService {
     return model;
   }
 
-  async getModelBySlug(slug: string, clientId: number) {
-    const model = await modelRepository.findBySlug(slug, clientId);
+  async getModelBySlug(slug: string, tenantId: number) {
+    const model = await modelRepository.findBySlug(slug, tenantId);
     if (!model) {
-      throw new NotFoundError(`Model with slug ${slug} not found for client ${clientId}.`);
+      throw new NotFoundError(`Model with slug ${slug} not found for client ${tenantId}.`);
     }
     return model;
   }
@@ -69,15 +69,17 @@ export class ModelService {
 
     // Create the main model entry
     const newModel = await modelRepository.create(modelData);
-    if (!newModel) {
+    if (!newModel || !('id' in newModel)) {
       throw new InternalServerError('Failed to create model.');
     }
+
+    const modelId = newModel.id as number;
 
     // Insert price drops if provided
     if (priceDrops && priceDrops.length > 0) {
       const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
       await db.insert(model_test_price_drops).values(priceDrops.map(pd => ({
-        model_id: newModel.id,
+        model_id: modelId,
         test_name: pd.test_name,
         price_drop: pd.price_drop,
         created_at: now,
@@ -90,13 +92,13 @@ export class ModelService {
       for (const transData of translations) {
         await modelRepository.createTranslation({
           ...transData,
-          model_id: newModel.id
+          model_id: modelId
         });
       }
     }
 
     // Return the newly created model with its translations
-    return modelRepository.findById(newModel.id);
+    return modelRepository.findById(modelId);
   }
 
   /**
@@ -192,9 +194,9 @@ export class ModelService {
     }
 
     // Delete the model image from S3 if it exists
-    if (model.model_image) {
+    if (model.models.model_image) {
       try {
-        await s3Service.deleteFile(model.model_image);
+        await s3Service.deleteFile(model.models.model_image);
       } catch (error) {
         console.error(`Failed to delete image for model ${id}:`, error);
         // Continue with deletion even if image deletion fails
@@ -424,9 +426,9 @@ export class ModelService {
     }
 
     // Delete old image if it exists
-    if (model.model_image) {
+    if (model.models.model_image) {
       try {
-        await s3Service.deleteFile(model.model_image);
+        await s3Service.deleteFile(model.models.model_image);
       } catch (error) {
         console.error(`Failed to delete old image for model ${id}:`, error);
         // Continue with upload even if old image deletion fails

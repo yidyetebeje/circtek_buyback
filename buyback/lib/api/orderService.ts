@@ -166,7 +166,7 @@ export interface AdminListOrdersParams {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   search?: string;
-  clientId?: number; // For admin to filter by a specific client ID
+  tenantId?: number; // For admin to filter by a specific client ID
   shopId?: number; // Filter orders by shop ID
 }
 

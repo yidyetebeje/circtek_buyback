@@ -6,7 +6,7 @@ export interface FeaturedDevice {
   id: number;
   modelId: number;
   shopId: number;
-  clientId?: number;
+  tenantId?: number;
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
@@ -35,7 +35,7 @@ export interface FeaturedDevice {
 export interface CreateFeaturedDevicePayload {
   modelId: number;
   shopId: number;
-  clientId?: number;
+  tenantId?: number;
   isPublished?: boolean;
 }
 
@@ -52,7 +52,7 @@ export interface FeaturedDeviceFilters extends Record<string, string | number | 
   order?: 'asc' | 'desc';
   shopId?: number | number[];
   modelId?: number | number[];
-  clientId?: number | number[];
+  tenantId?: number | number[];
   isPublished?: boolean;
   modelTitle?: string;
   shopName?: string;

@@ -46,7 +46,7 @@ export type TModelCreate = {
   price_drops?: TModelTestPriceDrop[];
 };
 
-export type TModelUpdate = Partial<Omit<TModelCreate, 'client_id'>>
+export type TModelUpdate = Partial<Omit<TModelCreate, 'tenant_id'>>
 
 // ---------------- Schema Definitions ----------------
 

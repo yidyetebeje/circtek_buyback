@@ -2,8 +2,9 @@ import { UserRepository } from '../repositories/user-repository';
 import { RoleService } from './role-service';
 import { ShopAccessService } from './shopAccessService';
 import { CreateUserWithRoleDTO, UpdateUserRoleDTO, UpdateUserDTO, ListUsersQueryDTO } from '../types/user-types';
-import { NotFoundError, InternalServerError, error } from 'elysia';
+import { NotFoundError, InternalServerError, ValidationError } from 'elysia';
 import { type AuthContext } from '../types/auth-types';
+import { ForbiddenError } from '../../buyback/utils/errors';
 
 export class UserService {
   private userRepository: UserRepository;
@@ -16,7 +17,7 @@ export class UserService {
     this.shopAccessService = new ShopAccessService();
   }
 
-  async createUserWithRole(userData: CreateUserWithRoleDTO & { clientId: number }) {
+  async createUserWithRole(userData: CreateUserWithRoleDTO & { tenantId: number }) {
     // Check if username or email already exists
     const existingByEmail = await this.userRepository.findByEmail(userData.email);
     if (existingByEmail) {
@@ -35,7 +36,7 @@ export class UserService {
     }
 
     // Create the user with the role
-    const newUser = await this.userRepository.createUserWithRole(userData, role.id, userData.clientId);
+    const newUser = await this.userRepository.createUserWithRole(userData, role.id, userData.tenantId);
     if (!newUser) {
       throw new InternalServerError('Failed to create user or retrieve it after creation.');
     }
@@ -90,7 +91,6 @@ export class UserService {
       id: updatedUser.id,
       name: updatedUser.name,
       user_name: updatedUser.user_name,
-      email: updatedUser.email,
       roleName: role.name,
       roleSlug: role.name,
     };
@@ -113,7 +113,7 @@ export class UserService {
     if (updateData.email !== undefined) repositoryUpdateData.email = updateData.email;
     if (updateData.password !== undefined) repositoryUpdateData.password = updateData.password;
     if (updateData.status !== undefined) repositoryUpdateData.status = updateData.status;
-    if (updateData.clientId !== undefined) repositoryUpdateData.tenant_id = updateData.clientId;
+    if (updateData.tenantId !== undefined) repositoryUpdateData.tenant_id = updateData.tenantId;
     if (updateData.warehouseId !== undefined) repositoryUpdateData.warehouse_id = updateData.warehouseId;
 
     // Handle managed_shop_id
@@ -142,7 +142,7 @@ export class UserService {
       id: updatedUser.id,
       name: updatedUser.name || '',
       user_name: updatedUser.user_name || '',
-      email: updatedUser.email || '',
+
       status: updatedUser.status,
       role_id: updatedUser.role_id,
       roleName: role?.name || '',
@@ -155,40 +155,20 @@ export class UserService {
 
   // Method to list users with pagination, sorting, and filtering
   async listUsers(queryParams: ListUsersQueryDTO, authContext?: AuthContext) {
-    let filterByAuthClientId: number | undefined = undefined;
-
-    if (authContext) {
-      if ((authContext.roleSlug === 'client' || authContext.roleSlug === 'admin') && authContext.clientId !== undefined) {
-        filterByAuthClientId = authContext.clientId;
-        if(authContext.roleSlug === 'client'){
-          filterByAuthClientId = authContext.id;
-          if (queryParams.clientId !== undefined && queryParams.clientId !== filterByAuthClientId) {
-            console.warn(`Client admin attempted to query for clientId ${queryParams.clientId}, enforcing own clientId ${filterByAuthClientId}`);
-            queryParams.clientId = undefined;
-          }
-        }
-      } else if (authContext.roleSlug === 'super-admin') {
-        // Super admin behavior (can see all or filter by queryParams.clientId)
-      } else {
-        throw error(403, 'You do not have permission to list users with your current role.');
-      }
-    } else {
-      throw error(401, 'Authentication required to list users.');
+    let filterByAuthTenantId: number | undefined = undefined;
+    if(authContext?.roleSlug != 'super_admin'){
+      queryParams.tenantId = authContext?.tenantId;
+      filterByAuthTenantId = authContext?.tenantId;
     }
 
-    const result = await this.userRepository.findManyPaginated(queryParams, filterByAuthClientId);
+    const result = await this.userRepository.findManyPaginated(queryParams, filterByAuthTenantId);
     return result;
   }
   
   // Method to get a user by ID with role information
   async getUserById(userId: number, authContext?: AuthContext) {
-    if (!authContext) {
-      throw error(401, 'Authentication required to get user details.');
-    }
-    
-    // Only super-admin, admin, and client roles can access user details
-    if (!['super-admin', 'admin', 'client', 'shop_manager'].includes(authContext.roleSlug || '')) {
-      throw error(403, 'You do not have permission to access user details with your current role.');
+    if(!authContext){
+      throw new ForbiddenError('Authentication required to get user details.');
     }
     
     // Get the user
@@ -199,17 +179,8 @@ export class UserService {
     
     // For 'client' role, they can only access users from their own client account.
     // The client's own user ID is the `tenant_id` for all users under their account.
-    if (authContext.roleSlug === 'client') {
-      if (user.tenant_id !== authContext.id) {
-        throw new NotFoundError(`User not found or you don't have permission to access this user.`);
-      }
-    }
-    
-    // For 'admin' role, they can only access users from their assigned client.
-    if (authContext.roleSlug === 'admin' && authContext.clientId !== undefined) {
-      if (user.tenant_id !== authContext.clientId) {
-        throw new NotFoundError(`User not found or you don't have permission to access this user.`);
-      }
+    if (authContext.roleSlug != 'super_admin' && user.tenant_id !== authContext.tenantId) {
+      throw new ForbiddenError(`You do not have permission to access this user.`);
     }
     
     const role = user.role_id ? await this.userRepository.findRoleById(user.role_id) : null;
@@ -218,7 +189,7 @@ export class UserService {
       id: user.id,
       name: user.name,
       user_name: user.user_name,
-      email: user.email,
+   
       role_id: user.role_id,
       roleName: role?.name || '',
       roleSlug: role?.name || '',

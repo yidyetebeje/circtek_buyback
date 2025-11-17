@@ -18,8 +18,8 @@ export const PaginatedResponseSchema = <T extends TSchema>(schema: T) => t.Objec
 });
 
 // Client ID parameter for filtering by client
-export const ClientIdQuerySchema = t.Object({
-  clientId: t.Optional(t.Numeric({ minimum: 1 }))
+export const TenantIdQuerySchema = t.Object({
+  tenantId: t.Optional(t.Numeric({ minimum: 1 }))
 });
 
 // Standard success response
@@ -38,6 +38,6 @@ export const ErrorResponseSchema = t.Object({
 
 // Static types
 export type TPaginationQuery = Static<typeof PaginationQuerySchema>;
-export type TClientIdQuery = Static<typeof ClientIdQuerySchema>;
+export type TTenantIdQuery = Static<typeof TenantIdQuerySchema>;
 export type TSuccessResponse = Static<typeof SuccessResponseSchema>;
 export type TErrorResponse = Static<typeof ErrorResponseSchema>;

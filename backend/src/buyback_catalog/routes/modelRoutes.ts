@@ -2,11 +2,47 @@ import Elysia, { t, type Context } from 'elysia';
 import { modelController } from '../controllers/modelController';
 import { ModelCreateSchema, ModelUpdateSchema, FileUploadSchema, ModelTranslationCreateSingleSchema, ModelTranslationUpdateSingleSchema } from '../types/modelTypes';
 import { requireRole } from '../../auth'; 
+import { NotFoundError, BadRequestError, ConflictError } from '../utils/errors';
 
 export const modelRoutes = new Elysia({ prefix: '/models' })
   // Protect the GET /models route with authentication
   .use(requireRole([])) // Added authentication middleware
-  .get('/', (ctx) => modelController.getAll(ctx as any), { // Pass context, user will be injected
+  .get('/', async (ctx) => {
+    try {
+      const page = ctx.query.page ? Number(ctx.query.page) : undefined;
+      const limit = ctx.query.limit ? Number(ctx.query.limit) : undefined;
+      const orderBy = ctx.query.orderBy as string | undefined;
+      const order = ctx.query.order as 'asc' | 'desc' | undefined;
+      const category_id = ctx.query.category_id as string | undefined;
+      const brand_id = ctx.query.brand_id as string | undefined;
+      const series_id = ctx.query.series_id as string | undefined;
+      const title = ctx.query.title as string | undefined;
+      const tenant_id = ctx.query.tenant_id ? Number(ctx.query.tenant_id) : undefined;
+      const { currentTenantId } = ctx as any;
+
+      const result = await modelController.getAll({
+        page,
+        limit,
+        orderBy,
+        order,
+        category_id,
+        brand_id,
+        series_id,
+        title,
+        tenant_id,
+        currentTenantId
+      });
+      return result;
+    } catch (error: any) {
+      if (error instanceof BadRequestError) {
+        ctx.set.status = 400;
+        return { error: error.message };
+      }
+      console.error("Error in getAll route:", error);
+      ctx.set.status = 500;
+      return { error: 'Failed to retrieve models' };
+    }
+  }, {
     query: t.Object({
         page: t.Optional(t.Numeric({ minimum: 1, default: 1 })),
         limit: t.Optional(t.Numeric({ minimum: 1, default: 20 })),
@@ -27,13 +63,28 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
   
   // GET /models/{id} - Retrieve a specific model by ID - public read access
   .get('/:id',
-    (ctx) => { 
-        const numericId = parseInt(ctx.params.id, 10);
-        if (isNaN(numericId)) {
-            ctx.set.status = 400; // Bad Request
-            return { error: 'Invalid model ID format. ID must be a number.' };
+    async (ctx) => { 
+        try {
+          const numericId = parseInt(ctx.params.id, 10);
+          if (isNaN(numericId)) {
+              ctx.set.status = 400; // Bad Request
+              return { error: 'Invalid model ID format. ID must be a number.' };
+          }
+          const result = await modelController.getById(numericId);
+          return result;
+        } catch (error: any) {
+          if (error instanceof BadRequestError) {
+            ctx.set.status = 400;
+            return { error: error.message };
+          }
+          if (error instanceof NotFoundError) {
+            ctx.set.status = 404;
+            return { error: error.message };
+          }
+          console.error("Error in getById route:", error);
+          ctx.set.status = 500;
+          return { error: 'Failed to retrieve model' };
         }
-        return modelController.getById(numericId, ctx);
     },
     {
         detail: {
@@ -49,26 +100,38 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
     .use(requireRole([]))
     
     // POST /models - Create a new model
-    .post('/', (ctx) => {
-      // Get tenantId from authenticated user
-      const data = { ...ctx.body } as any;
-      const { currentUserId, currentTenantId } = ctx as any;
-      if (currentUserId) {
-        // Add tenant_id to the data
-        data.tenant_id = currentTenantId;
-        // Ensure client_id is a number as required by the schema
-        const tenantId = currentTenantId; // Using tenant as client for now
-        if (tenantId !== undefined) {
-          data.tenant_id = tenantId;
+    .post('/', async (ctx) => {
+      try {
+        // Get tenantId from authenticated user
+        const data = { ...ctx.body } as any;
+        const { currentUserId, currentTenantId, currentRole } = ctx as any;
+        if (currentUserId) {
+          // Add tenant_id to the data
+          data.tenant_id = currentTenantId;
+          // Ensure client_id is a number as required by the schema
+          const tenantId = currentTenantId; // Using tenant as client for now
+          if (tenantId !== undefined) {
+            data.tenant_id = tenantId;
+          } else {
+            ctx.set.status = 400;
+            return { error: 'Tenant ID could not be determined from user information' };
+          }
         } else {
-          ctx.set.status = 400;
-          return { error: 'Tenant ID could not be determined from user information' };
+          ctx.set.status = 401;
+          return { error: 'User must be authenticated to create a model' };
         }
-      } else {
-        ctx.set.status = 401;
-        return { error: 'User must be authenticated to create a model' };
+        const result = await modelController.create(data, currentTenantId, currentRole);
+        ctx.set.status = 201;
+        return result;
+      } catch (error: any) {
+        if (error instanceof BadRequestError) {
+          ctx.set.status = 400;
+          return { error: error.message };
+        }
+        console.error("Error in create route:", error);
+        ctx.set.status = 500;
+        return { error: 'Failed to create model' };
       }
-      return modelController.create(data, ctx);
     }, {
       body: ModelCreateSchema, 
       detail: { 
@@ -80,13 +143,28 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
 
     // PUT /models/{id} - Update a specific model by ID
     .put('/:id',
-      (ctx) => { 
-          const numericId = parseInt(ctx.params.id, 10);
-          if (isNaN(numericId)) {
+      async (ctx) => { 
+          try {
+            const numericId = parseInt(ctx.params.id, 10);
+            if (isNaN(numericId)) {
+                ctx.set.status = 400;
+                return { error: 'Invalid model ID format. ID must be a number.' };
+            }
+            const result = await modelController.update(numericId, ctx.body);
+            return result;
+          } catch (error: any) {
+            if (error instanceof BadRequestError) {
               ctx.set.status = 400;
-              return { error: 'Invalid model ID format. ID must be a number.' };
+              return { error: error.message };
+            }
+            if (error instanceof NotFoundError) {
+              ctx.set.status = 404;
+              return { error: error.message };
+            }
+            console.error("Error in update route:", error);
+            ctx.set.status = 500;
+            return { error: 'Failed to update model' };
           }
-          return modelController.update(numericId, ctx.body, ctx);
       },
       {
           body: ModelUpdateSchema, 
@@ -100,13 +178,29 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
 
     // DELETE /models/{id} - Delete a specific model by ID
     .delete('/:id',
-      (ctx) => { 
-          const numericId = parseInt(ctx.params.id, 10);
-          if (isNaN(numericId)) {
+      async (ctx) => { 
+          try {
+            const numericId = parseInt(ctx.params.id, 10);
+            if (isNaN(numericId)) {
+                ctx.set.status = 400;
+                return { error: 'Invalid model ID format. ID must be a number.' };
+            }
+            await modelController.delete(numericId);
+            ctx.set.status = 204;
+            return;
+          } catch (error: any) {
+            if (error instanceof BadRequestError) {
               ctx.set.status = 400;
-              return { error: 'Invalid model ID format. ID must be a number.' };
+              return { error: error.message };
+            }
+            if (error instanceof NotFoundError) {
+              ctx.set.status = 404;
+              return { error: error.message };
+            }
+            console.error("Error in delete route:", error);
+            ctx.set.status = 500;
+            return { error: 'Failed to delete model' };
           }
-          return modelController.delete(numericId, ctx);
       },
       {
           detail: {
@@ -118,13 +212,28 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
 
     // POST /models/{id}/image - Upload an image for a model
     .post('/:id/image',
-      (ctx) => { 
-          const numericId = parseInt(ctx.params.id, 10);
-          if (isNaN(numericId)) {
+      async (ctx) => { 
+          try {
+            const numericId = parseInt(ctx.params.id, 10);
+            if (isNaN(numericId)) {
+                ctx.set.status = 400;
+                return { error: 'Invalid model ID format. ID must be a number.' };
+            }
+            const result = await modelController.uploadImage(numericId, ctx.body.file);
+            return result;
+          } catch (error: any) {
+            if (error instanceof BadRequestError) {
               ctx.set.status = 400;
-              return { error: 'Invalid model ID format. ID must be a number.' };
+              return { error: error.message };
+            }
+            if (error instanceof NotFoundError) {
+              ctx.set.status = 404;
+              return { error: error.message };
+            }
+            console.error("Error in uploadImage route:", error);
+            ctx.set.status = 500;
+            return { error: 'Failed to upload model image' };
           }
-          return modelController.uploadImage(numericId, ctx.body.file, ctx);
       },
       {
           body: FileUploadSchema,
@@ -139,7 +248,29 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
     // --- Translation Routes ---
 
     // GET /models/{id}/translations - Retrieve all translations for a model
-    .get('/:id/translations', modelController.getAllTranslations, {
+    .get('/:id/translations', async (ctx) => {
+      try {
+        const modelId = Number(ctx.params.id);
+        if (isNaN(modelId)) {
+          ctx.set.status = 400;
+          return { error: 'Invalid model ID format. ID must be a number.' };
+        }
+        const result = await modelController.getAllTranslations(modelId);
+        return result;
+      } catch (error: any) {
+        if (error instanceof BadRequestError) {
+          ctx.set.status = 400;
+          return { error: error.message };
+        }
+        if (error instanceof NotFoundError) {
+          ctx.set.status = 404;
+          return { error: error.message };
+        }
+        console.error("Error in getAllTranslations route:", error);
+        ctx.set.status = 500;
+        return { error: 'Failed to retrieve model translations' };
+      }
+    }, {
       detail: {
           summary: 'Get All Translations for a Model',
           tags: ['Models', 'Translations']
@@ -148,7 +279,30 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
     })
 
     // GET /models/{id}/translations/{languageId} - Retrieve a specific translation
-    .get('/:id/translations/:languageId', modelController.getTranslation, {
+    .get('/:id/translations/:languageId', async (ctx) => {
+      try {
+        const modelId = Number(ctx.params.id);
+        const languageId = Number(ctx.params.languageId);
+        if (isNaN(modelId) || isNaN(languageId)) {
+          ctx.set.status = 400;
+          return { error: 'Invalid ID format. IDs must be numbers.' };
+        }
+        const result = await modelController.getTranslation(modelId, languageId);
+        return result;
+      } catch (error: any) {
+        if (error instanceof BadRequestError) {
+          ctx.set.status = 400;
+          return { error: error.message };
+        }
+        if (error instanceof NotFoundError) {
+          ctx.set.status = 404;
+          return { error: error.message };
+        }
+        console.error("Error in getTranslation route:", error);
+        ctx.set.status = 500;
+        return { error: 'Failed to retrieve model translation' };
+      }
+    }, {
       detail: {
           summary: 'Get a Specific Translation for a Model',
           tags: ['Models', 'Translations']
@@ -160,7 +314,36 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
     })
 
     // POST /models/{id}/translations - Create a new translation for a model
-    .post('/:id/translations', modelController.createTranslation, {
+    .post('/:id/translations', async (ctx) => {
+      try {
+        const modelId = Number(ctx.params.id);
+        if (isNaN(modelId)) {
+          ctx.set.status = 400;
+          return { error: 'Invalid model ID format. ID must be a number.' };
+        }
+        const translationData = ctx.body as typeof ModelTranslationCreateSingleSchema._type;
+        const result = await modelController.createTranslation(modelId, translationData);
+        ctx.set.status = 201;
+        return result;
+      } catch (error: any) {
+        if (error instanceof BadRequestError) {
+          ctx.set.status = 400;
+          return { error: error.message };
+        }
+        if (error instanceof NotFoundError) {
+          ctx.set.status = 404;
+          return { error: error.message };
+        }
+        // Handle potential duplicate entry errors
+        if (error.code === 'ER_DUP_ENTRY') {
+          ctx.set.status = 409;
+          return { error: 'Translation for this model and language already exists.' };
+        }
+        console.error("Error in createTranslation route:", error);
+        ctx.set.status = 500;
+        return { error: 'Failed to create model translation' };
+      }
+    }, {
       body: ModelTranslationCreateSingleSchema,
       detail: {
           summary: 'Create a Translation for a Model',
@@ -170,7 +353,31 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
     })
 
     // PUT /models/{id}/translations/{languageId} - Update a specific translation
-    .put('/:id/translations/:languageId', modelController.updateTranslation, {
+    .put('/:id/translations/:languageId', async (ctx) => {
+      try {
+        const modelId = Number(ctx.params.id);
+        const languageId = Number(ctx.params.languageId);
+        if (isNaN(modelId) || isNaN(languageId)) {
+          ctx.set.status = 400;
+          return { error: 'Invalid ID format. IDs must be numbers.' };
+        }
+        const updateData = ctx.body as typeof ModelTranslationUpdateSingleSchema._type;
+        const result = await modelController.updateTranslation(modelId, languageId, updateData);
+        return result;
+      } catch (error: any) {
+        if (error instanceof BadRequestError) {
+          ctx.set.status = 400;
+          return { error: error.message };
+        }
+        if (error instanceof NotFoundError) {
+          ctx.set.status = 404;
+          return { error: error.message };
+        }
+        console.error("Error in updateTranslation route:", error);
+        ctx.set.status = 500;
+        return { error: 'Failed to update model translation' };
+      }
+    }, {
       body: ModelTranslationUpdateSingleSchema,
       detail: {
           summary: 'Update a Specific Translation for a Model',
@@ -183,7 +390,31 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
     })
 
     // DELETE /models/{id}/translations/{languageId} - Delete a specific translation
-    .delete('/:id/translations/:languageId', modelController.deleteTranslation, {
+    .delete('/:id/translations/:languageId', async (ctx) => {
+      try {
+        const modelId = Number(ctx.params.id);
+        const languageId = Number(ctx.params.languageId);
+        if (isNaN(modelId) || isNaN(languageId)) {
+          ctx.set.status = 400;
+          return { error: 'Invalid ID format. IDs must be numbers.' };
+        }
+        await modelController.deleteTranslation(modelId, languageId);
+        ctx.set.status = 204;
+        return;
+      } catch (error: any) {
+        if (error instanceof BadRequestError) {
+          ctx.set.status = 400;
+          return { error: error.message };
+        }
+        if (error instanceof NotFoundError) {
+          ctx.set.status = 404;
+          return { error: error.message };
+        }
+        console.error("Error in deleteTranslation route:", error);
+        ctx.set.status = 500;
+        return { error: 'Failed to delete model translation' };
+      }
+    }, {
       detail: {
           summary: 'Delete a Specific Translation for a Model',
           tags: ['Models', 'Translations']
@@ -195,7 +426,31 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
     })
 
     // PUT /models/{id}/translations/{languageId}/upsert - Create or update a translation
-    .put('/:id/translations/:languageId/upsert', modelController.upsertTranslation, {
+    .put('/:id/translations/:languageId/upsert', async (ctx) => {
+      try {
+        const modelId = Number(ctx.params.id);
+        const languageId = Number(ctx.params.languageId);
+        if (isNaN(modelId) || isNaN(languageId)) {
+          ctx.set.status = 400;
+          return { error: 'Invalid ID format. IDs must be numbers.' };
+        }
+        const translationData = ctx.body as typeof ModelTranslationCreateSingleSchema._type;
+        const result = await modelController.upsertTranslation(modelId, languageId, translationData);
+        return result;
+      } catch (error: any) {
+        if (error instanceof BadRequestError) {
+          ctx.set.status = 400;
+          return { error: error.message };
+        }
+        if (error instanceof NotFoundError) {
+          ctx.set.status = 404;
+          return { error: error.message };
+        }
+        console.error("Error in upsertTranslation route:", error);
+        ctx.set.status = 500;
+        return { error: 'Failed to save model translation' };
+      }
+    }, {
       body: ModelTranslationCreateSingleSchema,
       detail: {
           summary: 'Upsert a Translation for a Model',
@@ -209,7 +464,26 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
     })
 
     // POST /models/{id}/translations/bulk-upsert - Bulk upsert translations
-    .post('/:id/translations/bulk-upsert', modelController.bulkUpsertTranslations, {
+    .post('/:id/translations/bulk-upsert', async (ctx) => {
+      try {
+        const modelId = Number(ctx.params.id);
+        if (isNaN(modelId)) {
+          ctx.set.status = 400;
+          return { error: 'Invalid model ID format. ID must be a number.' };
+        }
+        const { translations } = ctx.body as { translations: Array<{ language_id: number; title: string; description?: string; meta_title?: string; meta_description?: string; meta_keywords?: string; specifications?: string; }> };
+        const result = await modelController.bulkUpsertTranslations(modelId, translations);
+        return result;
+      } catch (error: any) {
+        if (error instanceof BadRequestError || error instanceof NotFoundError) {
+          ctx.set.status = error instanceof BadRequestError ? 400 : 404;
+          return { error: error.message };
+        }
+        console.error("Error in bulkUpsertTranslations route:", error);
+        ctx.set.status = 500;
+        return { error: 'Failed to bulk upsert model translations' };
+      }
+    }, {
       body: t.Object({
         translations: t.Array(
           t.Object({
@@ -234,153 +508,24 @@ export const modelRoutes = new Elysia({ prefix: '/models' })
     })
 
     // Legacy route alias for backward compatibility
-    .post('/:id/translations/bulk', modelController.bulkUpsertTranslations)
-  )
-
-  // GET /models/{id} - Retrieve a specific model by ID
-  .get('/:id',
-    (ctx) => { 
-        const numericId = parseInt(ctx.params.id, 10);
-        if (isNaN(numericId)) {
-            ctx.set.status = 400; // Bad Request
-            return { error: 'Invalid model ID format. ID must be a number.' };
+    .post('/:id/translations/bulk', async (ctx) => {
+      try {
+        const modelId = Number(ctx.params.id);
+        if (isNaN(modelId)) {
+          ctx.set.status = 400;
+          return { error: 'Invalid model ID format. ID must be a number.' };
         }
-        return modelController.getById(numericId, ctx);
-    },
-    {
-        detail: {
-            summary: 'Get Model by ID',
-            tags: ['Models']
+        const { translations } = ctx.body as { translations: Array<{ language_id: number; title: string; description?: string; meta_title?: string; meta_description?: string; meta_keywords?: string; specifications?: string; }> };
+        const result = await modelController.bulkUpsertTranslations(modelId, translations);
+        return result;
+      } catch (error: any) {
+        if (error instanceof BadRequestError || error instanceof NotFoundError) {
+          ctx.set.status = error instanceof BadRequestError ? 400 : 404;
+          return { error: error.message };
         }
-    }
-  )
-
-  // PUT /models/{id} - Update a specific model by ID
-  .put('/:id',
-    (ctx) => { 
-        const numericId = parseInt(ctx.params.id, 10);
-        if (isNaN(numericId)) {
-            ctx.set.status = 400;
-            return { error: 'Invalid model ID format. ID must be a number.' };
-        }
-        return modelController.update(numericId, ctx.body, ctx);
-    },
-    {
-        body: ModelUpdateSchema, 
-        detail: {
-            summary: 'Update Model by ID',
-            description: 'Update model properties including title, base_price, category, brand, etc.',
-            tags: ['Models']
-        }
-    }
-  )
-
-  // DELETE /models/{id} - Delete a specific model by ID
-  .delete('/:id',
-    (ctx) => { 
-        const numericId = parseInt(ctx.params.id, 10);
-        if (isNaN(numericId)) {
-            ctx.set.status = 400;
-            return { error: 'Invalid model ID format. ID must be a number.' };
-        }
-        return modelController.delete(numericId, ctx);
-    },
-    {
-        detail: {
-            summary: 'Delete Model by ID',
-            tags: ['Models']
-        }
-    }
-  )
-
-  // POST /models/{id}/image - Upload an image for a model
-  .post('/:id/image',
-    (ctx) => { 
-        const numericId = parseInt(ctx.params.id, 10);
-        if (isNaN(numericId)) {
-            ctx.set.status = 400;
-            return { error: 'Invalid model ID format. ID must be a number.' };
-        }
-        return modelController.uploadImage(numericId, ctx.body.file, ctx);
-    },
-    {
-        body: FileUploadSchema,
-        detail: {
-            summary: 'Upload Model Image',
-            description: 'Upload an image for a model',
-            tags: ['Models']
-        }
-    }
-  )
-
-  // --- Translation Routes ---
-
-  // GET /models/{id}/translations - Retrieve all translations for a model
-  .get('/:id/translations', modelController.getAllTranslations, {
-    detail: {
-        summary: 'Get All Translations for a Model',
-        tags: ['Models', 'Translations']
-    },
-    params: t.Object({ id: t.Numeric() })
-  })
-
-  // GET /models/{id}/translations/{languageId} - Retrieve a specific translation
-  .get('/:id/translations/:languageId', modelController.getTranslation, {
-    detail: {
-        summary: 'Get a Specific Translation for a Model',
-        tags: ['Models', 'Translations']
-    },
-    params: t.Object({ 
-        id: t.Numeric(),
-        languageId: t.Numeric()
+        console.error("Error in bulkUpsertTranslations route:", error);
+        ctx.set.status = 500;
+        return { error: 'Failed to bulk upsert model translations' };
+      }
     })
-  })
-
-  // POST /models/{id}/translations - Create a new translation for a model
-  .post('/:id/translations', modelController.createTranslation, {
-    body: ModelTranslationCreateSingleSchema,
-    detail: {
-        summary: 'Create a Translation for a Model',
-        tags: ['Models', 'Translations']
-    },
-    params: t.Object({ id: t.Numeric() })
-  })
-
-  // PUT /models/{id}/translations/{languageId} - Update a specific translation
-  .put('/:id/translations/:languageId', modelController.updateTranslation, {
-    body: ModelTranslationUpdateSingleSchema,
-    detail: {
-        summary: 'Update a Specific Translation for a Model',
-        tags: ['Models', 'Translations']
-    },
-    params: t.Object({ 
-        id: t.Numeric(),
-        languageId: t.Numeric()
-    })
-  })
-
-  // DELETE /models/{id}/translations/{languageId} - Delete a specific translation
-  .delete('/:id/translations/:languageId', modelController.deleteTranslation, {
-    detail: {
-        summary: 'Delete a Specific Translation for a Model',
-        tags: ['Models', 'Translations']
-    },
-    params: t.Object({ 
-        id: t.Numeric(),
-        languageId: t.Numeric()
-    })
-  })
-
-  // PUT /models/{id}/translations/{languageId}/upsert - Create or update a translation
-  .put('/:id/translations/:languageId/upsert', modelController.upsertTranslation, {
-    body: ModelTranslationCreateSingleSchema,
-    detail: {
-        summary: 'Upsert a Translation for a Model',
-        description: 'Create a new translation or update an existing one for a model',
-        tags: ['Models', 'Translations']
-    },
-    params: t.Object({ 
-        id: t.Numeric(),
-        languageId: t.Numeric()
-    })
-  });
+  );

@@ -1,4 +1,4 @@
-import { NotFoundError, InternalServerError, error, type Context, type Static } from 'elysia';
+import { NotFoundError, InternalServerError,  type Context, type Static } from 'elysia';
 import { t } from 'elysia'; // Import t for TypeBox
 import { UserService } from '../services/user-service';
 import {
@@ -40,7 +40,7 @@ export class UserController {
     try {
       const authContextForService = currentUserId ? {
         id: currentUserId,
-        clientId: currentTenantId || undefined,
+        tenantId: currentTenantId || undefined,
         roleSlug: currentRole || undefined
       } : undefined;
 
@@ -108,20 +108,10 @@ export class UserController {
     const { body, userService, set, currentUserId, currentTenantId, currentRole } = context; 
     try {
       // Create user data with body properties
-      const userData: CreateUserWithRoleDTO & { clientId: number } = {
+      const userData: CreateUserWithRoleDTO & { tenantId: number } = {
         ...body as CreateUserWithRoleDTO,
-        clientId: 0 // Default value, will be overridden
+        tenantId: currentTenantId || 0
       };
-      
-      // Set client ID from authenticated user
-      if (currentUserId) {
-        if (currentRole === 'client') {
-          userData.clientId = currentUserId;
-        } else {
-          // Ensure clientId is always a number (use 0 as default if undefined)
-          userData.clientId = currentTenantId || 0;
-        }
-      }
       
       // If role is shop_manager, warehouseId must be provided
       if (userData.roleSlug === 'shop_manager') {
@@ -339,7 +329,7 @@ export class UserController {
     try {
       const authContextForService = currentUserId ? {
         id: currentUserId,
-        clientId: currentTenantId || undefined,
+        tenantId: currentTenantId || undefined,
         roleSlug: currentRole || undefined
       } : undefined;
 

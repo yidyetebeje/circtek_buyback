@@ -21,7 +21,7 @@ interface FetchOptions extends RequestInit {
 
 export class ApiClient {
   private baseUrl: string;
-  private clientId?: number;
+  private tenantId?: number;
 
   constructor(baseUrl = API_BASE_URL)
    {
@@ -31,16 +31,16 @@ export class ApiClient {
   /**
    * Set the client ID for subsequent API calls
    */
-  setClientId(clientId: number) {
-    this.clientId = clientId;
+  settenantId(tenantId: number) {
+    this.tenantId = tenantId;
     return this;
   }
 
   /**
    * Get the current client ID
    */
-  getClientId(): number | undefined {
-    return this.clientId;
+  gettenantId(): number | undefined {
+    return this.tenantId;
   }
 
   /**
@@ -50,8 +50,8 @@ export class ApiClient {
     const url = new URL(`${this.baseUrl}${endpoint}`);
     
     // Add client ID to all requests if available
-    if (this.clientId) {
-      url.searchParams.append('clientId', this.clientId.toString());
+    if (this.tenantId) {
+      url.searchParams.append('tenantId', this.tenantId.toString());
     }
     
     // Add other query parameters
@@ -320,6 +320,6 @@ export class ApiClient {
 export const apiClient = new ApiClient();
 
 // Export a function to create a new instance with a specific client ID
-export const createApiClient = (clientId?: number) => {
-  return clientId ? new ApiClient().setClientId(clientId) : new ApiClient();
+export const createApiClient = (tenantId?: number) => {
+  return tenantId ? new ApiClient().settenantId(tenantId) : new ApiClient();
 };

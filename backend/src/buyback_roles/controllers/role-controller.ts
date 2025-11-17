@@ -1,4 +1,4 @@
-import { Elysia, t, NotFoundError, error, InternalServerError } from "elysia";
+import { Elysia, NotFoundError, InternalServerError } from "elysia";
 import { RoleService } from "../services/role-service";
 import {
   insertRoleSchema,

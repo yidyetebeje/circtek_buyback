@@ -24,7 +24,7 @@ export default function CreateBrandPage() {
       return;
     }
 
-    const brandPayload: Omit<Brand, 'id' | 'created_at' | 'updated_at' | 'client_id'> & { tenant_id: number } = {
+    const brandPayload: Omit<Brand, 'id' | 'created_at' | 'updated_at' | 'tenant_id'> & { tenant_id: number } = {
       tenant_id: 1,
       title: values.title,
       icon: null,

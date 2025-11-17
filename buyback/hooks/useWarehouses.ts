@@ -7,7 +7,7 @@ import { warehouseService, Warehouse } from '@/lib/api';
  * Supports client ID filtering for admin users
  */
 export interface WarehousesQueryParams {
-  clientId?: number;
+  tenantId?: number;
   shopId?: number;
   page?: number;
   pageSize?: number;
@@ -20,14 +20,14 @@ export const useWarehouses = (
   const envShopId = process.env.NEXT_PUBLIC_SHOP_ID
     ? parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10)
     : undefined;
-  const { clientId, shopId = envShopId, page, pageSize } = params;
+  const { tenantId, shopId = envShopId, page, pageSize } = params;
 
   return useQuery<{ data: Warehouse[]; total: number }, Error>({
-    queryKey: ["warehouses", { clientId, shopId, page, pageSize }],
+    queryKey: ["warehouses", { tenantId, shopId, page, pageSize }],
     queryFn: async () => {
       try {
         const response = await warehouseService.getWarehouses({
-          clientId,
+          tenantId: tenantId,
           shopId,
           page,
           pageSize,
@@ -78,7 +78,7 @@ export const useCreateWarehouse = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { warehouseName: string; clientId?: number; timeZone?: string; status?: boolean; shopId?: number; }) =>
+    mutationFn: (data: { warehouseName: string; tenantId?: number; timeZone?: string; status?: boolean; shopId?: number; }) =>
       warehouseService.createWarehouse(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['warehouses'] });

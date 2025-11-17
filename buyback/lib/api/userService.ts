@@ -11,7 +11,7 @@ export interface ListUsersQueryParams {
   roleId?: number;
   roleSlug?: string; // Filter by role slug (e.g., 'shop_manager', 'admin', 'client')
   status?: boolean;
-  clientId?: number;
+  tenantId?: number;
   shopId?: number;
 }
 

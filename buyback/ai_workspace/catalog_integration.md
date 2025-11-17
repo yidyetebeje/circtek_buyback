@@ -47,7 +47,7 @@ GET /api/catalog/categories?page=1&limit=20&orderBy=order_no&order=asc
 * **limit** (1‑100, default 20)
 * **orderBy** (field name)
 * **order** (`asc`|`desc`)
-* Optional **clientId** filter on most endpoints.
+* Optional **tenantId** filter on most endpoints.
 
 > ⚠️  Expect 4xx with `{ error, details[] }` on validation errors and 401/403 on auth.
 

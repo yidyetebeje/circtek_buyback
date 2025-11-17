@@ -51,13 +51,13 @@ export const questionSetRoutes = new Elysia({ prefix: '/question-sets' })
   )
   
   // GET question set by internal name
-  .get('/by-name/:internalName/client/:clientId', 
+  .get('/by-name/:internalName/client/:tenantId', 
     async ({ params }) => {
-      return await questionSetController.getQuestionSetByInternalName(params.internalName, params.clientId);
+      return await questionSetController.getQuestionSetByInternalName(params.internalName, params.tenantId);
     }, {
       params: t.Object({
         internalName: t.String(),
-        clientId: t.Numeric({ minimum: 1 })
+        tenantId: t.Numeric({ minimum: 1 })
       }),
       detail: {
         summary: 'Get question set by internal name',

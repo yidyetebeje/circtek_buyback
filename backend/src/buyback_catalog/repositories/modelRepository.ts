@@ -623,7 +623,7 @@ export class ModelRepository {
    * @param categoryId Optional category filter
    * @param brandId Optional brand filter
    * @param modelSeriesId Optional model series filter
-   * @param clientId Optional client ID filter
+   * @param tenantId Optional tenant ID filter
    * @returns Paginated list of models published in the shop
    */
   async findPublishedInShop(

@@ -33,8 +33,8 @@ export class BrandService {
   /**
    * Get a brand by slug and client ID
    */
-  async getBrandBySlug(slug: string, clientId: number): Promise<ApiResponse<Brand>> {
-    return this.apiClient.get<ApiResponse<Brand>>(`${this.baseEndpoint}/slug/${slug}/client/${clientId}`);
+  async getBrandBySlug(slug: string, tenantId: number): Promise<ApiResponse<Brand>> {
+    return this.apiClient.get<ApiResponse<Brand>>(`${this.baseEndpoint}/slug/${slug}/client/${tenantId}`);
   }
 
   /**

@@ -32,8 +32,8 @@ export class CategoryService {
   /**
    * Get a category by slug and client ID
    */
-  async getCategoryBySlug(slug: string, clientId: number): Promise<ApiResponse<Category>> {
-    return this.apiClient.get<ApiResponse<Category>>(`${this.baseEndpoint}/slug/${slug}/client/${clientId}`);
+  async getCategoryBySlug(slug: string, tenantId: number): Promise<ApiResponse<Category>> {
+    return this.apiClient.get<ApiResponse<Category>>(`${this.baseEndpoint}/slug/${slug}/client/${tenantId}`);
   }
 
   /**

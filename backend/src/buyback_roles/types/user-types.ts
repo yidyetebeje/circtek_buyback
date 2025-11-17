@@ -28,7 +28,7 @@ export const updateUserSchema = t.Object({
   password: t.Optional(t.String({ minLength: 8, maxLength: 255 })),
   roleSlug: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
   status: t.Optional(t.Boolean()),
-  clientId: t.Optional(t.Numeric()),
+  tenantId: t.Optional(t.Numeric()),
   warehouseId: t.Optional(t.Numeric()),
   organizationName: t.Optional(t.String({ maxLength: 255 })),
   managed_shop_id: t.Optional(t.Nullable(t.Numeric())),
@@ -68,7 +68,7 @@ export const userUpdateResponseSchema = t.Object({
     roleId: t.Number(),
     roleName: t.String(),
     roleSlug: t.String(),
-    clientId: t.Optional(t.Numeric()),
+    tenantId: t.Optional(t.Numeric()),
     warehouseId: t.Optional(t.Numeric()),
     organizationName: t.Optional(t.String()),
     managed_shop_id: t.Optional(t.Nullable(t.Numeric())),
@@ -91,8 +91,7 @@ export const listUsersQuerySchema = t.Object({
   roleSlug: t.Optional(t.String()), // Added roleSlug filtering support
   roleName: t.Optional(t.String()), // Added roleName filtering support
   status: t.Optional(t.Boolean()), // This was previously t.Nullable(t.Boolean()) in userListItemSchema, ensuring consistency or specific use. For query, boolean is fine.
-  clientId: t.Optional(t.Numeric()), 
-  tenantId: t.Optional(t.Numeric()), // Added tenantId filtering support
+  tenantId: t.Optional(t.Numeric()), 
   shopId: t.Optional(t.Numeric()),
 });
 
