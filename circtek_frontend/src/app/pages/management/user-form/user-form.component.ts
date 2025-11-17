@@ -160,16 +160,14 @@ export class UserFormComponent {
       }
     ];
 
-    if (!this.isEditMode()) {
-      fields.push({
-        key: 'password',
-        label: 'Password',
-        type: 'password',
-        placeholder: 'Enter password',
-        required: true,
-        validation: { minLength: 6 }
-      });
-    }
+    fields.push({
+      key: 'password',
+      label: this.isEditMode() ? 'New Password' : 'Password',
+      type: 'password',
+      placeholder: this.isEditMode() ? 'Enter new password (leave blank to keep current)' : 'Enter password',
+      required: !this.isEditMode(),
+      validation: { minLength: 8 }
+    });
 
     if (this.isSuperAdmin()) {
       fields.push({
@@ -323,9 +321,10 @@ export class UserFormComponent {
       status: [true]
     };
 
-    if (!this.isEditMode()) {
-      formConfig.password = ['', [Validators.required, this.strongPasswordValidator]];
-    }
+    const passwordValidators = this.isEditMode()
+      ? [this.strongPasswordValidator]
+      : [Validators.required, this.strongPasswordValidator];
+    formConfig.password = ['', passwordValidators];
 
     if (this.isSuperAdmin()) {
       formConfig.tenant_id = [null, [Validators.required]];
@@ -498,6 +497,10 @@ export class UserFormComponent {
         userData[key] = userData[key].trim();
       }
     });
+
+    if (this.isEditMode() && !userData.password) {
+      delete userData.password;
+    }
     
     // For edit mode, show confirmation modal
     if (this.isEditMode()) {
