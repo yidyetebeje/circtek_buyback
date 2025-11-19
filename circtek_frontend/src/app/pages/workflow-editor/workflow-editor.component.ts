@@ -142,6 +142,7 @@ export class WorkflowEditorComponent
   staticNodeTypes: INodeType[] = [
     { id: "connect_iphone", label: "Start: Connect iPhone", color: "#4CAF50" },
     { id: "connect_airpods", label: "Start: Connect Airpods", color: "#388E3C" },
+    { id: "connect_android", label: "Start: Connect Android", color: "#2E7D32" },
     {
       id: "airpods_oem_test",
       label: "OEM",
@@ -2524,12 +2525,14 @@ export class WorkflowEditorComponent
 
   // --- Save/Load Workflow ---
   openSaveModal(): void {
-    const hasStartNode = this.nodes.some(
-      (node) => node.data.type === "connect_iphone",
+    const hasStartNode = this.nodes.some((node) =>
+      ["connect_iphone", "connect_airpods", "connect_android"].includes(
+        node.data.type,
+      ),
     );
     if (!hasStartNode) {
       this.showToast(
-        "Workflow must contain a 'Start: Connect iPhone' node before saving.",
+        "Workflow must contain a start node (Connect iPhone, Airpods, or Android) before saving.",
         "error",
       );
       return;
