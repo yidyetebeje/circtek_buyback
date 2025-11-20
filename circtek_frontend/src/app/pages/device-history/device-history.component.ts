@@ -7,11 +7,12 @@ import { ApiService } from '../../core/services/api.service';
 import { DeviceEvent } from '../../core/models/device-event';
 import { BarcodeScannerComponent, ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 import { AuthService } from '../../core/services/auth.service';
+import { CurrencyPipe } from '../../shared/pipes/currency.pipe';
 import { Tenant } from '../../core/models/tenant';
 
 @Component({
   selector: 'app-device-history',
-  imports: [CommonModule, FormsModule, BarcodeScannerComponent, LucideAngularModule],
+  imports: [CommonModule, FormsModule, BarcodeScannerComponent, LucideAngularModule, CurrencyPipe],
   templateUrl: './device-history.component.html',
   styleUrl: './device-history.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -318,7 +319,7 @@ export class DeviceHistoryComponent {
     return '';
   }
 
-  protected getConsumedItems(event: DeviceEvent): Array<{sku: string, quantity: number, reason: string, cost: string, description?: string}> {
+  protected getConsumedItems(event: DeviceEvent): Array<{sku: string, quantity: number, reason: string, cost: number, description?: string}> {
     if (event.event_type === 'REPAIR_COMPLETED' && event.details && (event.details as any).consumed_items) {
       const items = (event.details as any).consumed_items;
       // Handle both formats: {sku, ...} and {part_sku, ...}
@@ -326,7 +327,7 @@ export class DeviceHistoryComponent {
         sku: item.sku || item.part_sku || 'fixed_price',
         quantity: item.quantity || 1,
         reason: item.reason || 'Unknown',
-        cost: item.cost || '0',
+        cost: Number(item.cost || 0),
         description: item.description
       }));
     }
@@ -368,14 +369,14 @@ export class DeviceHistoryComponent {
     return 'N/A';
   }
 
-  protected getDeletedRepairItems(event: DeviceEvent): Array<{sku: string, quantity: number, reason: string, cost: string}> {
+  protected getDeletedRepairItems(event: DeviceEvent): Array<{sku: string, quantity: number, reason: string, cost: number}> {
     if (event.event_type === 'REPAIR_DELETED' && event.details && (event.details as any).consumed_items) {
       const items = (event.details as any).consumed_items;
       return items.map((item: any) => ({
         sku: item.sku || 'fixed_price',
         quantity: item.quantity || 1,
         reason: item.reason || 'Unknown',
-        cost: item.cost || '0'
+        cost: Number(item.cost || 0)
       }));
     }
     return [];

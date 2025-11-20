@@ -19,6 +19,7 @@ export interface TransferWithDetails {
   to_warehouse_name?: string;
   status: boolean | null;
   created_by: number;
+  created_by_name?: string;
   completed_by?: number | null;
   completed_at?: string | null;
   tenant_id: number;

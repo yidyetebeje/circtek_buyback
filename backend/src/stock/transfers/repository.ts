@@ -1,10 +1,10 @@
 import { and, count, eq, like, or, SQL, gte, lte, desc, asc, sum, sql } from "drizzle-orm";
 import { transfers, transfer_items, warehouses, devices, stock, stock_device_ids } from "../../db/circtek.schema";
-import { 
-  TransferCreateInput, 
-  TransferItemCreateInput, 
-  TransferQueryInput, 
-  TransferRecord, 
+import {
+  TransferCreateInput,
+  TransferItemCreateInput,
+  TransferQueryInput,
+  TransferRecord,
   TransferItemRecord,
   TransferWithDetails,
   TransferListResult,
@@ -13,7 +13,7 @@ import {
 import { db } from "../../db/index";
 
 export class TransfersRepository {
-  constructor(private readonly database: typeof db) {}
+  constructor(private readonly database: typeof db) { }
 
   async createTransfer(transferData: TransferCreateInput & { tenant_id: number; created_by: number }): Promise<TransferRecord | undefined> {
     const [result] = await this.database.insert(transfers).values(transferData);
@@ -110,7 +110,7 @@ export class TransfersRepository {
       .select()
       .from(transfers)
       .where(and(...conditions));
-    
+
     return result;
   }
 
@@ -183,7 +183,7 @@ export class TransfersRepository {
 
   async findAllTransfers(filters: TransferQueryInput & { tenant_id?: number }): Promise<TransferListResult> {
     const conditions: any[] = [];
-    
+
     if (typeof filters.tenant_id === 'number') {
       conditions.push(eq(transfers.tenant_id, filters.tenant_id));
     }
@@ -234,6 +234,7 @@ export class TransfersRepository {
         to_warehouse_name: sql`tw.name`.as('to_warehouse_name'),
         status: transfers.status,
         created_by: transfers.created_by as any,
+        created_by_name: sql`u.name`.as('created_by_name'),
         completed_by: transfers.completed_by as any,
         completed_at: transfers.completed_at as any,
         tenant_id: transfers.tenant_id,
@@ -245,6 +246,7 @@ export class TransfersRepository {
       .from(transfers)
       .leftJoin(sql`warehouses fw`, sql`${transfers.from_warehouse_id} = fw.id`)
       .leftJoin(sql`warehouses tw`, sql`${transfers.to_warehouse_id} = tw.id`)
+      .leftJoin(sql`users u`, sql`${transfers.created_by} = u.id`)
       .leftJoin(transfer_items, eq(transfers.id, transfer_items.transfer_id))
       .groupBy(transfers.id);
 
@@ -272,6 +274,7 @@ export class TransfersRepository {
       to_warehouse_name: row.to_warehouse_name as string,
       status: row.status,
       created_by: (row as any).created_by as number,
+      created_by_name: (row as any).created_by_name as string,
       completed_by: (row as any).completed_by as number | null,
       completed_at: (row as any).completed_at as Date | null,
       tenant_id: row.tenant_id,
@@ -296,7 +299,7 @@ export class TransfersRepository {
       .update(transfers)
       .set({ status, updated_at: new Date(), ...(status ? { completed_by, completed_at: new Date() } : {}) } as any)
       .where(and(...conditions));
-    
+
     return this.findTransferById(id, tenant_id);
   }
 
@@ -366,7 +369,7 @@ export class TransfersRepository {
       .groupBy(transfers.to_warehouse_id, warehouses.name);
 
     const by_warehouse: Record<string, { outbound: number; inbound: number }> = {};
-    
+
     warehouseOutbound.forEach(item => {
       const key = item.warehouse_name || `Warehouse ${item.warehouse_id}`;
       if (!by_warehouse[key]) by_warehouse[key] = { outbound: 0, inbound: 0 };
@@ -408,7 +411,7 @@ export class TransfersRepository {
    * For non-part items without device_id, attempts to find device by IMEI/serial.
    */
   private async prepareTransferItems(
-    items: TransferItemCreateInput[], 
+    items: TransferItemCreateInput[],
     tenant_id: number
   ): Promise<TransferItemCreateInput[]> {
     const prepared: TransferItemCreateInput[] = [];
@@ -544,12 +547,12 @@ export class TransfersRepository {
       .select({ id: stock.id })
       .from(stock)
       .where(and(
-        eq(stock.sku, sku), 
+        eq(stock.sku, sku),
         eq(stock.warehouse_id, warehouse_id),
         eq(stock.tenant_id, tenant_id)
       ))
       .limit(1);
-    
+
     if (existing) return;
 
     // Create stock record in the specified warehouse for FK constraint
@@ -578,7 +581,7 @@ export class TransfersRepository {
    */
   private async validateStockForTransfer(sku: string, quantity: number, from_warehouse_id: number, tenant_id: number, is_part?: boolean): Promise<void> {
     const [stockRecord] = await this.database
-      .select({ 
+      .select({
         id: stock.id,
         quantity: stock.quantity,
         warehouse_name: warehouses.name
@@ -606,14 +609,14 @@ export class TransfersRepository {
    * Checks if SKU exists and has sufficient quantity in the specified warehouse.
    */
   private async validateStockInTransaction(
-    tx: any, 
-    sku: string, 
-    quantity: number, 
-    warehouse_id: number, 
+    tx: any,
+    sku: string,
+    quantity: number,
+    warehouse_id: number,
     tenant_id: number
   ): Promise<void> {
     const [stockRecord] = await tx
-      .select({ 
+      .select({
         id: stock.id,
         quantity: stock.quantity,
         warehouse_name: warehouses.name
@@ -646,12 +649,12 @@ export class TransfersRepository {
       .select({ id: stock.id })
       .from(stock)
       .where(and(
-        eq(stock.sku, sku), 
+        eq(stock.sku, sku),
         eq(stock.warehouse_id, warehouse_id),
         eq(stock.tenant_id, tenant_id)
       ))
       .limit(1);
-    
+
     if (existing) return;
 
     // Create stock record in the specified warehouse for FK constraint
@@ -692,11 +695,11 @@ export class TransfersRepository {
       })
       .from(devices)
       .where(
-        tenant_id 
+        tenant_id
           ? and(
-              or(eq(devices.imei, identifier), eq(devices.serial, identifier)),
-              eq(devices.tenant_id, tenant_id)
-            )
+            or(eq(devices.imei, identifier), eq(devices.serial, identifier)),
+            eq(devices.tenant_id, tenant_id)
+          )
           : or(eq(devices.imei, identifier), eq(devices.serial, identifier))
       )
       .limit(1);

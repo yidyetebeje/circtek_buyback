@@ -170,33 +170,41 @@ export class StockManagementComponent {
     const tab = this.activeTab();
     if (tab === 'stock') {
       list.push({ key: 'warehouse_id', label: 'Warehouse', type: 'select', options: this.warehouseOptions() });
-      list.push({ key: 'is_part', label: 'Type', type: 'select', options: [
-        { label: 'Any', value: 'any' },
-        { label: 'Part', value: 'true' },
-        { label: 'Device', value: 'false' },
-      ] });
+      list.push({
+        key: 'is_part', label: 'Type', type: 'select', options: [
+          { label: 'Any', value: 'any' },
+          { label: 'Part', value: 'true' },
+          { label: 'Device', value: 'false' },
+        ]
+      });
       list.push({ key: 'low_stock_threshold', label: 'Low stock ≤', type: 'text', placeholder: 'e.g., 5', inputType: 'number' });
-      list.push({ key: 'group_by_batch', label: 'Group by Batch', type: 'select', options: [
-        { label: 'No (Show individual SKUs)', value: 'false' },
-        { label: 'Yes (Group by base SKU)', value: 'true' }
-      ] });
+      list.push({
+        key: 'group_by_batch', label: 'Group by Batch', type: 'select', options: [
+          { label: 'No (Show individual SKUs)', value: 'false' },
+          { label: 'Yes (Group by base SKU)', value: 'true' }
+        ]
+      });
     }
     if (tab === 'purchases') {
       list.push({ key: 'warehouse_id', label: 'Warehouse', type: 'select', options: this.warehouseOptions() });
       // Omit the explicit 'All' option to avoid duplication; the generic selector provides it
-      list.push({ key: 'receiving_status', label: 'Receiving Status', type: 'select', options: [
-        { label: 'Pending', value: 'pending' },
-        { label: 'Completed', value: 'completed' },
-      ] });
+      list.push({
+        key: 'receiving_status', label: 'Receiving Status', type: 'select', options: [
+          { label: 'Pending', value: 'pending' },
+          { label: 'Completed', value: 'completed' },
+        ]
+      });
     }
     if (tab === 'transfers') {
       list.push({ key: 'from_warehouse_id', label: 'From Warehouse', type: 'select', options: this.warehouseOptions() });
       list.push({ key: 'to_warehouse_id', label: 'To Warehouse', type: 'select', options: this.warehouseOptions() });
-      list.push({ key: 'status', label: 'Status', type: 'select', options: [
-        { label: 'Any', value: 'any' },
-        { label: 'Pending', value: 'pending' },
-        { label: 'Completed', value: 'completed' },
-      ] });
+      list.push({
+        key: 'status', label: 'Status', type: 'select', options: [
+          { label: 'Any', value: 'any' },
+          { label: 'Pending', value: 'pending' },
+          { label: 'Completed', value: 'completed' },
+        ]
+      });
     }
     // purchases: keep only search for now
     return list;
@@ -207,11 +215,13 @@ export class StockManagementComponent {
     switch (this.activeTab()) {
       case 'stock':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'SKU', accessorKey: 'sku' as any },
           { header: 'Warehouse', accessorKey: 'warehouse_name' as any },
           { header: 'Quantity', accessorKey: 'quantity' as any },
@@ -228,28 +238,34 @@ export class StockManagementComponent {
         ];
       case 'purchases':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Supplier Order No.', accessorKey: 'supplier_order_no' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Supplier', accessorKey: 'supplier_name' as any, meta: { truncateText: true, truncateMaxWidth: '180px' } },
-          { header: 'Warehouse', id: 'warehouse_name', accessorFn: (r: any) => {
-            const wid = r.warehouse_id;
-            if (wid == null) return '-';
-            const opt = this.warehouseOptions().find(o => Number(o.value) === wid);
-            return opt?.label ?? `WH ${wid}`;
-          } },
-          { header: 'Expected', id: 'expected_delivery_date', accessorFn: (r: any) => {
-            if (!r.expected_delivery_date) return '-';
-            const date = new Date(r.expected_delivery_date);
-            return date.toLocaleDateString('en-US', { 
-              year: 'numeric',
-              month: 'long', 
-              day: 'numeric'
-            });
-          } },
+          {
+            header: 'Warehouse', id: 'warehouse_name', accessorFn: (r: any) => {
+              const wid = r.warehouse_id;
+              if (wid == null) return '-';
+              const opt = this.warehouseOptions().find(o => Number(o.value) === wid);
+              return opt?.label ?? `WH ${wid}`;
+            }
+          },
+          {
+            header: 'Expected', id: 'expected_delivery_date', accessorFn: (r: any) => {
+              if (!r.expected_delivery_date) return '-';
+              const date = new Date(r.expected_delivery_date);
+              return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              });
+            }
+          },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
@@ -263,15 +279,31 @@ export class StockManagementComponent {
         ];
       case 'transfers':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'From', accessorKey: 'from_warehouse_name' as any },
           { header: 'To', accessorKey: 'to_warehouse_name' as any },
           { header: 'Items', accessorKey: 'total_items' as any },
           { header: 'Quantity', accessorKey: 'total_quantity' as any },
+          { header: 'Created By', id: 'created_by_name', accessorFn: (r: any) => r.created_by_name || '-' },
+          {
+            header: 'Created At', id: 'created_at', accessorFn: (r: any) => {
+              if (!r.created_at) return '-';
+              const date = new Date(r.created_at);
+              return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            }
+          },
           { header: 'Completed', id: 'is_completed', accessorFn: (r: any) => (r.is_completed ? 'Yes' : 'No') },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
@@ -285,11 +317,13 @@ export class StockManagementComponent {
         ];
       case 'sku-specs':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'SKU', accessorKey: 'sku' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'Make', accessorKey: 'make' as any, meta: { truncateText: true, truncateMaxWidth: '100px' } },
           { header: 'Model No.', accessorKey: 'model_no' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
@@ -359,13 +393,13 @@ export class StockManagementComponent {
     this.fromWarehouseId.set(optNum('from_warehouse_id'));
     this.toWarehouseId.set(optNum('to_warehouse_id'));
     const ts = str('status', 'any'); this.transferStatus.set(ts === 'pending' || ts === 'completed' ? (ts as any) : 'any');
-    
+
     // Purchase filters
     if (this.activeTab() === 'purchases') {
       this.purchaseWarehouseId.set(optNum('warehouse_id'));
     }
     const prs = str('receiving_status', 'all'); this.purchaseReceivingStatus.set(prs === 'pending' || prs === 'completed' ? (prs as any) : 'all');
-    
+
 
     this.initialized.set(true);
 
@@ -463,13 +497,13 @@ export class StockManagementComponent {
   private fetchData() {
     const seq = ++this.requestSeq;
     const tab = this.activeTab();
-    
+
     // SKU mappings tab handles its own data loading
     if (tab === 'sku-mappings') {
       this.loading.set(false);
       return;
     }
-    
+
     this.loading.set(true);
 
     if (tab === 'stock') {
@@ -567,11 +601,11 @@ export class StockManagementComponent {
     const size = event.pageSize;
     let changed = false;
     if (idx !== this.pageIndex()) { this.pageIndex.set(idx); changed = true; }
-    if (size !== this.pageSize()) { 
-      this.pageSize.set(size); 
+    if (size !== this.pageSize()) {
+      this.pageSize.set(size);
       // Persist the page size preference
       this.paginationService.setPageSize(size);
-      changed = true; 
+      changed = true;
     }
     if (!changed) return;
   }
@@ -600,7 +634,7 @@ export class StockManagementComponent {
       const rs = f['receiving_status']; this.purchaseReceivingStatus.set(rs === 'pending' || rs === 'completed' ? (rs as any) : 'all');
     }
 
-    
+
 
     this.pageIndex.set(0); // reset
   }

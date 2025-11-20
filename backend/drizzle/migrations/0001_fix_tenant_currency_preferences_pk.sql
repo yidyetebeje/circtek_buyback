@@ -16,3 +16,4 @@ ALTER TABLE `tenant_currency_preferences`
 
 
 
+
