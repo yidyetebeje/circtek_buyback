@@ -210,7 +210,7 @@ export class TransfersRepository {
 
     // Determine sorting
     const sortColumn = this.getSortColumn(filters.sort_by);
-    const sortDirection = filters.sort_dir === 'desc' ? desc : asc;
+    const sortDirection = filters.sort_dir === 'asc' ? asc : desc;
 
     // Get total count
     let totalRow: { total: number } | undefined;
