@@ -11,6 +11,27 @@ const controller = new RepairsController(repo);
 export const repairs_routes = new Elysia({ prefix: '/repairs' })
   .use(requireRole([]))
 
+  // Handle OPTIONS preflight for export endpoint
+  .options('/export', () => '', { detail: { tags: ['Repairs'], summary: 'CORS preflight for export' } })
+
+  // Export repairs as CSV
+  .get('/export', async (ctx) => {
+    const { query, set, currentRole, currentTenantId } = ctx as any
+    const tenantScoped = currentRole === 'super_admin' ? undefined : currentTenantId
+    const res = await controller.exportToCSV(query as any, tenantScoped)
+    // Merge headers to preserve CORS headers set by the middleware
+    set.headers = { ...((set as any).headers ?? {}), ...res.headers } as any
+    set.status = res.status as any
+    return res.body
+  }, {
+    query: RepairQuery,
+    detail: {
+      tags: ['Repairs'],
+      summary: 'Export repairs to CSV',
+      description: 'Export repairs to CSV file with filters'
+    }
+  })
+
   // Get repair analytics
   .get('/analytics', async (ctx) => {
     const { query, currentTenantId } = ctx as any
@@ -121,7 +142,7 @@ export const repairs_routes = new Elysia({ prefix: '/repairs' })
     return controller.deleteRepairWithCleanup(Number(params.id), currentTenantId, currentUserId)
   }, {
     detail: {
-      
+
       tags: ['Repairs'],
       summary: 'Delete repair',
       description: 'Delete a repair and restore consumed stock, deallocate purchases, and remove device events'

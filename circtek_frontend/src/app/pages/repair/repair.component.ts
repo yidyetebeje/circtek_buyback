@@ -48,7 +48,7 @@ export class RepairComponent {
   selectedWarehouseId = signal<number | null>(null); // dead-imei and analytics
   repairReasonStatus = signal<'true' | 'false'>('true'); // repair-reasons
   groupByBatch = signal<boolean>(false); // analytics
-  
+
   // Validation
   dateRangeError = computed<string | null>(() => {
     if (this.activeTab() !== 'repairs') return null;
@@ -58,7 +58,7 @@ export class RepairComponent {
     // Facet inputType is 'date', which yields YYYY-MM-DD values; lexical compare is safe
     return s > e ? 'Start Date cannot be later than End Date.' : null;
   });
-  
+
   // Analytics filters
   periodDays = signal<number>(30); // analytics
   analyticsStartDate = signal<string | null>(null); // analytics
@@ -108,7 +108,7 @@ export class RepairComponent {
   primaryAction = computed(() => {
     const tab = this.activeTab();
     if (tab === 'repairs') {
-      return { label: 'Add Repair' };
+      return { label: 'Export CSV' };
     } else if (tab === 'repair-reasons') {
       return { label: 'Add Repair Reason' };
     } else if (tab === 'dead-imei') {
@@ -153,33 +153,39 @@ export class RepairComponent {
   facets = computed<Facet[]>(() => {
     const list: Facet[] = [];
     const tab = this.activeTab();
-    
+
     if (tab === 'repairs') {
       list.push({ key: 'start_date', label: 'Start Date', type: 'text', inputType: 'date' });
       list.push({ key: 'end_date', label: 'End Date', type: 'text', inputType: 'date' });
     }
     if (tab === 'repair-reasons') {
-      list.push({ key: 'status', label: 'Status', type: 'select', options: [
-        { label: 'Active', value: 'true' },
-        { label: 'Inactive', value: 'false' },
-      ] });
+      list.push({
+        key: 'status', label: 'Status', type: 'select', options: [
+          { label: 'Active', value: 'true' },
+          { label: 'Inactive', value: 'false' },
+        ]
+      });
     }
     if (tab === 'dead-imei') {
       list.push({ key: 'warehouse_id', label: 'Warehouse', type: 'select', options: this.warehouseOptions() });
     }
     if (tab === 'analytics') {
       list.push({ key: 'warehouse_id', label: 'Warehouse', type: 'select', options: this.warehouseOptions() });
-      list.push({ key: 'period_days', label: 'Period', type: 'select', options: [
-        { label: 'Last 7 days', value: '7' },
-        { label: 'Last 30 days', value: '30' },
-        { label: 'Last 60 days', value: '60' },
-        { label: 'Last 90 days', value: '90' },
-        { label: 'Custom Range', value: 'custom' }
-      ] });
-      list.push({ key: 'group_by_batch', label: 'Group by Batch', type: 'select', options: [
-        { label: 'No (Show individual SKUs)', value: 'false' },
-        { label: 'Yes (Group by base SKU)', value: 'true' }
-      ] });
+      list.push({
+        key: 'period_days', label: 'Period', type: 'select', options: [
+          { label: 'Last 7 days', value: '7' },
+          { label: 'Last 30 days', value: '30' },
+          { label: 'Last 60 days', value: '60' },
+          { label: 'Last 90 days', value: '90' },
+          { label: 'Custom Range', value: 'custom' }
+        ]
+      });
+      list.push({
+        key: 'group_by_batch', label: 'Group by Batch', type: 'select', options: [
+          { label: 'No (Show individual SKUs)', value: 'false' },
+          { label: 'Yes (Group by base SKU)', value: 'true' }
+        ]
+      });
       // Only show date fields when custom range is selected
       if (this.isCustomDateRange()) {
         list.push({ key: 'analytics_start_date', label: 'Start Date', type: 'text', placeholder: 'YYYY-MM-DD' });
@@ -194,29 +200,33 @@ export class RepairComponent {
     switch (this.activeTab()) {
       case 'repairs':
         return [
-          { header: 'IMEI/Serial', id: 'device_identifier' as any, accessorFn: (r: any) => {
-            return r.device_imei || r.device_serial || 'N/A';
-          }, meta: { truncateText: true, truncateMaxWidth: '150px' } },
-          { header: 'Parts Used', id: 'parts_used', accessorFn: (r: any) => {
-            // Check for consumed items from repair
-            if (r.consumed_items && r.consumed_items.length > 0) {
-              const displayParts: string[] = [];
-              
-              for (const item of r.consumed_items) {
-                // For fixed_price items, show the reason
-                if (item.part_sku === 'fixed_price' && item.reason) {
-                  displayParts.push(item.reason);
-                } 
-                // For regular parts, show the part SKU
-                else if (item.part_sku && item.part_sku !== 'fixed_price') {
-                  displayParts.push(item.part_sku);
+          {
+            header: 'IMEI/Serial', id: 'device_identifier' as any, accessorFn: (r: any) => {
+              return r.device_imei || r.device_serial || 'N/A';
+            }, meta: { truncateText: true, truncateMaxWidth: '150px' }
+          },
+          {
+            header: 'Parts Used', id: 'parts_used', accessorFn: (r: any) => {
+              // Check for consumed items from repair
+              if (r.consumed_items && r.consumed_items.length > 0) {
+                const displayParts: string[] = [];
+
+                for (const item of r.consumed_items) {
+                  // For fixed_price items, show the reason
+                  if (item.part_sku === 'fixed_price' && item.reason) {
+                    displayParts.push(item.reason);
+                  }
+                  // For regular parts, show the part SKU
+                  else if (item.part_sku && item.part_sku !== 'fixed_price') {
+                    displayParts.push(item.part_sku);
+                  }
                 }
+
+                return displayParts.length > 0 ? displayParts.join(', ') : 'No parts used';
               }
-              
-              return displayParts.length > 0 ? displayParts.join(', ') : 'No parts used';
-            }
-            return 'No parts used';
-          }, meta: { wrapText: true } },
+              return 'No parts used';
+            }, meta: { wrapText: true }
+          },
           { header: 'Repairer', accessorKey: 'repairer_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
@@ -231,26 +241,29 @@ export class RepairComponent {
         ];
       case 'repair-reasons':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '250px' } },
-          { header: 'Status', id: 'status' as any, accessorFn: (r: any) => r.status ? 'Active' : 'Inactive', 
-            meta: { 
+          {
+            header: 'Status', id: 'status' as any, accessorFn: (r: any) => r.status ? 'Active' : 'Inactive',
+            meta: {
               cellClass: (r: any) => r.status ? 'text-success font-medium' : 'text-error font-medium'
-            } 
+            }
           },
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
               actions: (row: any) => [
                 { key: 'edit', label: 'Edit', class: 'text-primary', icon: 'edit' },
-                { 
-                  key: 'toggle-status', 
-                  label: row.status ? 'Disable' : 'Enable', 
+                {
+                  key: 'toggle-status',
+                  label: row.status ? 'Disable' : 'Enable',
                   class: row.status ? 'text-warning' : 'text-success',
                   icon: row.status ? 'x' : 'check'
                 },
@@ -261,11 +274,13 @@ export class RepairComponent {
         ];
       case 'dead-imei':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Device ID', accessorKey: 'device_id' as any },
           { header: 'SKU', accessorKey: 'sku' as any },
           { header: 'IMEI', accessorKey: 'device_imei' as any },
@@ -286,23 +301,27 @@ export class RepairComponent {
         ];
       case 'analytics':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Warehouse', accessorKey: 'warehouse_name' as any },
           { header: 'Part SKU', accessorKey: 'part_sku' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Qty Used', accessorKey: 'quantity_used' as any },
           { header: 'Current Stock', accessorKey: 'current_stock' as any },
           { header: 'Usage/Day', accessorFn: (r: any) => r.usage_per_day?.toFixed(2) || '0' },
-          { header: 'Days Until Empty', id: 'expected_days_until_empty', accessorFn: (r: any) => {
-            const days = r.expected_days_until_empty;
-            if (days === null || days === undefined) return '∞';
-            if (days <= 0) return 'Out of Stock';
-            if (days <= 30) return `${days} days (⚠️)`;
-            return `${days} days`;
-          } },
+          {
+            header: 'Days Until Empty', id: 'expected_days_until_empty', accessorFn: (r: any) => {
+              const days = r.expected_days_until_empty;
+              if (days === null || days === undefined) return '∞';
+              if (days <= 0) return 'Out of Stock';
+              if (days <= 30) return `${days} days (⚠️)`;
+              return `${days} days`;
+            }
+          },
           { header: 'Period', id: 'period_info', accessorFn: (r: any) => `${r.period_days} days` },
         ];
       default:
@@ -350,7 +369,7 @@ export class RepairComponent {
     this.selectedWarehouseId.set(optNum('warehouse_id'));
     const rrs = str('repair_reason_status', 'true'); this.repairReasonStatus.set(rrs === 'false' ? 'false' : 'true');
     this.groupByBatch.set(str('group_by_batch') === 'true');
-    
+
     // Analytics parameters
     const urlPeriodParam = qp.get('period_days');
     if (urlPeriodParam === 'custom') {
@@ -415,7 +434,7 @@ export class RepairComponent {
         limit: this.pageSize(),
       };
       const s = this.search().trim(); if (s) query['search'] = s;
-      
+
       if (this.activeTab() === 'repairs') {
         if (!this.dateRangeError()) {
           const startDate = this.startDate(); if (startDate) query['start_date'] = startDate;
@@ -441,7 +460,7 @@ export class RepairComponent {
           if (this.periodDays() !== 30) query['period_days'] = String(this.periodDays());
         }
       }
-      
+
       // Only navigate if normalized query differs from last emitted
       const desiredNorm = this._normalizeQuery(query);
       if (desiredNorm !== this._lastQueryNorm()) {
@@ -548,7 +567,7 @@ export class RepairComponent {
       const sd = this.sortDir(); if (sd) params = params.set('sort_dir', sd);
       const wid = this.selectedWarehouseId(); if (wid != null) params = params.set('warehouse_id', String(wid));
       if (this.groupByBatch()) params = params.set('group_by_batch', 'true');
-      
+
       // Date range parameters
       if (this.isCustomPeriod()) {
         const asd = this.analyticsStartDate(); if (asd) params = params.set('start_date', asd);
@@ -556,7 +575,7 @@ export class RepairComponent {
       } else {
         const pd = this.periodDays(); if (pd !== 30) params = params.set('period_days', String(pd));
       }
-      
+
       this.api.getSkuUsageAnalytics(params).subscribe({
         next: (res) => {
           if (seq !== this.requestSeq) return;
@@ -601,7 +620,7 @@ export class RepairComponent {
     if (this.activeTab() === 'analytics') {
       this.selectedWarehouseId.set(parseNum(f['warehouse_id']));
       this.groupByBatch.set(f['group_by_batch'] === 'true');
-      
+
       // Handle period selection
       const period = f['period_days'];
       if (period === 'custom') {
@@ -624,7 +643,7 @@ export class RepairComponent {
   onSortingChange(state: Array<{ id: string; desc: boolean }>) {
     // Only handle sorting for analytics tab
     if (this.activeTab() !== 'analytics') return;
-    
+
     if (state.length === 0) {
       this.sortBy.set(null);
       this.sortDir.set(null);
@@ -650,7 +669,7 @@ export class RepairComponent {
       this.sortBy.set(null);
       this.sortDir.set(null);
       this.pageIndex.set(0);
-      
+
       // Reset analytics-specific fields
       if (k === 'analytics') {
         this.periodDays.set(30);
@@ -665,7 +684,7 @@ export class RepairComponent {
   onPrimaryActionClick() {
     const tab = this.activeTab();
     if (tab === 'repairs') {
-      this.router.navigate(['/repair/repairs/add']);
+      this.exportRepairs();
     } else if (tab === 'repair-reasons') {
       this.router.navigate(['/repair/repair-reasons/add']);
     } else if (tab === 'dead-imei') {
@@ -754,7 +773,7 @@ export class RepairComponent {
   toggleRepairReasonStatus(reason: RepairReasonRecord) {
     const newStatus = !reason.status;
     const actionText = newStatus ? 'enable' : 'disable';
-    
+
     this.loading.set(true);
     this.api.updateRepairReason(reason.id, { status: newStatus }).subscribe({
       next: (res) => {
@@ -762,7 +781,7 @@ export class RepairComponent {
         if (res.status === 200) {
           this.fetchData(); // Refresh the list
           this.toast.success(
-            `Repair reason ${newStatus ? 'enabled' : 'disabled'} successfully`, 
+            `Repair reason ${newStatus ? 'enabled' : 'disabled'} successfully`,
             'Status Updated'
           );
         } else {
@@ -772,10 +791,67 @@ export class RepairComponent {
       error: (err) => {
         this.loading.set(false);
         this.toast.error(
-          err.error?.message || `Failed to ${actionText} repair reason`, 
+          err.error?.message || `Failed to ${actionText} repair reason`,
           'Update Failed'
         );
       },
+    });
+  }
+
+  // Export state
+  isExporting = signal(false);
+
+  // Export functionality for repairs tab
+  exportRepairs() {
+    if (this.activeTab() !== 'repairs') return;
+
+    this.isExporting.set(true);
+
+    // Build the same parameters used for fetching data
+    let params = new HttpParams();
+    const s = this.search().trim();
+    if (s) params = params.set('search', s);
+    const startDate = this.startDate();
+    if (startDate) params = params.set('date_from', startDate);
+    const endDate = this.endDate();
+    if (endDate) params = params.set('date_to', endDate);
+
+    // Call the export endpoint
+    this.api.exportRepairs(params).subscribe({
+      next: (blob: Blob) => {
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+
+        // Generate filename with timestamp and filters
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+        let filename = `repairs_${timestamp}`;
+
+        // Add filter info to filename if any filters are applied
+        const filterParts: string[] = [];
+        if (s) filterParts.push(`search-${s.replace(/[^a-zA-Z0-9]/g, '_')}`);
+        if (startDate) filterParts.push(`from-${startDate}`);
+        if (endDate) filterParts.push(`to-${endDate}`);
+
+        if (filterParts.length > 0) {
+          filename += `_${filterParts.join('_')}`;
+        }
+
+        link.download = `${filename}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        this.isExporting.set(false);
+        this.toast.success('CSV export completed successfully', 'Export Successful');
+      },
+      error: (error: any) => {
+        console.error('Export failed:', error);
+        this.isExporting.set(false);
+        this.toast.error('Failed to export repairs to CSV', 'Export Failed');
+      }
     });
   }
 }

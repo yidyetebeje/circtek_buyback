@@ -5,7 +5,7 @@ import { purchase_items } from "../../db/circtek.schema"
 import { RepairConsumeItemsInput, RepairListResult, RepairRecord, RepairWithItems, RepairCreateInput, RepairItemRecord, RepairQueryInput } from "./types"
 
 export class RepairsRepository {
-  constructor(private readonly database: typeof db) {}
+  constructor(private readonly database: typeof db) { }
 
   private normalizeRepair<T extends { status: boolean | null }>(row: T | undefined) {
     if (!row) return undefined
@@ -40,12 +40,12 @@ export class RepairsRepository {
       updated_at: repairs.updated_at,
       device_sku: devices.sku,
     })
-    .from(repairs)
-    .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
-    .leftJoin(users, eq(repairs.actor_id, users.id))
-    .leftJoin(devices, eq(repairs.device_id, devices.id))
-    .where(and(...conditions))
-    
+      .from(repairs)
+      .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+      .leftJoin(users, eq(repairs.actor_id, users.id))
+      .leftJoin(devices, eq(repairs.device_id, devices.id))
+      .where(and(...conditions))
+
     return this.normalizeRepair(row)
   }
 
@@ -77,13 +77,13 @@ export class RepairsRepository {
     let totalRow: { total: number } | undefined
     if (conditions.length) {
       const final = and(...conditions)
-      ;[totalRow] = await this.database.select({ total: sql<number>`COUNT(DISTINCT ${repairs.id})` })
-        .from(repairs)
-        .leftJoin(devices, eq(repairs.device_id, devices.id))
-        .leftJoin(users, eq(repairs.actor_id, users.id))
-        .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
-        .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
-        .where(final as any)
+        ;[totalRow] = await this.database.select({ total: sql<number>`COUNT(DISTINCT ${repairs.id})` })
+          .from(repairs)
+          .leftJoin(devices, eq(repairs.device_id, devices.id))
+          .leftJoin(users, eq(repairs.actor_id, users.id))
+          .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+          .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
+          .where(final as any)
     } else {
       ;[totalRow] = await this.database.select({ total: count() })
         .from(repairs)
@@ -95,9 +95,9 @@ export class RepairsRepository {
       const final = and(...conditions)
       // Use subquery to get distinct repair IDs first, then join for full data
       const distinctRepairIds = await this.database
-        .selectDistinct({ 
+        .selectDistinct({
           id: repairs.id,
-          created_at: repairs.created_at 
+          created_at: repairs.created_at
         })
         .from(repairs)
         .leftJoin(devices, eq(repairs.device_id, devices.id))
@@ -109,7 +109,7 @@ export class RepairsRepository {
         .orderBy(desc(repairs.created_at))
         .limit(limit)
         .offset(offset)
-      
+
       // Get full data for the distinct IDs
       if (distinctRepairIds.length === 0) {
         rows = []
@@ -171,14 +171,14 @@ export class RepairsRepository {
         if (normalized) {
           // Get consumed items with parts and reasons for this repair
           const consumedItems = await this.database
-            .select({ 
+            .select({
               sku: repair_items.sku,
               reason_name: repair_reasons.name
             })
             .from(repair_items)
             .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
             .where(and(eq(repair_items.repair_id, normalized.id), eq(repair_items.tenant_id, normalized.tenant_id)));
-          
+
           // Return consumed items as array of objects with part_sku and reason
           normalized.consumed_items = consumedItems.map(item => ({
             part_sku: item.sku,
@@ -188,7 +188,7 @@ export class RepairsRepository {
         return normalized;
       })
     );
-    
+
     return { rows: normalizedRows.filter(Boolean) as RepairRecord[], total: totalRow?.total ?? 0, page, limit }
   }
 
@@ -237,9 +237,9 @@ export class RepairsRepository {
       created_at: repair_items.created_at,
       updated_at: repair_items.updated_at,
     })
-    .from(repair_items)
-    .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
-    .where(and(...itemConditions))
+      .from(repair_items)
+      .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
+      .where(and(...itemConditions))
     const items: RepairItemRecord[] = rows.map(r => this.normalizeRepairItem(r))
 
     const total_items = items.length
@@ -268,7 +268,7 @@ export class RepairsRepository {
   }
 
   async deleteDeviceEventsByRepairId(repair_id: number, tenant_id: number): Promise<void> {
-    
+
     // Delete both REPAIR_STARTED and REPAIR_COMPLETED events for this repair
     await this.database.delete(device_events).where(
       and(
@@ -300,7 +300,7 @@ export class RepairsRepository {
       })
       .from(repair_reasons)
       .where(and(eq(repair_reasons.id, id), eq(repair_reasons.tenant_id, tenant_id)))
-    
+
     return row
   }
 
@@ -317,7 +317,7 @@ export class RepairsRepository {
         eq(repair_reason_model_prices.tenant_id, tenant_id),
         eq(repair_reason_model_prices.status, true)
       ))
-    
+
     if (modelPrice?.fixed_price) {
       return { fixed_price: modelPrice.fixed_price, is_model_specific: true }
     }
@@ -340,14 +340,14 @@ export class RepairsRepository {
       })
       .from(devices)
       .where(and(eq(devices.id, device_id), eq(devices.tenant_id, tenant_id)))
-    
+
     return row
   }
 
   // Analytics methods
   async getWarehouseAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number }) {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
-    
+
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
     if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
@@ -387,7 +387,7 @@ export class RepairsRepository {
 
   async getModelAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number }) {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
-    
+
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
     if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
@@ -417,7 +417,7 @@ export class RepairsRepository {
           eq(repairs.tenant_id, filters.tenant_id),
           eq(devices.model_name, r.model_name || ''),
         ]
-        
+
         if (filters.date_from) partsConditions.push(gte(repairs.created_at, new Date(filters.date_from)))
         if (filters.date_to) partsConditions.push(lte(repairs.created_at, new Date(filters.date_to)))
         if (filters.reason_id) partsConditions.push(eq(repair_items.reason_id, filters.reason_id))
@@ -506,7 +506,7 @@ export class RepairsRepository {
 
   async getReasonAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number }) {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
-    
+
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
     if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
@@ -544,7 +544,7 @@ export class RepairsRepository {
 
   async getUserAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number }) {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
-    
+
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
     if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
@@ -584,7 +584,7 @@ export class RepairsRepository {
 
   async getIMEIAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number; search?: string; page: number; limit: number }) {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
-    
+
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
     if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
@@ -641,7 +641,7 @@ export class RepairsRepository {
           eq(repairs.tenant_id, filters.tenant_id),
           eq(repairs.device_id, r.device_id),
         ]
-        
+
         if (filters.date_from) partsConditions.push(gte(repairs.created_at, new Date(filters.date_from)))
         if (filters.date_to) partsConditions.push(lte(repairs.created_at, new Date(filters.date_to)))
         if (filters.reason_id) partsConditions.push(eq(repair_items.reason_id, filters.reason_id))
@@ -719,7 +719,7 @@ export class RepairsRepository {
   async getRepairAnalytics(filters: { tenant_id: number; date_from?: string; date_to?: string; warehouse_id?: number; model_name?: string; reason_id?: number }) {
     // Get summary statistics
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
-    
+
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
     if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
@@ -744,8 +744,8 @@ export class RepairsRepository {
       total_parts_used: Number(summaryResult?.total_parts_used || 0),
       total_quantity_consumed: Number(summaryResult?.total_quantity_consumed || 0),
       total_cost: Number(summaryResult?.total_cost || 0),
-      average_cost_per_repair: Number(summaryResult?.unique_devices || 0) > 0 
-        ? Number(summaryResult?.total_cost || 0) / Number(summaryResult?.unique_devices || 0) 
+      average_cost_per_repair: Number(summaryResult?.unique_devices || 0) > 0
+        ? Number(summaryResult?.total_cost || 0) / Number(summaryResult?.unique_devices || 0)
         : 0,
     }
 
@@ -765,7 +765,132 @@ export class RepairsRepository {
       by_user,
     }
   }
- 
+
+  async findAllForExport(filters: RepairQueryInput & { tenant_id?: number }): Promise<Array<RepairRecord & { device_model_name: string | null; total_cost: number }>> {
+    const conditions: any[] = []
+    if (typeof filters.tenant_id === 'number') conditions.push(eq(repairs.tenant_id, filters.tenant_id))
+    if (typeof filters.device_id === 'number') conditions.push(eq(repairs.device_id, filters.device_id))
+    if (typeof filters.status === 'boolean') conditions.push(eq(repairs.status, filters.status))
+    if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.search) {
+      const pattern = `%${filters.search}%`
+      conditions.push(or(
+        like(repairs.remarks, pattern),
+        like(devices.sku, pattern),
+        like(devices.imei, pattern),
+        like(devices.serial, pattern),
+        like(users.name, pattern),
+        like(repair_items.sku, pattern),
+        like(repair_reasons.name, pattern)
+      ))
+    }
+
+    let rows: any[];
+    if (conditions.length) {
+      const final = and(...conditions)
+      // Get distinct repair IDs first
+      const distinctRepairIds = await this.database
+        .selectDistinct({
+          id: repairs.id,
+          created_at: repairs.created_at
+        })
+        .from(repairs)
+        .leftJoin(devices, eq(repairs.device_id, devices.id))
+        .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+        .leftJoin(users, eq(repairs.actor_id, users.id))
+        .leftJoin(repair_items, eq(repairs.id, repair_items.repair_id))
+        .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
+        .where(final as any)
+        .orderBy(desc(repairs.created_at))
+
+      if (distinctRepairIds.length === 0) {
+        rows = []
+      } else {
+        const repairIds = distinctRepairIds.map(r => r.id)
+        rows = await this.database.select({
+          id: repairs.id,
+          device_id: repairs.device_id,
+          remarks: repairs.remarks,
+          status: repairs.status,
+          tenant_id: repairs.tenant_id,
+          actor_id: repairs.actor_id,
+          warehouse_id: repairs.warehouse_id,
+          warehouse_name: warehouses.name,
+          repairer_name: users.name,
+          created_at: repairs.created_at,
+          updated_at: repairs.updated_at,
+          device_sku: devices.sku,
+          device_imei: devices.imei,
+          device_serial: devices.serial,
+          device_model_name: devices.model_name
+        })
+          .from(repairs)
+          .leftJoin(devices, eq(repairs.device_id, devices.id))
+          .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+          .leftJoin(users, eq(repairs.actor_id, users.id))
+          .where(sql`${repairs.id} IN (${sql.join(repairIds.map(id => sql`${id}`), sql`, `)})`)
+          .orderBy(desc(repairs.created_at))
+      }
+    } else {
+      rows = await this.database.select({
+        id: repairs.id,
+        device_id: repairs.device_id,
+        remarks: repairs.remarks,
+        status: repairs.status,
+        tenant_id: repairs.tenant_id,
+        actor_id: repairs.actor_id,
+        warehouse_id: repairs.warehouse_id,
+        warehouse_name: warehouses.name,
+        repairer_name: users.name,
+        created_at: repairs.created_at,
+        updated_at: repairs.updated_at,
+        device_sku: devices.sku,
+        device_imei: devices.imei,
+        device_serial: devices.serial,
+        device_model_name: devices.model_name
+      })
+        .from(repairs)
+        .leftJoin(devices, eq(repairs.device_id, devices.id))
+        .leftJoin(warehouses, eq(repairs.warehouse_id, warehouses.id))
+        .leftJoin(users, eq(repairs.actor_id, users.id))
+        .orderBy(desc(repairs.created_at))
+    }
+
+    // Get consumed parts, reasons, and calculate total cost for each repair
+    const normalizedRows = await Promise.all(
+      rows.map(async (r) => {
+        const normalized = this.normalizeRepair(r) as any;
+        if (normalized) {
+          // Get consumed items with parts, reasons, and costs for this repair
+          // Use r.id (the original row ID) instead of normalized.id
+          const consumedItems = await this.database
+            .select({
+              sku: repair_items.sku,
+              reason_name: repair_reasons.name,
+              quantity: repair_items.quantity,
+              cost: repair_items.cost
+            })
+            .from(repair_items)
+            .leftJoin(repair_reasons, eq(repair_items.reason_id, repair_reasons.id))
+            .where(and(eq(repair_items.repair_id, r.id), eq(repair_items.tenant_id, r.tenant_id)));
+
+          // Calculate total cost
+          normalized.total_cost = consumedItems.reduce((sum, item) => {
+            return sum + (Number(item.cost) * Number(item.quantity));
+          }, 0);
+
+          // Return consumed items as array of objects with part_sku and reason
+          normalized.consumed_items = consumedItems.map(item => ({
+            part_sku: item.sku,
+            reason: item.reason_name || null
+          }));
+        }
+        return normalized;
+      })
+    );
+
+    return normalizedRows.filter(Boolean) as Array<RepairRecord & { device_model_name: string | null; total_cost: number }>;
+  }
+
 }
-
-

@@ -1,61 +1,40 @@
-<app-generic-page
-  [title]="title"
-  [subtitle]="subtitle"
-  [loading]="loading()"
-  [tabs]="tabs()"
-  [activeTabKeyInput]="activeTab()"
-  [searchQueryInput]="search()"
-  [facets]="facets()"
-  [columns]="columns()"
-  [data]="data()"
-  [total]="total()"
-  [pageIndexInput]="pageIndex()"
-  [pageSizeInput]="pageSize()"
-  [searchPlaceholder]="searchPlaceholder()"
-  [primaryAction]="primaryAction()"
-  (primaryActionClick)="onPrimaryActionClick()"
-  (pageChange)="onPageChange($event)"
-  (filtersChange)="onFiltersChange($event)"
-  (sortingChange)="onSortingChange($event)"
-  (tabChange)="onTabChange($event)"
-  (cellAction)="onCellAction($event)"
-></app-generic-page>
+<app-generic-page [title]="title" [subtitle]="subtitle" [loading]="loading() || isExporting()" [tabs]="tabs()"
+  [activeTabKeyInput]="activeTab()" [searchQueryInput]="search()" [facets]="facets()" [columns]="columns()"
+  [data]="data()" [total]="total()" [pageIndexInput]="pageIndex()" [pageSizeInput]="pageSize()"
+  [searchPlaceholder]="searchPlaceholder()" [primaryAction]="primaryAction()"
+  (primaryActionClick)="onPrimaryActionClick()" (pageChange)="onPageChange($event)"
+  (filtersChange)="onFiltersChange($event)" (sortingChange)="onSortingChange($event)" (tabChange)="onTabChange($event)"
+  (cellAction)="onCellAction($event)"></app-generic-page>
 
 <!-- Delete Confirmation Modal -->
-<app-generic-modal
-  [isOpen]="isDeleteModalOpen()"
-  [title]="'Delete Repair'"
-  [actions]="deleteModalActions()"
-  size="md"
-  (close)="closeDeleteModal()"
-  (actionClick)="onDeleteModalAction($event)"
->
+<app-generic-modal [isOpen]="isDeleteModalOpen()" [title]="'Delete Repair'" [actions]="deleteModalActions()" size="md"
+  (close)="closeDeleteModal()" (actionClick)="onDeleteModalAction($event)">
   <div class="space-y-4">
     @if (deleteContext(); as repair) {
-      <p class="text-base-content/80">
-        Are you sure you want to delete this repair?
-      </p>
-      
-      <div class="bg-base-200/50 p-4 rounded-lg space-y-2">
-        <div class="flex items-start gap-2">
-          <span class="font-medium text-base-content/70 min-w-[100px]">IMEI/Serial:</span>
-          <span class="text-base-content">{{ repair.device_imei || repair.device_serial || 'N/A' }}</span>
-        </div>
-        <div class="flex items-start gap-2">
-          <span class="font-medium text-base-content/70 min-w-[100px]">Repairer:</span>
-          <span class="text-base-content">{{ repair.repairer_name || 'Unknown' }}</span>
-        </div>
-      </div>
+    <p class="text-base-content/80">
+      Are you sure you want to delete this repair?
+    </p>
 
-      <div class="bg-warning/10 border border-warning/30 p-4 rounded-lg">
-        <p class="text-sm text-warning-content font-medium mb-2">⚠️ This action will:</p>
-        <ul class="text-sm text-warning-content/80 space-y-1 list-disc list-inside">
-          <li>Restore consumed stock quantities</li>
-          <li>Deallocate purchases</li>
-          <li>Remove associated device events</li>
-          <li>Permanently delete this repair record</li>
-        </ul>
+    <div class="bg-base-200/50 p-4 rounded-lg space-y-2">
+      <div class="flex items-start gap-2">
+        <span class="font-medium text-base-content/70 min-w-[100px]">IMEI/Serial:</span>
+        <span class="text-base-content">{{ repair.device_imei || repair.device_serial || 'N/A' }}</span>
       </div>
+      <div class="flex items-start gap-2">
+        <span class="font-medium text-base-content/70 min-w-[100px]">Repairer:</span>
+        <span class="text-base-content">{{ repair.repairer_name || 'Unknown' }}</span>
+      </div>
+    </div>
+
+    <div class="bg-warning/10 border border-warning/30 p-4 rounded-lg">
+      <p class="text-sm text-warning-content font-medium mb-2">⚠️ This action will:</p>
+      <ul class="text-sm text-warning-content/80 space-y-1 list-disc list-inside">
+        <li>Restore consumed stock quantities</li>
+        <li>Deallocate purchases</li>
+        <li>Remove associated device events</li>
+        <li>Permanently delete this repair record</li>
+      </ul>
+    </div>
     }
   </div>
 </app-generic-modal>
