@@ -1,7 +1,8 @@
 <nav class="navbar">
   <!-- Mobile hamburger menu -->
   <button class="hamburger-btn" (click)="onSidebarToggle()">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+      class="w-6 h-6">
       <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
     </svg>
   </button>
@@ -25,67 +26,78 @@
         <span>History</span>
       </a>
     </li>
+    @if (canAccessManagement()) {
     <li>
       <a routerLink="/management" class="nav-link">
         <lucide-icon [img]="Users" size="18"></lucide-icon>
         <span>Management</span>
       </a>
     </li>
+    }
+    @if (canAccessStock()) {
     <li>
       <a routerLink="/stock-management" class="nav-link">
         <lucide-icon [img]="Package" size="18"></lucide-icon>
         <span>Stock</span>
       </a>
     </li>
+    }
+    @if (canAccessRepair()) {
     <li>
       <a routerLink="/repair" class="nav-link">
         <lucide-icon [img]="Wrench" size="18"></lucide-icon>
         <span>Repair</span>
       </a>
     </li>
+    }
+    @if (canAccessLicensing()) {
     <li>
       <a routerLink="/licensing" class="nav-link">
         <lucide-icon [img]="CreditCard" size="18"></lucide-icon>
         <span>Licensing</span>
       </a>
     </li>
+    }
   </ul>
-  
+
   <div class="navbar-actions">
     <!-- Currency selector -->
     @if (isAuthenticated()) {
-      <div class="currency-selector-wrapper">
-        <app-currency-selector></app-currency-selector>
-      </div>
+    <div class="currency-selector-wrapper">
+      <app-currency-selector></app-currency-selector>
+    </div>
     }
-    
+
     <!-- Theme toggle -->
-    <button type="button" class="group rounded-md p-2 hover:bg-base-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      [attr.aria-pressed]="isDarkMode()" [matTooltip]="themeTooltip()"
-      (click)="toggleTheme()">
+    <button type="button"
+      class="group rounded-md p-2 hover:bg-base-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      [attr.aria-pressed]="isDarkMode()" [matTooltip]="themeTooltip()" (click)="toggleTheme()">
       @if (isDarkMode()) {
-        <!-- Moon icon (dark mode active) -->
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6 fill-current text-base-content/80 transition-colors duration-200 group-hover:text-sky-400">
-          <path d="M21.64 13.5A1 1 0 0 0 20.5 12 9 9 0 0 1 12 3a1 1 0 0 0 0-2A11 11 0 0 0 1 13a11 11 0 0 0 9 9 1 1 0 0 0 1-1v-1a1 1 0 0 0-1-1 7 7 0 0 1-6.48-5.12 1 1 0 0 0-1.83.64A9 9 0 0 0 12 21a9.32 9.32 0 0 0 8.5-6.5 1 1 0 0 0 1.14-1Z"/>
-        </svg>
+      <!-- Moon icon (dark mode active) -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+        class="h-6 w-6 fill-current text-base-content/80 transition-colors duration-200 group-hover:text-sky-400">
+        <path
+          d="M21.64 13.5A1 1 0 0 0 20.5 12 9 9 0 0 1 12 3a1 1 0 0 0 0-2A11 11 0 0 0 1 13a11 11 0 0 0 9 9 1 1 0 0 0 1-1v-1a1 1 0 0 0-1-1 7 7 0 0 1-6.48-5.12 1 1 0 0 0-1.83.64A9 9 0 0 0 12 21a9.32 9.32 0 0 0 8.5-6.5 1 1 0 0 0 1.14-1Z" />
+      </svg>
       } @else {
-        <!-- Sun icon (light mode active) -->
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6 fill-current">
-          <path d="M5.64 17l-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm7-7a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0V4a1 1 0 0 0 1 1ZM5.64 7.05a1 1 0 0 0 .7.29 1 1 0 0 0 .71-.29 1 1 0 0 0 0-1.41l-.71-.71A1 1 0 0 0 4.93 6.34Zm12 .29a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41L17 5.64a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-9 8a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0V20a1 1 0 0 0-1-1Zm6.36-2a1 1 0 0 0-1.36 1.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41ZM12 6.5A5.5 5.5 0 1 0 17.5 12 5.51 5.51 0 0 0 12 6.5Zm0 9A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5Z"/>
-        </svg>
+      <!-- Sun icon (light mode active) -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-6 w-6 fill-current">
+        <path
+          d="M5.64 17l-.71.71a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l.71-.71A1 1 0 0 0 5.64 17ZM5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1Zm7-7a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0V4a1 1 0 0 0 1 1ZM5.64 7.05a1 1 0 0 0 .7.29 1 1 0 0 0 .71-.29 1 1 0 0 0 0-1.41l-.71-.71A1 1 0 0 0 4.93 6.34Zm12 .29a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41L17 5.64a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29ZM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm-9 8a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0V20a1 1 0 0 0-1-1Zm6.36-2a1 1 0 0 0-1.36 1.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41ZM12 6.5A5.5 5.5 0 1 0 17.5 12 5.51 5.51 0 0 0 12 6.5Zm0 9A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5Z" />
+      </svg>
       }
     </button>
-    
+
     <!-- Logout button (only shown when authenticated) -->
     @if (isAuthenticated() && currentUser(); as user) {
-      <button type="button" class="logout-btn" 
-        aria-label="Logout" 
-        (click)="logout()">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="logout-icon">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-        </svg>
-        Logout
-      </button>
+    <button type="button" class="logout-btn" aria-label="Logout" (click)="logout()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+        class="logout-icon">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+      </svg>
+      Logout
+    </button>
     }
   </div>
 </nav>

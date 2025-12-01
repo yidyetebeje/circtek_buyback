@@ -7,12 +7,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { GenericPageComponent, type Facet, type GenericTab } from '../../shared/components/generic-page/generic-page.component';
 import { GenericModalComponent, type ModalAction } from '../../shared/components/generic-modal/generic-modal.component';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { PaginationService } from '../../shared/services/pagination.service';
 import { ToastService } from '../../core/services/toast.service';
 import { RepairRecord } from '../../core/models/repair';
 import { RepairReasonRecord } from '../../core/models/repair-reason';
 import { DeadIMEIRecord } from '../../core/models/dead-imei';
 import { SkuUsageAnalyticsItem } from '../../core/models/analytics';
+import { ROLE_ID } from '../../core/constants/role.constants';
 
 // Union type for table rows across tabs
 export type RepairRow = RepairRecord | RepairReasonRecord | DeadIMEIRecord | SkuUsageAnalyticsItem;
@@ -26,6 +28,7 @@ export type RepairRow = RepairRecord | RepairReasonRecord | DeadIMEIRecord | Sku
 })
 export class RepairComponent {
   private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly paginationService = inject(PaginationService);
@@ -94,27 +97,45 @@ export class RepairComponent {
   // Track last emitted URL query to avoid redundant navigations
   private _lastQueryNorm = signal<string>('');
 
+  // Check if user can access repair reasons (admin/super admin only)
+  canAccessRepairReasons = computed(() => {
+    const user = this.auth.currentUser();
+    return user?.role_id === ROLE_ID.ADMIN || user?.role_id === ROLE_ID.SUPER_ADMIN;
+  });
+
   // Tabs
-  tabs = computed<GenericTab[]>(() => [
-    { key: 'repairs', label: 'Repairs' },
-    { key: 'repair-reasons', label: 'Repair Reasons' },
-    { key: 'dead-imei', label: 'Dead IMEI' },
-    { key: 'analytics', label: 'Usage Analytics' },
-  ]);
+  tabs = computed<GenericTab[]>(() => {
+    const allTabs = [
+      { key: 'repairs', label: 'Repairs' },
+      { key: 'repair-reasons', label: 'Repair Reasons' },
+      { key: 'dead-imei', label: 'Dead IMEI' },
+      { key: 'analytics', label: 'Usage Analytics' },
+    ];
+
+    // Filter out repair-reasons tab for non-admin users
+    if (!this.canAccessRepairReasons()) {
+      return allTabs.filter(tab => tab.key !== 'repair-reasons');
+    }
+
+    return allTabs;
+  });
 
   // Header
   title = 'Repair Management';
   subtitle = 'Manage repairs, repair reasons, dead IMEI records and usage analytics';
-  primaryAction = computed(() => {
+  headerActions = computed(() => {
     const tab = this.activeTab();
     if (tab === 'repairs') {
-      return { label: 'Export CSV' };
+      return [
+        { key: 'create-repair', label: 'Create Repair', variant: 'btn-primary' },
+        { key: 'export-csv', label: 'Export CSV', variant: 'btn-outline' }
+      ];
     } else if (tab === 'repair-reasons') {
-      return { label: 'Add Repair Reason' };
+      return [{ key: 'add-repair-reason', label: 'Add Repair Reason', variant: 'btn-primary' }];
     } else if (tab === 'dead-imei') {
-      return { label: 'Add Dead IMEI' };
+      return [{ key: 'add-dead-imei', label: 'Add Dead IMEI', variant: 'btn-primary' }];
     } else if (tab === 'analytics') {
-      return { label: 'View Detailed Analytics' };
+      return [{ key: 'view-analytics', label: 'View Detailed Analytics', variant: 'btn-primary' }];
     }
     return null;
   });
@@ -348,8 +369,20 @@ export class RepairComponent {
     const str = (k: string, d = '') => qp.get(k) ?? d;
 
     const tab = str('tab', 'repairs');
-    if (tab === 'repairs' || tab === 'repair-reasons' || tab === 'dead-imei' || tab === 'analytics') this.activeTab.set(tab as any);
-    else this.activeTab.set('repairs');
+    // Prevent non-admin users from accessing repair-reasons tab via URL
+    const user = this.auth.currentUser();
+    const isAdmin = user?.role_id === ROLE_ID.ADMIN || user?.role_id === ROLE_ID.SUPER_ADMIN;
+
+    if (tab === 'repairs' || tab === 'repair-reasons' || tab === 'dead-imei' || tab === 'analytics') {
+      // If trying to access repair-reasons without admin rights, redirect to repairs tab
+      if (tab === 'repair-reasons' && !isAdmin) {
+        this.activeTab.set('repairs');
+      } else {
+        this.activeTab.set(tab as any);
+      }
+    } else {
+      this.activeTab.set('repairs');
+    }
 
     this.pageIndex.set(Math.max(0, num('page', 1) - 1));
     // Use pagination service with URL fallback
@@ -396,7 +429,20 @@ export class RepairComponent {
     effect(() => {
       // Load warehouses for selects (limit high for options)
       this.api.getWarehouses(new HttpParams().set('limit', '1000')).subscribe(res => {
-        const opts = (res.data ?? []).map(w => ({ label: w.name, value: String(w.id) }));
+        const currentUser = this.auth.currentUser();
+        const isAdmin = currentUser?.role_id === ROLE_ID.ADMIN || currentUser?.role_id === ROLE_ID.SUPER_ADMIN;
+        let warehouses = res.data ?? [];
+
+        // Filter warehouses for non-admin users
+        if (!isAdmin && currentUser?.warehouse_id) {
+          warehouses = warehouses.filter(w => w.id === currentUser.warehouse_id);
+          // Auto-select warehouse for non-admin users if not already set
+          if (this.selectedWarehouseId() === null) {
+            this.selectedWarehouseId.set(currentUser.warehouse_id);
+          }
+        }
+
+        const opts = warehouses.map(w => ({ label: w.name, value: String(w.id) }));
         this.warehouseOptions.set(opts);
       });
     });
@@ -681,15 +727,16 @@ export class RepairComponent {
   }
 
   // Actions
-  onPrimaryActionClick() {
-    const tab = this.activeTab();
-    if (tab === 'repairs') {
+  onHeaderActionClick(actionKey: string) {
+    if (actionKey === 'create-repair') {
+      this.router.navigate(['/repair/repairs/add']);
+    } else if (actionKey === 'export-csv') {
       this.exportRepairs();
-    } else if (tab === 'repair-reasons') {
+    } else if (actionKey === 'add-repair-reason') {
       this.router.navigate(['/repair/repair-reasons/add']);
-    } else if (tab === 'dead-imei') {
+    } else if (actionKey === 'add-dead-imei') {
       this.router.navigate(['/repair/dead-imei/add']);
-    } else if (tab === 'analytics') {
+    } else if (actionKey === 'view-analytics') {
       this.router.navigate(['/repair/analytics']);
     }
   }

@@ -6,12 +6,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { GenericPageComponent, type Facet, type GenericTab } from '../../shared/components/generic-page/generic-page.component';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { PaginationService } from '../../shared/services/pagination.service';
 import { StockWithWarehouse } from '../../core/models/stock';
 import { PurchaseRecord } from '../../core/models/purchase';
 import { TransferWithDetails } from '../../core/models/transfer';
 import { SkuSpecsRecord } from '../../core/models/sku-specs';
 import { SkuMappingsComponent } from './sku-mappings/sku-mappings.component';
+import { ROLE_ID } from '../../core/constants/role.constants';
 // Union type for table rows across tabs
 export type StockMgmtRow = StockWithWarehouse | PurchaseRecord | TransferWithDetails | SkuSpecsRecord;
 
@@ -24,6 +26,7 @@ export type StockMgmtRow = StockWithWarehouse | PurchaseRecord | TransferWithDet
 })
 export class StockManagementComponent {
   private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly paginationService = inject(PaginationService);
@@ -79,19 +82,39 @@ export class StockManagementComponent {
   // Track last emitted URL query to avoid redundant navigations
   private _lastQueryNorm = signal<string>('');
 
+  // Role-based access control
+  isRepairManager = computed(() => {
+    const user = this.auth.currentUser();
+    return user?.role_id === ROLE_ID.REPAIR_MANAGER;
+  });
+
+  canEditStock = computed(() => {
+    return !this.isRepairManager();
+  });
+
   // Tabs
-  tabs = computed<GenericTab[]>(() => [
-    { key: 'stock', label: 'Stock' },
-    { key: 'purchases', label: 'Purchases' },
-    { key: 'transfers', label: 'Transfers' },
-    { key: 'sku-specs', label: 'SKU Specs' },
-    { key: 'sku-mappings', label: 'SKU Mappings' },
-  ]);
+  tabs = computed<GenericTab[]>(() => {
+    // Repair managers can only see the stock tab
+    if (this.isRepairManager()) {
+      return [{ key: 'stock', label: 'Stock' }];
+    }
+    return [
+      { key: 'stock', label: 'Stock' },
+      { key: 'purchases', label: 'Purchases' },
+      { key: 'transfers', label: 'Transfers' },
+      { key: 'sku-specs', label: 'SKU Specs' },
+      { key: 'sku-mappings', label: 'SKU Mappings' },
+    ];
+  });
 
   // Header
   title = 'Stock Management';
   subtitle = 'Manage stock, purchases, transfers and SKU specifications';
   primaryAction = computed(() => {
+    // Repair managers cannot perform any edit actions
+    if (this.isRepairManager()) {
+      return null;
+    }
     const tab = this.activeTab();
     if (tab === 'stock') {
       return { label: 'Stock In' };
@@ -169,7 +192,10 @@ export class StockManagementComponent {
     const list: Facet[] = [];
     const tab = this.activeTab();
     if (tab === 'stock') {
-      list.push({ key: 'warehouse_id', label: 'Warehouse', type: 'select', options: this.warehouseOptions() });
+      // Repair managers cannot filter by warehouse (they only see their assigned warehouse)
+      if (!this.isRepairManager()) {
+        list.push({ key: 'warehouse_id', label: 'Warehouse', type: 'select', options: this.warehouseOptions() });
+      }
       list.push({
         key: 'is_part', label: 'Type', type: 'select', options: [
           { label: 'Any', value: 'any' },
@@ -214,28 +240,34 @@ export class StockManagementComponent {
   columns = computed<ColumnDef<StockMgmtRow>[]>(() => {
     switch (this.activeTab()) {
       case 'stock':
-        return [
-          {
-            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-              const idx = this.data().indexOf(r as any);
-              const base = this.pageIndex() * this.pageSize();
-              return base + (idx >= 0 ? idx : 0) + 1;
-            }
-          },
-          { header: 'SKU', accessorKey: 'sku' as any },
-          { header: 'Warehouse', accessorKey: 'warehouse_name' as any },
-          { header: 'Quantity', accessorKey: 'quantity' as any },
-          { header: 'Type', id: 'is_part', accessorFn: (r: any) => (r.is_part ? 'Part' : 'Device') },
-          {
-            header: 'Actions', id: 'actions' as any, enableSorting: false as any,
-            meta: {
-              actions: [
-                { key: 'adjust', label: 'Adjust', class: 'text-primary' },
-              ],
-              cellClass: () => 'text-right'
-            }
-          } as any,
-        ];
+        {
+          const columns: ColumnDef<StockMgmtRow>[] = [
+            {
+              header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+                const idx = this.data().indexOf(r as any);
+                const base = this.pageIndex() * this.pageSize();
+                return base + (idx >= 0 ? idx : 0) + 1;
+              }
+            },
+            { header: 'SKU', accessorKey: 'sku' as any },
+            { header: 'Warehouse', accessorKey: 'warehouse_name' as any },
+            { header: 'Quantity', accessorKey: 'quantity' as any },
+            { header: 'Type', id: 'is_part', accessorFn: (r: any) => (r.is_part ? 'Part' : 'Device') },
+          ];
+          // Only show actions column if user can edit stock
+          if (this.canEditStock()) {
+            columns.push({
+              header: 'Actions', id: 'actions' as any, enableSorting: false as any,
+              meta: {
+                actions: [
+                  { key: 'adjust', label: 'Adjust', class: 'text-primary' },
+                ],
+                cellClass: () => 'text-right'
+              }
+            } as any);
+          }
+          return columns;
+        }
       case 'purchases':
         return [
           {
@@ -514,7 +546,19 @@ export class StockManagementComponent {
       const sb = this.sortBy(); const sd = this.sortDir();
       if (sb) params = params.set('sort_by', sb);
       if (sd) params = params.set('sort_dir', sd);
-      const wid = this.selectedWarehouseId(); if (wid != null) params = params.set('warehouse_id', String(wid));
+
+      // For repair managers, automatically filter by their assigned warehouse
+      if (this.isRepairManager()) {
+        const userWarehouseId = this.auth.currentUser()?.warehouse_id;
+        if (userWarehouseId != null) {
+          params = params.set('warehouse_id', String(userWarehouseId));
+        }
+      } else {
+        // For other users, use the selected warehouse filter
+        const wid = this.selectedWarehouseId();
+        if (wid != null) params = params.set('warehouse_id', String(wid));
+      }
+
       const ip = this.selectedIsPart(); if (ip !== 'any') params = params.set('is_part', ip === 'true' ? 'true' : 'false');
       const lst = this.lowStockThreshold(); if (lst != null) params = params.set('low_stock_threshold', String(lst));
       if (this.groupByBatch()) params = params.set('group_by_batch', 'true');
@@ -685,6 +729,10 @@ export class StockManagementComponent {
   }
 
   onCellAction(event: { action: string; row: StockMgmtRow }) {
+    // Repair managers cannot perform any actions
+    if (this.isRepairManager()) {
+      return;
+    }
     const tab = this.activeTab();
     const row = event.row as any;
 

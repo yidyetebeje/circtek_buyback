@@ -13,6 +13,7 @@ import { RepairCreateInput, RepairConsumeItemsInput, RepairCreateWithConsumeInpu
 import { BarcodeScannerComponent, ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 import { RepairReasonAutocompleteComponent } from '../../shared/components/repair-reason-autocomplete/repair-reason-autocomplete.component';
 import { RepairReasonRecord } from '../../core/models/repair-reason';
+import { ROLE_ID } from '../../core/constants/role.constants';
 
 @Component({
   selector: 'app-repair-form',
@@ -62,18 +63,18 @@ export class RepairFormComponent implements OnInit {
   // Computed form validation
   isFormValid = () => {
     const form = this.form();
-    
+
     // Check basic required fields
     const hasIdentifier = form.get('identifier')?.value?.trim();
     const hasWarehouseId = form.get('warehouse_id')?.value;
     const hasDeviceId = form.get('device_id')?.value;
     const deviceFoundStatus = this.deviceFound();
-    
+
     // If device is not found yet, don't validate parts
     if (!deviceFoundStatus) {
       return hasIdentifier && hasWarehouseId;
     }
-    
+
     // If device is found, validate parts as well
     const hasParts = this.parts.length > 0;
     const allPartsValid = this.parts.controls.every(partGroup => {
@@ -87,7 +88,7 @@ export class RepairFormComponent implements OnInit {
       // Only invalid if both SKU and reason are missing
       return quantityValid && (hasSku || hasReason);
     });
-    
+
     console.log({
       hasIdentifier,
       hasWarehouseId,
@@ -96,7 +97,7 @@ export class RepairFormComponent implements OnInit {
       hasParts,
       allPartsValid
     })
-    
+
     return hasIdentifier && hasWarehouseId && hasDeviceId && hasParts && allPartsValid;
   };
 
@@ -124,6 +125,12 @@ export class RepairFormComponent implements OnInit {
     const currentUser = this.auth.currentUser();
     if (currentUser?.warehouse_id) {
       this.form().get('warehouse_id')?.setValue(currentUser.warehouse_id);
+
+      // Disable warehouse field for non-admin users
+      const isAdmin = currentUser.role_id === ROLE_ID.ADMIN || currentUser.role_id === ROLE_ID.SUPER_ADMIN;
+      if (!isAdmin) {
+        this.isWarehouseDisabled.set(true);
+      }
     }
   }
 
@@ -136,16 +143,16 @@ export class RepairFormComponent implements OnInit {
     this.repairHistory.set([]);
     this.error.set(null);
     this.isImeiScannerDisabled.set(false);
-    
+
     // Create a new form instance
     this.form.set(this.createForm());
-    
+
     // Clear the IMEI scanner component
     const scanner = this.imeiScanner();
     if (scanner) {
       scanner.clear();
     }
-    
+
     // Re-apply user's warehouse and setup subscriptions
     this.setUserWarehouse();
     this.setupIdentifierSubscription();
@@ -159,6 +166,25 @@ export class RepairFormComponent implements OnInit {
   failedComponents = signal<string[]>([]);
   repairHistory = signal<RepairRecord[]>([]);
   now = signal<Date>(new Date());
+  isWarehouseDisabled = signal<boolean>(false);
+
+  // Computed warehouse list based on user role
+  filteredWarehouses = computed(() => {
+    const currentUser = this.auth.currentUser();
+    const allWarehouses = this.warehouses();
+
+    // Admin and super_admin can see all warehouses
+    if (currentUser?.role_id === ROLE_ID.ADMIN || currentUser?.role_id === ROLE_ID.SUPER_ADMIN) {
+      return allWarehouses;
+    }
+
+    // Non-admin users can only see their assigned warehouse
+    if (currentUser?.warehouse_id) {
+      return allWarehouses.filter(w => w.id === currentUser.warehouse_id);
+    }
+
+    return [];
+  });
 
   repairReasonOptions = computed(() => this.repairReasons().map(r => ({ label: r.name, value: r.id })));
 
@@ -207,11 +233,11 @@ export class RepairFormComponent implements OnInit {
     const params = new HttpParams()
       .set('limit', '500')
       .set('status', 'true'); // Only fetch active repair reasons
-    this.api.getRepairReasons(params).subscribe({ 
-      next: (res) => { 
+    this.api.getRepairReasons(params).subscribe({
+      next: (res) => {
         // Additional client-side filter to ensure only active reasons are shown
         const activeReasons = (res.data ?? []).filter(r => r.status === true);
-        this.repairReasons.set(activeReasons); 
+        this.repairReasons.set(activeReasons);
       },
       error: () => { this.repairReasons.set([]); }
     });
@@ -221,7 +247,7 @@ export class RepairFormComponent implements OnInit {
     const params = new HttpParams()
       .set('device_id', deviceId.toString())
       .set('limit', '50');
-    
+
     this.api.getRepairs(params).subscribe({
       next: (res) => {
         this.repairHistory.set(res.data ?? []);
@@ -251,10 +277,10 @@ export class RepairFormComponent implements OnInit {
           console.log("device id", deviceId);
           if (deviceId > 0) this.form().get('device_id')?.setValue(deviceId);
           console.log(this.form().value);
-          
+
           // Fetch repair history for this device
           this.fetchRepairHistory(deviceId);
-          
+
           const params = new HttpParams()
             .set('identifier', identifier)
             .set('page', '1')
@@ -345,14 +371,14 @@ export class RepairFormComponent implements OnInit {
 
 
 
-  
+
 
   onItemTypeChange(index: number, isFixedPrice: boolean) {
     const partGroup = this.parts.at(index);
     if (!partGroup) return;
 
     partGroup.get('is_fixed_price')?.setValue(isFixedPrice);
-    
+
     if (isFixedPrice) {
       // For fixed-price services, set SKU to the constant
       partGroup.get('sku')?.setValue('fixed_price');
@@ -381,13 +407,13 @@ export class RepairFormComponent implements OnInit {
 
   onSubmit() {
     console.log(this.form().value, "submitting");
-    
+
     // Early validation check - must have at least one part
     if (this.deviceFound() && this.parts.length === 0) {
       this.error.set('Please add at least one part or service before submitting the repair');
       return;
     }
-    
+
     if (!this.isFormValid()) {
       this.error.set(this.getValidationErrorMessage());
       return;
@@ -460,14 +486,14 @@ export class RepairFormComponent implements OnInit {
     const missingFields: string[] = [];
     const deviceFoundStatus = this.deviceFound();
     console.log(form, "validated form")
-    
+
     if (!form.get('identifier')?.value?.trim()) {
       missingFields.push('Device IMEI/Serial');
     }
     if (!form.get('warehouse_id')?.value) {
       missingFields.push('Warehouse');
     }
-    
+
     // If device is not found yet, only validate basic fields
     if (!deviceFoundStatus) {
       if (!form.get('identifier')?.value?.trim() || !form.get('warehouse_id')?.value) {
@@ -475,11 +501,11 @@ export class RepairFormComponent implements OnInit {
       }
       return 'Device not found. Please verify the IMEI/Serial and try again';
     }
-    
+
     if (!form.get('device_id')?.value) {
       missingFields.push('Device Details (fetch device details first)');
     }
-    
+
     // Check parts validation only if device is found
     const partsErrors: string[] = [];
     if (this.parts.length === 0) {
@@ -491,7 +517,7 @@ export class RepairFormComponent implements OnInit {
         const reasonId = partGroup.get('reason_id')?.value;
         const hasSku = sku.length > 0;
         const hasReason = !!reasonId;
-        
+
         if (!partGroup.get('quantity')?.value || partGroup.get('quantity')?.value < 1) {
           partErrors.push('quantity');
         }
@@ -505,7 +531,7 @@ export class RepairFormComponent implements OnInit {
         }
       });
     }
-    
+
     let errorMessage = '';
     if (missingFields.length > 0) {
       errorMessage += `Missing required fields: ${missingFields.join(', ')}`;
@@ -514,7 +540,7 @@ export class RepairFormComponent implements OnInit {
       if (errorMessage) errorMessage += '. ';
       errorMessage += `Parts issues: ${partsErrors.join('; ')}`;
     }
-    
+
     return errorMessage || 'Please fill in all required fields';
   }
 

@@ -1,8 +1,8 @@
 <app-generic-page [title]="title" [subtitle]="subtitle" [loading]="loading() || isExporting()" [tabs]="tabs()"
   [activeTabKeyInput]="activeTab()" [searchQueryInput]="search()" [facets]="facets()" [columns]="columns()"
   [data]="data()" [total]="total()" [pageIndexInput]="pageIndex()" [pageSizeInput]="pageSize()"
-  [searchPlaceholder]="searchPlaceholder()" [primaryAction]="primaryAction()"
-  (primaryActionClick)="onPrimaryActionClick()" (pageChange)="onPageChange($event)"
+  [searchPlaceholder]="searchPlaceholder()" [headerActions]="headerActions()"
+  (headerActionClick)="onHeaderActionClick($event)" (pageChange)="onPageChange($event)"
   (filtersChange)="onFiltersChange($event)" (sortingChange)="onSortingChange($event)" (tabChange)="onTabChange($event)"
   (cellAction)="onCellAction($event)"></app-generic-page>
 

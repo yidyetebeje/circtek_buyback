@@ -16,9 +16,16 @@ export const repairs_routes = new Elysia({ prefix: '/repairs' })
 
   // Export repairs as CSV
   .get('/export', async (ctx) => {
-    const { query, set, currentRole, currentTenantId } = ctx as any
+    const { query, set, currentRole, currentTenantId, warehouseId } = ctx as any
     const tenantScoped = currentRole === 'super_admin' ? undefined : currentTenantId
-    const res = await controller.exportToCSV(query as any, tenantScoped)
+
+    // Apply warehouse filter for non-admin roles
+    const queryWithWarehouse = {
+      ...query,
+      ...(currentRole !== 'admin' && currentRole !== 'super_admin' && warehouseId ? { warehouse_id: warehouseId } : {})
+    }
+
+    const res = await controller.exportToCSV(queryWithWarehouse as any, tenantScoped)
     // Merge headers to preserve CORS headers set by the middleware
     set.headers = { ...((set as any).headers ?? {}), ...res.headers } as any
     set.status = res.status as any
@@ -34,8 +41,15 @@ export const repairs_routes = new Elysia({ prefix: '/repairs' })
 
   // Get repair analytics
   .get('/analytics', async (ctx) => {
-    const { query, currentTenantId } = ctx as any
-    return controller.getAnalytics(query as any, currentTenantId)
+    const { query, currentTenantId, currentRole, warehouseId } = ctx as any
+
+    // Apply warehouse filter for non-admin roles
+    const queryWithWarehouse = {
+      ...query,
+      ...(currentRole !== 'admin' && currentRole !== 'super_admin' && warehouseId ? { warehouse_id: warehouseId } : {})
+    }
+
+    return controller.getAnalytics(queryWithWarehouse as any, currentTenantId)
   }, {
     query: RepairAnalyticsQuery,
     detail: {
@@ -59,8 +73,15 @@ export const repairs_routes = new Elysia({ prefix: '/repairs' })
 
   // Get IMEI analytics
   .get('/imei-analytics', async (ctx) => {
-    const { query, currentTenantId } = ctx as any
-    return controller.getIMEIAnalytics(query as any, currentTenantId)
+    const { query, currentTenantId, currentRole, warehouseId } = ctx as any
+
+    // Apply warehouse filter for non-admin roles
+    const queryWithWarehouse = {
+      ...query,
+      ...(currentRole !== 'admin' && currentRole !== 'super_admin' && warehouseId ? { warehouse_id: warehouseId } : {})
+    }
+
+    return controller.getIMEIAnalytics(queryWithWarehouse as any, currentTenantId)
   }, {
     query: IMEIAnalyticsQuery,
     detail: {
@@ -72,9 +93,16 @@ export const repairs_routes = new Elysia({ prefix: '/repairs' })
 
   // List repairs
   .get('/', async (ctx) => {
-    const { query, currentRole, currentTenantId } = ctx as any
+    const { query, currentRole, currentTenantId, warehouseId } = ctx as any
     const tenantScoped = currentRole === 'super_admin' ? undefined : currentTenantId
-    return controller.list(query as any, tenantScoped)
+
+    // Apply warehouse filter for non-admin roles
+    const queryWithWarehouse = {
+      ...query,
+      ...(currentRole !== 'admin' && currentRole !== 'super_admin' && warehouseId ? { warehouse_id: warehouseId } : {})
+    }
+
+    return controller.list(queryWithWarehouse as any, tenantScoped)
   }, {
     query: RepairQuery,
     detail: {

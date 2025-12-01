@@ -17,7 +17,7 @@ const stockWithWarehouseSelection = {
 };
 
 export class StockRepository {
-  constructor(private readonly database: typeof db) {}
+  constructor(private readonly database: typeof db) { }
 
   /**
    * Extract base SKU by removing the last segment (batch number)
@@ -50,19 +50,19 @@ export class StockRepository {
           .from(stock)
           .leftJoin(warehouses, eq(stock.warehouse_id, warehouses.id))
           .where(eq(stock.sku, stockData.sku));
-        
+
         if (existingGlobal) {
           // Update existing record to match our warehouse and add quantity
           await this.database
             .update(stock)
-            .set({ 
-              warehouse_id: stockData.warehouse_id, 
+            .set({
+              warehouse_id: stockData.warehouse_id,
               tenant_id: stockData.tenant_id,
               quantity: existingGlobal.quantity + stockData.quantity,
               updated_at: new Date()
             })
             .where(eq(stock.sku, stockData.sku));
-          
+
           return this.findBySkuAndWarehouse(stockData.sku, stockData.warehouse_id, stockData.tenant_id);
         }
       }
@@ -115,9 +115,9 @@ export class StockRepository {
     }
 
     const conditions: any[] = [];
-    
+
     if (typeof filters.tenant_id === 'number') {
-     
+
       conditions.push(eq(stock.tenant_id, filters.tenant_id));
     }
     if (typeof filters.warehouse_id === 'number') {
@@ -137,13 +137,14 @@ export class StockRepository {
       conditions.push(lte(stock.quantity, filters.low_stock_threshold));
     }
 
+
     const page = Math.max(1, filters.page ?? 1);
     const limit = Math.max(1, Math.min(100, filters.limit ?? 10));
     const offset = (page - 1) * limit;
 
     // Determine sorting
     const sortColumn = this.getSortColumn(filters.sort_by);
-    const sortDirection = filters.sort_dir === 'desc' ? desc : asc;
+    const sortDirection = filters.sort_dir === 'asc' ? asc : desc;
 
     // Get total count
     let totalRow: { total: number } | undefined;
@@ -156,7 +157,7 @@ export class StockRepository {
     } else {
       [totalRow] = await this.database.select({ total: count() }).from(stock);
     }
-    
+
     // Get paginated results
     let rows;
     if (conditions.length) {
@@ -188,7 +189,7 @@ export class StockRepository {
    */
   private async findAllGroupedByBatch(filters: StockQueryInput & { tenant_id?: number }): Promise<StockListResult> {
     const conditions: any[] = [];
-    
+
     if (typeof filters.tenant_id === 'number') {
       conditions.push(eq(stock.tenant_id, filters.tenant_id));
     }
@@ -226,11 +227,11 @@ export class StockRepository {
 
     // Group by base SKU and warehouse
     const groupedMap = new Map<string, StockWithWarehouse>();
-    
+
     allRecords.forEach(record => {
       const baseSku = this.getBaseSku(record.sku);
       const key = `${record.warehouse_id}:${baseSku}`;
-      
+
       const existing = groupedMap.get(key);
       if (existing) {
         // Aggregate quantities
@@ -253,12 +254,12 @@ export class StockRepository {
     }
 
     // Apply sorting
-    const sortBy = filters.sort_by || 'created_at';
-    const sortDir = filters.sort_dir || 'asc';
-    
+    const sortBy = filters.sort_by || 'quantity';
+    const sortDir = filters.sort_dir || 'desc';
+
     groupedRecords.sort((a, b) => {
       let aVal: any, bVal: any;
-      
+
       switch (sortBy) {
         case 'sku':
           aVal = a.sku;
@@ -277,14 +278,14 @@ export class StockRepository {
           bVal = b.is_part ? 1 : 0;
           break;
         default:
-          aVal = a.created_at?.getTime() ?? 0;
-          bVal = b.created_at?.getTime() ?? 0;
+          aVal = a.quantity;
+          bVal = b.quantity;
       }
-      
+
       if (typeof aVal === 'string' && typeof bVal === 'string') {
         return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
       }
-      
+
       return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
     });
 
@@ -308,14 +309,14 @@ export class StockRepository {
       .update(stock)
       .set({ ...updates, updated_at: new Date() })
       .where(and(...conditions));
-    
+
     return this.findById(id, tenant_id);
   }
 
   async updateStockQuantity(sku: string, warehouse_id: number, delta: number, tenant_id: number): Promise<StockWithWarehouse | undefined> {
     const existing = await this.findBySkuAndWarehouse(sku, warehouse_id, tenant_id);
-     console.log("updateStockQuantity", sku, warehouse_id, delta, tenant_id);
-    
+    console.log("updateStockQuantity", sku, warehouse_id, delta, tenant_id);
+
     if (!existing) {
       // Create new stock record if doesn't exist
       if (delta > 0) {
@@ -325,7 +326,7 @@ export class StockRepository {
     }
 
     const newQuantity = existing.quantity + delta;
-    
+
     // Prevent negative stock
     if (newQuantity < 0) {
       throw new Error(`Insufficient stock. Current: ${existing.quantity}, Attempted delta: ${delta}`);
@@ -352,7 +353,7 @@ export class StockRepository {
 
     // Get basic counts
     const whereClause = conditions.length ? and(...conditions) : undefined;
-    
+
     const [summary] = await this.database
       .select({
         total_skus: count(),
@@ -406,8 +407,10 @@ export class StockRepository {
       case 'is_part':
         return stock.is_part;
       case 'created_at':
-      default:
         return stock.created_at;
+      case 'quantity':
+      default:
+        return stock.quantity;
     }
   }
 }
