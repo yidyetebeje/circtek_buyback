@@ -3,6 +3,7 @@ import { superAdminGuard } from './core/guards/super-admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 import { repairGuard } from './core/guards/repair.guard';
+import { repairReasonGuard } from './core/guards/repair-reason.guard';
 import { stockGuard } from './core/guards/stock.guard';
 
 export const routes: Routes = [
@@ -230,16 +231,16 @@ export const routes: Routes = [
       import('./pages/device-history/device-history.component').then((m) => m.DeviceHistoryComponent),
   },
 
-  // Repair Reasons form routes (admin/super-admin only)
+  // Repair Reasons form routes (admin/super-admin/repair-manager)
   {
     path: 'repair/repair-reasons/add',
-    canMatch: [authGuard, adminGuard],
+    canMatch: [authGuard, repairReasonGuard],
     loadComponent: () =>
       import('./pages/repair-reasons-form/repair-reasons-form.component').then((m) => m.RepairReasonsFormComponent),
   },
   {
     path: 'repair/repair-reasons/:id/edit',
-    canMatch: [authGuard, adminGuard],
+    canMatch: [authGuard, repairReasonGuard],
     loadComponent: () =>
       import('./pages/repair-reasons-form/repair-reasons-form.component').then((m) => m.RepairReasonsFormComponent),
   },

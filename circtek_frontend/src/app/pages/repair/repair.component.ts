@@ -97,10 +97,12 @@ export class RepairComponent {
   // Track last emitted URL query to avoid redundant navigations
   private _lastQueryNorm = signal<string>('');
 
-  // Check if user can access repair reasons (admin/super admin only)
+  // Check if user can access repair reasons (admin/super admin/repair manager)
   canAccessRepairReasons = computed(() => {
     const user = this.auth.currentUser();
-    return user?.role_id === ROLE_ID.ADMIN || user?.role_id === ROLE_ID.SUPER_ADMIN;
+    return user?.role_id === ROLE_ID.ADMIN ||
+      user?.role_id === ROLE_ID.SUPER_ADMIN ||
+      user?.role_id === ROLE_ID.REPAIR_MANAGER;
   });
 
   // Tabs
@@ -369,13 +371,15 @@ export class RepairComponent {
     const str = (k: string, d = '') => qp.get(k) ?? d;
 
     const tab = str('tab', 'repairs');
-    // Prevent non-admin users from accessing repair-reasons tab via URL
+    // Prevent unauthorized users from accessing repair-reasons tab via URL
     const user = this.auth.currentUser();
-    const isAdmin = user?.role_id === ROLE_ID.ADMIN || user?.role_id === ROLE_ID.SUPER_ADMIN;
+    const hasRepairReasonAccess = user?.role_id === ROLE_ID.ADMIN ||
+      user?.role_id === ROLE_ID.SUPER_ADMIN ||
+      user?.role_id === ROLE_ID.REPAIR_MANAGER;
 
     if (tab === 'repairs' || tab === 'repair-reasons' || tab === 'dead-imei' || tab === 'analytics') {
-      // If trying to access repair-reasons without admin rights, redirect to repairs tab
-      if (tab === 'repair-reasons' && !isAdmin) {
+      // If trying to access repair-reasons without proper access, redirect to repairs tab
+      if (tab === 'repair-reasons' && !hasRepairReasonAccess) {
         this.activeTab.set('repairs');
       } else {
         this.activeTab.set(tab as any);
@@ -430,7 +434,8 @@ export class RepairComponent {
       // Load warehouses for selects (limit high for options)
       this.api.getWarehouses(new HttpParams().set('limit', '1000')).subscribe(res => {
         const currentUser = this.auth.currentUser();
-        const isAdmin = currentUser?.role_id === ROLE_ID.ADMIN || currentUser?.role_id === ROLE_ID.SUPER_ADMIN;
+        const isAdmin = currentUser?.role_id === ROLE_ID.ADMIN ||
+          currentUser?.role_id === ROLE_ID.SUPER_ADMIN;
         let warehouses = res.data ?? [];
 
         // Filter warehouses for non-admin users
