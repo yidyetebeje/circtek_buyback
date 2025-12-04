@@ -340,13 +340,24 @@ export class UserFormComponent {
     return form;
   }
 
+  /**
+   * Transforms a role name from snake_case to Title Case.
+   * Example: 'super_admin' -> 'Super Admin'
+   */
+  private formatRoleName(name: string): string {
+    return name
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
   private loadRoleOptions() {
     this.api.getRoles(new HttpParams().set('limit', '1000')).subscribe({
       next: (res) => {
         let roles = res.data ?? [];
         // Filter out super_admin role for all users
         roles = roles.filter(role => role.name !== 'super_admin');
-        const options = roles.map(role => ({ label: role.name, value: role.id }));
+        const options = roles.map(role => ({ label: this.formatRoleName(role.name), value: role.id }));
         this.roleOptions.set(options);
       },
       error: () => {
@@ -359,7 +370,7 @@ export class UserFormComponent {
           { name: 'repair_technician', id: 5 },
           { name: 'stock_manager', id: 6 },
         ];
-        this.roleOptions.set(fallback.map(r => ({ label: r.name, value: r.id })));
+        this.roleOptions.set(fallback.map(r => ({ label: this.formatRoleName(r.name), value: r.id })));
       }
     });
   }

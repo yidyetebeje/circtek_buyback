@@ -146,11 +146,13 @@ export class ManagementComponent {
     const list: Facet[] = [];
     if (this.activeTab() === 'users') {
       list.push({ key: 'role_id', label: 'Role', type: 'select', options: this.roleOptions() });
-      list.push({ key: 'is_active', label: 'Status', type: 'select', options: [
-        { label: 'Any', value: 'any' },
-        { label: 'Active', value: 'true' },
-        { label: 'Inactive', value: 'false' },
-      ] });
+      list.push({
+        key: 'is_active', label: 'Status', type: 'select', options: [
+          { label: 'Any', value: 'any' },
+          { label: 'Active', value: 'true' },
+          { label: 'Inactive', value: 'false' },
+        ]
+      });
       // Note: Backend does NOT support filtering users by warehouse; omitting warehouse facet.
     }
 
@@ -166,15 +168,15 @@ export class ManagementComponent {
 
     // Add status filter for API keys
     if (this.activeTab() === 'api-keys') {
-      list.push({ 
-        key: 'is_active', 
-        label: 'Status', 
-        type: 'select', 
+      list.push({
+        key: 'is_active',
+        label: 'Status',
+        type: 'select',
         options: [
           { label: 'All', value: '' },
           { label: 'Active', value: 'true' },
           { label: 'Inactive', value: 'false' },
-        ] 
+        ]
       });
     }
 
@@ -219,7 +221,7 @@ export class ManagementComponent {
     logo: null as File | null
   });
   tenantProfilePreviewUrl = signal<string | null>(null);
-  
+
   deleteModalActions = computed<ModalAction[]>(() => [
     {
       label: 'Cancel',
@@ -250,7 +252,7 @@ export class ManagementComponent {
   apiKeyCreateModalActions = computed<ModalAction[]>(() => {
     const form = this.apiKeyCreateForm();
     const isValid = form.name.trim() && form.tenant_id !== null;
-    
+
     return [
       {
         label: 'Cancel',
@@ -436,16 +438,16 @@ export class ManagementComponent {
           this.closeDeleteModal();
           this.fetchData(); // Refresh the data
           // Show success message
-          const entityName = ctx.tab === 'tenants' ? 'Tenant' : 
-                             ctx.tab === 'users' ? 'User' :
-                             ctx.tab === 'warehouses' ? 'Warehouse' :
-                             ctx.tab === 'wifi' ? 'WiFi Profile' :
-                             ctx.tab === 'labels' ? 'Label Template' :
-                             ctx.tab === 'workflows' ? 'Workflow' :
-                             ctx.tab === 'grades' ? 'Grade' :
-                             ctx.tab === 'api-keys' ? 'API Key' :
-                             ctx.tab === 'questions' ? 'Question Set' :
-                             'OTA Update';
+          const entityName = ctx.tab === 'tenants' ? 'Tenant' :
+            ctx.tab === 'users' ? 'User' :
+              ctx.tab === 'warehouses' ? 'Warehouse' :
+                ctx.tab === 'wifi' ? 'WiFi Profile' :
+                  ctx.tab === 'labels' ? 'Label Template' :
+                    ctx.tab === 'workflows' ? 'Workflow' :
+                      ctx.tab === 'grades' ? 'Grade' :
+                        ctx.tab === 'api-keys' ? 'API Key' :
+                          ctx.tab === 'questions' ? 'Question Set' :
+                            'OTA Update';
           this.toast.deleteSuccess(entityName);
         },
         error: (error: any) => {
@@ -453,16 +455,16 @@ export class ManagementComponent {
           this.loading.set(false);
           this.closeDeleteModal();
           // Show error message with backend message if available
-          const entityName = ctx.tab === 'tenants' ? 'Tenant' : 
-                             ctx.tab === 'users' ? 'User' :
-                             ctx.tab === 'warehouses' ? 'Warehouse' :
-                             ctx.tab === 'wifi' ? 'WiFi Profile' :
-                             ctx.tab === 'labels' ? 'Label Template' :
-                             ctx.tab === 'workflows' ? 'Workflow' :
-                             ctx.tab === 'grades' ? 'Grade' :
-                             ctx.tab === 'api-keys' ? 'API Key' :
-                             ctx.tab === 'questions' ? 'Question Set' :
-                             'OTA Update';
+          const entityName = ctx.tab === 'tenants' ? 'Tenant' :
+            ctx.tab === 'users' ? 'User' :
+              ctx.tab === 'warehouses' ? 'Warehouse' :
+                ctx.tab === 'wifi' ? 'WiFi Profile' :
+                  ctx.tab === 'labels' ? 'Label Template' :
+                    ctx.tab === 'workflows' ? 'Workflow' :
+                      ctx.tab === 'grades' ? 'Grade' :
+                        ctx.tab === 'api-keys' ? 'API Key' :
+                          ctx.tab === 'questions' ? 'Question Set' :
+                            'OTA Update';
           const errorMessage = error?.error?.message || error?.message;
           if (errorMessage) {
             this.toastr.error(errorMessage, `Delete ${entityName} Failed`);
@@ -481,12 +483,12 @@ export class ManagementComponent {
         return [
           { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
           { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '250px' } },
-          { 
-            header: 'Logo', 
-            id: 'logo' as any, 
-            enableSorting: false as any, 
+          {
+            header: 'Logo',
+            id: 'logo' as any,
+            enableSorting: false as any,
             accessorFn: (r: any) => r.logo ? 'Yes' : 'No',
-            meta: { 
+            meta: {
               cellClass: () => 'text-left'
             }
           },
@@ -505,11 +507,13 @@ export class ManagementComponent {
         ];
       case 'tenants':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
           { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
@@ -528,14 +532,16 @@ export class ManagementComponent {
         ];
       case 'users':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Username', accessorKey: 'user_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
-          
+
           { header: 'Role', accessorKey: 'role_name' as any, meta: { truncateText: true, truncateMaxWidth: '100px' } },
           { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'Active', id: 'status', accessorFn: (r: any) => (r.status ? 'Yes' : 'No'), enableSorting: false },
@@ -554,11 +560,13 @@ export class ManagementComponent {
         ];
       case 'warehouses':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
           { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
@@ -578,11 +586,13 @@ export class ManagementComponent {
         ];
       case 'wifi':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'SSID', accessorKey: 'ssid' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
@@ -605,11 +615,13 @@ export class ManagementComponent {
         ];
       case 'labels':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
           { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
@@ -630,11 +642,13 @@ export class ManagementComponent {
         ];
       case 'workflows':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Name', accessorKey: 'name' as any, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
           { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
@@ -655,18 +669,20 @@ export class ManagementComponent {
         ];
       case 'grades':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Name', accessorKey: 'name' as any, enableSorting: true, meta: { truncateText: true, truncateMaxWidth: '150px' } },
-          { 
-            header: 'Color', 
-            id: 'color_display' as any, 
-            enableSorting: false as any, 
+          {
+            header: 'Color',
+            id: 'color_display' as any,
+            enableSorting: false as any,
             accessorFn: (r: any) => r.color,
-            meta: { 
+            meta: {
               renderColor: true,
               cellClass: () => 'text-left'
             }
@@ -686,11 +702,13 @@ export class ManagementComponent {
         ];
       case 'questions':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Title', accessorKey: 'title' as any, meta: { truncateText: true, truncateMaxWidth: '200px' } },
           { header: 'Description', accessorKey: 'description' as any, meta: { truncateText: true, truncateMaxWidth: '250px' } },
           { header: 'Tenant', accessorKey: 'tenant_name' as any, meta: { truncateText: true, truncateMaxWidth: '120px' } },
@@ -712,21 +730,27 @@ export class ManagementComponent {
         ];
       case 'ota-updates':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Version', accessorKey: 'version' as any, enableSorting: true, meta: { truncateText: true, truncateMaxWidth: '120px' } },
-          { header: 'Target OS', accessorKey: 'target_os' as any, enableSorting: true, accessorFn: (r: any) => {
-            const osMap = { 'window': 'Windows', 'macos': 'macOS' };
-            return (osMap as any)[r.target_os] || r.target_os;
-          } },
+          {
+            header: 'Target OS', accessorKey: 'target_os' as any, enableSorting: true, accessorFn: (r: any) => {
+              const osMap = { 'window': 'Windows', 'macos': 'macOS' };
+              return (osMap as any)[r.target_os] || r.target_os;
+            }
+          },
           { header: 'Architecture', accessorKey: 'target_architecture' as any, enableSorting: true },
-          { header: 'Channel', accessorKey: 'release_channel' as any, enableSorting: true, accessorFn: (r: any) => {
-            const channelMap = { 'stable': 'Stable', 'beta': 'Beta', 'dev': 'Development' };
-            return (channelMap as any)[r.release_channel] || r.release_channel;
-          } },
+          {
+            header: 'Channel', accessorKey: 'release_channel' as any, enableSorting: true, accessorFn: (r: any) => {
+              const channelMap = { 'stable': 'Stable', 'beta': 'Beta', 'dev': 'Development' };
+              return (channelMap as any)[r.release_channel] || r.release_channel;
+            }
+          },
           { header: 'URL', accessorKey: 'url' as any, enableSorting: true, meta: { truncateText: true, truncateMaxWidth: '200px' } },
           {
             header: 'Actions',
@@ -745,25 +769,31 @@ export class ManagementComponent {
         ];
       case 'api-keys':
         return [
-          { header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
-            const idx = this.data().indexOf(r as any);
-            const base = this.pageIndex() * this.pageSize();
-            return base + (idx >= 0 ? idx : 0) + 1;
-          } },
+          {
+            header: 'S.No', id: 'row_number' as any, enableSorting: false as any, accessorFn: (r: any) => {
+              const idx = this.data().indexOf(r as any);
+              const base = this.pageIndex() * this.pageSize();
+              return base + (idx >= 0 ? idx : 0) + 1;
+            }
+          },
           { header: 'Name', accessorKey: 'name' as any, enableSorting: true, meta: { truncateText: true, truncateMaxWidth: '150px' } },
           { header: 'Key Prefix', accessorKey: 'key_display' as any, enableSorting: false, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'Tenant', accessorKey: 'tenant_name' as any, enableSorting: false, meta: { truncateText: true, truncateMaxWidth: '120px' } },
           { header: 'Rate Limit', accessorKey: 'rate_limit' as any, enableSorting: true },
           { header: 'Usage Count', accessorKey: 'usage_count' as any, enableSorting: true },
-          { header: 'Status', id: 'status' as any, enableSorting: false, accessorFn: (r: any) => {
-            if (r.revoked_at) return 'Revoked';
-            if (r.expires_at && new Date(r.expires_at) < new Date()) return 'Expired';
-            return r.is_active ? 'Active' : 'Inactive';
-          } },
-          { header: 'Last Used', accessorKey: 'last_used_at' as any, enableSorting: true, accessorFn: (r: any) => {
-            if (!r.last_used_at) return 'Never';
-            return new Date(r.last_used_at).toLocaleDateString();
-          } },
+          {
+            header: 'Status', id: 'status' as any, enableSorting: false, accessorFn: (r: any) => {
+              if (r.revoked_at) return 'Revoked';
+              if (r.expires_at && new Date(r.expires_at) < new Date()) return 'Expired';
+              return r.is_active ? 'Active' : 'Inactive';
+            }
+          },
+          {
+            header: 'Last Used', accessorKey: 'last_used_at' as any, enableSorting: true, accessorFn: (r: any) => {
+              if (!r.last_used_at) return 'Never';
+              return new Date(r.last_used_at).toLocaleDateString();
+            }
+          },
           {
             header: 'Actions',
             id: 'actions' as any,
@@ -835,7 +865,7 @@ export class ManagementComponent {
     const urlPageSize = num('limit', 0);
     const preferredPageSize = this.paginationService.getPageSizeWithFallback(urlPageSize > 0 ? urlPageSize : null);
     this.pageSize.set(preferredPageSize);
-   
+
     this.search.set(str('search', ''));
     this.selectedRoleId.set(optNum('role_id'));
     this.selectedTenantId.set(optNum('tenant_id'));
@@ -848,7 +878,7 @@ export class ManagementComponent {
     effect(() => {
       // Roles (super_admin only route)
       this.api.getRoles(new HttpParams().set('limit', '1000')).subscribe(res => {
-        const opts = (res.data ?? []).map(r => ({ label: r.name, value: String(r.id) }));
+        const opts = (res.data ?? []).map(r => ({ label: this.formatRoleName(r.name), value: String(r.id) }));
         this.roleOptions.set(opts);
       });
     });
@@ -926,9 +956,9 @@ export class ManagementComponent {
             }
             this.loading.set(false);
           },
-          error: () => { 
-            if (seq !== this.requestSeq) return; 
-            this.loading.set(false); 
+          error: () => {
+            if (seq !== this.requestSeq) return;
+            this.loading.set(false);
           },
         });
       } else {
@@ -966,16 +996,16 @@ export class ManagementComponent {
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getUsers(params).subscribe({
-        next: (res) => { 
-          if (seq !== this.requestSeq) return; 
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
           const users = (res.data ?? []).map(u => ({
             ...u,
-            role_name: u.role_name ?? String(u.role_id),
+            role_name: this.formatRoleName(u.role_name ?? String(u.role_id)),
             tenant_name: u.tenant_name ?? String(u.tenant_id)
           }));
-          this.data.set(users); 
-          this.total.set(res.meta?.total ?? 0); 
-          this.loading.set(false); 
+          this.data.set(users);
+          this.total.set(res.meta?.total ?? 0);
+          this.loading.set(false);
         },
         error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
       });
@@ -991,15 +1021,15 @@ export class ManagementComponent {
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getWarehouses(params).subscribe({
-        next: (res) => { 
-          if (seq !== this.requestSeq) return; 
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
           const warehouses = (res.data ?? []).map(w => ({
             ...w,
             tenant_name: w.tenant_name ?? String(w.tenant_id)
           }));
-          this.data.set(warehouses); 
-          this.total.set(res.meta?.total ?? 0); 
-          this.loading.set(false); 
+          this.data.set(warehouses);
+          this.total.set(res.meta?.total ?? 0);
+          this.loading.set(false);
         },
         error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
       });
@@ -1019,7 +1049,7 @@ export class ManagementComponent {
           }));
           const s = this.debouncedSearch().trim().toLowerCase();
           let filtered = s ? all.filter(r => `${r.name} ${r.ssid}`.toLowerCase().includes(s)) : all;
-          
+
           // Apply client-side sorting
           const sortField = this.sortField();
           const sortOrder = this.sortOrder();
@@ -1050,15 +1080,15 @@ export class ManagementComponent {
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getLabelTemplates(params).subscribe({
-        next: (res) => { 
-          if (seq !== this.requestSeq) return; 
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
           const labels = (res.data ?? []).map(r => ({
             ...r,
             tenant_name: (r as any).tenant_name ?? String(r.tenant_id)
           }));
-          this.data.set(labels); 
-          this.total.set(res.meta?.total ?? 0); 
-          this.loading.set(false); 
+          this.data.set(labels);
+          this.total.set(res.meta?.total ?? 0);
+          this.loading.set(false);
         },
         error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
       });
@@ -1073,15 +1103,15 @@ export class ManagementComponent {
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getWorkflows(params).subscribe({
-        next: (res) => { 
-          if (seq !== this.requestSeq) return; 
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
           const workflows = (res.data ?? []).map(r => ({
             ...r,
             tenant_name: (r as any).tenant_name ?? String(r.tenant_id)
           }));
-          this.data.set(workflows); 
-          this.total.set(res.meta?.total ?? 0); 
-          this.loading.set(false); 
+          this.data.set(workflows);
+          this.total.set(res.meta?.total ?? 0);
+          this.loading.set(false);
         },
         error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
       });
@@ -1096,15 +1126,15 @@ export class ManagementComponent {
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getGrades(params).subscribe({
-        next: (res) => { 
-          if (seq !== this.requestSeq) return; 
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
           const grades = (res.data ?? []).map(g => ({
             ...g,
             tenant_name: (g as any).tenant_name ?? String(g.tenant_id)
           }));
-          this.data.set(grades); 
-          this.total.set(res.meta?.total ?? 0); 
-          this.loading.set(false); 
+          this.data.set(grades);
+          this.total.set(res.meta?.total ?? 0);
+          this.loading.set(false);
         },
         error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
       });
@@ -1119,11 +1149,11 @@ export class ManagementComponent {
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getDiagnosticQuestionSets(params).subscribe({
-        next: (res) => { 
-          if (seq !== this.requestSeq) return; 
-          this.data.set(res.data ?? []); 
-          this.total.set(res.meta?.total ?? 0); 
-          this.loading.set(false); 
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
+          this.data.set(res.data ?? []);
+          this.total.set(res.meta?.total ?? 0);
+          this.loading.set(false);
         },
         error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
       });
@@ -1138,12 +1168,12 @@ export class ManagementComponent {
       const sort = this.sortField(); if (sort) params = params.set('sort', sort);
       const order = this.sortOrder(); if (sort) params = params.set('order', order);
       this.api.getOtaUpdates(params).subscribe({
-        next: (res) => { 
-          if (seq !== this.requestSeq) return; 
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
           const otaUpdates = res.data ?? [];
-          this.data.set(otaUpdates); 
-          this.total.set(res.meta?.total ?? otaUpdates.length); 
-          this.loading.set(false); 
+          this.data.set(otaUpdates);
+          this.total.set(res.meta?.total ?? otaUpdates.length);
+          this.loading.set(false);
         },
         error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
       });
@@ -1154,22 +1184,22 @@ export class ManagementComponent {
         .set('page', String(this.pageIndex() + 1))
         .set('limit', String(this.pageSize()));
       const s = this.debouncedSearch().trim(); if (s) params = params.set('search', s);
-      if (this.isSuperAdmin()) { 
-        const tid = this.selectedTenantId(); 
-        if (tid != null) params = params.set('tenant_id', String(tid)); 
+      if (this.isSuperAdmin()) {
+        const tid = this.selectedTenantId();
+        if (tid != null) params = params.set('tenant_id', String(tid));
       }
       // Handle is_active filter
       const isActive = this.selectedApiKeyActive();
       if (isActive === 'true') params = params.set('is_active', 'true');
       else if (isActive === 'false') params = params.set('is_active', 'false');
-      
+
       this.api.getApiKeys(params).subscribe({
-        next: (res) => { 
-          if (seq !== this.requestSeq) return; 
+        next: (res) => {
+          if (seq !== this.requestSeq) return;
           const apiKeys = res.data ?? [];
-          this.data.set(apiKeys); 
-          this.total.set(res.pagination?.total ?? 0); 
-          this.loading.set(false); 
+          this.data.set(apiKeys);
+          this.total.set(res.pagination?.total ?? 0);
+          this.loading.set(false);
         },
         error: () => { if (seq !== this.requestSeq) return; this.loading.set(false); },
       });
@@ -1183,11 +1213,11 @@ export class ManagementComponent {
     const size = event.pageSize;
     let changed = false;
     if (idx !== this.pageIndex()) { this.pageIndex.set(idx); changed = true; }
-    if (size !== this.pageSize()) { 
-      this.pageSize.set(size); 
+    if (size !== this.pageSize()) {
+      this.pageSize.set(size);
       // Persist the page size preference
       this.paginationService.setPageSize(size);
-      changed = true; 
+      changed = true;
     }
     if (!changed) return;
   }
@@ -1204,7 +1234,7 @@ export class ManagementComponent {
       const ia = f['is_active']; this.selectedUserActive.set(ia === 'true' || ia === 'false' ? (ia as any) : 'any');
     }
     if (this.activeTab() === 'api-keys') {
-      const ia = f['is_active']; 
+      const ia = f['is_active'];
       this.selectedApiKeyActive.set(ia === 'true' || ia === 'false' ? (ia as '' | 'true' | 'false') : '');
     }
     this.pageIndex.set(0); // reset
@@ -1324,7 +1354,7 @@ export class ManagementComponent {
       return;
     }
 
-  // Assignment actions for wifi, labels, workflows, and ota-updates
+    // Assignment actions for wifi, labels, workflows, and ota-updates
     if (tab === 'wifi' || tab === 'labels' || tab === 'workflows' || tab === 'ota-updates') {
       const assignableRow = row as WiFiProfile | LabelTemplateRecord | WorkflowRecord | OtaUpdate;
       if (event.action === 'assign') {
@@ -1364,7 +1394,7 @@ export class ManagementComponent {
   selectedWorkflow = signal<WorkflowRecord | null>(null);
   selectedAssignTesterId = signal<number | null>(null);
   selectedAssignProfileId = signal<number | null>(null);
-  
+
   assignModalActions = computed<ModalAction[]>(() => [
     {
       label: 'Cancel',
@@ -1390,30 +1420,30 @@ export class ManagementComponent {
     let params = new HttpParams().set('limit', '1000');
     // Load all active users (including both testers and admins) for assignment
     params = params.set('is_active', 'true');
-    
+
     // Filter to include only tester and admin roles
     const testerRoleId = this.testerRoleId();
     const adminRoleId = this.adminRoleId();
-    
+
     if (this.isSuperAdmin()) {
       const tid = this.selectedTenantId();
       if (tid != null) params = params.set('tenant_id', String(tid));
     }
-    
+
     this.api.getUsers(params).subscribe({
       next: (res) => {
         // Filter users to only include testers and admins
         let users = res.data ?? [];
         if (testerRoleId != null || adminRoleId != null) {
-          users = users.filter(u => 
+          users = users.filter(u =>
             u.role_id === testerRoleId || u.role_id === adminRoleId
           );
         }
-        
+
         // Include role name in the label for clarity
-        const opts = users.map(u => ({ 
-          label: `${u.name || u.user_name}`, 
-          value: String(u.id) 
+        const opts = users.map(u => ({
+          label: `${u.name || u.user_name}`,
+          value: String(u.id)
         }));
         this.testerOptions.set(opts);
         // Don't auto-select any tester - require explicit selection
@@ -1491,89 +1521,89 @@ export class ManagementComponent {
       return;
     }
     this.loading.set(true);
-    
+
     if (this.activeTab() === 'wifi') {
       const profile = this.selectedWifiProfile();
       const profileId = profile ? profile.id : this.selectedAssignProfileId();
-      if (profileId == null) { 
-        this.loading.set(false); 
+      if (profileId == null) {
+        this.loading.set(false);
         this.toast.validationError('Please select a WiFi profile before assigning');
-        return; 
+        return;
       }
-      this.api.assignWifiProfile(profileId, testerId).subscribe({ 
-        next: () => { 
-          this.loading.set(false); 
-          this.closeAssignModal(); 
+      this.api.assignWifiProfile(profileId, testerId).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.closeAssignModal();
           this.toast.assignmentSuccess('WiFi Profile');
-        }, 
-        error: (error) => { 
-          this.loading.set(false); 
+        },
+        error: (error) => {
+          this.loading.set(false);
           console.error('Failed to assign WiFi profile:', error);
           this.toast.assignmentError('WiFi profile');
         }
       });
       return;
     }
-    
+
     if (this.activeTab() === 'labels') {
       const rec = this.selectedLabelTemplate();
-      if (!rec) { 
-        this.loading.set(false); 
+      if (!rec) {
+        this.loading.set(false);
         this.toast.validationError('Please select a label template before assigning');
-        return; 
+        return;
       }
-      this.api.assignLabelTemplate(rec.id, testerId).subscribe({ 
-        next: () => { 
-          this.loading.set(false); 
-          this.closeAssignModal(); 
+      this.api.assignLabelTemplate(rec.id, testerId).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.closeAssignModal();
           this.toast.assignmentSuccess('Label Template');
-        }, 
-        error: (error) => { 
-          this.loading.set(false); 
+        },
+        error: (error) => {
+          this.loading.set(false);
           console.error('Failed to assign label template:', error);
           this.toast.assignmentError('Label template');
         }
       });
       return;
     }
-    
+
     if (this.activeTab() === 'workflows') {
       const rec = this.selectedWorkflow();
-      if (!rec) { 
-        this.loading.set(false); 
+      if (!rec) {
+        this.loading.set(false);
         this.toast.validationError('Please select a workflow before assigning');
-        return; 
+        return;
       }
-      this.api.assignWorkflow(rec.id, testerId).subscribe({ 
-        next: () => { 
-          this.loading.set(false); 
-          this.closeAssignModal(); 
+      this.api.assignWorkflow(rec.id, testerId).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.closeAssignModal();
           this.toast.assignmentSuccess('Workflow');
-        }, 
-        error: (error) => { 
-          this.loading.set(false); 
+        },
+        error: (error) => {
+          this.loading.set(false);
           console.error('Failed to assign workflow:', error);
           this.toast.assignmentError('Workflow');
         }
       });
       return;
     }
-    
+
     if (this.activeTab() === 'ota-updates') {
       const rec = this.selectedOtaUpdate();
-      if (!rec) { 
-        this.loading.set(false); 
+      if (!rec) {
+        this.loading.set(false);
         this.toast.validationError('Please select an OTA update before assigning');
-        return; 
+        return;
       }
-      this.api.assignOtaUpdate(rec.id, testerId).subscribe({ 
-        next: () => { 
-          this.loading.set(false); 
-          this.closeAssignModal(); 
+      this.api.assignOtaUpdate(rec.id, testerId).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.closeAssignModal();
           this.toast.assignmentSuccess('OTA Update');
-        }, 
-        error: (error) => { 
-          this.loading.set(false); 
+        },
+        error: (error) => {
+          this.loading.set(false);
           console.error('Failed to assign OTA update:', error);
           this.toast.assignmentError('OTA update');
         }
@@ -1599,7 +1629,7 @@ export class ManagementComponent {
   isAssignedModalOpen = signal(false);
   assignedTesters = signal<User[]>([]);
   assignedTestersLoading = signal(false);
-  
+
   assignedModalActions = computed<ModalAction[]>(() => [
     {
       label: 'Close',
@@ -1612,87 +1642,87 @@ export class ManagementComponent {
     this.isAssignedModalOpen.set(true);
     this.assignedTestersLoading.set(true);
     this.assignedTesters.set([]); // Clear previous data
-    
+
     let params = new HttpParams();
     if (this.isSuperAdmin()) { const tid = this.selectedTenantId(); if (tid != null) params = params.set('tenant_id', String(tid)); }
-    
+
     if (this.activeTab() === 'wifi') {
       this.selectedWifiProfile.set(row as WiFiProfile);
-      this.api.getWifiProfileTesters((row as WiFiProfile).id, params).subscribe({ 
-        next: (res) => { 
-          this.assignedTesters.set(res.data ?? []); 
+      this.api.getWifiProfileTesters((row as WiFiProfile).id, params).subscribe({
+        next: (res) => {
+          this.assignedTesters.set(res.data ?? []);
           this.assignedTestersLoading.set(false);
-        }, 
-        error: (error) => { 
+        },
+        error: (error) => {
           console.error('Failed to load assigned testers:', error);
-          this.assignedTesters.set([]); 
+          this.assignedTesters.set([]);
           this.assignedTestersLoading.set(false);
           this.toast.loadingError('assigned testers');
-        }, 
+        },
       });
       return;
     }
     if (this.activeTab() === 'labels') {
       this.selectedLabelTemplate.set(row as LabelTemplateRecord);
-      this.api.getLabelTemplateTesters((row as LabelTemplateRecord).id, params).subscribe({ 
-        next: (res) => { 
-          this.assignedTesters.set(res.data ?? []); 
+      this.api.getLabelTemplateTesters((row as LabelTemplateRecord).id, params).subscribe({
+        next: (res) => {
+          this.assignedTesters.set(res.data ?? []);
           this.assignedTestersLoading.set(false);
-        }, 
-        error: (error) => { 
+        },
+        error: (error) => {
           console.error('Failed to load assigned testers:', error);
-          this.assignedTesters.set([]); 
+          this.assignedTesters.set([]);
           this.assignedTestersLoading.set(false);
           this.toast.loadingError('assigned testers');
-        }, 
+        },
       });
       return;
     }
     if (this.activeTab() === 'workflows') {
       this.selectedWorkflow.set(row as WorkflowRecord);
-      this.api.getWorkflowTesters((row as WorkflowRecord).id, params).subscribe({ 
-        next: (res) => { 
-          this.assignedTesters.set(res.data ?? []); 
+      this.api.getWorkflowTesters((row as WorkflowRecord).id, params).subscribe({
+        next: (res) => {
+          this.assignedTesters.set(res.data ?? []);
           this.assignedTestersLoading.set(false);
-        }, 
-        error: (error) => { 
+        },
+        error: (error) => {
           console.error('Failed to load assigned testers:', error);
-          this.assignedTesters.set([]); 
+          this.assignedTesters.set([]);
           this.assignedTestersLoading.set(false);
           this.toast.loadingError('assigned testers');
-        }, 
+        },
       });
       return;
     }
     if (this.activeTab() === 'ota-updates') {
       this.selectedOtaUpdate.set(row as OtaUpdate);
-      this.api.getOtaUpdateTesters((row as OtaUpdate).id, params).subscribe({ 
-        next: (res) => { 
-          this.assignedTesters.set(res.data ?? []); 
+      this.api.getOtaUpdateTesters((row as OtaUpdate).id, params).subscribe({
+        next: (res) => {
+          this.assignedTesters.set(res.data ?? []);
           this.assignedTestersLoading.set(false);
-        }, 
-        error: (error) => { 
+        },
+        error: (error) => {
           console.error('Failed to load assigned testers:', error);
-          this.assignedTesters.set([]); 
+          this.assignedTesters.set([]);
           this.assignedTestersLoading.set(false);
           this.toast.loadingError('assigned testers');
-        }, 
+        },
       });
       return;
     }
     if (this.activeTab() === 'questions') {
       this.selectedDiagnosticQuestionSet.set(row as DiagnosticQuestionSet);
-      this.api.getDiagnosticQuestionSetTesters((row as DiagnosticQuestionSet).id, params).subscribe({ 
-        next: (res) => { 
-          this.assignedTesters.set(res.data ?? []); 
+      this.api.getDiagnosticQuestionSetTesters((row as DiagnosticQuestionSet).id, params).subscribe({
+        next: (res) => {
+          this.assignedTesters.set(res.data ?? []);
           this.assignedTestersLoading.set(false);
-        }, 
-        error: (error) => { 
+        },
+        error: (error) => {
           console.error('Failed to load assigned testers for question set:', error);
-          this.assignedTesters.set([]); 
+          this.assignedTesters.set([]);
           this.assignedTestersLoading.set(false);
           this.toast.loadingError('assigned testers');
-        }, 
+        },
       });
     }
   }
@@ -1706,22 +1736,22 @@ export class ManagementComponent {
       this.api.unassignWifiProfile(profile.id, userId).subscribe({
         next: () => {
           this.assignedTestersLoading.set(true);
-          this.api.getWifiProfileTesters(profile.id, params).subscribe({ 
-            next: (res) => { 
-              this.assignedTesters.set(res.data ?? []); 
-              this.loading.set(false); 
+          this.api.getWifiProfileTesters(profile.id, params).subscribe({
+            next: (res) => {
+              this.assignedTesters.set(res.data ?? []);
+              this.loading.set(false);
               this.assignedTestersLoading.set(false);
               this.toast.unassignmentSuccess('Tester from WiFi Profile');
-            }, 
-            error: () => { 
-              this.loading.set(false); 
+            },
+            error: () => {
+              this.loading.set(false);
               this.assignedTestersLoading.set(false);
               this.toast.loadingError('tester list');
-            }, 
+            },
           });
         },
-        error: (error) => { 
-          this.loading.set(false); 
+        error: (error) => {
+          this.loading.set(false);
           console.error('Failed to unassign WiFi profile:', error);
           this.toast.unassignmentError('tester from WiFi profile');
         },
@@ -1733,22 +1763,22 @@ export class ManagementComponent {
       this.api.unassignLabelTemplate(rec.id, userId).subscribe({
         next: () => {
           this.assignedTestersLoading.set(true);
-          this.api.getLabelTemplateTesters(rec.id, params).subscribe({ 
-            next: (res) => { 
-              this.assignedTesters.set(res.data ?? []); 
-              this.loading.set(false); 
+          this.api.getLabelTemplateTesters(rec.id, params).subscribe({
+            next: (res) => {
+              this.assignedTesters.set(res.data ?? []);
+              this.loading.set(false);
               this.assignedTestersLoading.set(false);
               this.toast.unassignmentSuccess('Tester from Label Template');
-            }, 
-            error: () => { 
-              this.loading.set(false); 
+            },
+            error: () => {
+              this.loading.set(false);
               this.assignedTestersLoading.set(false);
               this.toast.loadingError('tester list');
-            }, 
+            },
           });
         },
-        error: (error) => { 
-          this.loading.set(false); 
+        error: (error) => {
+          this.loading.set(false);
           console.error('Failed to unassign label template:', error);
           this.toast.unassignmentError('tester from label template');
         },
@@ -1760,22 +1790,22 @@ export class ManagementComponent {
       this.api.unassignWorkflow(rec.id, userId).subscribe({
         next: () => {
           this.assignedTestersLoading.set(true);
-          this.api.getWorkflowTesters(rec.id, params).subscribe({ 
-            next: (res) => { 
-              this.assignedTesters.set(res.data ?? []); 
-              this.loading.set(false); 
+          this.api.getWorkflowTesters(rec.id, params).subscribe({
+            next: (res) => {
+              this.assignedTesters.set(res.data ?? []);
+              this.loading.set(false);
               this.assignedTestersLoading.set(false);
               this.toast.unassignmentSuccess('Tester from Workflow');
-            }, 
-            error: () => { 
-              this.loading.set(false); 
+            },
+            error: () => {
+              this.loading.set(false);
               this.assignedTestersLoading.set(false);
               this.toast.loadingError('tester list');
-            }, 
+            },
           });
         },
-        error: (error) => { 
-          this.loading.set(false); 
+        error: (error) => {
+          this.loading.set(false);
           console.error('Failed to unassign workflow:', error);
           this.toast.unassignmentError('tester from workflow');
         },
@@ -1787,22 +1817,22 @@ export class ManagementComponent {
       this.api.unassignOtaUpdate(rec.id, userId).subscribe({
         next: () => {
           this.assignedTestersLoading.set(true);
-          this.api.getOtaUpdateTesters(rec.id, params).subscribe({ 
-            next: (res) => { 
-              this.assignedTesters.set(res.data ?? []); 
-              this.loading.set(false); 
+          this.api.getOtaUpdateTesters(rec.id, params).subscribe({
+            next: (res) => {
+              this.assignedTesters.set(res.data ?? []);
+              this.loading.set(false);
               this.assignedTestersLoading.set(false);
               this.toast.unassignmentSuccess('Tester from OTA Update');
-            }, 
-            error: () => { 
-              this.loading.set(false); 
+            },
+            error: () => {
+              this.loading.set(false);
               this.assignedTestersLoading.set(false);
               this.toast.loadingError('tester list');
-            }, 
+            },
           });
         },
-        error: (error) => { 
-          this.loading.set(false); 
+        error: (error) => {
+          this.loading.set(false);
           console.error('Failed to unassign OTA update:', error);
           this.toast.unassignmentError('tester from OTA update');
         },
@@ -1814,22 +1844,22 @@ export class ManagementComponent {
       this.api.unassignDiagnosticQuestionSet(userId).subscribe({
         next: () => {
           this.assignedTestersLoading.set(true);
-          this.api.getDiagnosticQuestionSetTesters(questionSet.id, params).subscribe({ 
-            next: (res) => { 
-              this.assignedTesters.set(res.data ?? []); 
-              this.loading.set(false); 
+          this.api.getDiagnosticQuestionSetTesters(questionSet.id, params).subscribe({
+            next: (res) => {
+              this.assignedTesters.set(res.data ?? []);
+              this.loading.set(false);
               this.assignedTestersLoading.set(false);
               this.toast.unassignmentSuccess('Tester from Question Set');
-            }, 
-            error: () => { 
-              this.loading.set(false); 
+            },
+            error: () => {
+              this.loading.set(false);
               this.assignedTestersLoading.set(false);
               this.toast.loadingError('tester list');
-            }, 
+            },
           });
         },
-        error: (error) => { 
-          this.loading.set(false); 
+        error: (error) => {
+          this.loading.set(false);
           console.error('Failed to unassign question set:', error);
           this.toast.unassignmentError('tester from question set');
         },
@@ -1859,7 +1889,7 @@ export class ManagementComponent {
   selectedGrade = signal<Grade | null>(null);
   gradeForm = signal({ name: '', color: '#000000' });
   gradeNameError = signal<string | null>(null);
-  
+
   gradeModalActions = computed<ModalAction[]>(() => [
     {
       label: 'Cancel',
@@ -1933,7 +1963,7 @@ export class ManagementComponent {
   onGradeNameChange(event: Event) {
     const target = event.target as HTMLInputElement;
     const value = target.value;
-    
+
     // Validate: only letters and spaces allowed
     const nameRegex = /^[a-zA-Z\s]*$/;
     if (!nameRegex.test(value)) {
@@ -1943,7 +1973,7 @@ export class ManagementComponent {
     } else {
       this.gradeNameError.set(null);
     }
-    
+
     this.gradeForm.update(form => ({ ...form, name: value }));
   }
 
@@ -1964,13 +1994,13 @@ export class ManagementComponent {
   });
   otaUpdateVersionError = signal<string | null>(null);
   otaUpdateFileError = signal<string | null>(null);
-  
+
   otaUpdateModalActions = computed<ModalAction[]>(() => {
     const form = this.otaUpdateForm();
     const hasVersion = form.version.trim();
     const hasFile = form.file !== null;
     const hasErrors = !!this.otaUpdateVersionError() || !!this.otaUpdateFileError();
-    
+
     return [
       {
         label: 'Cancel',
@@ -2095,7 +2125,7 @@ export class ManagementComponent {
   onOtaUpdateVersionChange(event: Event) {
     const target = event.target as HTMLInputElement;
     const value = target.value;
-    
+
     // Validate version format: should be numbers and dots (e.g., 1.0.0, 2.5.1)
     const versionRegex = /^[0-9.]*$/;
     if (value && !versionRegex.test(value)) {
@@ -2105,7 +2135,7 @@ export class ManagementComponent {
     } else {
       this.otaUpdateVersionError.set(null);
     }
-    
+
     this.otaUpdateForm.update(form => ({ ...form, version: value }));
   }
 
@@ -2127,7 +2157,7 @@ export class ManagementComponent {
   onOtaUpdateFileChange(event: Event) {
     const target = event.target as HTMLInputElement;
     const file = target.files?.[0] || null;
-    
+
     // Validate file type (must be zip)
     if (file) {
       const isValidZip = file.name.toLowerCase().endsWith('.zip') || file.type === 'application/zip' || file.type === 'application/x-zip-compressed';
@@ -2138,7 +2168,7 @@ export class ManagementComponent {
         target.value = '';
         return;
       }
-      
+
       // Validate file size (e.g., max 100MB)
       const maxSize = 100 * 1024 * 1024; // 100MB
       if (file.size > maxSize) {
@@ -2147,10 +2177,10 @@ export class ManagementComponent {
         target.value = '';
         return;
       }
-      
+
       this.otaUpdateFileError.set(null);
     }
-    
+
     this.otaUpdateForm.update(form => ({ ...form, file }));
   }
 
@@ -2204,7 +2234,7 @@ export class ManagementComponent {
     if (!form.name.trim() || !currentTenant) return;
 
     this.loading.set(true);
-    
+
     // If there's a logo file to upload, upload it first
     if (form.logo) {
       this.api.uploadFile(form.logo, 'tenant-logos').subscribe({
@@ -2261,7 +2291,7 @@ export class ManagementComponent {
     const target = event.target as HTMLInputElement;
     const file = target.files?.[0] || null;
     this.tenantProfileForm.update(form => ({ ...form, logo: file }));
-    
+
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -2307,5 +2337,16 @@ export class ManagementComponent {
     }).catch(() => {
       this.toast.error('Failed to copy API key');
     });
+  }
+
+  /**
+   * Transforms a role name from snake_case to Title Case.
+   * Example: 'super_admin' -> 'Super Admin'
+   */
+  private formatRoleName(name: string): string {
+    return name
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }
 }
