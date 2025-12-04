@@ -1,9 +1,6 @@
 import { TrafficController, Priority } from '../../lib/bm-traffic-control';
-import { loadRateLimitConfig } from '../../lib/bm-traffic-control/config';
+import { loadRateLimitConfig, DEFAULT_BACKMARKET_LIMITS } from '../../lib/bm-traffic-control/config';
 import { logRateLimitRequest } from './rateLimitLogger';
-
-const config = loadRateLimitConfig();
-// const traffic = new TrafficController(config, logRateLimitRequest); // Moved to class
 
 export class BackMarketService {
   private baseUrl = process.env.BACKMARKET_API_URL || 'https://www.backmarket.fr';
@@ -11,7 +8,17 @@ export class BackMarketService {
   private traffic: TrafficController;
 
   constructor(traffic?: TrafficController) {
-    this.traffic = traffic || new TrafficController(config, logRateLimitRequest);
+    if (traffic) {
+      this.traffic = traffic;
+    } else {
+      this.traffic = new TrafficController(DEFAULT_BACKMARKET_LIMITS, logRateLimitRequest);
+      // Async update from DB
+      loadRateLimitConfig().then(config => {
+        this.traffic.updateConfig(config);
+      }).catch(err => {
+        console.error('Failed to load rate limit config:', err);
+      });
+    }
   }
 
   private getHeaders() {
@@ -281,4 +288,10 @@ export class BackMarketService {
     // Set 1% below lowest competitor, but not below 50% of original
     return Math.max(lowestCompetitor * 0.99, fallbackPrice * 0.5);
   }
+
+  public updateTrafficConfig(config: any) {
+    this.traffic.updateConfig(config);
+  }
 }
+
+export const backMarketService = new BackMarketService();

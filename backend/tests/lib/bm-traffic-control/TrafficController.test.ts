@@ -5,13 +5,14 @@ import { Priority } from '../../../src/lib/bm-traffic-control/types';
 
 describe('TrafficController', () => {
   let controller: TrafficController;
-  const config = loadRateLimitConfig();
+  let config: any;
 
   // Mock fetch
   const originalFetch = global.fetch;
   const mockFetch = mock(() => Promise.resolve(new Response('{}')));
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    config = await loadRateLimitConfig();
     // Cast to any to avoid missing properties like 'preconnect' on the Mock type
     (global as any).fetch = mockFetch;
     mockFetch.mockClear();

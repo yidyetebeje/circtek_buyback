@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { int, mysqlTable, serial, tinyint, timestamp, varchar, boolean, bigint, json, text, mysqlEnum, date, decimal, datetime, primaryKey, index, unique, float, foreignKey, uniqueIndex } from 'drizzle-orm/mysql-core';
 import { shops } from './shops.schema';
 export * from './rate_limit.schema';
+export * from './system_config.schema';
 export const device_types = mysqlEnum('device_types', ['iPhone', 'Macbook', 'Airpods', 'Android']);
 export const stock_movement_reasons = mysqlEnum('stock_movement_reasons', ['purchase', 'dead_imei', 'transfer_out', 'transfer_in', 'repair', 'adjustment', 'buyback']);
 

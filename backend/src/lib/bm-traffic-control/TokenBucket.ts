@@ -77,6 +77,12 @@ export class TokenBucket {
     return this.tokens - this.reservedTokens; // Available to spend = Total - Reserved
   }
   
+  public updateConfig(maxTokens: number, refillIntervalMs: number) {
+    this.maxTokens = maxTokens;
+    this.refillIntervalMs = refillIntervalMs;
+    this.tokens = Math.min(this.tokens, this.maxTokens);
+  }
+
   // Helper for testing to see raw tokens
   public getRawTokens(): number {
       this.refill();

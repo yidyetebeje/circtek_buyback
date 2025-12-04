@@ -1,5 +1,5 @@
 import { db } from '../../src/db'
-import { roles, users, warehouses, tenants, stock, stock_movements, purchases, purchase_items, transfers, transfer_items, devices, repair_reasons, sku_specs } from '../../src/db/circtek.schema'
+import { roles, users, warehouses, tenants, stock, stock_movements, purchases, purchase_items, transfers, transfer_items, devices, repair_reasons, sku_specs, system_config } from '../../src/db/circtek.schema'
 import { eq, sql, and } from 'drizzle-orm'
 
 export const resetDb = async () => {

@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia';
-import { BackMarketService } from '../services/backMarketService';
+import { backMarketService } from '../services/backMarketService';
 import { BackMarketSyncService } from '../services/backMarketSyncService';
 import { requireRole } from '../../auth';
 import { 
@@ -11,7 +11,6 @@ import {
   UpdateListingSchema 
 } from '../types/backmarket';
 
-const backMarketService = new BackMarketService();
 const backMarketSyncService = new BackMarketSyncService(backMarketService);
 
 export const backMarketController = new Elysia({ prefix: '/backmarket' })

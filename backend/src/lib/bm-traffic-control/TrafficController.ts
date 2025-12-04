@@ -31,6 +31,22 @@ export class TrafficController {
     this.initializeBucket(BucketType.CARE, config.care);
   }
 
+  public updateConfig(config: RateLimitConfig) {
+    this.updateBucket(BucketType.GLOBAL, config.global);
+    this.updateBucket(BucketType.CATALOG, config.catalog);
+    this.updateBucket(BucketType.COMPETITOR, config.competitor);
+    this.updateBucket(BucketType.CARE, config.care);
+  }
+
+  private updateBucket(type: BucketType, config: BucketConfig) {
+    const bucket = this.buckets.get(type);
+    if (bucket) {
+      bucket.updateConfig(config.maxRequests, config.intervalMs);
+    } else {
+      this.initializeBucket(type, config);
+    }
+  }
+
   private initializeBucket(type: BucketType, config: BucketConfig) {
     this.buckets.set(type, new TokenBucket(config.maxRequests, config.intervalMs));
     this.queues.set(type, new RequestQueue<PendingRequest>());
