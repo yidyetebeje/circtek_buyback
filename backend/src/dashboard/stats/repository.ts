@@ -1,10 +1,10 @@
 import type { MySql2Database } from 'drizzle-orm/mysql2'
 import { and, count, eq, gte, lte, sql, desc, max } from 'drizzle-orm'
-import { 
-  test_results, 
-  devices, 
-  users, 
-  warehouses, 
+import {
+  test_results,
+  devices,
+  users,
+  warehouses,
   tenants,
   stock,
   purchases,
@@ -13,19 +13,19 @@ import {
   transfers,
   repairs
 } from '../../db/circtek.schema'
-import type { 
-  DashboardOverviewStats, 
-  DeviceTypeCount, 
+import type {
+  DashboardOverviewStats,
+  DeviceTypeCount,
   TestDeviceTypeCount,
-  StockAlert, 
-  RecentActivity, 
-  WarehouseStats, 
+  StockAlert,
+  RecentActivity,
+  WarehouseStats,
   MonthlyTrend,
   DiagnosticsMonthlyTrend
 } from './types'
 
 export class DashboardStatsRepository {
-  constructor(private readonly db: MySql2Database<any>) {}
+  constructor(private readonly db: MySql2Database<any>) { }
 
   async getOverviewStats(tenantId?: number, from?: string, to?: string): Promise<DashboardOverviewStats> {
     const fromDate = from ? new Date(from) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -70,7 +70,7 @@ export class DashboardStatsRepository {
 
     // Device stats
     const deviceCondition = tenantId ? eq(devices.tenant_id, tenantId) : undefined
-    
+
     const [totalDevices] = await this.db
       .select({ count: count() })
       .from(devices)
@@ -98,7 +98,7 @@ export class DashboardStatsRepository {
 
     // Stock stats
     const stockCondition = tenantId ? eq(stock.tenant_id, tenantId) : undefined
-    
+
     const [totalStockItems] = await this.db
       .select({ count: count() })
       .from(stock)
@@ -114,7 +114,7 @@ export class DashboardStatsRepository {
 
     // User stats
     const userCondition = tenantId ? eq(users.tenant_id, tenantId) : undefined
-    
+
     const [totalUsers] = await this.db
       .select({ count: count() })
       .from(users)
@@ -130,7 +130,7 @@ export class DashboardStatsRepository {
 
     // Warehouse stats
     const warehouseCondition = tenantId ? eq(warehouses.tenant_id, tenantId) : undefined
-    
+
     const [totalWarehouses] = await this.db
       .select({ count: count() })
       .from(warehouses)
@@ -138,7 +138,7 @@ export class DashboardStatsRepository {
 
     // Purchase stats
     const purchaseCondition = tenantId ? eq(purchases.tenant_id, tenantId) : undefined
-    
+
     const [totalPurchases] = await this.db
       .select({ count: count() })
       .from(purchases)
@@ -153,7 +153,7 @@ export class DashboardStatsRepository {
       .from(purchases)
       .leftJoin(purchase_items, eq(purchase_items.purchase_id, purchases.id))
       .leftJoin(
-        received_items, 
+        received_items,
         and(
           eq(received_items.purchase_id, purchases.id),
           eq(received_items.purchase_item_id, purchase_items.id)
@@ -174,7 +174,7 @@ export class DashboardStatsRepository {
 
     // Transfer stats
     const transferCondition = tenantId ? eq(transfers.tenant_id, tenantId) : undefined
-    
+
     const [totalTransfers] = await this.db
       .select({ count: count() })
       .from(transfers)
@@ -190,7 +190,7 @@ export class DashboardStatsRepository {
 
     // Repair stats
     const repairCondition = tenantId ? eq(repairs.tenant_id, tenantId) : undefined
-    
+
     const [totalRepairs] = await this.db
       .select({ count: count() })
       .from(repairs)
@@ -202,6 +202,30 @@ export class DashboardStatsRepository {
       .where(and(
         repairCondition,
         eq(repairs.status, true)
+      ))
+
+    const [repairsToday] = await this.db
+      .select({ count: count() })
+      .from(repairs)
+      .where(and(
+        repairCondition,
+        gte(repairs.created_at, today)
+      ))
+
+    const [repairsThisWeek] = await this.db
+      .select({ count: count() })
+      .from(repairs)
+      .where(and(
+        repairCondition,
+        gte(repairs.created_at, weekAgo)
+      ))
+
+    const [repairsThisMonth] = await this.db
+      .select({ count: count() })
+      .from(repairs)
+      .where(and(
+        repairCondition,
+        gte(repairs.created_at, monthAgo)
       ))
 
     // Tenant stats (super admin only)
@@ -238,7 +262,10 @@ export class DashboardStatsRepository {
       total_transfers: totalTransfers.count,
       pending_transfers: pendingTransfers.count,
       total_repairs: totalRepairs.count,
-      active_repairs: activeRepairs.count
+      active_repairs: activeRepairs.count,
+      repairs_today: repairsToday.count,
+      repairs_this_week: repairsThisWeek.count,
+      repairs_this_month: repairsThisMonth.count
     }
   }
 
@@ -261,7 +288,7 @@ export class DashboardStatsRepository {
 
     // Group by warehouse
     const warehouseMap = new Map<number, WarehouseStats>()
-    
+
     for (const row of warehouseDeviceTypes) {
       if (!warehouseMap.has(row.warehouse_id)) {
         warehouseMap.set(row.warehouse_id, {
@@ -270,7 +297,7 @@ export class DashboardStatsRepository {
           device_type_counts: []
         })
       }
-      
+
       if (row.test_count > 0) {
         warehouseMap.get(row.warehouse_id)!.device_type_counts.push({
           device_type: row.device_type,
@@ -300,10 +327,10 @@ export class DashboardStatsRepository {
     return recentTests.map(test => {
       const hasPassedComponents = test.passed_components && test.passed_components !== ''
       const hasFailedComponents = test.failed_components && test.failed_components !== ''
-      
+
       let report = 'Unknown'
-      
-     if (hasFailedComponents) {
+
+      if (hasFailedComponents) {
         report = 'Fail'
       } else {
         report = 'Pass'
@@ -320,16 +347,16 @@ export class DashboardStatsRepository {
 
   async getMonthlyTrends(tenantId?: number, months: number = 6, from?: string, to?: string): Promise<MonthlyTrend[]> {
     const trends: MonthlyTrend[] = []
-    
+
     // If date range is provided, use it; otherwise use default months
     if (from && to) {
       const startDate = new Date(from)
       const endDate = new Date(to)
-      
+
       // Generate monthly data for the date range
       const current = new Date(startDate.getFullYear(), startDate.getMonth(), 1)
       const end = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0)
-      
+
       while (current <= end) {
         const monthStart = new Date(current.getFullYear(), current.getMonth(), 1)
         const monthEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59)
@@ -348,7 +375,7 @@ export class DashboardStatsRepository {
           month: monthName,
           diagnostics: diagnosticsCount.count
         })
-        
+
         current.setMonth(current.getMonth() + 1)
       }
     } else {
