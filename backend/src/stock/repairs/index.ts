@@ -164,16 +164,26 @@ export const repairs_routes = new Elysia({ prefix: '/repairs' })
     }
   })
 
-  // Delete repair with cleanup
+  // Delete repair with cleanup (restricted to admin, super_admin, repair_manager)
   .delete('/:id', async (ctx) => {
-    const { params, currentTenantId, currentUserId } = ctx as any
+    const { params, currentTenantId, currentUserId, currentRole } = ctx as any
+
+    // Role-based access control: only admin, super_admin, and repair_manager can delete repairs
+    const allowedRoles = ['admin', 'super_admin', 'repair_manager']
+    if (!allowedRoles.includes(currentRole)) {
+      return {
+        data: null,
+        message: 'Forbidden: You do not have permission to delete repairs',
+        status: 403
+      }
+    }
+
     return controller.deleteRepairWithCleanup(Number(params.id), currentTenantId, currentUserId)
   }, {
     detail: {
-
       tags: ['Repairs'],
       summary: 'Delete repair',
-      description: 'Delete a repair and restore consumed stock, deallocate purchases, and remove device events'
+      description: 'Delete a repair and restore consumed stock, deallocate purchases, and remove device events. Restricted to admin, super_admin, and repair_manager roles.'
     }
   })
 

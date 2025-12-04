@@ -109,6 +109,16 @@ export class RepairComponent {
     ]);
   });
 
+  // Check if user can delete repairs (admin/super admin/repair manager only - not repair technicians)
+  canDeleteRepairs = computed(() => {
+    const roleId = this.auth.currentUser()?.role_id;
+    return this.roleService.hasAnyRole(roleId, [
+      ROLE_NAME.ADMIN,
+      ROLE_NAME.SUPER_ADMIN,
+      ROLE_NAME.REPAIR_MANAGER
+    ]);
+  });
+
   // Tabs
   tabs = computed<GenericTab[]>(() => {
     const allTabs = [
@@ -258,10 +268,14 @@ export class RepairComponent {
           {
             header: 'Actions', id: 'actions' as any, enableSorting: false as any,
             meta: {
-              actions: [
-                { key: 'detail', label: 'View Details', class: 'text-info', icon: 'eye' },
-                { key: 'delete', label: 'Delete', class: 'text-error', icon: 'delete' },
-              ],
+              actions: this.canDeleteRepairs()
+                ? [
+                  { key: 'detail', label: 'View Details', class: 'text-info', icon: 'eye' },
+                  { key: 'delete', label: 'Delete', class: 'text-error', icon: 'delete' },
+                ]
+                : [
+                  { key: 'detail', label: 'View Details', class: 'text-info', icon: 'eye' },
+                ],
               cellClass: () => 'text-right'
             }
           } as any,

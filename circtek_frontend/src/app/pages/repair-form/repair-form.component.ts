@@ -188,6 +188,16 @@ export class RepairFormComponent implements OnInit {
     return [];
   });
 
+  // Check if user can delete repairs (admin/super admin/repair manager only - not repair technicians)
+  canDeleteRepairs = computed(() => {
+    const roleId = this.auth.currentUser()?.role_id;
+    return this.roleService.hasAnyRole(roleId, [
+      ROLE_NAME.ADMIN,
+      ROLE_NAME.SUPER_ADMIN,
+      ROLE_NAME.REPAIR_MANAGER
+    ]);
+  });
+
   repairReasonOptions = computed(() => this.repairReasons().map(r => ({ label: r.name, value: r.id })));
 
   get parts(): FormArray {
