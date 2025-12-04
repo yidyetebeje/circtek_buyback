@@ -5,7 +5,7 @@ export const backmarket_orders = mysqlTable("backmarket_orders", {
   order_id: bigint("order_id", { mode: 'number' }).notNull(), // Back Market Order ID
   creation_date: timestamp("creation_date").notNull(),
   modification_date: timestamp("modification_date").notNull(),
-  status: int("status").notNull(),
+  status: varchar("status", { length: 50 }).notNull(),
   currency: varchar("currency", { length: 3 }).notNull(),
   shipping_first_name: varchar("shipping_first_name", { length: 255 }),
   shipping_last_name: varchar("shipping_last_name", { length: 255 }),

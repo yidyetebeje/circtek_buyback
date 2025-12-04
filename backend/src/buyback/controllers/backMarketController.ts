@@ -1,14 +1,25 @@
 import { Elysia } from 'elysia';
 import { BackMarketService } from '../services/backMarketService';
 import { BackMarketSyncService } from '../services/backMarketSyncService';
+import { requireRole } from '../../auth';
+import { 
+  ProbeSchema, 
+  RecoverSchema, 
+  SyncOrdersSchema, 
+  PaginationSchema, 
+  OrderParamsSchema, 
+  UpdateListingSchema 
+} from '../types/backmarket';
 
 const backMarketService = new BackMarketService();
 const backMarketSyncService = new BackMarketSyncService(backMarketService);
 
 export const backMarketController = new Elysia({ prefix: '/backmarket' })
+  .use(requireRole(['super_admin', 'admin']))
+  
   .post('/probe/:listingId', async ({ params, body }) => {
     const { listingId } = params;
-    const { currentPrice } = body as { currentPrice: number };
+    const { currentPrice } = body;
     
     const newPrice = await backMarketService.runPriceProbe(listingId, currentPrice);
     
@@ -17,10 +28,19 @@ export const backMarketController = new Elysia({ prefix: '/backmarket' })
       listingId,
       newPrice
     };
+  }, {
+    params: ProbeSchema.params,
+    body: ProbeSchema.body,
+    detail: {
+      tags: ['Back Market'],
+      summary: 'Run Price Probe',
+      description: 'Initiates a "Dip-Peek-Peak" price probe strategy to determine the optimal price for a listing against competitors.'
+    }
   })
+
   .post('/recover/:listingId', async ({ params, body }) => {
     const { listingId } = params;
-    const { targetPrice } = body as { targetPrice: number };
+    const { targetPrice } = body;
     
     await backMarketService.emergencyRecovery(listingId, targetPrice);
     
@@ -29,15 +49,40 @@ export const backMarketController = new Elysia({ prefix: '/backmarket' })
       listingId,
       message: 'Price recovered'
     };
+  }, {
+    params: RecoverSchema.params,
+    body: RecoverSchema.body,
+    detail: {
+      tags: ['Back Market'],
+      summary: 'Emergency Price Recovery',
+      description: 'Immediately updates a listing price to a target value with high priority, bypassing normal rate limits if necessary.'
+    }
   })
-  .post('/sync/orders', async () => {
-    const result = await backMarketSyncService.syncOrders();
+
+  .post('/sync/orders', async ({ body }) => {
+    const fullSync = body?.fullSync ?? false;
+    const result = await backMarketSyncService.syncOrders(fullSync);
     return { success: true, ...result };
+  }, {
+    body: SyncOrdersSchema.body,
+    detail: {
+      tags: ['Back Market'],
+      summary: 'Sync Orders',
+      description: 'Triggers synchronization of orders from Back Market to the local database.'
+    }
   })
+
   .post('/sync/listings', async () => {
     const result = await backMarketSyncService.syncListings();
     return { success: true, ...result };
+  }, {
+    detail: {
+      tags: ['Back Market'],
+      summary: 'Sync Listings',
+      description: 'Triggers synchronization of listings from Back Market to the local database.'
+    }
   })
+
   .get('/orders', async ({ query }) => {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 50;
@@ -48,10 +93,69 @@ export const backMarketController = new Elysia({ prefix: '/backmarket' })
       order_id: order.order_id.toString()
     }));
     return { success: true, results: serializedOrders, page, limit };
+  }, {
+    query: PaginationSchema.query,
+    detail: {
+      tags: ['Back Market'],
+      summary: 'List Local Orders',
+      description: 'Retrieves a paginated list of Back Market orders stored in the local database.'
+    }
   })
+
   .get('/listings', async ({ query }) => {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 50;
     const listings = await backMarketSyncService.getListings(page, limit);
     return { success: true, results: listings, page, limit };
+  }, {
+    query: PaginationSchema.query,
+    detail: {
+      tags: ['Back Market'],
+      summary: 'List Local Listings',
+      description: 'Retrieves a paginated list of Back Market listings stored in the local database.'
+    }
+  })
+
+  .get('/orders/:orderId/live', async ({ params, set }) => {
+    const { orderId } = params;
+    const response = await backMarketService.getBuyBackOrder(orderId);
+    
+    if (response.status !== 200) {
+      set.status = response.status;
+      return { success: false, status: response.status, message: response.statusText };
+    }
+    
+    const data = await response.json();
+    return { success: true, data };
+  }, {
+    params: OrderParamsSchema.params,
+    detail: {
+      tags: ['Back Market'],
+      summary: 'Get Live Order',
+      description: 'Fetches the most up-to-date details of a specific order directly from the Back Market API.'
+    }
+  })
+
+  .post('/listings/:listingId', async ({ params, body, set }) => {
+    const { listingId } = params;
+    const updateData = body;
+    
+    const response = await backMarketService.updateListing(listingId, updateData);
+    
+    if (response.status !== 200) {
+      set.status = response.status;
+      return { success: false, status: response.status, message: response.statusText };
+    }
+    
+    const data = await response.json();
+    return { success: true, data };
+  }, {
+    params: UpdateListingSchema.params,
+    body: UpdateListingSchema.body,
+    detail: {
+      tags: ['Back Market'],
+      summary: 'Update Listing',
+      description: 'Updates a listing on Back Market (e.g., price, quantity) directly via the API.'
+    }
   });
+
