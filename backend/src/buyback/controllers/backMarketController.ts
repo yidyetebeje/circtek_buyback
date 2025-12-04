@@ -217,9 +217,14 @@ export const backMarketController = new Elysia({ prefix: '/backmarket' })
 
   .post('/webhook', async ({ body }) => {
     // TODO: Verify signature if applicable
-    console.log('Received Back Market Webhook:', body);
-    // Handle different event types
-    // For now just log it
+    const { type, payload } = body as any;
+    
+    if (type && payload) {
+        await backMarketSyncService.handleWebhook(type, payload);
+    } else {
+        console.warn('Received webhook with missing type or payload', body);
+    }
+    
     return { success: true };
   }, {
     body: WebhookSchema.body,

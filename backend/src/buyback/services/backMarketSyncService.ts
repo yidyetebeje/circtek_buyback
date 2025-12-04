@@ -154,4 +154,55 @@ export class BackMarketSyncService {
     const offset = (page - 1) * limit;
     return await db.select().from(backmarket_listings).limit(limit).offset(offset);
   }
+
+  /**
+   * Handle incoming webhooks from Back Market
+   */
+  async handleWebhook(type: string, payload: any) {
+    console.log(`[Webhook] Received event: ${type}`);
+    
+    try {
+      switch (type) {
+        case 'order.created':
+        case 'order.updated':
+          // Payload might contain the order ID or the full order
+          // To be safe, we fetch the latest version from API if ID is present
+          const orderId = payload.order_id || payload.id;
+          if (orderId) {
+            console.log(`[Webhook] Syncing order ${orderId}`);
+            // Use Priority.HIGH (1) for webhook updates
+            const response = await this.apiService.getBuyBackOrder(orderId, 1); 
+            if (response.ok) {
+              const order = await response.json();
+              await this.upsertOrder(order);
+              console.log(`[Webhook] Order ${orderId} synced successfully`);
+            } else {
+              console.error(`[Webhook] Failed to fetch order ${orderId}: ${response.status}`);
+            }
+          } else {
+            console.warn('[Webhook] No order ID found in payload');
+          }
+          break;
+
+        case 'listing.updated':
+          const listingId = payload.listing_id || payload.id;
+          if (listingId) {
+             console.log(`[Webhook] Syncing listing ${listingId}`);
+             const response = await this.apiService.getListing(listingId, 1);
+             if (response.ok) {
+                const listing = await response.json();
+                await this.upsertListing(listing);
+                console.log(`[Webhook] Listing ${listingId} synced successfully`);
+             }
+          }
+          break;
+
+        default:
+          console.log(`[Webhook] Unhandled event type: ${type}`);
+      }
+    } catch (error) {
+      console.error('[Webhook] Error processing webhook:', error);
+      throw error;
+    }
+  }
 }
