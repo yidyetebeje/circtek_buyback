@@ -1,6 +1,8 @@
 import { Elysia } from 'elysia';
 import { backMarketService } from '../services/backMarketService';
 import { BackMarketSyncService } from '../services/backMarketSyncService';
+import { schedulerService } from '../services/SchedulerService';
+import { PricingRepository } from '../pricing/PricingRepository';
 import { requireRole } from '../../auth';
 import { 
   ProbeSchema, 
@@ -8,10 +10,14 @@ import {
   SyncOrdersSchema, 
   PaginationSchema, 
   OrderParamsSchema, 
-  UpdateListingSchema 
+  UpdateListingSchema,
+  RepriceSchema,
+  ParametersSchema,
+  WebhookSchema
 } from '../types/backmarket';
 
 const backMarketSyncService = new BackMarketSyncService(backMarketService);
+const pricingRepo = new PricingRepository();
 
 export const backMarketController = new Elysia({ prefix: '/backmarket' })
   .use(requireRole(['super_admin', 'admin']))
@@ -156,5 +162,72 @@ export const backMarketController = new Elysia({ prefix: '/backmarket' })
       summary: 'Update Listing',
       description: 'Updates a listing on Back Market (e.g., price, quantity) directly via the API.'
     }
+  })
+
+  .post('/reprice/:listingId', async ({ params }) => {
+    const { listingId } = params;
+    // Trigger repricing asynchronously
+    backMarketService.repriceListing(listingId).catch(console.error);
+    return { success: true, message: `Repricing triggered for ${listingId}` };
+  }, {
+    params: RepriceSchema.params,
+    detail: {
+      tags: ['Back Market'],
+      summary: 'Trigger Repricing',
+      description: 'Manually triggers the repricing logic for a specific listing.'
+    }
+  })
+
+  .get('/parameters/:sku', async ({ params, query }) => {
+    const { sku } = params;
+    const { grade, country } = query;
+    const paramsData = await pricingRepo.getParameters(sku, Number(grade), country);
+    return { success: true, data: paramsData };
+  }, {
+    params: ParametersSchema.params,
+    query: ParametersSchema.query,
+    detail: {
+      tags: ['Back Market'],
+      summary: 'Get Pricing Parameters',
+      description: 'Retrieves the pricing parameters (PFCS inputs) for a specific SKU, grade, and country.'
+    }
+  })
+
+  .post('/parameters', async ({ body }) => {
+    await pricingRepo.upsertParameters(body);
+    return { success: true, message: 'Parameters updated' };
+  }, {
+    body: ParametersSchema.body,
+    detail: {
+      tags: ['Back Market'],
+      summary: 'Update Pricing Parameters',
+      description: 'Updates or creates pricing parameters for a SKU.'
+    }
+  })
+
+  .get('/scheduler/status', () => {
+    return { success: true, status: schedulerService.getStatus() };
+  }, {
+    detail: {
+      tags: ['Back Market'],
+      summary: 'Scheduler Status',
+      description: 'Returns the current status of the Back Market scheduler tasks.'
+    }
+  })
+
+  .post('/webhook', async ({ body }) => {
+    // TODO: Verify signature if applicable
+    console.log('Received Back Market Webhook:', body);
+    // Handle different event types
+    // For now just log it
+    return { success: true };
+  }, {
+    body: WebhookSchema.body,
+    detail: {
+      tags: ['Back Market'],
+      summary: 'Webhook Endpoint',
+      description: 'Endpoint to receive real-time updates from Back Market.'
+    }
   });
+
 

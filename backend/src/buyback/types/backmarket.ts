@@ -54,3 +54,36 @@ export const UpdateListingSchema = {
     // Allow other fields as needed, but document common ones
   }, { additionalProperties: true })
 };
+
+export const RepriceSchema = {
+  params: t.Object({
+    listingId: t.String({ description: 'The ID of the listing to reprice' })
+  })
+};
+
+export const ParametersSchema = {
+  params: t.Object({
+    sku: t.String({ description: 'The SKU to get parameters for' })
+  }),
+  query: t.Object({
+    grade: t.Numeric({ description: 'The grade of the device' }),
+    country: t.String({ description: 'The country code (e.g. fr-fr)' })
+  }),
+  body: t.Object({
+    sku: t.String(),
+    grade: t.Number(),
+    country_code: t.String(),
+    c_refurb: t.Optional(t.String()),
+    c_op: t.Optional(t.String()),
+    c_risk: t.Optional(t.String()),
+    m_target: t.Optional(t.String()),
+    f_bm: t.Optional(t.String())
+  })
+};
+
+export const WebhookSchema = {
+  body: t.Object({
+    type: t.String({ description: 'Event type (e.g. order.created)' }),
+    payload: t.Any({ description: 'Event payload' })
+  }, { additionalProperties: true })
+};

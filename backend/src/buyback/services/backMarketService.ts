@@ -1,13 +1,29 @@
 import { TrafficController, Priority } from '../../lib/bm-traffic-control';
 import { loadRateLimitConfig, DEFAULT_BACKMARKET_LIMITS } from '../../lib/bm-traffic-control/config';
 import { logRateLimitRequest } from './rateLimitLogger';
+import { PricingRepository } from '../pricing/PricingRepository';
+import { OutlierDetectionService } from '../pricing/OutlierDetectionService';
+import { ProfitabilityConstraintService } from '../pricing/ProfitabilityConstraintService';
+import { DynamicPricingEngine } from '../pricing/DynamicPricingEngine';
 
 export class BackMarketService {
   private baseUrl = process.env.BACKMARKET_API_URL || 'https://www.backmarket.fr';
   private apiToken = process.env.BACKMARKET_API_TOKEN;
   private traffic: TrafficController;
+  
+  // Pricing Services
+  private pricingRepo: PricingRepository;
+  private ods: OutlierDetectionService;
+  private pfcs: ProfitabilityConstraintService;
+  private dpo: DynamicPricingEngine;
 
-  constructor(traffic?: TrafficController) {
+  constructor(
+    traffic?: TrafficController,
+    pricingRepo?: PricingRepository,
+    ods?: OutlierDetectionService,
+    pfcs?: ProfitabilityConstraintService,
+    dpo?: DynamicPricingEngine
+  ) {
     if (traffic) {
       this.traffic = traffic;
     } else {
@@ -19,6 +35,10 @@ export class BackMarketService {
         console.error('Failed to load rate limit config:', err);
       });
     }
+    this.pricingRepo = pricingRepo || new PricingRepository();
+    this.ods = ods || new OutlierDetectionService();
+    this.pfcs = pfcs || new ProfitabilityConstraintService();
+    this.dpo = dpo || new DynamicPricingEngine();
   }
 
   private getHeaders() {
@@ -201,16 +221,32 @@ export class BackMarketService {
   /**
    * Update listing price
    */
-  async updatePrice(listingId: string, price: number, priority: Priority = Priority.NORMAL): Promise<Response> {
-    return this.updateListing(listingId, { price }, priority);
+  async updatePrice(listingId: string, price: number, priority: Priority = Priority.NORMAL, countryCode?: string): Promise<Response> {
+    const data: any = { price };
+    if (countryCode) {
+      // Assuming BM API accepts country specific updates via some field or separate endpoint
+      // For now, we'll just log it or append to data if we knew the field.
+      // If it's a separate endpoint per country, we'd change the URL.
+      // Let's assume we pass it in the body for now as 'country_code' or similar if supported,
+      // OR we might need to use a different listing ID if listing IDs are country specific.
+      // But based on our architecture, we are iterating over countries for a single listing ID.
+      // This implies the update endpoint might need a query param or body field.
+      // Let's assume body field for now.
+      data.country_code = countryCode;
+    }
+    return this.updateListing(listingId, data, priority);
   }
 
   /**
    * Get competitor data
    */
-  async getCompetitors(listingId: string): Promise<any> {
+  async getCompetitors(listingId: string, countryCode?: string): Promise<any> {
+    let url = `${this.baseUrl}/ws/backbox/v1/competitors/${listingId}`;
+    if (countryCode) {
+        url += `?country=${countryCode}`; // Hypothetical param
+    }
     const response = await this.traffic.scheduleRequest(
-      `${this.baseUrl}/ws/backbox/v1/competitors/${listingId}`,
+      url,
       {
         method: 'GET',
         headers: this.getHeaders()
@@ -219,6 +255,87 @@ export class BackMarketService {
       1
     );
     return response.json();
+  }
+
+  /**
+   * Reprice a listing using the full DPO pipeline (P1 -> P8)
+   */
+  async repriceListing(listingId: string): Promise<void> {
+    try {
+      // 1. Get Listing Details (Internal)
+      const listing = await this.pricingRepo.getListingDetails(listingId);
+      if (!listing) {
+        console.warn(`Listing ${listingId} not found locally. Skipping repricing.`);
+        return;
+      }
+
+      // 1.1 Get Active Countries
+      const countries = await this.pricingRepo.getActiveCountries(listingId);
+      if (countries.length === 0) {
+        // Fallback to default if no specific countries found
+        countries.push("fr-fr");
+      }
+
+      // Fetch acquisition cost (placeholder for IMS integration)
+      // This is constant across countries for the same SKU
+      const acquisitionCost = await this.pricingRepo.getAverageAcquisitionCost(listing.sku!);
+      const velocity = await this.pricingRepo.getSalesVelocity(listing.sku!);
+
+      // Loop through each country
+      for (const countryCode of countries) {
+        // 2. Get Competitors (External P2)
+        const competitorData = await this.getCompetitors(listingId, countryCode);
+        const competitors = (competitorData.competitors || []).map((c: any) => ({
+            competitorId: c.seller_id,
+            price: c.price,
+            updatedAt: new Date(), 
+            feedbackCount: c.feedback_count
+        }));
+
+        // 3. Filter Outliers (P3)
+        const validCompetitors = this.ods.filterPrices(competitors);
+        const validPrices = validCompetitors.map(c => c.price);
+
+        // 4. Get Cost Parameters & Calculate Floor (P4)
+        const params = await this.pricingRepo.getParameters(listing.sku!, listing.grade!, countryCode);
+        
+        if (!params) {
+            console.warn(`No pricing parameters for SKU ${listing.sku} / Grade ${listing.grade} / Country ${countryCode}. Skipping.`);
+            continue;
+        }
+
+        const floorPrice = this.pfcs.calculateFloorPrice({
+            acquisitionCost: acquisitionCost,
+            refurbishmentCost: Number(params.c_refurb),
+            operationalCost: Number(params.c_op),
+            warrantyRiskCost: Number(params.c_risk)
+        }, {
+            backMarketFeeRate: Number(params.f_bm),
+            targetMarginRate: Number(params.m_target)
+        });
+
+        // 5. Calculate Target (P5)
+        const result = this.dpo.calculatePrice(validPrices, floorPrice);
+
+        // Calculate Priority based on Margin and Velocity
+        const margin = result.targetPrice > 0 ? (result.targetPrice - floorPrice) / result.targetPrice : 0;
+        
+        let priority = Priority.NORMAL;
+        if (margin > 0.2 && velocity > 10) {
+            priority = Priority.HIGH;
+        } else if (margin < 0.05 || velocity === 0) {
+            priority = Priority.LOW;
+        }
+
+        // 6. Update BM (P8)
+        console.log(`Repricing ${listingId} [${countryCode}]: Target ${result.targetPrice} (Floor: ${floorPrice}) Priority: ${priority}`);
+        
+        await this.updatePrice(listingId, result.targetPrice, priority, countryCode);
+      }
+
+    } catch (error) {
+      console.error(`Failed to reprice listing ${listingId}:`, error);
+    }
   }
 
   /**

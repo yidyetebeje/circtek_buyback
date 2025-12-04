@@ -44,7 +44,12 @@ export class BackMarketSyncService {
         totalSynced++;
       }
 
-      if (data.next) {
+      // If not full sync, stop after first page or if we hit existing orders?
+      // For now, let's just sync everything if fullSync is true, or just first 5 pages if false?
+      // Or check modification date.
+      if (!fullSync && page >= 5) {
+        hasMore = false;
+      } else if (data.next) {
         page++;
       } else {
         hasMore = false;

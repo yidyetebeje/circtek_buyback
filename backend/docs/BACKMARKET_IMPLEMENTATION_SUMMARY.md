@@ -56,7 +56,17 @@ This document summarizes the work completed today regarding the integration of t
   - Includes smoke tests for all endpoints: `sync/orders`, `sync/listings`, `GET /orders`, `GET /listings`, `GET /orders/:id/live`, `POST /listings/:id`.
 - Confirmed that the service connects to the API, processes responses, and interacts with the database without errors.
 
+## 7. Automated Scheduler
+- **Service:** `src/buyback/services/SchedulerService.ts`
+- **Features:**
+  - **Order Sync**: Runs every 15 minutes (incremental).
+  - **Listing Sync**: Runs every 1 hour.
+  - **Repricing Cycle**: Runs every 1 hour.
+- **Integration:**
+  - Initialized in `src/index.ts` on server startup.
+  - Uses `setTimeout` and `setInterval` to manage tasks without external dependencies.
+
 ## Next Steps
 - **Frontend Integration:** Connect the new API endpoints to the Admin frontend.
-- **Automated Sync:** Set up a cron job or scheduled task to run the sync methods periodically.
 - **Webhooks:** Implement webhook handling for real-time updates from Back Market (if supported/required).
+- **Monitoring Dashboard:** Visualize sync status and repricing logs in the Admin UI.

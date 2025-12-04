@@ -41,3 +41,41 @@ export const backmarket_listings = mysqlTable("backmarket_listings", {
   primaryKey({ columns: [table.listing_id], name: "backmarket_listings_pk" }),
   index("idx_bm_listings_sku").on(table.sku),
 ]));
+
+// Back Market Listing Prices (Geo-Targeting)
+export const backmarket_listing_prices = mysqlTable("backmarket_listing_prices", {
+  id: bigint("id", { mode: 'number' }).autoincrement().notNull(),
+  listing_id: varchar("listing_id", { length: 50 }).notNull(), // FK to backmarket_listings
+  country_code: varchar("country_code", { length: 5 }).notNull(), // e.g. "fr-fr"
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 3 }).notNull(),
+  status: boolean("status").default(true), // Is active in this country
+  updated_at: timestamp("updated_at").defaultNow().onUpdateNow(),
+}, (table) => ([
+  primaryKey({ columns: [table.id], name: "backmarket_listing_prices_pk" }),
+  unique("uq_listing_country").on(table.listing_id, table.country_code),
+  index("idx_listing_prices_listing").on(table.listing_id)
+]));
+
+// Back Market Pricing Parameters (PFCS Inputs)
+export const backmarket_pricing_parameters = mysqlTable("backmarket_pricing_parameters", {
+  id: bigint("id", { mode: 'number' }).autoincrement().notNull(),
+  sku: varchar("sku", { length: 255 }).notNull(), // Link to internal SKU
+  grade: int("grade").notNull(), // Back Market Grade
+  country_code: varchar("country_code", { length: 5 }).notNull(), // e.g. "fr-fr"
+  
+  // Cost Components
+  c_refurb: decimal("c_refurb", { precision: 10, scale: 2 }).default("0.00"),
+  c_op: decimal("c_op", { precision: 10, scale: 2 }).default("0.00"),
+  c_risk: decimal("c_risk", { precision: 10, scale: 2 }).default("0.00"),
+  
+  // Market Params
+  m_target: decimal("m_target", { precision: 5, scale: 4 }).default("0.1500"), // 15% = 0.15
+  f_bm: decimal("f_bm", { precision: 5, scale: 4 }).default("0.1000"), // 10% = 0.10
+  
+  updated_at: timestamp("updated_at").defaultNow().onUpdateNow(),
+}, (table) => ([
+  primaryKey({ columns: [table.id], name: "backmarket_pricing_parameters_pk" }),
+  unique("uq_pricing_sku_grade_country").on(table.sku, table.grade, table.country_code),
+  index("idx_pricing_sku").on(table.sku)
+]));

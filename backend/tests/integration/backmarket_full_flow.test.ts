@@ -12,7 +12,7 @@ config();
 const db = drizzle(pool);
 
 describe('Back Market Full Flow Demo', () => {
-    let app: Elysia;
+    let app: ReturnType<typeof buildApp>;
     let adminToken: string;
     let testListingId: string | null = null;
     let testOrderId: string | null = null;
