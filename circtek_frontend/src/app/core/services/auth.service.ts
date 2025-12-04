@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from './api.service';
+import { RoleService } from './role.service';
 import { User } from '../models/user';
 import { AuthResponse } from '../models/auth';
 import { ApiResponse } from '../models/api';
@@ -14,6 +15,7 @@ const AUTH_TOKEN_KEY = 'auth_token';
 export class AuthService {
   private readonly apiService = inject(ApiService);
   private readonly router = inject(Router);
+  private readonly roleService = inject(RoleService);
 
   currentUser = signal<User | null>(null);
   isAuthenticated = signal<boolean>(false);
@@ -24,7 +26,8 @@ export class AuthService {
     if (token) {
       this.token.set(token);
       this.isAuthenticated.set(true);
-      // Optionally, you can fetch user profile here
+      // Load roles and fetch user profile
+      this.roleService.loadRoles().subscribe();
       this.me();
     }
   }
@@ -41,6 +44,7 @@ export class AuthService {
 
   logout() {
     this.clearAuth();
+    this.roleService.clearCache();
     this.router.navigate(['/login']);
   }
 
@@ -57,6 +61,8 @@ export class AuthService {
     this.currentUser.set(authResponse.user);
     this.isAuthenticated.set(true);
     localStorage.setItem(AUTH_TOKEN_KEY, authResponse.token);
+    // Load roles after successful login
+    this.roleService.loadRoles().subscribe();
   }
 
   private clearAuth() {

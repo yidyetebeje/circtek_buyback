@@ -7,13 +7,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { GenericPageComponent, type Facet, type GenericTab } from '../../shared/components/generic-page/generic-page.component';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { RoleService } from '../../core/services/role.service';
 import { PaginationService } from '../../shared/services/pagination.service';
 import { StockWithWarehouse } from '../../core/models/stock';
 import { PurchaseRecord } from '../../core/models/purchase';
 import { TransferWithDetails } from '../../core/models/transfer';
 import { SkuSpecsRecord } from '../../core/models/sku-specs';
 import { SkuMappingsComponent } from './sku-mappings/sku-mappings.component';
-import { ROLE_ID } from '../../core/constants/role.constants';
+import { ROLE_NAME } from '../../core/constants/role.constants';
 // Union type for table rows across tabs
 export type StockMgmtRow = StockWithWarehouse | PurchaseRecord | TransferWithDetails | SkuSpecsRecord;
 
@@ -27,6 +28,7 @@ export type StockMgmtRow = StockWithWarehouse | PurchaseRecord | TransferWithDet
 export class StockManagementComponent {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly roleService = inject(RoleService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly paginationService = inject(PaginationService);
@@ -84,8 +86,8 @@ export class StockManagementComponent {
 
   // Role-based access control
   isRepairManager = computed(() => {
-    const user = this.auth.currentUser();
-    return user?.role_id === ROLE_ID.REPAIR_MANAGER;
+    const roleId = this.auth.currentUser()?.role_id;
+    return this.roleService.hasRole(roleId, ROLE_NAME.REPAIR_MANAGER);
   });
 
   canEditStock = computed(() => {

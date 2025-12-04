@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, signal, inject, computed } from '@a
 import { RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../../core/services/auth.service';
-import { ROLE_ID } from '../../../core/constants/role.constants';
+import { RoleService } from '../../../core/services/role.service';
+import { ROLE_NAME } from '../../../core/constants/role.constants';
 import {
   LayoutDashboard,
   Stethoscope,
@@ -22,6 +23,7 @@ import {
 })
 export class SidebarComponent {
   protected readonly authService = inject(AuthService);
+  protected readonly roleService = inject(RoleService);
   protected readonly isOpen = signal(false);
 
   // Icons
@@ -39,22 +41,32 @@ export class SidebarComponent {
   // Role-based menu visibility
   protected readonly canAccessManagement = computed(() => {
     const roleId = this.currentUser()?.role_id;
-    return roleId === ROLE_ID.ADMIN || roleId === ROLE_ID.SUPER_ADMIN;
+    return this.roleService.hasAnyRole(roleId, [ROLE_NAME.ADMIN, ROLE_NAME.SUPER_ADMIN]);
   });
 
   protected readonly canAccessStock = computed(() => {
     const roleId = this.currentUser()?.role_id;
-    return roleId === ROLE_ID.STOCK_MANAGER || roleId === ROLE_ID.REPAIR_MANAGER || roleId === ROLE_ID.ADMIN || roleId === ROLE_ID.SUPER_ADMIN;
+    return this.roleService.hasAnyRole(roleId, [
+      ROLE_NAME.STOCK_MANAGER,
+      ROLE_NAME.REPAIR_MANAGER,
+      ROLE_NAME.ADMIN,
+      ROLE_NAME.SUPER_ADMIN
+    ]);
   });
 
   protected readonly canAccessRepair = computed(() => {
     const roleId = this.currentUser()?.role_id;
-    return roleId === ROLE_ID.REPAIR_MANAGER || roleId === ROLE_ID.REPAIR_TECHNICIAN || roleId === ROLE_ID.ADMIN || roleId === ROLE_ID.SUPER_ADMIN;
+    return this.roleService.hasAnyRole(roleId, [
+      ROLE_NAME.REPAIR_MANAGER,
+      ROLE_NAME.REPAIR_TECHNICIAN,
+      ROLE_NAME.ADMIN,
+      ROLE_NAME.SUPER_ADMIN
+    ]);
   });
 
   protected readonly canAccessLicensing = computed(() => {
     const roleId = this.currentUser()?.role_id;
-    return roleId === ROLE_ID.ADMIN || roleId === ROLE_ID.SUPER_ADMIN;
+    return this.roleService.hasAnyRole(roleId, [ROLE_NAME.ADMIN, ROLE_NAME.SUPER_ADMIN]);
   });
 
   toggleSidebar() {

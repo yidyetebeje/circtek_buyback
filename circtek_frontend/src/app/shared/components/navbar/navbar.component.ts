@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, output } from '@a
 import { RouterModule } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { RoleService } from '../../../core/services/role.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { LucideAngularModule } from 'lucide-angular';
 import { CurrencySelectorComponent } from '../currency-selector/currency-selector.component';
-import { ROLE_ID } from '../../../core/constants/role.constants';
+import { ROLE_NAME } from '../../../core/constants/role.constants';
 import {
   LayoutDashboard,
   Stethoscope,
@@ -27,6 +28,7 @@ import {
 export class NavbarComponent {
   protected readonly themeService = inject(ThemeService);
   protected readonly authService = inject(AuthService);
+  protected readonly roleService = inject(RoleService);
   protected readonly isDarkMode = computed(() => this.themeService.theme() === 'dim');
   protected readonly themeTooltip = computed(() =>
     this.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'
@@ -51,22 +53,32 @@ export class NavbarComponent {
   // Role-based menu visibility
   protected readonly canAccessManagement = computed(() => {
     const roleId = this.currentUser()?.role_id;
-    return roleId === ROLE_ID.ADMIN || roleId === ROLE_ID.SUPER_ADMIN;
+    return this.roleService.hasAnyRole(roleId, [ROLE_NAME.ADMIN, ROLE_NAME.SUPER_ADMIN]);
   });
 
   protected readonly canAccessStock = computed(() => {
     const roleId = this.currentUser()?.role_id;
-    return roleId === ROLE_ID.STOCK_MANAGER || roleId === ROLE_ID.REPAIR_MANAGER || roleId === ROLE_ID.ADMIN || roleId === ROLE_ID.SUPER_ADMIN;
+    return this.roleService.hasAnyRole(roleId, [
+      ROLE_NAME.STOCK_MANAGER,
+      ROLE_NAME.REPAIR_MANAGER,
+      ROLE_NAME.ADMIN,
+      ROLE_NAME.SUPER_ADMIN
+    ]);
   });
 
   protected readonly canAccessRepair = computed(() => {
     const roleId = this.currentUser()?.role_id;
-    return roleId === ROLE_ID.REPAIR_MANAGER || roleId === ROLE_ID.REPAIR_TECHNICIAN || roleId === ROLE_ID.ADMIN || roleId === ROLE_ID.SUPER_ADMIN;
+    return this.roleService.hasAnyRole(roleId, [
+      ROLE_NAME.REPAIR_MANAGER,
+      ROLE_NAME.REPAIR_TECHNICIAN,
+      ROLE_NAME.ADMIN,
+      ROLE_NAME.SUPER_ADMIN
+    ]);
   });
 
   protected readonly canAccessLicensing = computed(() => {
     const roleId = this.currentUser()?.role_id;
-    return roleId === ROLE_ID.ADMIN || roleId === ROLE_ID.SUPER_ADMIN;
+    return this.roleService.hasAnyRole(roleId, [ROLE_NAME.ADMIN, ROLE_NAME.SUPER_ADMIN]);
   });
 
   toggleTheme(): void {

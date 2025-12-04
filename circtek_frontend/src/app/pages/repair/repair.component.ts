@@ -8,13 +8,14 @@ import { GenericPageComponent, type Facet, type GenericTab } from '../../shared/
 import { GenericModalComponent, type ModalAction } from '../../shared/components/generic-modal/generic-modal.component';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { RoleService } from '../../core/services/role.service';
 import { PaginationService } from '../../shared/services/pagination.service';
 import { ToastService } from '../../core/services/toast.service';
 import { RepairRecord } from '../../core/models/repair';
 import { RepairReasonRecord } from '../../core/models/repair-reason';
 import { DeadIMEIRecord } from '../../core/models/dead-imei';
 import { SkuUsageAnalyticsItem } from '../../core/models/analytics';
-import { ROLE_ID } from '../../core/constants/role.constants';
+import { ROLE_NAME } from '../../core/constants/role.constants';
 
 // Union type for table rows across tabs
 export type RepairRow = RepairRecord | RepairReasonRecord | DeadIMEIRecord | SkuUsageAnalyticsItem;
@@ -29,6 +30,7 @@ export type RepairRow = RepairRecord | RepairReasonRecord | DeadIMEIRecord | Sku
 export class RepairComponent {
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly roleService = inject(RoleService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly paginationService = inject(PaginationService);
@@ -99,10 +101,12 @@ export class RepairComponent {
 
   // Check if user can access repair reasons (admin/super admin/repair manager)
   canAccessRepairReasons = computed(() => {
-    const user = this.auth.currentUser();
-    return user?.role_id === ROLE_ID.ADMIN ||
-      user?.role_id === ROLE_ID.SUPER_ADMIN ||
-      user?.role_id === ROLE_ID.REPAIR_MANAGER;
+    const roleId = this.auth.currentUser()?.role_id;
+    return this.roleService.hasAnyRole(roleId, [
+      ROLE_NAME.ADMIN,
+      ROLE_NAME.SUPER_ADMIN,
+      ROLE_NAME.REPAIR_MANAGER
+    ]);
   });
 
   // Tabs
@@ -373,9 +377,11 @@ export class RepairComponent {
     const tab = str('tab', 'repairs');
     // Prevent unauthorized users from accessing repair-reasons tab via URL
     const user = this.auth.currentUser();
-    const hasRepairReasonAccess = user?.role_id === ROLE_ID.ADMIN ||
-      user?.role_id === ROLE_ID.SUPER_ADMIN ||
-      user?.role_id === ROLE_ID.REPAIR_MANAGER;
+    const hasRepairReasonAccess = this.roleService.hasAnyRole(user?.role_id, [
+      ROLE_NAME.ADMIN,
+      ROLE_NAME.SUPER_ADMIN,
+      ROLE_NAME.REPAIR_MANAGER
+    ]);
 
     if (tab === 'repairs' || tab === 'repair-reasons' || tab === 'dead-imei' || tab === 'analytics') {
       // If trying to access repair-reasons without proper access, redirect to repairs tab
@@ -434,8 +440,10 @@ export class RepairComponent {
       // Load warehouses for selects (limit high for options)
       this.api.getWarehouses(new HttpParams().set('limit', '1000')).subscribe(res => {
         const currentUser = this.auth.currentUser();
-        const isAdmin = currentUser?.role_id === ROLE_ID.ADMIN ||
-          currentUser?.role_id === ROLE_ID.SUPER_ADMIN;
+        const isAdmin = this.roleService.hasAnyRole(currentUser?.role_id, [
+          ROLE_NAME.ADMIN,
+          ROLE_NAME.SUPER_ADMIN
+        ]);
         let warehouses = res.data ?? [];
 
         // Filter warehouses for non-admin users

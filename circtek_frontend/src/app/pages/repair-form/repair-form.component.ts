@@ -8,12 +8,13 @@ import { LucideAngularModule, Trash2 } from 'lucide-angular';
 import { GenericFormPageComponent, type FormField } from '../../shared/components/generic-form-page/generic-form-page.component';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { RoleService } from '../../core/services/role.service';
 import { ToastService } from '../../core/services/toast.service';
 import { RepairCreateInput, RepairConsumeItemsInput, RepairCreateWithConsumeInput, RepairRecord } from '../../core/models/repair';
 import { BarcodeScannerComponent, ScanResult } from '../../shared/components/barcode-scanner/barcode-scanner.component';
 import { RepairReasonAutocompleteComponent } from '../../shared/components/repair-reason-autocomplete/repair-reason-autocomplete.component';
 import { RepairReasonRecord } from '../../core/models/repair-reason';
-import { ROLE_ID } from '../../core/constants/role.constants';
+import { ROLE_NAME } from '../../core/constants/role.constants';
 
 @Component({
   selector: 'app-repair-form',
@@ -26,6 +27,7 @@ export class RepairFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
   private readonly auth = inject(AuthService);
+  private readonly roleService = inject(RoleService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
@@ -127,7 +129,7 @@ export class RepairFormComponent implements OnInit {
       this.form().get('warehouse_id')?.setValue(currentUser.warehouse_id);
 
       // Disable warehouse field for non-admin users
-      const isAdmin = currentUser.role_id === ROLE_ID.ADMIN || currentUser.role_id === ROLE_ID.SUPER_ADMIN;
+      const isAdmin = this.roleService.hasAnyRole(currentUser.role_id, [ROLE_NAME.ADMIN, ROLE_NAME.SUPER_ADMIN]);
       if (!isAdmin) {
         this.isWarehouseDisabled.set(true);
       }
@@ -174,7 +176,7 @@ export class RepairFormComponent implements OnInit {
     const allWarehouses = this.warehouses();
 
     // Admin and super_admin can see all warehouses
-    if (currentUser?.role_id === ROLE_ID.ADMIN || currentUser?.role_id === ROLE_ID.SUPER_ADMIN) {
+    if (this.roleService.hasAnyRole(currentUser?.role_id, [ROLE_NAME.ADMIN, ROLE_NAME.SUPER_ADMIN])) {
       return allWarehouses;
     }
 
