@@ -91,15 +91,12 @@ export class StockManagementComponent {
   });
 
   canEditStock = computed(() => {
-    return !this.isRepairManager();
+    return true; // repair_manager now has full access
   });
 
   // Tabs
   tabs = computed<GenericTab[]>(() => {
-    // Repair managers can only see the stock tab
-    if (this.isRepairManager()) {
-      return [{ key: 'stock', label: 'Stock' }];
-    }
+    // All roles including repair_manager can see all tabs
     return [
       { key: 'stock', label: 'Stock' },
       { key: 'purchases', label: 'Purchases' },
@@ -113,10 +110,7 @@ export class StockManagementComponent {
   title = 'Stock Management';
   subtitle = 'Manage stock, purchases, transfers and SKU specifications';
   primaryAction = computed(() => {
-    // Repair managers cannot perform any edit actions
-    if (this.isRepairManager()) {
-      return null;
-    }
+    // All roles including repair_manager can perform actions
     const tab = this.activeTab();
     if (tab === 'stock') {
       return { label: 'Stock In' };
@@ -194,10 +188,8 @@ export class StockManagementComponent {
     const list: Facet[] = [];
     const tab = this.activeTab();
     if (tab === 'stock') {
-      // Repair managers cannot filter by warehouse (they only see their assigned warehouse)
-      if (!this.isRepairManager()) {
-        list.push({ key: 'warehouse_id', label: 'Warehouse', type: 'select', options: this.warehouseOptions() });
-      }
+      // All roles including repair_manager can filter by warehouse
+      list.push({ key: 'warehouse_id', label: 'Warehouse', type: 'select', options: this.warehouseOptions() });
       list.push({
         key: 'is_part', label: 'Type', type: 'select', options: [
           { label: 'Any', value: 'any' },
@@ -549,17 +541,9 @@ export class StockManagementComponent {
       if (sb) params = params.set('sort_by', sb);
       if (sd) params = params.set('sort_dir', sd);
 
-      // For repair managers, automatically filter by their assigned warehouse
-      if (this.isRepairManager()) {
-        const userWarehouseId = this.auth.currentUser()?.warehouse_id;
-        if (userWarehouseId != null) {
-          params = params.set('warehouse_id', String(userWarehouseId));
-        }
-      } else {
-        // For other users, use the selected warehouse filter
-        const wid = this.selectedWarehouseId();
-        if (wid != null) params = params.set('warehouse_id', String(wid));
-      }
+      // All roles including repair_manager use the selected warehouse filter
+      const wid = this.selectedWarehouseId();
+      if (wid != null) params = params.set('warehouse_id', String(wid));
 
       const ip = this.selectedIsPart(); if (ip !== 'any') params = params.set('is_part', ip === 'true' ? 'true' : 'false');
       const lst = this.lowStockThreshold(); if (lst != null) params = params.set('low_stock_threshold', String(lst));
@@ -731,10 +715,7 @@ export class StockManagementComponent {
   }
 
   onCellAction(event: { action: string; row: StockMgmtRow }) {
-    // Repair managers cannot perform any actions
-    if (this.isRepairManager()) {
-      return;
-    }
+    // All roles including repair_manager can perform actions
     const tab = this.activeTab();
     const row = event.row as any;
 
