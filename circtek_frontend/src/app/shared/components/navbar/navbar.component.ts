@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, output, signal, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -25,7 +25,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit {
   protected readonly themeService = inject(ThemeService);
   protected readonly authService = inject(AuthService);
   protected readonly roleService = inject(RoleService);
@@ -33,6 +33,9 @@ export class NavbarComponent {
   protected readonly themeTooltip = computed(() =>
     this.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'
   );
+
+  // Track initialization state
+  protected readonly isInitialized = signal(false);
 
   // Icons
   readonly LayoutDashboard = LayoutDashboard;
@@ -49,6 +52,13 @@ export class NavbarComponent {
   // Expose auth state to template
   protected readonly isAuthenticated = this.authService.isAuthenticated;
   protected readonly currentUser = this.authService.currentUser;
+
+  ngOnInit(): void {
+    // Subscribe to auth initialization to ensure user data is loaded
+    this.authService.initialized$.subscribe(() => {
+      this.isInitialized.set(true);
+    });
+  }
 
   // Role-based menu visibility
   protected readonly canAccessManagement = computed(() => {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, signal, inject, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, inject, computed, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../../core/services/auth.service';
@@ -21,10 +21,13 @@ import {
   styleUrl: './sidebar.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
   protected readonly authService = inject(AuthService);
   protected readonly roleService = inject(RoleService);
   protected readonly isOpen = signal(false);
+
+  // Track initialization state
+  protected readonly isInitialized = signal(false);
 
   // Icons
   readonly LayoutDashboard = LayoutDashboard;
@@ -37,6 +40,13 @@ export class SidebarComponent {
 
   // Expose auth state to template
   protected readonly currentUser = this.authService.currentUser;
+
+  ngOnInit(): void {
+    // Subscribe to auth initialization to ensure user data is loaded
+    this.authService.initialized$.subscribe(() => {
+      this.isInitialized.set(true);
+    });
+  }
 
   // Role-based menu visibility
   protected readonly canAccessManagement = computed(() => {

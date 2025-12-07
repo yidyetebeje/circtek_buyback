@@ -89,7 +89,7 @@
     </button>
 
     <!-- Logout button (only shown when authenticated) -->
-    @if (isAuthenticated() && currentUser(); as user) {
+    @if (isAuthenticated()) {
     <button type="button" class="logout-btn" aria-label="Logout" (click)="logout()">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
         class="logout-icon">
