@@ -108,7 +108,7 @@
       <div class="flex items-center justify-between">
         <div class="min-w-0 flex-1 mr-3">
           <p class="text-sm font-medium text-base-content/70">Total Repairs</p>
-          <p class="text-3xl font-bold text-primary truncate">{{ formatNumber(summary()!.total_repairs) }}</p>
+          <p class="text-3xl font-bold text-primary">{{ formatNumber(summary()!.total_repairs) }}</p>
         </div>
         <div class="bg-primary/20 p-3 rounded-full flex-shrink-0">
           <lucide-icon [img]="ActivityIcon" class="size-6 text-primary"></lucide-icon>
@@ -122,7 +122,7 @@
       <div class="flex items-center justify-between">
         <div class="min-w-0 flex-1 mr-3">
           <p class="text-sm font-medium text-base-content/70">Unique Devices</p>
-          <p class="text-3xl font-bold text-secondary truncate">{{ formatNumber(summary()!.unique_devices) }}</p>
+          <p class="text-3xl font-bold text-secondary">{{ formatNumber(summary()!.unique_devices) }}</p>
         </div>
         <div class="bg-secondary/20 p-3 rounded-full flex-shrink-0">
           <lucide-icon [img]="PackageIcon" class="size-6 text-secondary"></lucide-icon>
@@ -136,7 +136,7 @@
       <div class="flex items-center justify-between">
         <div class="min-w-0 flex-1 mr-3">
           <p class="text-sm font-medium text-base-content/70">Total Spend</p>
-          <p class="text-3xl font-bold text-success truncate">{{ summary()!.total_cost | appCurrency }}</p>
+          <p class="text-3xl font-bold text-success">{{ summary()!.total_cost | appCurrency }}</p>
         </div>
         <div class="bg-success/20 p-3 rounded-full flex-shrink-0">
           <lucide-icon [img]="DollarSignIcon" class="size-6 text-success"></lucide-icon>
@@ -150,7 +150,7 @@
       <div class="flex items-center justify-between">
         <div class="min-w-0 flex-1 mr-3">
           <p class="text-sm font-medium text-base-content/70">Avg Cost/Device</p>
-          <p class="text-3xl font-bold text-warning truncate">{{ summary()!.average_cost_per_repair | appCurrency }}</p>
+          <p class="text-3xl font-bold text-warning">{{ summary()!.average_cost_per_repair | appCurrency }}</p>
         </div>
         <div class="bg-warning/20 p-3 rounded-full flex-shrink-0">
           <lucide-icon [img]="DollarSignIcon" class="size-6 text-warning"></lucide-icon>
