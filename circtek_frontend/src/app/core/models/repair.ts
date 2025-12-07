@@ -173,6 +173,7 @@ export interface ModelAnalytics {
 export interface RepairAnalytics {
   summary: {
     total_repairs: number;
+    unique_devices: number;
     total_parts_used: number;
     total_quantity_consumed: number;
     total_cost: number;

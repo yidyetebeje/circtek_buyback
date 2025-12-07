@@ -102,57 +102,43 @@
   </div>
   } @else if (summary()) {
   <!-- Summary Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
     <!-- Total Repairs -->
     <div class="bg-base-100 rounded-xl p-6 border border-base-300">
       <div class="flex items-center justify-between">
-        <div>
+        <div class="min-w-0 flex-1 mr-3">
           <p class="text-sm font-medium text-base-content/70">Total Repairs</p>
-          <p class="text-3xl font-bold text-primary">{{ formatNumber(summary()!.total_repairs) }}</p>
+          <p class="text-3xl font-bold text-primary truncate">{{ formatNumber(summary()!.total_repairs) }}</p>
         </div>
-        <div class="bg-primary/20 p-3 rounded-full">
+        <div class="bg-primary/20 p-3 rounded-full flex-shrink-0">
           <lucide-icon [img]="ActivityIcon" class="size-6 text-primary"></lucide-icon>
         </div>
       </div>
       <div class="mt-4 text-sm text-base-content/60">All repair records</div>
     </div>
 
-    <!-- Total Parts Used -->
+    <!-- Unique Devices Repaired -->
     <div class="bg-base-100 rounded-xl p-6 border border-base-300">
       <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm font-medium text-base-content/70">Total Parts Used</p>
-          <p class="text-3xl font-bold text-secondary">{{ formatNumber(summary()!.total_parts_used) }}</p>
+        <div class="min-w-0 flex-1 mr-3">
+          <p class="text-sm font-medium text-base-content/70">Unique Devices</p>
+          <p class="text-3xl font-bold text-secondary truncate">{{ formatNumber(summary()!.unique_devices) }}</p>
         </div>
-        <div class="bg-secondary/20 p-3 rounded-full">
+        <div class="bg-secondary/20 p-3 rounded-full flex-shrink-0">
           <lucide-icon [img]="PackageIcon" class="size-6 text-secondary"></lucide-icon>
         </div>
       </div>
-      <div class="mt-4 text-sm text-base-content/60">Unique part entries</div>
-    </div>
-
-    <!-- Total Quantity -->
-    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm font-medium text-base-content/70">Total Quantity</p>
-          <p class="text-3xl font-bold text-accent">{{ formatNumber(summary()!.total_quantity_consumed) }}</p>
-        </div>
-        <div class="bg-accent/20 p-3 rounded-full">
-          <lucide-icon [img]="TrendingUpIcon" class="size-6 text-accent"></lucide-icon>
-        </div>
-      </div>
-      <div class="mt-4 text-sm text-base-content/60">Parts consumed</div>
+      <div class="mt-4 text-sm text-base-content/60">Distinct devices repaired</div>
     </div>
 
     <!-- Total Cost -->
     <div class="bg-base-100 rounded-xl p-6 border border-base-300">
       <div class="flex items-center justify-between">
-        <div>
+        <div class="min-w-0 flex-1 mr-3">
           <p class="text-sm font-medium text-base-content/70">Total Spend</p>
-          <p class="text-3xl font-bold text-success">{{ summary()!.total_cost | appCurrency }}</p>
+          <p class="text-2xl font-bold text-success truncate">{{ summary()!.total_cost | appCurrency:2:true }}</p>
         </div>
-        <div class="bg-success/20 p-3 rounded-full">
+        <div class="bg-success/20 p-3 rounded-full flex-shrink-0">
           <lucide-icon [img]="DollarSignIcon" class="size-6 text-success"></lucide-icon>
         </div>
       </div>
@@ -162,11 +148,12 @@
     <!-- Average Cost -->
     <div class="bg-base-100 rounded-xl p-6 border border-base-300">
       <div class="flex items-center justify-between">
-        <div>
+        <div class="min-w-0 flex-1 mr-3">
           <p class="text-sm font-medium text-base-content/70">Avg Cost/Device</p>
-          <p class="text-3xl font-bold text-warning">{{ summary()!.average_cost_per_repair | appCurrency }}</p>
+          <p class="text-2xl font-bold text-warning truncate">{{ summary()!.average_cost_per_repair | appCurrency:2:true
+            }}</p>
         </div>
-        <div class="bg-warning/20 p-3 rounded-full">
+        <div class="bg-warning/20 p-3 rounded-full flex-shrink-0">
           <lucide-icon [img]="DollarSignIcon" class="size-6 text-warning"></lucide-icon>
         </div>
       </div>

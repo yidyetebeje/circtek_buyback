@@ -741,6 +741,7 @@ export class RepairsRepository {
 
     const summary = {
       total_repairs: Number(summaryResult?.total_repairs || 0),
+      unique_devices: Number(summaryResult?.unique_devices || 0),
       total_parts_used: Number(summaryResult?.total_parts_used || 0),
       total_quantity_consumed: Number(summaryResult?.total_quantity_consumed || 0),
       total_cost: Number(summaryResult?.total_cost || 0),
