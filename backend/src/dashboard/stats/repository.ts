@@ -1,5 +1,5 @@
 import type { MySql2Database } from 'drizzle-orm/mysql2'
-import { and, count, eq, gte, lte, sql, desc, max } from 'drizzle-orm'
+import { and, count, countDistinct, eq, gte, lte, sql, desc, max } from 'drizzle-orm'
 import {
   test_results,
   devices,
@@ -40,12 +40,12 @@ export class DashboardStatsRepository {
 
     // Diagnostics stats
     const [totalDiagnostics] = await this.db
-      .select({ count: count() })
+      .select({ count: countDistinct(test_results.device_id) })
       .from(test_results)
       .where(tenantCondition)
 
     const [diagnosticsToday] = await this.db
-      .select({ count: count() })
+      .select({ count: countDistinct(test_results.device_id) })
       .from(test_results)
       .where(and(
         tenantCondition,
@@ -53,7 +53,7 @@ export class DashboardStatsRepository {
       ))
 
     const [diagnosticsThisWeek] = await this.db
-      .select({ count: count() })
+      .select({ count: countDistinct(test_results.device_id) })
       .from(test_results)
       .where(and(
         tenantCondition,
@@ -61,7 +61,7 @@ export class DashboardStatsRepository {
       ))
 
     const [diagnosticsThisMonth] = await this.db
-      .select({ count: count() })
+      .select({ count: countDistinct(test_results.device_id) })
       .from(test_results)
       .where(and(
         tenantCondition,
@@ -192,12 +192,12 @@ export class DashboardStatsRepository {
     const repairCondition = tenantId ? eq(repairs.tenant_id, tenantId) : undefined
 
     const [totalRepairs] = await this.db
-      .select({ count: count() })
+      .select({ count: countDistinct(repairs.device_id) })
       .from(repairs)
       .where(repairCondition)
 
     const [activeRepairs] = await this.db
-      .select({ count: count() })
+      .select({ count: countDistinct(repairs.device_id) })
       .from(repairs)
       .where(and(
         repairCondition,
@@ -205,7 +205,7 @@ export class DashboardStatsRepository {
       ))
 
     const [repairsToday] = await this.db
-      .select({ count: count() })
+      .select({ count: countDistinct(repairs.device_id) })
       .from(repairs)
       .where(and(
         repairCondition,
@@ -213,7 +213,7 @@ export class DashboardStatsRepository {
       ))
 
     const [repairsThisWeek] = await this.db
-      .select({ count: count() })
+      .select({ count: countDistinct(repairs.device_id) })
       .from(repairs)
       .where(and(
         repairCondition,
@@ -221,7 +221,7 @@ export class DashboardStatsRepository {
       ))
 
     const [repairsThisMonth] = await this.db
-      .select({ count: count() })
+      .select({ count: countDistinct(repairs.device_id) })
       .from(repairs)
       .where(and(
         repairCondition,
