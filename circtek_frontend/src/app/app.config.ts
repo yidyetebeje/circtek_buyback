@@ -11,9 +11,8 @@ import { errorInterceptor } from './core/interceptors/error.interceptor';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes, withHashLocation()),
+    provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
-    provideAnimations(),
     provideToastr({
       timeOut: 5000,
       positionClass: 'toast-top-right',
