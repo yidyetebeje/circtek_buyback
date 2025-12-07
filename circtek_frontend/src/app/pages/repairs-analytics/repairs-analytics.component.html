@@ -136,7 +136,7 @@
       <div class="flex items-center justify-between">
         <div class="min-w-0 flex-1 mr-3">
           <p class="text-sm font-medium text-base-content/70">Total Spend</p>
-          <p class="text-2xl font-bold text-success truncate">{{ summary()!.total_cost | appCurrency:2:true }}</p>
+          <p class="text-3xl font-bold text-success truncate">{{ summary()!.total_cost | appCurrency }}</p>
         </div>
         <div class="bg-success/20 p-3 rounded-full flex-shrink-0">
           <lucide-icon [img]="DollarSignIcon" class="size-6 text-success"></lucide-icon>
@@ -150,8 +150,7 @@
       <div class="flex items-center justify-between">
         <div class="min-w-0 flex-1 mr-3">
           <p class="text-sm font-medium text-base-content/70">Avg Cost/Device</p>
-          <p class="text-2xl font-bold text-warning truncate">{{ summary()!.average_cost_per_repair | appCurrency:2:true
-            }}</p>
+          <p class="text-3xl font-bold text-warning truncate">{{ summary()!.average_cost_per_repair | appCurrency }}</p>
         </div>
         <div class="bg-warning/20 p-3 rounded-full flex-shrink-0">
           <lucide-icon [img]="DollarSignIcon" class="size-6 text-warning"></lucide-icon>

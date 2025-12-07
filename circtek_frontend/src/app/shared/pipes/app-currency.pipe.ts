@@ -12,8 +12,11 @@ export class AppCurrencyPipe implements PipeTransform {
   transform(amount: number, decimals = 2, space = false): string {
     const symbol = this.currencyService.getSymbolSync() || '$';
     const n = isFinite(amount) ? amount : 0;
-    const formatted = n.toFixed(decimals);
-    
+    const formatted = n.toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
+
     return space ? `${symbol} ${formatted}` : `${symbol}${formatted}`;
   }
 }
