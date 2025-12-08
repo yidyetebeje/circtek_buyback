@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { StepProcessConfig, TranslatableText } from '@/types/shop';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; 
-import { Button } from "@/components/ui/button"; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, Zap, Trash2 } from "lucide-react";
 import { toast } from 'sonner';
 import { aiTranslationService } from '@/lib/api/catalog/aiTranslationService';
@@ -30,20 +30,20 @@ export function StepProcessTranslationEditor({
   // Synchronize local state with props
   useEffect(() => {
     setLocalConfig(stepProcessConfig || {});
-    
+
     // Update managed locales based on existing data OR ensure at least English is available
     const existingLocales = new Set<string>();
-    
+
     // Check all step process fields for existing locales
     Object.values(stepProcessConfig || {}).forEach(field => {
       if (field && typeof field === 'object') {
         Object.keys(field).forEach(locale => existingLocales.add(locale));
       }
     });
-    
+
     // Always include English as the default language
     existingLocales.add('en');
-    
+
     if (existingLocales.size > 0) {
       setManagedLocales(Array.from(existingLocales));
     } else {
@@ -59,13 +59,13 @@ export function StepProcessTranslationEditor({
 
   const handleConfigChange = (locale: string, field: keyof StepProcessConfig, value: string) => {
     const updatedConfig = { ...localConfig };
-    
-    if (!updatedConfig[field]) {
-      updatedConfig[field] = {};
+
+    if (!updatedConfig[field] || typeof updatedConfig[field] !== 'object') {
+      (updatedConfig as Record<string, TranslatableText>)[field] = {};
     }
-    
+
     (updatedConfig[field] as TranslatableText)[locale] = value;
-    
+
     setLocalConfig(updatedConfig);
     onChange(updatedConfig);
   };
@@ -75,9 +75,9 @@ export function StepProcessTranslationEditor({
       toast.error("Cannot remove English (default language)");
       return;
     }
-    
+
     setManagedLocales(prev => prev.filter(l => l !== locale));
-    
+
     // Remove from config
     const updatedConfig = { ...localConfig };
     Object.keys(updatedConfig).forEach(field => {
@@ -86,15 +86,15 @@ export function StepProcessTranslationEditor({
         delete (fieldValue as TranslatableText)[locale];
       }
     });
-    
+
     setLocalConfig(updatedConfig);
     onChange(updatedConfig);
-    
+
     // Switch to English if removing current active locale
     if (locale === activeLocale) {
       setActiveLocale('en');
     }
-    
+
     toast.success(`${locale.toUpperCase()} language removed`);
   };
 
@@ -132,10 +132,10 @@ export function StepProcessTranslationEditor({
       if (translatedTexts) {
         // Update config with AI-generated translations
         const updatedConfig = { ...localConfig };
-        
+
         Object.entries(translatedTexts).forEach(([field, translation]) => {
-          if (!updatedConfig[field as keyof StepProcessConfig]) {
-            updatedConfig[field as keyof StepProcessConfig] = {};
+          if (!updatedConfig[field as keyof StepProcessConfig] || typeof updatedConfig[field as keyof StepProcessConfig] !== 'object') {
+            (updatedConfig as Record<string, TranslatableText>)[field] = {};
           }
           (updatedConfig[field as keyof StepProcessConfig] as TranslatableText)[targetLocale] = translation;
         });
@@ -147,7 +147,7 @@ export function StepProcessTranslationEditor({
         if (!managedLocales.includes(targetLocale)) {
           setManagedLocales(prev => [...prev, targetLocale]);
         }
-        
+
         toast.success(`AI translation generated for ${targetLocale.toUpperCase()}!`);
       } else {
         toast.error("Failed to generate AI translation. Please try again.");
@@ -255,7 +255,7 @@ export function StepProcessTranslationEditor({
           <div>
             <h4 className="text-sm font-medium text-blue-900">AI Translation Available</h4>
             <p className="text-sm text-blue-700 mt-1">
-              Use AI to automatically translate step process content from English to other languages. 
+              Use AI to automatically translate step process content from English to other languages.
               Click the AI button next to each language to generate translations.
             </p>
           </div>
@@ -266,13 +266,12 @@ export function StepProcessTranslationEditor({
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-medium">Active Languages:</span>
           {managedLocales.map(locale => (
-            <div 
-              key={locale} 
-              className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm cursor-pointer transition-colors ${
-                locale === activeLocale 
-                  ? 'bg-blue-100 text-blue-800 border border-blue-300' 
+            <div
+              key={locale}
+              className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm cursor-pointer transition-colors ${locale === activeLocale
+                  ? 'bg-blue-100 text-blue-800 border border-blue-300'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
               onClick={() => setActiveLocale(locale)}
             >
               <span className="uppercase font-medium">{locale}</span>
@@ -387,7 +386,7 @@ export function StepProcessTranslationEditor({
               </Button>
             )}
           </div>
-          
+
           <div className="space-y-4">
             {stepFields.map(field => (
               <div key={field.key}>

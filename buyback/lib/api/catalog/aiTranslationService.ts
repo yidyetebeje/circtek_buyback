@@ -26,13 +26,13 @@ export interface TranslationRequestData {
     }>;
   }>;
   // For component configurations
-  componentType?: 'hero' | 'categories' | 'header' | 'footer';
+  componentType?: 'hero' | 'categories' | 'header' | 'footer' | 'globalEarth';
   componentTexts?: Record<string, string>; // Key-value pairs of text fields
 }
 
 // New interface specifically for component configuration translation
 export interface ComponentTranslationRequest {
-  componentType: 'hero' | 'categories' | 'header' | 'footer';
+  componentType: 'hero' | 'categories' | 'header' | 'footer' | 'globalEarth';
   sourceLanguageCode: string;
   targetLanguageCode: string;
   texts: Record<string, string>; // Key-value pairs of text fields to translate
@@ -253,7 +253,7 @@ export class AITranslationService {
         meta_title: translation.meta_title,
         meta_description: translation.meta_description,
         meta_keywords: translation.meta_keywords,
-        specifications: translation.specifications ? 
+        specifications: translation.specifications ?
           JSON.stringify(translation.specifications, null, 2) : undefined,
       };
     } catch (error) {
@@ -276,7 +276,7 @@ export class AITranslationService {
    * Helper method to generate component translation with simplified parameters
    */
   async generateComponentTexts(
-    componentType: 'hero' | 'categories' | 'header' | 'footer',
+    componentType: 'hero' | 'categories' | 'header' | 'footer' | 'globalEarth',
     sourceLanguage: string,
     targetLanguage: string,
     texts: Record<string, string>
