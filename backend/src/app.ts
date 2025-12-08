@@ -27,14 +27,14 @@ import { devices_routes } from "./devices";
 import { licensing_routes } from "./licensing";
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
-        .use(cors({
-            origin: ["http://localhost:4200", "http://localhost:3000","https://circtek-aws.vercel.app", "https://staging-db.circtek.io", "https://db.circtek.io"],
-            methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-            allowedHeaders: ["Content-Type", "Authorization", "Accept", "Cookie"],
-            credentials: true,
-            exposeHeaders: ["Content-Disposition", "Content-Type"],
-            preflight: true
-        }))
+		.use(cors({
+			origin: ["http://localhost:4200", "http://localhost:3000", "https://circtek-aws.vercel.app", "https://staging-db.circtek.io", "https://db.circtek.io", "https://circtek-buyback.vercel.app"],
+			methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+			allowedHeaders: ["Content-Type", "Authorization", "Accept", "Cookie"],
+			credentials: true,
+			exposeHeaders: ["Content-Disposition", "Content-Type"],
+			preflight: true
+		}))
 		.get('/', () => 'Hello Elysia')
 		.use(swagger({
 			path: '/swagger',
