@@ -1,7 +1,7 @@
 import { db } from "../../db";
-import { backmarket_pricing_parameters, backmarket_listings, backmarket_orders, backmarket_listing_prices } from "../../db/backmarket.schema";
-import { devices, received_items, purchase_items } from "../../db/circtek.schema";
-import { eq, and, sql, gte } from "drizzle-orm";
+import { backmarket_pricing_parameters, backmarket_listings, backmarket_orders, backmarket_listing_prices, backmarket_price_history, backmarket_competitors } from "../../db/backmarket.schema";
+import { devices, received_items, purchase_items, buyback_prices } from "../../db/circtek.schema";
+import { eq, and, sql, gte, desc } from "drizzle-orm";
 
 export class PricingRepository {
   async getParameters(sku: string, grade: number, countryCode: string) {
@@ -25,6 +25,9 @@ export class PricingRepository {
     c_risk?: string;
     m_target?: string;
     f_bm?: string;
+    price_step?: string;
+    min_price?: string;
+    max_price?: string;
   }) {
     const existing = await this.getParameters(params.sku, params.grade, params.country_code);
     
@@ -48,6 +51,18 @@ export class PricingRepository {
       .where(eq(backmarket_listings.listing_id, listingId))
       .limit(1);
       return result[0] || null;
+  }
+
+  async getListingsBySkuAndGrade(sku: string, grade: number): Promise<string[]> {
+    const result = await db.select({
+      listingId: backmarket_listings.listing_id
+    })
+    .from(backmarket_listings)
+    .where(and(
+      eq(backmarket_listings.sku, sku),
+      eq(backmarket_listings.grade, grade)
+    ));
+    return result.map(r => r.listingId);
   }
 
   /**
@@ -155,6 +170,76 @@ export class PricingRepository {
     } catch (error) {
       console.error(`Error calculating acquisition cost for SKU ${sku}:`, error);
       return 0;
+    }
+  }
+
+  async updateBasePrice(listingId: string, price: number) {
+    await db.update(backmarket_listings)
+      .set({ base_price: price.toFixed(2) })
+      .where(eq(backmarket_listings.listing_id, listingId));
+  }
+
+  async addPriceHistory(data: {
+    listing_id: string;
+    price: number;
+    currency: string;
+    is_winner: boolean;
+    competitor_id?: number;
+  }) {
+    await db.insert(backmarket_price_history).values({
+      listing_id: data.listing_id,
+      price: data.price.toFixed(2),
+      currency: data.currency,
+      is_winner: data.is_winner,
+      competitor_id: data.competitor_id,
+    });
+  }
+
+  async getPriceHistory(listingId: string) {
+    return db.select({
+      id: backmarket_price_history.id,
+      listing_id: backmarket_price_history.listing_id,
+      price: backmarket_price_history.price,
+      currency: backmarket_price_history.currency,
+      timestamp: backmarket_price_history.timestamp,
+      is_winner: backmarket_price_history.is_winner,
+      competitor_id: backmarket_price_history.competitor_id,
+      competitor_name: backmarket_competitors.name
+    })
+    .from(backmarket_price_history)
+    .leftJoin(backmarket_competitors, eq(backmarket_price_history.competitor_id, backmarket_competitors.id))
+    .where(eq(backmarket_price_history.listing_id, listingId))
+    .orderBy(desc(backmarket_price_history.timestamp));
+  }
+
+  async getBuybackPrice(sku: string, grade: number): Promise<number | null> {
+    const gradeName = this.mapGrade(grade);
+    // Assuming tenant_id = 1 for now
+    const result = await db.select({ price: buyback_prices.price })
+      .from(buyback_prices)
+      .where(and(
+        eq(buyback_prices.sku, sku),
+        eq(buyback_prices.grade_name, gradeName),
+        eq(buyback_prices.tenant_id, 1)
+      ))
+      .limit(1);
+      
+    return result[0] ? Number(result[0].price) : null;
+  }
+
+  private mapGrade(bmGrade: number | null): string {
+    // Map Back Market grades to internal names
+    // 10: Mint, 11: Very Good, 12: Good, 13: Fair, 14: Stallone
+    // Note: These are hypothetical BM grade IDs. Adjust as needed.
+    // Actually, BM API uses integers like 1, 2, 3? Or 10, 11, 12?
+    // Let's assume standard mapping for now.
+    switch (bmGrade) {
+      case 10: return "Mint";
+      case 11: return "Very Good";
+      case 12: return "Good";
+      case 13: return "Fair";
+      case 14: return "Stallone";
+      default: return "Good"; // Default fallback
     }
   }
 }

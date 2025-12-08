@@ -49,6 +49,23 @@ export async function loadRateLimitConfig(): Promise<RateLimitConfig> {
 }
 
 export async function saveRateLimitConfig(config: RateLimitConfig): Promise<void> {
+  // Check if exists
+  const existing = await db.select().from(system_config).where(eq(system_config.key, 'backmarket_rate_limits')).limit(1);
+  
+  if (existing.length > 0) {
+    await db.update(system_config)
+      .set({ value: config })
+      .where(eq(system_config.key, 'backmarket_rate_limits'));
+  } else {
+    await db.insert(system_config).values({
+      key: 'backmarket_rate_limits',
+      value: config,
+      description: 'Back Market API Rate Limit Configuration'
+    });
+  }
+}
+
+export async function saveRateLimitConfig(config: RateLimitConfig): Promise<void> {
     const existing = await db.select().from(system_config).where(eq(system_config.key, 'backmarket_rate_limits')).limit(1);
     
     if (existing.length > 0) {

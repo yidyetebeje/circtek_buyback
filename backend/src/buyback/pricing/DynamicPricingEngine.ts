@@ -1,6 +1,6 @@
 export interface PricingStrategy {
-  type: 'UNDERCUT_LOWEST' | 'MATCH_LOWEST';
-  amount: number; // e.g., 0.01 for undercut
+  type: 'UNDERCUT_LOWEST' | 'MATCH_LOWEST' | 'OVERCUT_HIGHEST';
+  amount: number; // e.g., 0.01 for undercut, 1.00 for overcut
 }
 
 export interface PricingResult {
@@ -15,27 +15,28 @@ export class DynamicPricingEngine {
    * @param competitorPrices List of valid competitor prices (numbers)
    * @param floorPrice The absolute minimum price (P_Floor_A)
    * @param strategy The repricing strategy
+   * @param ceilingPrice The absolute maximum price (optional, for Buyback)
    */
   calculatePrice(
     competitorPrices: number[], 
     floorPrice: number, 
-    strategy: PricingStrategy = { type: 'UNDERCUT_LOWEST', amount: 0.01 }
+    strategy: PricingStrategy = { type: 'UNDERCUT_LOWEST', amount: 0.01 },
+    ceilingPrice?: number
   ): PricingResult {
     
     // Default result if no competitors
     if (!competitorPrices || competitorPrices.length === 0) {
-      // Strategy for Blue Ocean: Maximize margin? Or stick to floor?
-      // For safety and simplicity based on tests: return floor (or floor + margin if defined later)
-      // The test expects >= floor.
+      // If no competitors, use the floor price (Minimum offer)
       return {
         targetPrice: floorPrice,
-        isFloorConstrained: true, // Technically constrained by lack of competition + floor
+        isFloorConstrained: true,
         buyBoxFloor: floorPrice
       };
     }
 
-    // Find lowest competitor price
+    // Find lowest and highest competitor price
     const lowestCompetitorPrice = Math.min(...competitorPrices);
+    const highestCompetitorPrice = Math.max(...competitorPrices);
 
     // Calculate target based on strategy
     let calculatedTarget = lowestCompetitorPrice;
@@ -44,23 +45,25 @@ export class DynamicPricingEngine {
       calculatedTarget = lowestCompetitorPrice - strategy.amount;
     } else if (strategy.type === 'MATCH_LOWEST') {
       calculatedTarget = lowestCompetitorPrice;
+    } else if (strategy.type === 'OVERCUT_HIGHEST') {
+      calculatedTarget = highestCompetitorPrice + strategy.amount;
     }
 
-    // Handle floating point precision issues (e.g. 10.03 - 0.01 = 10.019999)
+    // Handle floating point precision issues
     calculatedTarget = Math.round(calculatedTarget * 100) / 100;
 
-    // Enforce Floor Constraint
     let finalPrice = calculatedTarget;
     let isConstrained = false;
 
-    if (calculatedTarget < floorPrice) {
+    // Enforce Floor Constraint (Minimum Price)
+    if (finalPrice < floorPrice) {
       finalPrice = floorPrice;
       isConstrained = true;
     }
 
-    // Ensure we don't accidentally go below floor due to rounding
-    if (finalPrice < floorPrice) {
-        finalPrice = floorPrice;
+    // Enforce Ceiling Constraint (Maximum Price)
+    if (ceilingPrice !== undefined && finalPrice > ceilingPrice) {
+        finalPrice = ceilingPrice;
         isConstrained = true;
     }
 

@@ -64,26 +64,32 @@ async function seed_warehouses() {
 async function seed_roles() {
     const roles_data = [
         {
+            id: 1,
             name: 'super_admin',
             description: 'Super Admin',
         },
         {
+            id: 2,
             name: 'admin',
             description: 'Admin',
         },
         {
+            id: 3,
             name: 'tester',
             description: 'Tester',
         },
         {
+            id: 4,
             name: "repair_manager",
             description: "Repair Manager",
         },
         {
+            id: 5,
             name: "repair_technician",
             description: "Repair Technician",
         },
         {
+            id: 6,
             name: "stock_manager",
             description: "Stock Manager",
         },        
@@ -275,10 +281,12 @@ async function seed_shop() {
     console.log('Detailed shops seeded successfully');
 }
 async function seed() {
-   
+    await cleanup();
     await seed_tenants();
     await seed_roles();
     await seed_users();
+    await seed_shops();
+    await seed_warehouses();
     console.log('🎉 All seeding completed successfully!');
 }
 

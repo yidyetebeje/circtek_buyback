@@ -196,4 +196,15 @@ export class TrafficController {
       reject(error);
     }
   }
+
+  public getStatus() {
+    const status: Record<string, any> = {};
+    for (const [type, bucket] of this.buckets.entries()) {
+      status[type] = {
+        ...bucket.getStatus(),
+        queueLength: this.queues.get(type)?.size() || 0
+      };
+    }
+    return status;
+  }
 }

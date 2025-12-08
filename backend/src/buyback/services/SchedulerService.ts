@@ -1,14 +1,18 @@
 import { backMarketService } from "./backMarketService";
 import { backMarketSyncServiceInstance } from "./backMarketSyncServiceInstance";
 import { PricingRepository } from "../pricing/PricingRepository";
+import { BuybackPricingService } from "./BuybackPricingService";
 
 export class SchedulerService {
   private pricingRepo = new PricingRepository();
+  private buybackPricingService = new BuybackPricingService();
   private intervals: Timer[] = [];
-  private status: Record<string, { lastRun: Date | null, lastError: string | null, isRunning: boolean }> = {
-    "Sync Orders": { lastRun: null, lastError: null, isRunning: false },
-    "Sync Listings": { lastRun: null, lastError: null, isRunning: false },
-    "Reprice Listings": { lastRun: null, lastError: null, isRunning: false }
+  private tasks: Record<string, () => Promise<void>> = {};
+  private status: Record<string, { lastRun: Date | null, nextRun: Date | null, lastError: string | null, isRunning: boolean }> = {
+    "Sync Orders": { lastRun: null, nextRun: null, lastError: null, isRunning: false },
+    "Sync Listings": { lastRun: null, nextRun: null, lastError: null, isRunning: false },
+    "Reprice Listings": { lastRun: null, nextRun: null, lastError: null, isRunning: false },
+    "Sync Buyback Prices": { lastRun: null, nextRun: null, lastError: null, isRunning: false }
   };
 
   start() {
@@ -24,9 +28,14 @@ export class SchedulerService {
       await backMarketSyncServiceInstance.syncListings();
     });
 
-    // 3. Reprice Listings every 1 hour
-    this.scheduleTask("Reprice Listings", 60 * 60 * 1000, async () => {
+    // 3. Reprice Listings every 15 minutes (more frequent to stay on top)
+    this.scheduleTask("Reprice Listings", 15 * 60 * 1000, async () => {
       await this.runRepricingCycle();
+    });
+
+    // 4. Sync Buyback Prices every 1 hour
+    this.scheduleTask("Sync Buyback Prices", 60 * 60 * 1000, async () => {
+      await this.buybackPricingService.calculateAndSyncPrices();
     });
   }
 
@@ -40,18 +49,66 @@ export class SchedulerService {
     return this.status;
   }
 
+  async triggerTask(name: string) {
+    const task = this.tasks[name];
+    if (!task) {
+      throw new Error(`Task ${name} not found`);
+    }
+    
+    if (this.status[name]?.isRunning) {
+      throw new Error(`Task ${name} is already running`);
+    }
+
+    console.log(`[Scheduler] Manually triggering task: ${name}`);
+    // Run in background so we don't block the request
+    this.runTaskWrapper(name, task);
+    return true;
+  }
+
+  async triggerAllTasks() {
+    console.log(`[Scheduler] Manually triggering ALL tasks`);
+    const results: Record<string, string> = {};
+    
+    for (const [name, task] of Object.entries(this.tasks)) {
+        if (this.status[name]?.isRunning) {
+            results[name] = "Skipped (Already Running)";
+            continue;
+        }
+        this.runTaskWrapper(name, task);
+        results[name] = "Triggered";
+    }
+    return results;
+  }
+
   private scheduleTask(name: string, intervalMs: number, task: () => Promise<void>) {
+    // Store task for manual triggering
+    this.tasks[name] = task;
+
     // Run immediately on start? Maybe not, to avoid startup spike.
     // Let's run it after a small random delay to stagger them if they have same interval.
     const delay = Math.random() * 10000; 
     
+    // Initialize status if missing
+    if (!this.status[name]) {
+        this.status[name] = { lastRun: null, nextRun: null, lastError: null, isRunning: false };
+    }
+    
+    // Set initial nextRun
+    this.status[name].nextRun = new Date(Date.now() + delay);
+
     setTimeout(() => {
       console.log(`[Scheduler] Running initial task: ${name}`);
       this.runTaskWrapper(name, task);
       
+      // Set next run for the interval
+      this.status[name].nextRun = new Date(Date.now() + intervalMs);
+
       const timer = setInterval(async () => {
         console.log(`[Scheduler] Running task: ${name}`);
         await this.runTaskWrapper(name, task);
+        
+        // Update nextRun for the NEXT interval
+        this.status[name].nextRun = new Date(Date.now() + intervalMs);
       }, intervalMs);
       
       this.intervals.push(timer);
@@ -60,7 +117,7 @@ export class SchedulerService {
 
   private async runTaskWrapper(name: string, task: () => Promise<void>) {
     if (!this.status[name]) {
-        this.status[name] = { lastRun: null, lastError: null, isRunning: false };
+        this.status[name] = { lastRun: null, nextRun: null, lastError: null, isRunning: false };
     }
     
     this.status[name].isRunning = true;

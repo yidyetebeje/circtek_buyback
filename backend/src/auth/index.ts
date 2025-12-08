@@ -27,7 +27,7 @@ export const auth_routes = new Elysia({ prefix: '/auth' })
 		const token = (ctx as any).bearer as string | undefined
 		if (!token) return { data: null, message: 'Access Denied', status: 401 }
 		const payload = await (ctx as any).jwt.verify(token)
-		if (!payload) return { data: null, message: 'Invalid Token', status: 403 }
+		if (!payload) return { data: null, message: 'Invalid Token', status: 401 }
 		return controller.me(Number((payload as any).sub))
 	}, { detail: { tags: ['Auth'], summary: 'Get current user profile' } })
 
@@ -42,7 +42,7 @@ export const requireRole = (roles: string[]) =>
 				const token = (ctx as any).bearer as string | undefined
 				if (!token) return { authError: { status: 401, message: 'Access Denied' }, currentUserId: null, currentTenantId: null, currentRole: null, warehouseId: null, managedShopId: null }
 				const payload = await (ctx as any).jwt.verify(token)
-				if (!payload) return { authError: { status: 403, message: 'Invalid Token' }, currentUserId: null, currentTenantId: null, currentRole: null, warehouseId: null, managedShopId: null }
+				if (!payload) return { authError: { status: 401, message: 'Invalid Token' }, currentUserId: null, currentTenantId: null, currentRole: null, warehouseId: null, managedShopId: null }
 				const role = (payload as any).role as string | undefined
 				console.log(role, "role")
 				console.log(roles, "roles")

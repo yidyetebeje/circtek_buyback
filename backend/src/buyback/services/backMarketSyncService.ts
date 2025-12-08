@@ -3,6 +3,7 @@ import { pool } from '../../db';
 import { drizzle } from 'drizzle-orm/mysql2';
 import { backmarket_orders, backmarket_listings } from '../../db/backmarket.schema';
 import { sql } from 'drizzle-orm';
+import crypto from 'crypto';
 
 const db = drizzle(pool);
 
@@ -153,6 +154,19 @@ export class BackMarketSyncService {
   async getListings(page: number = 1, limit: number = 50) {
     const offset = (page - 1) * limit;
     return await db.select().from(backmarket_listings).limit(limit).offset(offset);
+  }
+
+  verifySignature(payload: string, signature: string): boolean {
+    const secret = process.env.BACKMARKET_WEBHOOK_SECRET;
+    if (!secret) {
+      console.warn('BACKMARKET_WEBHOOK_SECRET not set. Skipping signature verification.');
+      return true;
+    }
+    
+    // Back Market uses HMAC-SHA256
+    const hmac = crypto.createHmac('sha256', secret);
+    const digest = hmac.update(payload).digest('hex');
+    return signature === digest;
   }
 
   /**

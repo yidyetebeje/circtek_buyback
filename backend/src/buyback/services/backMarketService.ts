@@ -1,10 +1,14 @@
 import { TrafficController, Priority } from '../../lib/bm-traffic-control';
-import { loadRateLimitConfig, DEFAULT_BACKMARKET_LIMITS } from '../../lib/bm-traffic-control/config';
+import { loadRateLimitConfig, saveRateLimitConfig, DEFAULT_BACKMARKET_LIMITS } from '../../lib/bm-traffic-control/config';
 import { logRateLimitRequest } from './rateLimitLogger';
 import { PricingRepository } from '../pricing/PricingRepository';
 import { OutlierDetectionService } from '../pricing/OutlierDetectionService';
 import { ProfitabilityConstraintService } from '../pricing/ProfitabilityConstraintService';
 import { DynamicPricingEngine } from '../pricing/DynamicPricingEngine';
+import { RateLimitConfig } from '../../lib/bm-traffic-control/types';
+import { db } from '../../db';
+import { backmarket_listings, backmarket_test_competitors } from '../../db/backmarket.schema';
+import { eq } from 'drizzle-orm';
 
 export class BackMarketService {
   private baseUrl = process.env.BACKMARKET_API_URL || 'https://www.backmarket.fr';
@@ -47,6 +51,20 @@ export class BackMarketService {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     };
+  }
+
+  public getRateLimitStatus() {
+    return this.traffic.getStatus();
+  }
+
+  public getDefaultRateLimits() {
+    return DEFAULT_BACKMARKET_LIMITS;
+  }
+
+  public async updateRateLimitConfig(config: RateLimitConfig) {
+    await saveRateLimitConfig(config);
+    this.traffic.updateConfig(config);
+    return { success: true };
   }
 
   /**
@@ -100,6 +118,76 @@ export class BackMarketService {
       priority,
       1
     );
+  }
+
+  /**
+   * Create a new listing on Back Market
+   */
+  async createListing(data: any, priority: Priority = Priority.HIGH): Promise<Response> {
+    return this.traffic.scheduleRequest(
+      `${this.baseUrl}/ws/listings`,
+      {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(data)
+      },
+      priority,
+      1
+    );
+  }
+
+  /**
+   * Upload bulk CSV for data ingestion
+   */
+  async uploadBulkCsv(
+    catalog: string,
+    quotechar: string = '"',
+    delimiter: string = ',',
+    encoding: string = 'utf-8',
+    priority: Priority = Priority.LOW
+  ): Promise<Response> {
+    const headers = this.getHeaders();
+    headers['Content-Type'] = 'application/json';
+    const body = JSON.stringify({ catalog, quotechar, delimiter, encoding });
+    return this.traffic.scheduleRequest(
+      `${this.baseUrl}/ws/listings/bulk`,
+      {
+        method: 'POST',
+        headers: headers,
+        body
+      },
+      priority,
+      1
+    );
+  }
+
+  /**
+   * Get task status for async batch operations
+   */
+  async getTaskStatus(taskId: number | string, priority: Priority = Priority.NORMAL): Promise<Response> {
+    return this.traffic.scheduleRequest(
+      `${this.baseUrl}/ws/tasks/${taskId}`,
+      {
+        method: 'GET',
+        headers: this.getHeaders()
+      },
+      priority,
+      1
+    );
+  }
+
+  /**
+   * Update base price for a listing (Local DB only)
+   */
+  async updateBasePrice(listingId: string, price: number): Promise<void> {
+    await this.pricingRepo.updateBasePrice(listingId, price);
+  }
+
+  /**
+   * Get price history for a listing
+   */
+  async getPriceHistory(listingId: string): Promise<any[]> {
+    return this.pricingRepo.getPriceHistory(listingId);
   }
 
   /**
@@ -224,16 +312,24 @@ export class BackMarketService {
   async updatePrice(listingId: string, price: number, priority: Priority = Priority.NORMAL, countryCode?: string): Promise<Response> {
     const data: any = { price };
     if (countryCode) {
-      // Assuming BM API accepts country specific updates via some field or separate endpoint
-      // For now, we'll just log it or append to data if we knew the field.
-      // If it's a separate endpoint per country, we'd change the URL.
-      // Let's assume we pass it in the body for now as 'country_code' or similar if supported,
-      // OR we might need to use a different listing ID if listing IDs are country specific.
-      // But based on our architecture, we are iterating over countries for a single listing ID.
-      // This implies the update endpoint might need a query param or body field.
-      // Let's assume body field for now.
       data.country_code = countryCode;
     }
+    
+    // Update local database first to reflect changes immediately in UI
+    try {
+        await db.update(backmarket_listings)
+            .set({ price: price.toString() })
+            .where(eq(backmarket_listings.listing_id, listingId));
+            
+        // Also update country specific price if applicable
+        if (countryCode) {
+            // This table might not be fully populated yet, but good to try
+            // await db.update(backmarket_listing_prices)... 
+        }
+    } catch (error) {
+        console.error(`Failed to update local price for ${listingId}:`, error);
+    }
+
     return this.updateListing(listingId, data, priority);
   }
 
@@ -241,6 +337,22 @@ export class BackMarketService {
    * Get competitor data
    */
   async getCompetitors(listingId: string, countryCode?: string): Promise<any> {
+    // Check for test competitors first
+    const testCompetitors = await db.select()
+        .from(backmarket_test_competitors)
+        .where(eq(backmarket_test_competitors.listing_id, listingId));
+
+    if (testCompetitors.length > 0) {
+        console.log(`Using ${testCompetitors.length} test competitors for listing ${listingId}`);
+        return {
+            competitors: testCompetitors.map(tc => ({
+                seller_id: tc.competitor_name, // Use name as ID for test
+                price: Number(tc.price),
+                feedback_count: 1000 // Mock feedback
+            }))
+        };
+    }
+
     let url = `${this.baseUrl}/ws/backbox/v1/competitors/${listingId}`;
     if (countryCode) {
         url += `?country=${countryCode}`; // Hypothetical param
@@ -258,15 +370,37 @@ export class BackMarketService {
   }
 
   /**
+   * Add a test competitor
+   */
+  async addTestCompetitor(listingId: string, name: string, price: number) {
+    await db.insert(backmarket_test_competitors).values({
+        listing_id: listingId,
+        competitor_name: name,
+        price: price.toString()
+    });
+    return { success: true };
+  }
+
+  /**
+   * Remove all test competitors for a listing
+   */
+  async clearTestCompetitors(listingId: string) {
+    await db.delete(backmarket_test_competitors)
+        .where(eq(backmarket_test_competitors.listing_id, listingId));
+    return { success: true };
+  }
+
+  /**
    * Reprice a listing using the full DPO pipeline (P1 -> P8)
    */
-  async repriceListing(listingId: string): Promise<void> {
+  async repriceListing(listingId: string): Promise<{ success: boolean; message: string }> {
+    console.log(`Starting repricing for listing ${listingId}`);
     try {
       // 1. Get Listing Details (Internal)
       const listing = await this.pricingRepo.getListingDetails(listingId);
       if (!listing) {
         console.warn(`Listing ${listingId} not found locally. Skipping repricing.`);
-        return;
+        return { success: false, message: `Listing ${listingId} not found locally.` };
       }
 
       // 1.1 Get Active Countries
@@ -275,16 +409,62 @@ export class BackMarketService {
         // Fallback to default if no specific countries found
         countries.push("fr-fr");
       }
+      console.log(`Active countries for ${listingId}:`, countries);
+
+      // Pre-check for parameters to fail fast if configuration is missing
+      let hasConfiguredStrategy = false;
+      
+      // Check default strategy first
+      const defaultParams = await this.pricingRepo.getParameters(listing.sku!, listing.grade!, 'fr-fr');
+      if (defaultParams) {
+          hasConfiguredStrategy = true;
+      } else {
+          // Check specific countries
+          for (const countryCode of countries) {
+              const params = await this.pricingRepo.getParameters(listing.sku!, listing.grade!, countryCode);
+              if (params) {
+                  hasConfiguredStrategy = true;
+                  break;
+              }
+          }
+      }
+
+      if (!hasConfiguredStrategy) {
+          const msg = `No pricing strategy configured for SKU ${listing.sku} (Grade ${listing.grade}). Please configure strategy first.`;
+          console.warn(msg);
+          return { success: false, message: msg };
+      }
 
       // Fetch acquisition cost (placeholder for IMS integration)
       // This is constant across countries for the same SKU
       const acquisitionCost = await this.pricingRepo.getAverageAcquisitionCost(listing.sku!);
       const velocity = await this.pricingRepo.getSalesVelocity(listing.sku!);
 
+      let updatedCount = 0;
+
       // Loop through each country
       for (const countryCode of countries) {
+        console.log(`Processing country ${countryCode} for ${listingId}`);
+        
+        // 4. Get Cost Parameters & Calculate Floor (P4)
+        // We fetch again here, but it's fast (DB)
+        let params = await this.pricingRepo.getParameters(listing.sku!, listing.grade!, countryCode);
+        
+        // Fallback to fr-fr if specific country params are missing
+        if (!params && countryCode !== 'fr-fr') {
+             console.log(`No parameters for ${countryCode}, falling back to fr-fr`);
+             params = await this.pricingRepo.getParameters(listing.sku!, listing.grade!, 'fr-fr');
+        }
+        
+        if (!params) {
+            console.warn(`No pricing parameters for SKU ${listing.sku} / Grade ${listing.grade} / Country ${countryCode}. Skipping.`);
+            continue;
+        }
+
         // 2. Get Competitors (External P2)
         const competitorData = await this.getCompetitors(listingId, countryCode);
+        console.log(`Competitors found:`, competitorData.competitors?.length || 0);
+        
         const competitors = (competitorData.competitors || []).map((c: any) => ({
             competitorId: c.seller_id,
             price: c.price,
@@ -295,46 +475,90 @@ export class BackMarketService {
         // 3. Filter Outliers (P3)
         const validCompetitors = this.ods.filterPrices(competitors);
         const validPrices = validCompetitors.map(c => c.price);
+        console.log(`Valid prices after outlier detection:`, validPrices);
 
-        // 4. Get Cost Parameters & Calculate Floor (P4)
-        const params = await this.pricingRepo.getParameters(listing.sku!, listing.grade!, countryCode);
+        console.log(`Pricing parameters found:`, params);
+
+        // Calculate Max Price (Ceiling) - The most we can pay
+        // Priority: Manual Max Price > Calculated Buyback Price > PFCS Fallback
+        let maxPrice = params.max_price ? Number(params.max_price) : 0;
         
-        if (!params) {
-            console.warn(`No pricing parameters for SKU ${listing.sku} / Grade ${listing.grade} / Country ${countryCode}. Skipping.`);
-            continue;
+        if (!maxPrice) {
+             maxPrice = (await this.pricingRepo.getBuybackPrice(listing.sku!, listing.grade!)) || 0;
         }
 
-        const floorPrice = this.pfcs.calculateFloorPrice({
-            acquisitionCost: acquisitionCost,
-            refurbishmentCost: Number(params.c_refurb),
-            operationalCost: Number(params.c_op),
-            warrantyRiskCost: Number(params.c_risk)
-        }, {
-            backMarketFeeRate: Number(params.f_bm),
-            targetMarginRate: Number(params.m_target)
-        });
+        if (!maxPrice) {
+            // Fallback: Calculate using PFCS
+            maxPrice = this.pfcs.calculateFloorPrice({
+                acquisitionCost: acquisitionCost,
+                refurbishmentCost: Number(params.c_refurb),
+                operationalCost: Number(params.c_op),
+                warrantyRiskCost: Number(params.c_risk)
+            }, {
+                backMarketFeeRate: Number(params.f_bm),
+                targetMarginRate: Number(params.m_target)
+            });
+        }
+        console.log(`Calculated max price (ceiling): ${maxPrice}`);
+
+        // Calculate Min Price (Floor) - The least we want to offer
+        // Priority: Manual Min Price > Listing Base Price > 0
+        let minPrice = params.min_price ? Number(params.min_price) : 0;
+        
+        if (!minPrice) {
+            minPrice = listing.base_price ? Number(listing.base_price) : 0;
+        }
+        console.log(`Calculated min price (floor): ${minPrice}`);
 
         // 5. Calculate Target (P5)
-        const result = this.dpo.calculatePrice(validPrices, floorPrice);
+        // Use OVERCUT_HIGHEST strategy for Buyback (pay more than competitor)
+        // Default step is 1.00 if not configured
+        const stepAmount = params.price_step ? Number(params.price_step) : 1.00;
+        
+        const result = this.dpo.calculatePrice(validPrices, minPrice, { 
+            type: 'OVERCUT_HIGHEST', 
+            amount: stepAmount 
+        }, maxPrice);
+        console.log(`Calculated target price: ${result.targetPrice}`);
 
         // Calculate Priority based on Margin and Velocity
-        const margin = result.targetPrice > 0 ? (result.targetPrice - floorPrice) / result.targetPrice : 0;
-        
+        // Margin calculation is tricky for Buyback. 
+        // Let's assume higher priority if we are winning (targetPrice > competitors)
         let priority = Priority.NORMAL;
-        if (margin > 0.2 && velocity > 10) {
+        if (velocity > 10) {
             priority = Priority.HIGH;
-        } else if (margin < 0.05 || velocity === 0) {
-            priority = Priority.LOW;
         }
 
         // 6. Update BM (P8)
-        console.log(`Repricing ${listingId} [${countryCode}]: Target ${result.targetPrice} (Floor: ${floorPrice}) Priority: ${priority}`);
+        console.log(`Repricing ${listingId} [${countryCode}]: Target ${result.targetPrice} (Min: ${minPrice}, Max: ${maxPrice}) Priority: ${priority}`);
         
         await this.updatePrice(listingId, result.targetPrice, priority, countryCode);
+        updatedCount++;
+
+        // 7. Log History
+        await this.pricingRepo.addPriceHistory({
+            listing_id: listingId,
+            price: result.targetPrice,
+            currency: "EUR", // Default to EUR for now
+            is_winner: result.targetPrice < Math.min(...validPrices),
+            competitor_id: undefined // We don't track specific competitor ID yet
+        });
       }
+
+      // Update last_dip_at (Last Reprice Time)
+      try {
+          await db.update(backmarket_listings)
+              .set({ last_dip_at: new Date() })
+              .where(eq(backmarket_listings.listing_id, listingId));
+      } catch (error) {
+          console.error(`Failed to update last_dip_at for listing ${listingId}:`, error);
+      }
+
+      return { success: true, message: `Repricing completed for ${updatedCount} countries.` };
 
     } catch (error) {
       console.error(`Failed to reprice listing ${listingId}:`, error);
+      return { success: false, message: `Repricing failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
     }
   }
 
@@ -354,6 +578,15 @@ export class BackMarketService {
       Priority.NORMAL,
       2 
     );
+
+    // Update last_dip_at in database
+    try {
+        await db.update(backmarket_listings)
+            .set({ last_dip_at: new Date() })
+            .where(eq(backmarket_listings.listing_id, listingId));
+    } catch (error) {
+        console.error(`Failed to update last_dip_at for listing ${listingId}:`, error);
+    }
     
     // Wait for competitors to react
     await Bun.sleep(3000);
@@ -367,22 +600,12 @@ export class BackMarketService {
         competitorData = null;
     }
     
-    // Peak: Calculate and set new price
-    const newPrice = this.calculateOptimalPrice(competitorData, currentPrice);
-    
-    // Cost 0 because we reserved it in the Dip
-    await this.traffic.scheduleRequest(
-      `${this.baseUrl}/ws/listings/${listingId}`,
-      {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({ price: newPrice })
-      },
-      Priority.HIGH,
-      0
-    );
-    
-    return newPrice;
+    // Peak: Reprice to optimal
+    await this.repriceListing(listingId);
+
+    // Fetch the new price from DB to return it
+    const updatedListing = await this.pricingRepo.getListingDetails(listingId);
+    return updatedListing?.price ? Number(updatedListing.price) : currentPrice;
   }
 
   /**
@@ -390,20 +613,6 @@ export class BackMarketService {
    */
   async emergencyRecovery(listingId: string, targetPrice: number): Promise<void> {
     await this.updatePrice(listingId, targetPrice, Priority.CRITICAL);
-  }
-
-  private calculateOptimalPrice(competitorData: any, fallbackPrice: number): number {
-    // Your pricing algorithm here
-    if (!competitorData?.competitors?.length) {
-      return fallbackPrice;
-    }
-    
-    const lowestCompetitor = Math.min(
-      ...competitorData.competitors.map((c: any) => c.price)
-    );
-    
-    // Set 1% below lowest competitor, but not below 50% of original
-    return Math.max(lowestCompetitor * 0.99, fallbackPrice * 0.5);
   }
 
   public updateTrafficConfig(config: any) {

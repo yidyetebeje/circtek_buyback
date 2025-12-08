@@ -74,6 +74,10 @@ export class ShopController {
     try {
       console.log("send request", id)
       const shop = await shopService.getShopById(id);
+      if (!shop) {
+        ctx.set.status = 404;
+        return { error: `Shop with ID ${id} not found` };
+      }
       return {
         data: shop,
       }

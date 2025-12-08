@@ -18,6 +18,26 @@ export const RecoverSchema = {
   })
 };
 
+export const CreateListingSchema = {
+  body: t.Object({
+    sku: t.String(),
+    title: t.String(),
+    price: t.String(),
+    quantity: t.Number(),
+    state: t.Number(),
+    grade: t.Number()
+  })
+};
+
+export const UpdateBasePriceSchema = {
+  params: t.Object({
+    listingId: t.String()
+  }),
+  body: t.Object({
+    price: t.Number()
+  })
+};
+
 export const SyncOrdersSchema = {
   body: t.Object({
     fullSync: t.Optional(t.Boolean({ description: 'Whether to perform a full sync (fetch all pages)', default: false }))
@@ -77,7 +97,11 @@ export const ParametersSchema = {
     c_op: t.Optional(t.String()),
     c_risk: t.Optional(t.String()),
     m_target: t.Optional(t.String()),
-    f_bm: t.Optional(t.String())
+    f_bm: t.Optional(t.String()),
+    price_step: t.Optional(t.String()),
+    min_price: t.Optional(t.String()),
+    max_price: t.Optional(t.String()),
+    triggerReprice: t.Optional(t.Boolean())
   })
 };
 

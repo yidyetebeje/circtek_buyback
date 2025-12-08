@@ -88,4 +88,15 @@ export class TokenBucket {
       this.refill();
       return this.tokens;
   }
+
+  public getStatus() {
+    this.refill();
+    return {
+      tokens: this.tokens,
+      maxTokens: this.maxTokens,
+      reservedTokens: this.reservedTokens,
+      refillIntervalMs: this.refillIntervalMs,
+      lastRefill: this.lastRefill
+    };
+  }
 }
