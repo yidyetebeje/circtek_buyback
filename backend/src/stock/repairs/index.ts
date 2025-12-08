@@ -45,8 +45,7 @@ export const repairs_routes = new Elysia({ prefix: '/repairs' })
 
     // Apply warehouse filter for non-admin roles
     const queryWithWarehouse = {
-      ...query,
-      ...(currentRole !== 'admin' && currentRole !== 'super_admin' && warehouseId ? { warehouse_id: warehouseId } : {})
+      ...query
     }
 
     return controller.getAnalytics(queryWithWarehouse as any, currentTenantId)
