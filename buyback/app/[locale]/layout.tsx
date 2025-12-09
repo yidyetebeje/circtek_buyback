@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Open_Sans } from "next/font/google";
 import "../globals.css";
-import {NextIntlClientProvider, hasLocale} from 'next-intl';
-import {getMessages} from 'next-intl/server';
-import {notFound} from 'next/navigation';
-import {routing} from '@/i18n/routing';
+import { NextIntlClientProvider, hasLocale } from 'next-intl';
+import { getMessages } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import { routing } from '@/i18n/routing';
 import { Toaster } from "@/components/ui/sonner";
 import { ReactQueryProvider } from "@/providers/react-query-provider";
 import { shopService } from "@/lib/api/catalog/shopService";
@@ -22,8 +22,8 @@ const openSansFont = Open_Sans({
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
-  const shopId = process.env.NEXT_PUBLIC_SHOP_ID ? 
-    parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) : 
+  const shopId = process.env.NEXT_PUBLIC_SHOP_ID ?
+    parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) :
     0;
   let shopName = "Buyback Service";
   let logoUrl = "";
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     await getShopConfig("default");
   }
   const domain = process.env.NEXT_PUBLIC_DOMAIN || "buyback.example.com";
-  
+
   return {
     title: {
       default: `${shopName} - Sell Your Device for the Best Price`,
@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       siteName: shopName,
       images: [
         {
-          url: logoUrl || "/logo.png", 
+          url: logoUrl || "/logo.png",
           width: 1200,
           height: 630,
           alt: shopName,
@@ -94,11 +94,11 @@ export default async function RootLayout({
   params,
 }: Readonly<{
   children: React.ReactNode;
-  params: Promise<{locale: string}>;
+  params: Promise<{ locale: string }>;
 }>) {
   const { locale } = await params;
-  const shopId = process.env.NEXT_PUBLIC_SHOP_ID ? 
-    parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) : 
+  const shopId = process.env.NEXT_PUBLIC_SHOP_ID ?
+    parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) :
     0;
   let shopConfig: ShopConfig;
   try {
@@ -112,19 +112,19 @@ export default async function RootLayout({
     shopConfig.shopName = shopConfig.shopName || "Buyback Service";
     shopConfig.logoUrl = shopConfig.logoUrl || "";
   }
-  
-  // Set favicon URL with priority: environment variable, shop config, or default
-  shopConfig.faviconUrl = process.env.NEXT_PUBLIC_FAVICON_URL || 
-                          shopConfig.faviconUrl || 
-                          shopInfo.data.logo || 
-                          "/favicon.ico";
-  
+
+  // Set favicon URL with priority: environment variable, shop config, shop logo, or default
+  shopConfig.faviconUrl = process.env.NEXT_PUBLIC_FAVICON_URL ||
+    shopConfig.faviconUrl ||
+    shopConfig.logoUrl ||
+    "/favicon.ico";
+
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
 
   const messages = await getMessages();
-  
+
   return (
     <html lang={locale}>
       <head>
@@ -134,18 +134,18 @@ export default async function RootLayout({
         className={`${openSansFont.className} antialiased`}
       >
         <TopLoader />
-        <Toaster/>
+        <Toaster />
         <NextIntlClientProvider messages={messages}>
-        <AuthProvider>
-          <ReactQueryProvider>
-            <LanguageProvider>
-              <ShopConfigProvider config={shopConfig}>
-                <DynamicFavicon />
-                {children}
-              </ShopConfigProvider>
-            </LanguageProvider>
-          </ReactQueryProvider>
-        </AuthProvider>
+          <AuthProvider>
+            <ReactQueryProvider>
+              <LanguageProvider>
+                <ShopConfigProvider config={shopConfig}>
+                  <DynamicFavicon />
+                  {children}
+                </ShopConfigProvider>
+              </LanguageProvider>
+            </ReactQueryProvider>
+          </AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>

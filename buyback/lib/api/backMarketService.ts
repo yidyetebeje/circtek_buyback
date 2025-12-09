@@ -7,6 +7,7 @@ export interface BackMarketOrder {
   modification_date: string;
   status: string;
   currency: string;
+  price?: string;
   shipping_first_name?: string;
   shipping_last_name?: string;
   shipping_address1?: string;
@@ -34,6 +35,7 @@ export interface BackMarketListing {
   grade?: number;
   publication_state?: number;
   synced_at: string;
+  last_dip_at?: string;
 }
 
 export interface PricingParameters {
@@ -243,9 +245,9 @@ export const backMarketService = {
   getParameters: async (sku: string, grade: number, country: string) => {
     return apiClient.get<{ success: boolean; data: PricingParameters | null }>(
       `/buyback/backmarket/parameters/${sku}`,
-      { 
+      {
         params: { grade, country },
-        isProtected: true 
+        isProtected: true
       }
     );
   },
