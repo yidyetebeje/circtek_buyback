@@ -2,7 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal, effect } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpParams } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { LucideAngularModule, Activity, Package, TrendingUp, DollarSign, Warehouse, Calendar, Search } from 'lucide-angular';
+
 import { AppCurrencyPipe } from '../../shared/pipes/app-currency.pipe';
 
 import { ApiService } from '../../core/services/api.service';
@@ -22,6 +24,7 @@ export class RepairsAnalyticsComponent {
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
   private readonly currencyService = inject(CurrencyService);
+  private readonly route = inject(ActivatedRoute);
 
   // Icons
   protected readonly TrendingUpIcon = TrendingUp;
@@ -48,7 +51,7 @@ export class RepairsAnalyticsComponent {
 
   // Tabs
   protected readonly activeTab = signal<'overview' | 'by-model' | 'by-reason' | 'by-user' | 'by-imei'>('overview');
-  
+
   // IMEI analytics state
   protected readonly imeiData = signal<any[]>([]);
   protected readonly imeiTotal = signal(0);
@@ -71,11 +74,20 @@ export class RepairsAnalyticsComponent {
   protected readonly Math = Math;
 
   constructor() {
+    // Read query params and apply as initial filter values
+    const queryParams = this.route.snapshot.queryParams;
+    if (queryParams['date_from']) {
+      this.dateFrom.set(queryParams['date_from']);
+    }
+    if (queryParams['date_to']) {
+      this.dateTo.set(queryParams['date_to']);
+    }
+
     // Load filters data
     this.loadWarehouses();
     this.loadDeviceModels();
     this.loadRepairReasons();
-    
+
     // Load initial analytics
     this.loadAnalytics();
   }
@@ -198,13 +210,13 @@ export class RepairsAnalyticsComponent {
   protected toggleIMEIExpansion(deviceId: number) {
     const expanded = this.expandedIMEIs();
     const newExpanded = new Set(expanded);
-    
+
     if (newExpanded.has(deviceId)) {
       newExpanded.delete(deviceId);
     } else {
       newExpanded.add(deviceId);
     }
-    
+
     this.expandedIMEIs.set(newExpanded);
   }
 
@@ -215,13 +227,13 @@ export class RepairsAnalyticsComponent {
   protected toggleModelExpansion(modelName: string) {
     const expanded = this.expandedModels();
     const newExpanded = new Set(expanded);
-    
+
     if (newExpanded.has(modelName)) {
       newExpanded.delete(modelName);
     } else {
       newExpanded.add(modelName);
     }
-    
+
     this.expandedModels.set(newExpanded);
   }
 

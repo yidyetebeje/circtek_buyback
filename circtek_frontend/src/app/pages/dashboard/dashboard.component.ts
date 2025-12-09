@@ -37,11 +37,11 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   protected readonly recentActivity = signal<RecentActivity[]>([]);
   protected readonly monthlyTrends = signal<MonthlyTrend[]>([]);
   protected readonly deviceTypes = signal<{ device_type: string; test_count: number }[]>([]);
-  
+
   // New signals for date picker values
   protected readonly selectedFromDate = signal<string | null>(null);
   protected readonly selectedToDate = signal<string | null>(null);
-  
+
   protected maxDate!: string;
   protected minDate!: string;
 
@@ -52,10 +52,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   protected readonly testResults = signal<Diagnostic[]>([]);
   protected readonly hasSearched = signal<boolean>(false);
   protected readonly showingSearchResults = computed(() => this.hasSearched() && this.searchTerm().trim().length > 0);
-  protected readonly isDownloadingMap = signal<{[id: number]: boolean}>({});
+  protected readonly isDownloadingMap = signal<{ [id: number]: boolean }>({});
   protected readonly isAnyDownloading = computed(() => Object.values(this.isDownloadingMap()).some(isDownloading => isDownloading));
   private searchTimeout: any = null;
-  
+
 
   // Chart configurations
   protected deviceTypeChart: ChartConfiguration | null = null;
@@ -96,7 +96,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   ngAfterViewInit() {
     this.viewInitialized = true;
     console.log('ngAfterViewInit called, viewInitialized set to true');
-    
+
     // Use requestAnimationFrame to ensure DOM is fully rendered
     requestAnimationFrame(() => {
       console.log('Canvas refs available after requestAnimationFrame:', {
@@ -104,7 +104,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         monthlyTrends: !!this.monthlyTrendsChartRef?.nativeElement,
         warehouse: !!this.warehouseChartRef?.nativeElement
       });
-      
+
       // If data already loaded, create charts now
       if (this.overviewData() && this.monthlyTrends().length >= 0) {
         console.log('Data available in ngAfterViewInit, creating charts');
@@ -126,7 +126,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private loadDashboardData() {
     this.isLoading.set(true);
-    
+
     // Load all dashboard data except monthly trends initially
     Promise.all([
       firstValueFrom(this.apiService.getDashboardOverview()),
@@ -206,7 +206,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       return;
     }
-    
+
     this.deviceTypeChart = {
       type: 'doughnut' as ChartType,
       data: {
@@ -251,7 +251,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
           },
           tooltip: {
             callbacks: {
-              label: function(context) {
+              label: function (context) {
                 const label = context.label || '';
                 const value = context.parsed as number;
                 const data = context.dataset.data as number[];
@@ -303,7 +303,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const trends = this.monthlyTrends()!;
     console.log('Monthly trends data:', trends);
-    
+
     this.monthlyTrendsChart = {
       type: 'line' as ChartType,
       data: {
@@ -364,16 +364,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const warehouses = this.warehouseStats()!;
     console.log('Warehouse stats data:', warehouses);
-    
+
     // Collect all device types across warehouses
     const allDeviceTypes = new Set<string>();
     warehouses.forEach(w => {
       w.device_type_counts.forEach(dt => allDeviceTypes.add(dt.device_type));
     });
-    
+
     const deviceTypes = Array.from(allDeviceTypes);
     const colors = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'];
-    
+
     const datasets = deviceTypes.map((deviceType, index) => ({
       label: deviceType,
       data: warehouses.map(w => {
@@ -382,7 +382,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       }),
       backgroundColor: colors[index % colors.length]
     }));
-    
+
     this.warehouseChart = {
       type: 'bar' as ChartType,
       data: {
@@ -482,9 +482,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   protected onFromDateChange(event: Event): void {
     const target = event.target as HTMLInputElement;
     const fromDate = target.value;
-    
+
     this.selectedFromDate.set(fromDate);
-    
+
     // If the new fromDate is after the current toDate, reset toDate to fromDate
     if (this.selectedToDate() && new Date(fromDate) > new Date(this.selectedToDate()!)) {
       this.selectedToDate.set(fromDate);
@@ -498,7 +498,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   protected onToDateChange(event: Event): void {
     const target = event.target as HTMLInputElement;
     const toDate = target.value;
-    
+
     this.selectedToDate.set(toDate);
 
     if (this.selectedFromDate() && this.selectedToDate()) {
@@ -532,7 +532,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   // Unified Test Search and Recent Activity Methods
   private loadRecentTests(): void {
     if (this.showingSearchResults()) return; // Don't load recent tests if showing search results
-    
+
     this.isSearching.set(true);
     this.searchError.set('');
 
@@ -626,36 +626,36 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     const id = row.id;
     // Set loading state only for this diagnostic ID
     this.isDownloadingMap.update(map => ({ ...map, [id]: true }));
-    
+
     try {
       console.log('Starting high-quality PDF generation for diagnostic:', row.id);
-      
+
       // Use the shared diagnostic PDF service that renders the exact report component layout
       const blob = await this.diagnosticPdfService.generatePdf(row.id);
-      
+
       // Create download link
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      
+
       // Generate filename using the diagnostic data
       const diagnosticResponse = await firstValueFrom(this.apiService.getPublicDiagnostic(row.id));
-      const filename = diagnosticResponse?.data ? 
-        this.diagnosticPdfService.generateFilename(diagnosticResponse.data) : 
+      const filename = diagnosticResponse?.data ?
+        this.diagnosticPdfService.generateFilename(diagnosticResponse.data) :
         `diagnostic_report_${row.id}_${new Date().toISOString().split('T')[0]}.pdf`;
-      
+
       link.download = filename;
-      
+
       // Trigger download
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Cleanup blob URL
       setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-      
+
       console.log('High-quality PDF generated successfully from dashboard using shared service');
-      
+
     } catch (error) {
       console.error('Error generating PDF from dashboard:', error);
       // Fallback to opening report page in new tab
@@ -664,7 +664,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     } finally {
       // Reset loading state for this diagnostic ID
       this.isDownloadingMap.update(map => {
-        const newMap = {...map};
+        const newMap = { ...map };
         delete newMap[id];
         return newMap;
       });
@@ -729,16 +729,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       `;
       document.head.appendChild(printStyles);
-      
+
       // Add print class to main content area
       const dashboardElement = document.querySelector('.min-h-screen.bg-base-200');
       if (dashboardElement) {
         dashboardElement.classList.add('dashboard-print-area');
       }
-      
+
       // Trigger print dialog
       window.print();
-      
+
       // Cleanup after print dialog closes
       setTimeout(() => {
         document.head.removeChild(printStyles);
@@ -746,12 +746,50 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
           dashboardElement.classList.remove('dashboard-print-area');
         }
       }, 100);
-      
+
       console.log('Dashboard print dialog opened');
     } catch (error) {
       console.error('Error opening dashboard print dialog:', error);
       // Fallback: show message to user
       alert('Please use your browser\'s print function (Ctrl+P or Cmd+P) to export the dashboard.');
+    }
+  }
+
+  // Navigation methods for clickable overview cards
+  protected navigateToDiagnostics(): void {
+    this.router.navigate(['/diagnostics']);
+  }
+
+  protected navigateToRepairs(filter?: string): void {
+    if (filter === 'today') {
+      const today = new Date().toISOString().split('T')[0];
+      this.router.navigate(['/repair/analytics'], {
+        queryParams: { date_from: today, date_to: today }
+      });
+    } else {
+      this.router.navigate(['/repair/analytics']);
+    }
+  }
+
+  protected navigateToStock(tab?: string, filter?: string): void {
+    const queryParams: any = {};
+    if (tab) {
+      queryParams.tab = tab;
+      // Add filter based on tab type
+      if (tab === 'purchases' && filter === 'pending') {
+        queryParams.receiving_status = 'pending';
+      } else if (tab === 'transfers' && filter === 'pending') {
+        queryParams.status = 'pending';
+      }
+    }
+    this.router.navigate(['/stock-management'], { queryParams });
+  }
+
+  protected navigateToManagement(filter?: string): void {
+    if (filter === 'active') {
+      this.router.navigate(['/management'], { queryParams: { is_active: 'true' } });
+    } else {
+      this.router.navigate(['/management']);
     }
   }
 }

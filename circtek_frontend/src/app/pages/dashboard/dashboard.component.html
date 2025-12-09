@@ -15,7 +15,9 @@
   @if (overviewData(); as stats) {
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <!-- Diagnostics Today -->
-    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+    <div
+      class="bg-base-100 rounded-xl p-6 border border-base-300 cursor-pointer hover:shadow-lg hover:border-info/50 transition-all duration-200"
+      (click)="navigateToDiagnostics()">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-medium text-base-content/70">Diagnostics Today</p>
@@ -31,7 +33,9 @@
     </div>
 
     <!-- Repairs Today -->
-    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+    <div
+      class="bg-base-100 rounded-xl p-6 border border-base-300 cursor-pointer hover:shadow-lg hover:border-success/50 transition-all duration-200"
+      (click)="navigateToRepairs('today')">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-medium text-base-content/70">Repairs Today</p>
@@ -47,7 +51,9 @@
     </div>
 
     <!-- Stock Items -->
-    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+    <div
+      class="bg-base-100 rounded-xl p-6 border border-base-300 cursor-pointer hover:shadow-lg hover:border-secondary/50 transition-all duration-200"
+      (click)="navigateToStock()">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-medium text-base-content/70">Stock Items</p>
@@ -67,7 +73,9 @@
     </div>
 
     <!-- Active Users -->
-    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+    <div
+      class="bg-base-100 rounded-xl p-6 border border-base-300 cursor-pointer hover:shadow-lg hover:border-warning/50 transition-all duration-200"
+      (click)="navigateToManagement('active')">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-medium text-base-content/70">Active Users</p>
@@ -89,7 +97,9 @@
   <!-- Secondary Stats Row -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <!-- Purchases -->
-    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+    <div
+      class="bg-base-100 rounded-xl p-6 border border-base-300 cursor-pointer hover:shadow-lg hover:border-neutral/50 transition-all duration-200"
+      (click)="navigateToStock('purchases', 'pending')">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-medium text-base-content/70">Purchases</p>
@@ -105,7 +115,9 @@
     </div>
 
     <!-- Transfers -->
-    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+    <div
+      class="bg-base-100 rounded-xl p-6 border border-base-300 cursor-pointer hover:shadow-lg hover:border-neutral/50 transition-all duration-200"
+      (click)="navigateToStock('transfers', 'pending')">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-medium text-base-content/70">Transfers</p>
@@ -121,7 +133,9 @@
     </div>
 
     <!-- Total Devices -->
-    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+    <div
+      class="bg-base-100 rounded-xl p-6 border border-base-300 cursor-pointer hover:shadow-lg hover:border-neutral/50 transition-all duration-200"
+      (click)="navigateToDiagnostics()">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-medium text-base-content/70">Total Devices</p>
@@ -137,7 +151,9 @@
     </div>
 
     <!-- Total Diagnostics -->
-    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+    <div
+      class="bg-base-100 rounded-xl p-6 border border-base-300 cursor-pointer hover:shadow-lg hover:border-neutral/50 transition-all duration-200"
+      (click)="navigateToDiagnostics()">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm font-medium text-base-content/70">All-Time Diagnostics</p>
