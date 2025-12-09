@@ -1,9 +1,11 @@
 <app-generic-page [title]="'Management'" [loading]="loading()" [tabs]="tabs()" [activeTabKeyInput]="activeTab()"
-  [searchQueryInput]="search()" [facets]="facets()" [columns]="columns()" [data]="data()" [total]="total()"
-  [pageIndexInput]="pageIndex()" [pageSizeInput]="pageSize()" [searchPlaceholder]="searchPlaceholder()"
-  [primaryAction]="primaryAction()" (primaryActionClick)="onPrimaryActionClick()" (pageChange)="onPageChange($event)"
+  [searchQueryInput]="search()" [facets]="facets()" [facetValuesInput]="facetValues()" [columns]="columns()"
+  [data]="data()" [total]="total()" [pageIndexInput]="pageIndex()" [pageSizeInput]="pageSize()"
+  [searchPlaceholder]="searchPlaceholder()" [primaryAction]="primaryAction()"
+  (primaryActionClick)="onPrimaryActionClick()" (pageChange)="onPageChange($event)"
   (filtersChange)="onFiltersChange($event)" (sortingChange)="onSortingChange($event)" (tabChange)="onTabChange($event)"
   (cellAction)="onCellAction($event)"></app-generic-page>
+
 
 <!-- Assign User Modal -->
 <app-generic-modal [isOpen]="isAssignModalOpen()" [title]="'Assign User'" [actions]="assignModalActions()" size="md"

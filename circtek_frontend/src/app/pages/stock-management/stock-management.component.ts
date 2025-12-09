@@ -230,6 +230,37 @@ export class StockManagementComponent {
     return list;
   });
 
+  // Computed facet values to pass to generic-page for initial display
+  facetValues = computed<Record<string, string>>(() => {
+    const values: Record<string, string> = {};
+    const tab = this.activeTab();
+
+    if (tab === 'stock') {
+      const wid = this.selectedWarehouseId();
+      if (wid != null) values['warehouse_id'] = String(wid);
+      if (this.selectedIsPart() !== 'any') values['is_part'] = this.selectedIsPart();
+      const lst = this.lowStockThreshold();
+      if (lst != null) values['low_stock_threshold'] = String(lst);
+      if (this.groupByBatch()) values['group_by_batch'] = 'true';
+    }
+
+    if (tab === 'purchases') {
+      const pwid = this.purchaseWarehouseId();
+      if (pwid != null) values['warehouse_id'] = String(pwid);
+      if (this.purchaseReceivingStatus() !== 'all') values['receiving_status'] = this.purchaseReceivingStatus();
+    }
+
+    if (tab === 'transfers') {
+      const fw = this.fromWarehouseId();
+      if (fw != null) values['from_warehouse_id'] = String(fw);
+      const tw = this.toWarehouseId();
+      if (tw != null) values['to_warehouse_id'] = String(tw);
+      if (this.transferStatus() !== 'any') values['status'] = this.transferStatus();
+    }
+
+    return values;
+  });
+
   // Columns per tab
   columns = computed<ColumnDef<StockMgmtRow>[]>(() => {
     switch (this.activeTab()) {
