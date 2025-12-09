@@ -64,6 +64,7 @@ export const buildApp = () =>
 					{ name: 'Stats', description: 'Stats' },
 					{ name: 'Buyback', description: 'Buyback' },
 					{ name: 'Buyback Catalog', description: 'Buyback Catalog' },
+					{ name: 'Back Market', description: 'Back Market Integration' },
 					{ name: 'Email Templates', description: 'Email Templates' },
 					{ name: 'Email', description: 'Email' },
 					{ name: 'Devices', description: 'Device LPN lookup and management' },

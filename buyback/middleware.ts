@@ -34,6 +34,24 @@ export async function middleware(request: NextRequest) {
 
     const currentLocale: Locale = getLocaleFromPath(pathname);
 
+    // Fix for double locale issue (e.g. /en/fr/admin -> /fr/admin)
+    // This happens if next-intl or some redirect logic appends a locale to a path that already has one
+    const doubleLocaleRegex = new RegExp(`^/(${routing.locales.join('|')})/(${routing.locales.join('|')})(/.*)?$`);
+    const doubleLocaleMatch = pathname.match(doubleLocaleRegex);
+    if (doubleLocaleMatch) {
+      const firstLocale = doubleLocaleMatch[1];
+      const secondLocale = doubleLocaleMatch[2];
+      const rest = doubleLocaleMatch[3] || '';
+      
+      // If we have /en/fr/..., redirect to /fr/...
+      // We prioritize the second locale as it's likely the intended one (inner path)
+      if (firstLocale !== secondLocale) {
+         console.log(`Detected double locale ${pathname}, redirecting to /${secondLocale}${rest}`);
+         const newUrl = new URL(`/${secondLocale}${rest}`, request.url);
+         return NextResponse.redirect(newUrl);
+      }
+    }
+
     // Check for /admin root path (e.g., /en/admin or /nl/admin/)
     const adminRootPathRegex = new RegExp(`^/(${routing.locales.join('|')})/admin/?$`);
     const isAdminRootPath = adminRootPathRegex.test(pathname);

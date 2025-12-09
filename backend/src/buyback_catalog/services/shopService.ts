@@ -31,8 +31,11 @@ export class ShopService {
     }
 
     const shop = await shopRepository.findById(id);
+    // Instead of throwing an exception here, return null when not found.
+    // This avoids unhandled exceptions during background tasks or dev environment
+    // where a missing shop should be handled gracefully by callers.
     if (!shop) {
-      throw new NotFoundError(`Shop with ID ${id} not found`);
+      return null;
     }
 
     return shop;
@@ -161,6 +164,9 @@ export class ShopService {
   async uploadShopLogo(id: number, file: File | Blob) {
     // Validate shop exists
     const shop = await this.getShopById(id);
+    if (!shop) {
+      throw new NotFoundError(`Shop with ID ${id} not found`);
+    }
     
     if (typeof s3Service?.uploadFile === 'function') {
       // Use S3 for file uploads if available

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useShopOverview, DateRange } from "@/hooks/useStats";
-import { Package, TrendingUp, ShoppingBag, DollarSign } from "lucide-react";
+import { Package, TrendingUp, ShoppingBag, Banknote } from "lucide-react";
 
 interface ShopStatsOverviewProps {
   shopId: number;
@@ -50,7 +50,7 @@ export function PlatformStatsOverview({ shopId, dateRange }: ShopStatsOverviewPr
     {
       title: "Total Revenue",
       value: data?.totalFinalValue,
-      icon: DollarSign,
+      icon: Banknote,
       iconColor: "text-purple-600 bg-purple-50 dark:bg-purple-950 dark:text-purple-400",
       borderColor: "border-purple-200 dark:border-purple-800",
       isCurrency: true,

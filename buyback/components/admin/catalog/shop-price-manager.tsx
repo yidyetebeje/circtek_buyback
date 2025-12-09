@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Loader2, DollarSign, Save, Globe } from 'lucide-react';
+import { Loader2, Banknote, Save, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -234,7 +234,7 @@ export const ShopPriceManager: React.FC<ShopPriceManagerProps> = ({
             <div className="flex-1">
               <Label htmlFor="bulk-price">New Price (for {selectedShops.size || shopPrices.length} shops)</Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Banknote className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="bulk-price"
                   type="number"
@@ -301,7 +301,7 @@ export const ShopPriceManager: React.FC<ShopPriceManagerProps> = ({
                       New Price
                     </Label>
                     <div className="relative">
-                      <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                      <Banknote className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                       <Input
                         id={`price-${shopData.shopId}`}
                         type="number"

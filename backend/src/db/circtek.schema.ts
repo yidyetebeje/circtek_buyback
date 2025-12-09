@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
 import { int, mysqlTable, serial, tinyint, timestamp, varchar, boolean, bigint, json, text, mysqlEnum, date, decimal, datetime, primaryKey, index, unique, float, foreignKey, uniqueIndex } from 'drizzle-orm/mysql-core';
 import { shops } from './shops.schema';
+export * from './rate_limit.schema';
+export * from './system_config.schema';
 export const device_types = mysqlEnum('device_types', ['iPhone', 'Macbook', 'Airpods', 'Android']);
 export const stock_movement_reasons = mysqlEnum('stock_movement_reasons', ['purchase', 'dead_imei', 'transfer_out', 'transfer_in', 'repair', 'adjustment', 'buyback']);
 
@@ -646,5 +648,19 @@ export const sku_mappings = mysqlTable('sku_mappings', {
   uniqueIndex('uq_sku_mappings_canonical_tenant').on(table.canonical_key, table.tenant_id),
   index('idx_sku_mappings_sku').on(table.sku),
   index('idx_sku_mappings_tenant').on(table.tenant_id),
+]);
+
+// Buyback Prices - Calculated prices for buying devices from customers
+export const buyback_prices = mysqlTable('buyback_prices', {
+  id: serial('id').primaryKey(),
+  sku: varchar('sku', { length: 255 }).notNull(),
+  grade_name: varchar('grade_name', { length: 50 }).notNull(), // e.g. "Mint", "Good", "Broken"
+  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
+  market_price: decimal('market_price', { precision: 10, scale: 2 }), // The reference market price used
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
+}, (table) => [
+  index('idx_buyback_prices_sku').on(table.sku),
+  unique('uq_buyback_prices_sku_grade').on(table.sku, table.grade_name, table.tenant_id),
 ]);
 
