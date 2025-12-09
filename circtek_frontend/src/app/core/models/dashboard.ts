@@ -4,37 +4,40 @@ export interface DashboardOverviewStats {
   diagnostics_today: number;
   diagnostics_this_week: number;
   diagnostics_this_month: number;
-  
+
   // Device stats
   total_devices: number;
   devices_by_type: DeviceTypeCount[];
   test_devices_by_type: TestDeviceTypeCount[];
-  
+
   // Stock stats
   total_stock_items: number;
   low_stock_alerts: number;
-  
+
   // User stats
   total_users: number;
   active_users: number;
-  
+
   // Warehouse stats
   total_warehouses: number;
-  
+
   // Tenant stats (super admin only)
   total_tenants?: number;
-  
+
   // Purchase stats
   total_purchases: number;
   pending_purchases: number;
-  
+
   // Transfer stats
   total_transfers: number;
   pending_transfers: number;
-  
+
   // Repair stats
   total_repairs: number;
   active_repairs: number;
+  repairs_today: number;
+  repairs_this_week: number;
+  repairs_this_month: number;
 }
 
 export interface DeviceTypeCount {

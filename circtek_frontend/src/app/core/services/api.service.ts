@@ -41,7 +41,7 @@ export class ApiService {
       try {
         // Clear any stored token and redirect to login
         localStorage.removeItem('auth_token');
-      } catch {}
+      } catch { }
       this.router.navigate(['/login']);
     }
     return throwError(() => err);
@@ -66,7 +66,7 @@ export class ApiService {
       bodyType: typeof body,
       bodyKeys: body ? Object.keys(body) : null
     });
-    
+
     return this.http
       .put<T>(`${this.apiUrl}${path}`, body, { withCredentials: true })
       .pipe(catchError(this.handleError));
@@ -494,6 +494,16 @@ export class ApiService {
     return this.get<ApiResponse<RepairRecord[]>>('/stock/repairs', params);
   }
 
+  exportRepairs(params: HttpParams = new HttpParams()): Observable<Blob> {
+    return this.http
+      .get(`${this.apiUrl}/stock/repairs/export`, {
+        params,
+        withCredentials: true,
+        responseType: 'blob'
+      })
+      .pipe(catchError(this.handleError));
+  }
+
   getRepair(id: number): Observable<ApiResponse<RepairWithItems | null>> {
     return this.get<ApiResponse<RepairWithItems | null>>(`/stock/repairs/${id}`);
   }
@@ -570,10 +580,10 @@ export class ApiService {
     if (folder) {
       formData.append('folder', folder);
     }
-    
+
     return this.http.post<ApiResponse<{ url: string; fileName: string; originalName: string; size: number; type: string } | null>>(
-      `${this.apiUrl}/uploads`, 
-      formData, 
+      `${this.apiUrl}/uploads`,
+      formData,
       { withCredentials: true }
     ).pipe(catchError(this.handleError));
   }
@@ -587,7 +597,7 @@ export class ApiService {
     let params = new HttpParams().set('key', key);
     if (contentType) params = params.set('contentType', contentType);
     if (expiresIn) params = params.set('expiresIn', expiresIn.toString());
-    
+
     return this.get<ApiResponse<{ uploadUrl: string; key: string; expiresIn: number } | null>>('/uploads/upload-url', params);
   }
 

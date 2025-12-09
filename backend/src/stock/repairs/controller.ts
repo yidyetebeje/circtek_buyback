@@ -7,7 +7,7 @@ import { deviceEventsService } from '../device-events'
 import { stockRepository } from '../stock'
 
 export class RepairsController {
-  constructor(private readonly repo: RepairsRepository) {}
+  constructor(private readonly repo: RepairsRepository) { }
 
   async create(payload: RepairCreateInput, tenant_id: number, actor_id: number): Promise<response<RepairRecord | null>> {
     try {
@@ -43,18 +43,18 @@ export class RepairsController {
         warehouse_id: payload.warehouse_id,
         actor_id,
       }
-      
+
       const created = await this.repo.createRepair({ ...repairPayload, tenant_id })
       if (!created) return { data: null, message: 'Failed to create repair', status: 500 }
 
       // Fire device event for repair started
-      
+
 
       // 2) If no items to consume, return early
       if (!payload.items || payload.items.length === 0) {
-        return { 
-          data: { 
-            repair: created, 
+        return {
+          data: {
+            repair: created,
             consume_result: {
               repair_id: created.id,
               items_count: 0,
@@ -62,9 +62,9 @@ export class RepairsController {
               total_cost: 0,
               results: []
             }
-          }, 
-          message: 'Repair created successfully (no items consumed)', 
-          status: 201 
+          },
+          message: 'Repair created successfully (no items consumed)',
+          status: 201
         }
       }
 
@@ -94,8 +94,8 @@ export class RepairsController {
 
       return { data, message: 'Repair created and items consumed successfully', status: 201 }
     } catch (error) {
-    
-      console.log("error",error);
+
+      console.log("error", error);
       return { data: null, message: 'Failed to create repair with consumption', status: 500, error: (error as Error).message }
     }
   }
@@ -122,6 +122,64 @@ export class RepairsController {
     }
   }
 
+  async exportToCSV(query: RepairQueryInput, tenant_id?: number): Promise<{ headers: Record<string, string>; body: string; status: number }> {
+    try {
+      const rows = await this.repo.findAllForExport({ ...query, tenant_id })
+
+      // Define CSV headers (removed: status, updated_at, repair_reasons, device_sku)
+      const header = [
+        'id', 'created_at', 'device_imei', 'device_model', 'consumed_parts',
+        'device_serial', 'warehouse_name', 'repairer_name', 'total_cost', 'remarks'
+      ]
+
+      // Create CSV rows
+      const csv = [
+        header.join(','),
+        ...rows.map(r => [
+          r.id,
+          r.created_at ? new Date(r.created_at).toISOString() : '',
+          r.device_imei ?? '',
+          r.device_model_name ?? '',
+          // For consumed parts: if sku is 'fixed_price', show the reason instead
+          r.consumed_items?.map(item => {
+            if (item.part_sku === 'fixed_price' && item.reason) {
+              return item.reason;
+            }
+            return item.part_sku;
+          }).filter(Boolean).join('; ') ?? '',
+          r.device_serial ?? '',
+          r.warehouse_name ?? '',
+          r.repairer_name ?? '',
+          r.total_cost?.toFixed(2) ?? '0.00',
+          r.remarks ?? ''
+        ].map(v => {
+          // Escape CSV values: quote if contains comma, newline, or quote
+          const str = String(v)
+          if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+            return `"${str.replace(/"/g, '""')}"`
+          }
+          return str
+        }).join(','))
+      ].join('\n')
+
+      return {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': 'attachment; filename="repairs.csv"',
+        },
+        body: csv,
+        status: 200,
+      }
+    } catch (error) {
+      console.error('CSV export error:', error)
+      return {
+        headers: { 'Content-Type': 'text/plain' },
+        body: 'Failed to export repairs',
+        status: 500,
+      }
+    }
+  }
+
   async consumeItems(repair_id: number, payload: RepairConsumeItemsInput, tenant_id: number, actor_id: number): Promise<response<RepairConsumeResult | null>> {
     try {
       const repair = await this.repo.findById(repair_id, tenant_id)
@@ -132,13 +190,13 @@ export class RepairsController {
       if (!allocationsResult.success || !allocationsResult.data) {
         return { data: null, message: allocationsResult.message, status: 400 }
       }
-      
+
       const allocations = allocationsResult.data
 
       // Step 2: Create stock movements for each item
       const movementsResult = await this.createStockMovements(allocations, payload.warehouse_id, repair_id, tenant_id, actor_id)
       if (!movementsResult.success || !movementsResult.data) {
-   
+        await this.rollbackAllocations(allocations, tenant_id)
         return { data: null, message: 'Failed to create stock movement; operation reverted', status: 500 }
       }
 
@@ -146,7 +204,7 @@ export class RepairsController {
 
       // Step 3: Persist repair items
       const persistResult = await this.persistRepairItems(allocations, repair_id, tenant_id)
-      console.log("persistResult",persistResult);
+      console.log("persistResult", persistResult);
       if (!persistResult.success) {
 
         await this.rollbackMovements(successfulMovements, payload.warehouse_id, repair_id, tenant_id, actor_id)
@@ -194,7 +252,7 @@ export class RepairsController {
         // Non-blocking: log in tests
         if (process.env.NODE_ENV === 'test') {
           console.error('Failed to create REPAIR_COMPLETED device event', e)
-          console.log("Failed to create Repaired_complete ",e);
+          console.log("Failed to create Repaired_complete ", e);
         }
       }
 
@@ -205,58 +263,58 @@ export class RepairsController {
   }
 
   private async allocateAllItems(items: RepairConsumeItemsInput['items'], device_id: number, tenant_id: number, warehouse_id: number) {
-    type ItemAllocation = { sku: string; quantity: number; reason_id: number; description?: string; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }>; is_fixed_price?: boolean; fixed_price?: number}
+    type ItemAllocation = { sku: string; quantity: number; reason_id: number; description?: string; allocations: Array<{ purchase_item_id: number; quantity: number; unit_price: number }>; is_fixed_price?: boolean; fixed_price?: number }
     const allocations: ItemAllocation[] = []
 
     // Get device information to determine model-specific pricing
     const device = await this.repo.getDeviceById(device_id, tenant_id)
     console.log("device information", device)
     if (!device) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: 'Device not found',
-        data: null 
+        data: null
       }
     }
 
     for (const item of items) {
-     
+
       // Handle fixed-price items (service-only repairs)
       if (item.sku === 'fixed_price' || item.sku === '') {
         // Get model-specific or default price
         const priceInfo = await this.repo.getRepairReasonPrice(item.reason_id || 0, device.model_name || '', tenant_id)
         const reason = await this.repo.getRepairReasonById(item.reason_id || 0, tenant_id)
-        
+
         if (!priceInfo) {
           // Rollback any successful allocations before failing
           await this.rollbackAllocations(allocations, tenant_id)
-          return { 
-            success: false, 
+          return {
+            success: false,
             message: `Repair reason ${item.reason_id} not found`,
-            data: null 
+            data: null
           }
         }
-        
-        
+
+
         if (!priceInfo.fixed_price) {
           // Rollback any successful allocations before failing
           await this.rollbackAllocations(allocations, tenant_id)
-          
+
           // Get the repair reason name for a better error message
           const repairReason = await this.repo.getRepairReasonById(item.reason_id || 0, tenant_id)
           const reasonName = repairReason?.name || 'Unknown'
-          
-          return { 
-            success: false, 
+
+          return {
+            success: false,
             message: `Repair reason "${reasonName}" does not have a fixed price${device.model_name ? ` for model ${device.model_name}` : ''}`,
-            data: null 
+            data: null
           }
         }
-      
-        allocations.push({ 
-          sku: 'fixed_price', 
-          quantity: item.quantity, 
-          reason_id: item.reason_id || 0, 
+
+        allocations.push({
+          sku: 'fixed_price',
+          quantity: item.quantity,
+          reason_id: item.reason_id || 0,
           description: item.description,
           allocations: [],
           is_fixed_price: true,
@@ -264,33 +322,33 @@ export class RepairsController {
         })
         continue
       }
-      
-      
+
+
       // Handle regular parts-based items
       const allocation = await purchasesRepository.allocateSkuQuantity(item.sku, item.quantity, tenant_id, warehouse_id)
-      
+
       if (allocation.total_allocated !== item.quantity) {
         // Rollback any successful allocations before failing
         await this.rollbackAllocations(allocations, tenant_id)
-        
+
         // Also rollback the partial allocation from this failed attempt
         if (allocation.allocations?.length > 0) {
           await this.rollbackPurchaseAllocations(allocation.allocations, tenant_id)
         }
-        
-        return { 
-          success: false, 
+
+        return {
+          success: false,
           message: `Insufficient available purchased quantity for SKU ${item.sku}`,
-          data: null 
+          data: null
         }
       }
 
-      allocations.push({ 
-        sku: item.sku, 
-        quantity: item.quantity, 
-        reason_id: item.reason_id || 0, 
+      allocations.push({
+        sku: item.sku,
+        quantity: item.quantity,
+        reason_id: item.reason_id || 0,
         description: item.description,
-        allocations: allocation.allocations 
+        allocations: allocation.allocations
       })
     }
 
@@ -307,7 +365,7 @@ export class RepairsController {
       // Skip stock movements for fixed-price items (no physical inventory consumed)
       if (item.is_fixed_price) {
         const itemCost = item.fixed_price * item.quantity
-        
+
         results.push({
           sku: item.sku,
           quantity: item.quantity,
@@ -334,7 +392,7 @@ export class RepairsController {
 
       const itemCost = this.calculateItemCost(item.allocations, item.quantity)
       const success = movementResult.status === 201
-      
+
       results.push({
         sku: item.sku,
         quantity: item.quantity,
@@ -354,8 +412,8 @@ export class RepairsController {
       total_cost += this.calculateTotalItemCost(item.allocations)
     }
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: { results, successfulMovements, totals: { quantity: total_quantity, cost: total_cost } },
       message: 'All movements created successfully'
     }
@@ -363,8 +421,8 @@ export class RepairsController {
 
   private async persistRepairItems(allocations: any[], repair_id: number, tenant_id: number) {
     const repairItems = allocations.flatMap(item => {
-      if(item.reason_id == 0){
-         item.reason_id = null;
+      if (item.reason_id == 0) {
+        item.reason_id = null;
       }
       // Handle fixed-price items (no purchase allocations)
       if (item.is_fixed_price) {
@@ -382,7 +440,7 @@ export class RepairsController {
           updated_at: null,
         }]
       }
-      
+
       // Handle regular parts-based items (with purchase allocations)
       return item.allocations.map((allocation: any) => ({
         repair_id,
@@ -412,10 +470,10 @@ export class RepairsController {
     // Filter out fixed-price items as they don't have allocations to rollback
     const allAllocations = allocations
       .filter(a => !a.is_fixed_price)
-      .flatMap(a => 
+      .flatMap(a =>
         a.allocations.map((x: any) => ({ purchase_item_id: x.purchase_item_id, quantity: x.quantity }))
       )
-    
+
     if (allAllocations.length > 0) {
       await purchasesRepository.deallocateAllocations(allAllocations, tenant_id)
     }
@@ -536,7 +594,7 @@ export class RepairsController {
       // delete all device events from this repair
       await this.repo.deleteDeviceEventsByRepairId(repair_id, tenant_id)
 
-      
+
       // Step 3: Create REPAIR_DELETED event for audit trail
       try {
         // Prepare consumed items summary for the event

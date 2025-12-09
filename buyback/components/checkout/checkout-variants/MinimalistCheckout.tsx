@@ -127,28 +127,29 @@ export function MinimalistCheckout({
     const cartItem = relevantCartItems[0] as InProgressEstimation;
 
     if (!cartItem || !cartItem.deviceModel || typeof cartItem.deviceModel.id !== 'number') {
-        console.error("Device model ID is missing or invalid in the cart item.", cartItem);
-        createOrderMutation.reset();
-        alert(t('messages.deviceConfigError'));
-        return;
+      console.error("Device model ID is missing or invalid in the cart item.", cartItem);
+      createOrderMutation.reset();
+      alert(t('messages.deviceConfigError'));
+      return;
     }
 
-   
+
+    const tenantIdString = process.env.NEXT_PUBLIC_TENANT_ID;
     const shopIdString = process.env.NEXT_PUBLIC_SHOP_ID;
 
-    if ( !shopIdString) {
+    if (!tenantIdString || !shopIdString) {
       console.error("Client ID or Shop ID is not configured in environment variables.");
       alert(t('messages.configurationError'));
       return;
     }
 
-
+    const tenantId = parseInt(tenantIdString, 10);
     const shopId = parseInt(shopIdString, 10);
 
-    if (isNaN(shopId)) {
-        console.error("Client ID or Shop ID from env is not a valid number.");
-        alert(t('messages.invalidConfigError'));
-        return;
+    if (isNaN(tenantId) || isNaN(shopId)) {
+      console.error("Client ID or Shop ID from env is not a valid number.");
+      alert(t('messages.invalidConfigError'));
+      return;
     }
 
     const orderPayload: CreateOrderPayload = {
@@ -194,7 +195,7 @@ export function MinimalistCheckout({
         phoneNumber: data.phoneNumber,
         email: data.email,
       },
-
+      tenantId: tenantId,
       shopId: shopId,
     };
 
@@ -267,7 +268,7 @@ export function MinimalistCheckout({
         <div className="bg-white p-10 rounded-md shadow-sm text-center max-w-md">
           <h2 className="text-2xl font-medium text-gray-800 mb-4">{t('emptyCart.title')}</h2>
           <p className="text-gray-600 mb-8">{t('emptyCart.description')}</p>
-          <a 
+          <a
             href={`/${currentLocale}`}
             className="px-6 py-3 text-white font-medium rounded-md hover:bg-opacity-90 transition-colors duration-150 inline-block"
             style={{ backgroundColor: primaryColor }}
@@ -283,7 +284,7 @@ export function MinimalistCheckout({
     <div style={{ backgroundColor }} className="min-h-screen py-12">
       <div className="container mx-auto px-4 max-w-5xl">
         <h1 className="text-3xl font-light text-center text-gray-800 mb-10">{t('title')}</h1>
-        
+
         {createOrderMutation.isError && (
           <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative flex items-center" role="alert">
             <AlertCircle className="h-5 w-5 mr-2" />
@@ -299,7 +300,7 @@ export function MinimalistCheckout({
         <div className="bg-white rounded-md shadow-sm overflow-hidden">
           <div className="p-6 border-b" style={{ borderColor: `${primaryColor}20` }}>
             <h2 className="text-lg font-medium mb-4">{t('sections.yourOrder')}</h2>
-            
+
             <div className="divide-y" style={{ borderColor: `${primaryColor}10` }}>
               {relevantCartItems.map((item) => {
                 const deviceModel = item.deviceModel;
@@ -308,18 +309,18 @@ export function MinimalistCheckout({
                 const specifications = deviceModel.specifications;
                 const storage = specifications && typeof specifications.storage === 'string' ? specifications.storage : 'N/A';
                 const answeredQuestions = getAnsweredQuestionsListForItem(item);
-                
+
                 return (
                   <div key={item.deviceId} className="py-4">
                     <div className="flex items-center">
-                      <img src={deviceImageUrl} alt={deviceName} className="w-16 h-16 object-contain rounded-md mr-4"/>
+                      <img src={deviceImageUrl} alt={deviceName} className="w-16 h-16 object-contain rounded-md mr-4" />
                       <div className="flex-grow">
                         <div className="flex justify-between">
                           <h3 className="font-medium text-gray-800">{deviceName}</h3>
                           <span className="font-medium">€ {item.estimatedPrice?.toFixed(2) ?? '0.00'}</span>
                         </div>
                         <p className="text-sm text-gray-500">
-                          {deviceModel.brand?.title ? getLocalizedText(deviceModel.brand.title, currentLocale, defaultLocale) : ''} {storage !== 'N/A' ? ` | ${storage}`: ''}
+                          {deviceModel.brand?.title ? getLocalizedText(deviceModel.brand.title, currentLocale, defaultLocale) : ''} {storage !== 'N/A' ? ` | ${storage}` : ''}
                         </p>
                       </div>
                       <div className="flex gap-2 ml-4">
@@ -354,51 +355,51 @@ export function MinimalistCheckout({
                   </div>
                 );
               })}
-              
+
               <div className="py-4 flex justify-between items-center font-medium text-lg">
                 <span>{t('summary.total')}</span>
                 <span style={{ color: primaryColor }}>€ {totalEstimatedPrice.toFixed(2)}</span>
               </div>
             </div>
           </div>
-          
+
           <form onSubmit={handleSubmit(onSubmit)} className="p-6">
             <h2 className="text-lg font-medium mb-6">{t('sections.shippingInformation')}</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.firstName')}</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   {...register("firstName")}
                   className={`w-full p-2.5 border ${errors.firstName ? 'border-red-500' : 'border-gray-300'} rounded-md bg-gray-50`}
                   placeholder={t('form.firstNamePlaceholder')}
                 />
                 {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName.message}</p>}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.lastName')}</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   {...register("lastName")}
                   className={`w-full p-2.5 border ${errors.lastName ? 'border-red-500' : 'border-gray-300'} rounded-md bg-gray-50`}
                   placeholder={t('form.lastNamePlaceholder')}
                 />
                 {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName.message}</p>}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.email')}</label>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   {...register("email")}
                   className={`w-full p-2.5 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md bg-gray-50`}
                   placeholder={t('form.emailPlaceholder')}
                 />
                 {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.phoneNumber')}</label>
                 <Controller
@@ -416,34 +417,34 @@ export function MinimalistCheckout({
                 />
                 {errors.phoneNumber && <p className="text-xs text-red-500 mt-1">{errors.phoneNumber.message}</p>}
               </div>
-              
+
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.accountNumberOptional')}</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   {...register("accountNumber")}
                   className={`w-full p-2.5 border ${errors.accountNumber ? 'border-red-500' : 'border-gray-300'} rounded-md bg-gray-50`}
                   placeholder={t('form.ibanPlaceholder')}
                 />
                 {errors.accountNumber && <p className="text-xs text-red-500 mt-1">{errors.accountNumber.message}</p>}
               </div>
-              
+
               <div className="md:col-span-2 grid grid-cols-3 gap-x-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.streetName')}</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     {...register("streetName")}
                     className={`w-full p-2.5 border ${errors.streetName ? 'border-red-500' : 'border-gray-300'} rounded-md bg-gray-50`}
                     placeholder={t('form.streetNamePlaceholder')}
                   />
                   {errors.streetName && <p className="text-xs text-red-500 mt-1">{errors.streetName.message}</p>}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.houseNumber')}</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     {...register("houseNumber")}
                     className={`w-full p-2.5 border ${errors.houseNumber ? 'border-red-500' : 'border-gray-300'} rounded-md bg-gray-50`}
                     placeholder={t('form.houseNumberPlaceholder')}
@@ -455,8 +456,8 @@ export function MinimalistCheckout({
               <div className="md:col-span-2 grid grid-cols-2 gap-x-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.postalCode')}</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     {...register("postalCode")}
                     className={`w-full p-2.5 border ${errors.postalCode ? 'border-red-500' : 'border-gray-300'} rounded-md bg-gray-50`}
                     placeholder={t('form.postalCodePlaceholder')}
@@ -465,8 +466,8 @@ export function MinimalistCheckout({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.city')}</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     {...register("city")}
                     className={`w-full p-2.5 border ${errors.city ? 'border-red-500' : 'border-gray-300'} rounded-md bg-gray-50`}
                     placeholder={t('form.cityPlaceholder')}
@@ -478,9 +479,9 @@ export function MinimalistCheckout({
               <div className="md:col-span-2 grid grid-cols-2 gap-x-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.stateProvince')}</label>
-                  <input 
-                    type="text" 
-                    {...register("stateProvince")} 
+                  <input
+                    type="text"
+                    {...register("stateProvince")}
                     className={`w-full p-2.5 border ${errors.stateProvince ? 'border-red-500' : 'border-gray-300'} rounded-md bg-gray-50`}
                     placeholder={t('form.stateProvincePlaceholder')}
                   />

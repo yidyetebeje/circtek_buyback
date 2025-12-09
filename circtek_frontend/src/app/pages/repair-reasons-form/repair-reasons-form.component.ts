@@ -152,58 +152,58 @@ export class RepairReasonsFormComponent {
   // Custom validators
   private lettersOnlyValidator(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
-    
+
     const value = control.value.toString();
     const trimmedValue = value.trim();
     if (!trimmedValue) return null; // Allow empty values (for optional fields)
-    
+
     // Allow letters (including accented characters), spaces, apostrophes, and hyphens
     const lettersOnlyPattern = /^[a-zA-ZÀ-ÿ\s'-]+$/;
-    
+
     if (!lettersOnlyPattern.test(value)) {
       return { lettersOnly: { message: 'Only letters, spaces, apostrophes, and hyphens are allowed' } };
     }
-    
+
     // Check for more than two consecutive spaces
     if (/\s{3,}/.test(value)) {
       return { excessiveWhitespace: { message: 'No more than two consecutive spaces allowed' } };
     }
-    
+
     return null;
   }
 
   // Validator specifically for required fields that must contain only letters
   private requiredLettersOnlyValidator(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
-    
+
     const value = control.value.toString();
     const trimmedValue = value.trim();
     if (!trimmedValue) return { required: true };
-    
+
     // Allow letters (including accented characters), spaces, apostrophes, and hyphens
     const lettersOnlyPattern = /^[a-zA-ZÀ-ÿ\s'-]+$/;
-    
+
     if (!lettersOnlyPattern.test(value)) {
       return { lettersOnly: { message: 'Only letters, spaces, apostrophes, and hyphens are allowed' } };
     }
-    
+
     // Check for more than two consecutive spaces
     if (/\s{3,}/.test(value)) {
       return { excessiveWhitespace: { message: 'No more than two consecutive spaces allowed' } };
     }
-    
+
     return null;
   }
 
   private trimWhitespaceValidator(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
-    
+
     const value = control.value.toString();
     const trimmedValue = value.trim();
-    
+
     // Only update on blur or when user stops typing to avoid interfering with typing
     // This will be handled by the form submission instead
-    
+
     return null;
   }
 
@@ -229,8 +229,8 @@ export class RepairReasonsFormComponent {
       label: 'Name',
       type: 'text',
       required: true,
-      placeholder: 'Enter repair reason name (letters and spaces)',
-      description: 'A descriptive name for the repair reason (2-100 characters, letters and spaces allowed)'
+      placeholder: 'Enter repair reason name',
+      description: 'A descriptive name for the repair reason (2-100 characters)'
     },
     {
       key: 'description',
@@ -272,11 +272,9 @@ export class RepairReasonsFormComponent {
   constructor() {
     this.form = this.fb.group({
       name: ['', [
-        Validators.required, 
-        Validators.minLength(2), 
-        Validators.maxLength(100), // Limit name to 100 characters
-        this.requiredLettersOnlyValidator.bind(this),
-        this.trimWhitespaceValidator.bind(this)
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(100) // Limit name to 100 characters
       ]],
       description: ['', [
         Validators.maxLength(500), // Limit description to 500 characters
@@ -320,7 +318,7 @@ export class RepairReasonsFormComponent {
   removeModelPrice(index: number): void {
     const control = this.modelPrices.at(index);
     const id = control.get('id')?.value;
-    
+
     if (id) {
       // Mark existing price for deletion
       control.get('_isDeleted')?.setValue(true);
@@ -405,10 +403,10 @@ export class RepairReasonsFormComponent {
     });
 
     // Check if main form is valid (excluding model_prices)
-    const mainFormValid = this.form.get('name')?.valid && 
-                          this.form.get('description')?.valid && 
-                          this.form.get('fixed_price')?.valid && 
-                          this.form.get('status')?.valid;
+    const mainFormValid = this.form.get('name')?.valid &&
+      this.form.get('description')?.valid &&
+      this.form.get('fixed_price')?.valid &&
+      this.form.get('status')?.valid;
 
     // Check if visible model prices are valid
     const modelPricesValid = this.getVisibleModelPricesWithIndex().every(item => {
@@ -447,7 +445,7 @@ export class RepairReasonsFormComponent {
 
     console.log('Form data to submit:', formData);
 
-    const request = this.isEditMode() 
+    const request = this.isEditMode()
       ? this.updateRepairReason(formData)
       : this.createRepairReason(formData);
 
@@ -473,8 +471,8 @@ export class RepairReasonsFormComponent {
       next: (response) => {
         console.log('Form submitted successfully');
         this.toast.saveSuccess('Repair Reason', this.isEditMode() ? 'updated' : 'created');
-        this.router.navigate(['/repair'], { 
-          queryParams: { tab: 'repair-reasons' } 
+        this.router.navigate(['/repair'], {
+          queryParams: { tab: 'repair-reasons' }
         });
         this.submitting.set(false);
       },
@@ -581,8 +579,8 @@ export class RepairReasonsFormComponent {
   }
 
   private navigateBack(): void {
-    this.router.navigate(['/repair'], { 
-      queryParams: { tab: 'repair-reasons' } 
+    this.router.navigate(['/repair'], {
+      queryParams: { tab: 'repair-reasons' }
     });
   }
 }

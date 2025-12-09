@@ -1,314 +1,215 @@
-<app-generic-page
-  [title]="'Management'"
-  [loading]="loading()"
-  [tabs]="tabs()"
-  [activeTabKeyInput]="activeTab()"
-  [searchQueryInput]="search()"
-  [facets]="facets()"
-  [columns]="columns()"
-  [data]="data()"
-  [total]="total()"
-  [pageIndexInput]="pageIndex()"
-  [pageSizeInput]="pageSize()"
-  [searchPlaceholder]="searchPlaceholder()"
-  [primaryAction]="primaryAction()"
-  (primaryActionClick)="onPrimaryActionClick()"
-  (pageChange)="onPageChange($event)"
-  (filtersChange)="onFiltersChange($event)"
-  (sortingChange)="onSortingChange($event)"
-  (tabChange)="onTabChange($event)"
-  (cellAction)="onCellAction($event)"
-></app-generic-page>
+<app-generic-page [title]="'Management'" [loading]="loading()" [tabs]="tabs()" [activeTabKeyInput]="activeTab()"
+  [searchQueryInput]="search()" [facets]="facets()" [columns]="columns()" [data]="data()" [total]="total()"
+  [pageIndexInput]="pageIndex()" [pageSizeInput]="pageSize()" [searchPlaceholder]="searchPlaceholder()"
+  [primaryAction]="primaryAction()" (primaryActionClick)="onPrimaryActionClick()" (pageChange)="onPageChange($event)"
+  (filtersChange)="onFiltersChange($event)" (sortingChange)="onSortingChange($event)" (tabChange)="onTabChange($event)"
+  (cellAction)="onCellAction($event)"></app-generic-page>
 
 <!-- Assign User Modal -->
-<app-generic-modal
-  [isOpen]="isAssignModalOpen()"
-  [title]="'Assign User'"
-  [actions]="assignModalActions()"
-  size="md"
-  (close)="closeAssignModal()"
-  (actionClick)="onAssignModalAction($event)"
->
+<app-generic-modal [isOpen]="isAssignModalOpen()" [title]="'Assign User'" [actions]="assignModalActions()" size="md"
+  (close)="closeAssignModal()" (actionClick)="onAssignModalAction($event)">
   <div class="space-y-4">
     <!-- Context information based on active tab -->
-    <div class="text-sm text-base-content/70 p-3 bg-base-200/30 rounded-lg border border-base-300/20 modal-context-info">
+    <div
+      class="text-sm text-base-content/70 p-3 bg-base-200/30 rounded-lg border border-base-300/20 modal-context-info">
       @if (activeTab() === 'wifi' && selectedWifiProfile(); as p) {
-        <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
-          <span class="font-medium text-base-content/90 flex-shrink-0">Profile:</span> 
-          <div class="min-w-0 flex-1">
-            <app-truncated-text 
-              [text]="p.name + ' (SSID: ' + p.ssid + ')'"
-              [maxWidth]="'280px'"
-            ></app-truncated-text>
-          </div>
+      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+        <span class="font-medium text-base-content/90 flex-shrink-0">Profile:</span>
+        <div class="min-w-0 flex-1">
+          <app-truncated-text [text]="p.name + ' (SSID: ' + p.ssid + ')'" [maxWidth]="'280px'"></app-truncated-text>
         </div>
+      </div>
       }
       @if (activeTab() === 'labels' && selectedLabelTemplate(); as l) {
-        <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
-          <span class="font-medium text-base-content/90 flex-shrink-0">Label Template:</span>
-          <div class="min-w-0 flex-1">
-            <app-truncated-text 
-              [text]="l.name"
-              [maxWidth]="'280px'"
-            ></app-truncated-text>
-          </div>
+      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+        <span class="font-medium text-base-content/90 flex-shrink-0">Label Template:</span>
+        <div class="min-w-0 flex-1">
+          <app-truncated-text [text]="l.name" [maxWidth]="'280px'"></app-truncated-text>
         </div>
+      </div>
       }
       @if (activeTab() === 'workflows' && selectedWorkflow(); as w) {
-        <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
-          <span class="font-medium text-base-content/90 flex-shrink-0">Workflow:</span>
-          <div class="min-w-0 flex-1">
-            <app-truncated-text 
-              [text]="w.name"
-              [maxWidth]="'280px'"
-            ></app-truncated-text>
-          </div>
+      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+        <span class="font-medium text-base-content/90 flex-shrink-0">Workflow:</span>
+        <div class="min-w-0 flex-1">
+          <app-truncated-text [text]="w.name" [maxWidth]="'280px'"></app-truncated-text>
         </div>
+      </div>
       }
       @if (activeTab() === 'ota-updates' && selectedOtaUpdate(); as ota) {
-        <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
-          <span class="font-medium text-base-content/90 flex-shrink-0">OTA Update:</span>
-          <div class="min-w-0 flex-1">
-            <app-truncated-text 
-              [text]="ota.version + ' (' + ota.target_os + ' ' + ota.target_architecture + ')'"
-              [maxWidth]="'280px'"
-            ></app-truncated-text>
-          </div>
+      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+        <span class="font-medium text-base-content/90 flex-shrink-0">OTA Update:</span>
+        <div class="min-w-0 flex-1">
+          <app-truncated-text [text]="ota.version + ' (' + ota.target_os + ' ' + ota.target_architecture + ')'"
+            [maxWidth]="'280px'"></app-truncated-text>
         </div>
+      </div>
       }
     </div>
-    
+
     <!-- WiFi Profile dropdown only for wifi tab when no profile is selected -->
     @if (activeTab() === 'wifi' && !selectedWifiProfile()) {
-      <div class="form-control">
-        <label class="label mb-1"><span class="label-text">WiFi Profile</span></label>
-        <select 
-          class="select select-accent" 
-          (change)="onAssignProfileSelect($event)"
-          [disabled]="loading()"
-          [title]="'Select a WiFi profile to assign'"
-        >
-          <option [value]="''">Select WiFi profile…</option>
-          @for (opt of wifiOptions(); track opt.value) {
-            <option [value]="opt.value" [title]="opt.label">
-              {{ opt.label }}
-            </option>
-          }
-        </select>
-      </div>
+    <div class="form-control">
+      <label class="label mb-1"><span class="label-text">WiFi Profile</span></label>
+      <select class="select select-accent" (change)="onAssignProfileSelect($event)" [disabled]="loading()"
+        [title]="'Select a WiFi profile to assign'">
+        <option [value]="''">Select WiFi profile…</option>
+        @for (opt of wifiOptions(); track opt.value) {
+        <option [value]="opt.value" [title]="opt.label">
+          {{ opt.label }}
+        </option>
+        }
+      </select>
+    </div>
     }
-    
+
     <!-- User selection -->
     <div class="form-control">
       <label class="label mb-1 pr-4"><span class="label-text">User</span></label>
-      <select 
-        class="select select-accent" 
-        (change)="onAssignTesterSelect($event)" 
-        [value]="selectedAssignTesterId() ?? ''"
-        [disabled]="loading()"
-        [title]="'Select a user to assign'"
-      >
+      <select class="select select-accent" (change)="onAssignTesterSelect($event)"
+        [value]="selectedAssignTesterId() ?? ''" [disabled]="loading()" [title]="'Select a user to assign'">
         <option value="">Select a user…</option>
         @for (opt of testerOptions(); track opt.value) {
-          <option [value]="opt.value" [title]="opt.label">
-            {{ opt.label }}
-          </option>
+        <option [value]="opt.value" [title]="opt.label">
+          {{ opt.label }}
+        </option>
         }
       </select>
       @if (loading()) {
-        <div class="text-xs text-base-content/60 mt-1">
-          <span class="loading loading-spinner loading-xs"></span>
-          Loading users...
-        </div>
+      <div class="text-xs text-base-content/60 mt-1">
+        <span class="loading loading-spinner loading-xs"></span>
+        Loading users...
+      </div>
       }
     </div>
   </div>
 </app-generic-modal>
 
 <!-- View Assigned Users Modal -->
-<app-generic-modal
-  [isOpen]="isAssignedModalOpen()"
-  [title]="'Assigned Users'"
-  [actions]="assignedModalActions()"
-  size="lg"
-  (close)="closeAssignedModal()"
-  (actionClick)="onAssignedModalAction($event)"
->
-  <div class="text-sm text-base-content/70 p-3 bg-base-200/30 rounded-lg border border-base-300/20 mb-4 modal-context-info">
+<app-generic-modal [isOpen]="isAssignedModalOpen()" [title]="'Assigned Users'" [actions]="assignedModalActions()"
+  size="lg" (close)="closeAssignedModal()" (actionClick)="onAssignedModalAction($event)">
+  <div
+    class="text-sm text-base-content/70 p-3 bg-base-200/30 rounded-lg border border-base-300/20 mb-4 modal-context-info">
     @if (activeTab() === 'wifi' && selectedWifiProfile(); as p) {
-      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
-        <span class="font-medium text-base-content/90 flex-shrink-0">Profile:</span>
-        <div class="min-w-0 flex-1">
-          <app-truncated-text 
-            [text]="p.name + ' (SSID: ' + p.ssid + ')'"
-            [maxWidth]="'300px'"
-          ></app-truncated-text>
-        </div>
+    <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+      <span class="font-medium text-base-content/90 flex-shrink-0">Profile:</span>
+      <div class="min-w-0 flex-1">
+        <app-truncated-text [text]="p.name + ' (SSID: ' + p.ssid + ')'" [maxWidth]="'300px'"></app-truncated-text>
       </div>
+    </div>
     }
     @if (activeTab() === 'labels' && selectedLabelTemplate(); as l) {
-      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
-        <span class="font-medium text-base-content/90 flex-shrink-0">Label Template:</span>
-        <div class="min-w-0 flex-1">
-          <app-truncated-text 
-            [text]="l.name"
-            [maxWidth]="'300px'"
-          ></app-truncated-text>
-        </div>
+    <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+      <span class="font-medium text-base-content/90 flex-shrink-0">Label Template:</span>
+      <div class="min-w-0 flex-1">
+        <app-truncated-text [text]="l.name" [maxWidth]="'300px'"></app-truncated-text>
       </div>
+    </div>
     }
     @if (activeTab() === 'workflows' && selectedWorkflow(); as w) {
-      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
-        <span class="font-medium text-base-content/90 flex-shrink-0">Workflow:</span>
-        <div class="min-w-0 flex-1">
-          <app-truncated-text 
-            [text]="w.name"
-            [maxWidth]="'300px'"
-          ></app-truncated-text>
-        </div>
+    <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+      <span class="font-medium text-base-content/90 flex-shrink-0">Workflow:</span>
+      <div class="min-w-0 flex-1">
+        <app-truncated-text [text]="w.name" [maxWidth]="'300px'"></app-truncated-text>
       </div>
+    </div>
     }
     @if (activeTab() === 'ota-updates' && selectedOtaUpdate(); as ota) {
-      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
-        <span class="font-medium text-base-content/90 flex-shrink-0">OTA Update:</span>
-        <div class="min-w-0 flex-1">
-          <app-truncated-text 
-            [text]="ota.version + ' (' + ota.target_os + ' ' + ota.target_architecture + ')'"
-            [maxWidth]="'300px'"
-          ></app-truncated-text>
-        </div>
+    <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+      <span class="font-medium text-base-content/90 flex-shrink-0">OTA Update:</span>
+      <div class="min-w-0 flex-1">
+        <app-truncated-text [text]="ota.version + ' (' + ota.target_os + ' ' + ota.target_architecture + ')'"
+          [maxWidth]="'300px'"></app-truncated-text>
       </div>
+    </div>
     }
     @if (activeTab() === 'questions' && selectedDiagnosticQuestionSet(); as qs) {
-      <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
-        <span class="font-medium text-base-content/90 flex-shrink-0">Question Set:</span>
-        <div class="min-w-0 flex-1">
-          <app-truncated-text 
-            [text]="qs.title"
-            [maxWidth]="'300px'"
-          ></app-truncated-text>
-        </div>
+    <div class="flex flex-col sm:flex-row sm:gap-2 sm:items-start">
+      <span class="font-medium text-base-content/90 flex-shrink-0">Question Set:</span>
+      <div class="min-w-0 flex-1">
+        <app-truncated-text [text]="qs.title" [maxWidth]="'300px'"></app-truncated-text>
       </div>
+    </div>
     }
   </div>
   @if (assignedTestersLoading()) {
-    <div class="flex items-center justify-center py-8">
-      <span class="loading loading-spinner loading-md mr-2"></span>
-      <span class="text-base-content/70">Loading assigned users...</span>
-    </div>
+  <div class="flex items-center justify-center py-8">
+    <span class="loading loading-spinner loading-md mr-2"></span>
+    <span class="text-base-content/70">Loading assigned users...</span>
+  </div>
   } @else {
-    <div class="overflow-x-auto border rounded-box">
-      <table class="table w-full">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Name</th>
-            <th class="text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (u of assignedTesters(); track u.id) {
-            <tr>
-              <td>{{ u.id }}</td>
-              <td>
-                <app-truncated-text 
-                  [text]="u.user_name"
-                  [maxWidth]="'120px'"
-                ></app-truncated-text>
-              </td>
-              <td>
-                <app-truncated-text 
-                  [text]="u.name"
-                  [maxWidth]="'140px'"
-                ></app-truncated-text>
-              </td>
-              <td class="text-right">
-                <button 
-                  class="btn btn-ghost btn-xs text-error" 
-                  [disabled]="loading() || assignedTestersLoading()"
-                  [class.loading]="loading()"
-                  (click)="unassignTester(u.id)"
-                  [title]="'Unassign ' + u.user_name"
-                >
-                  @if (loading()) {
-                    <span class="loading loading-spinner loading-xs"></span>
-                  } @else {
-                    Unassign
-                  }
-                </button>
-              </td>
-            </tr>
-          }
-          @if (!assignedTesters().length) {
-            <tr>
-              <td colspan="4" class="text-center py-4 text-base-content/60">No users assigned.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+  <div class="overflow-x-auto border rounded-box">
+    <table class="table w-full">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Name</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (u of assignedTesters(); track u.id) {
+        <tr>
+          <td>{{ u.id }}</td>
+          <td>
+            <app-truncated-text [text]="u.user_name" [maxWidth]="'120px'"></app-truncated-text>
+          </td>
+          <td>
+            <app-truncated-text [text]="u.name" [maxWidth]="'140px'"></app-truncated-text>
+          </td>
+          <td class="text-right">
+            <button class="btn btn-ghost btn-xs text-error" [disabled]="loading() || assignedTestersLoading()"
+              [class.loading]="loading()" (click)="unassignTester(u.id)" [title]="'Unassign ' + u.user_name">
+              @if (loading()) {
+              <span class="loading loading-spinner loading-xs"></span>
+              } @else {
+              Unassign
+              }
+            </button>
+          </td>
+        </tr>
+        }
+        @if (!assignedTesters().length) {
+        <tr>
+          <td colspan="4" class="text-center py-4 text-base-content/60">No users assigned.</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
   }
 </app-generic-modal>
 
 <!-- Grade Modal -->
-<app-generic-modal
-  [isOpen]="isGradeModalOpen()"
-  [title]="selectedGrade() ? 'Edit Grade' : 'Add Grade'"
-  [actions]="gradeModalActions()"
-  size="md"
-  (close)="closeGradeModal()"
-  (actionClick)="onGradeModalAction($event)"
->
+<app-generic-modal [isOpen]="isGradeModalOpen()" [title]="selectedGrade() ? 'Edit Grade' : 'Add Grade'"
+  [actions]="gradeModalActions()" size="md" (close)="closeGradeModal()" (actionClick)="onGradeModalAction($event)">
   <div class="space-y-4">
     <div class="form-control w-full">
       <label class="block mb-2">
         <span class="text-sm font-medium">Name <span class="text-error">*</span></span>
       </label>
-      <input 
-        type="text" 
-        class="input input-accent w-full" 
-        placeholder="Enter grade name (letters only)"
-        [value]="gradeForm().name"
-        (input)="onGradeNameChange($event)"
-        [disabled]="loading()"
-        maxlength="100"
-      />
+      <input type="text" class="input input-accent w-full" placeholder="Enter grade name (letters only)"
+        [value]="gradeForm().name" (input)="onGradeNameChange($event)" [disabled]="loading()" maxlength="100" />
       @if (gradeNameError()) {
-        <div class="mt-1">
-          <span class="text-xs text-error">{{ gradeNameError() }}</span>
-        </div>
+      <div class="mt-1">
+        <span class="text-xs text-error">{{ gradeNameError() }}</span>
+      </div>
       }
     </div>
-    
+
     <div class="form-control w-full">
       <label class="block mb-2">
         <span class="text-sm font-medium">Color <span class="text-error">*</span></span>
       </label>
       <div class="flex items-center gap-3">
-        <input 
-          type="color" 
-          class="input input-accent w-16 h-12 p-1 border-2"
-          [value]="gradeForm().color"
-          (input)="onGradeColorChange($event)"
-          [disabled]="loading()"
-          [title]="gradeForm().color"
-        />
-        <input 
-          type="text" 
-          class="input input-accent flex-1" 
-          placeholder="#000000"
-          [value]="gradeForm().color"
-          (input)="onGradeColorChange($event)"
-          [disabled]="loading()"
-          pattern="^#[0-9A-Fa-f]{6}$"
-          [title]="gradeForm().color"
-        />
-        <div 
-          class="w-12 h-12 rounded border-2 border-base-300"
-          [style.background-color]="gradeForm().color"
-          [title]="gradeForm().color"
-        ></div>
+        <input type="color" class="input input-accent w-16 h-12 p-1 border-2" [value]="gradeForm().color"
+          (input)="onGradeColorChange($event)" [disabled]="loading()" [title]="gradeForm().color" />
+        <input type="text" class="input input-accent flex-1" placeholder="#000000" [value]="gradeForm().color"
+          (input)="onGradeColorChange($event)" [disabled]="loading()" pattern="^#[0-9A-Fa-f]{6}$"
+          [title]="gradeForm().color" />
+        <div class="w-12 h-12 rounded border-2 border-base-300" [style.background-color]="gradeForm().color"
+          [title]="gradeForm().color"></div>
       </div>
       <div class="label">
         <span class="label-text-alt text-base-content/60">Choose a color to represent this grade</span>
@@ -318,337 +219,248 @@
 </app-generic-modal>
 
 <!-- OTA Update Modal -->
-<app-generic-modal
-  [isOpen]="isOtaUpdateModalOpen()"
-  [title]="selectedOtaUpdate() ? 'Edit OTA Update' : 'Add OTA Update'"
-  [actions]="otaUpdateModalActions()"
-  size="lg"
-  (close)="closeOtaUpdateModal()"
-  (actionClick)="onOtaUpdateModalAction($event)"
->
+<app-generic-modal [isOpen]="isOtaUpdateModalOpen()"
+  [title]="selectedOtaUpdate() ? 'Edit OTA Update' : 'Add OTA Update'" [actions]="otaUpdateModalActions()" size="lg"
+  (close)="closeOtaUpdateModal()" (actionClick)="onOtaUpdateModalAction($event)">
   <div class="space-y-4">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="form-control">
         <label class="label mb-1">
           <span class="label-text">Version <span class="text-error">*</span></span>
         </label>
-        <input 
-          type="text" 
-          class="input input-accent" 
-          placeholder="e.g., 1.0.0"
-          [value]="otaUpdateForm().version"
-          (input)="onOtaUpdateVersionChange($event)"
-          [disabled]="loading()"
-          maxlength="50"
-          [class.input-error]="otaUpdateVersionError()"
-        />
+        <input type="text" class="input input-accent" placeholder="e.g., 1.0.0" [value]="otaUpdateForm().version"
+          (input)="onOtaUpdateVersionChange($event)" [disabled]="loading()" maxlength="50"
+          [class.input-error]="otaUpdateVersionError()" />
         @if (otaUpdateVersionError()) {
-          <div class="mt-1">
-            <span class="text-xs text-error">{{ otaUpdateVersionError() }}</span>
-          </div>
+        <div class="mt-1">
+          <span class="text-xs text-error">{{ otaUpdateVersionError() }}</span>
+        </div>
         }
       </div>
-      
+
       <div class="form-control">
         <label class="label mb-1">
           <span class="label-text">Target OS <span class="text-error">*</span></span>
         </label>
-        <select 
-          class="select select-accent" 
-          [value]="otaUpdateForm().target_os"
-          (change)="onOtaUpdateTargetOsChange($event)"
-          [disabled]="loading()"
-        >
+        <select class="select select-accent" [value]="otaUpdateForm().target_os"
+          (change)="onOtaUpdateTargetOsChange($event)" [disabled]="loading()">
           <option value="window">Windows</option>
           <option value="macos">macOS</option>
         </select>
       </div>
     </div>
-    
+
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="form-control">
         <label class="label mb-1">
           <span class="label-text">Architecture <span class="text-error">*</span></span>
         </label>
-        <select 
-          class="select select-accent" 
-          [value]="otaUpdateForm().target_architecture"
-          (change)="onOtaUpdateArchitectureChange($event)"
-          [disabled]="loading()"
-        >
+        <select class="select select-accent" [value]="otaUpdateForm().target_architecture"
+          (change)="onOtaUpdateArchitectureChange($event)" [disabled]="loading()">
           <option value="x86">x86</option>
           <option value="arm">ARM</option>
         </select>
       </div>
-      
+
       <div class="form-control">
         <label class="label mb-1">
           <span class="label-text">Release Channel <span class="text-error">*</span></span>
         </label>
-        <select 
-          class="select select-accent" 
-          [value]="otaUpdateForm().release_channel"
-          (change)="onOtaUpdateChannelChange($event)"
-          [disabled]="loading()"
-        >
+        <select class="select select-accent" [value]="otaUpdateForm().release_channel"
+          (change)="onOtaUpdateChannelChange($event)" [disabled]="loading()">
           <option value="stable">Stable</option>
           <option value="beta">Beta</option>
           <option value="dev">Development</option>
         </select>
       </div>
     </div>
-    
+
     <!-- File Upload Section -->
     <div class="form-control w-full">
       <label class="block mb-2">
         <span class="text-sm font-medium">Upload ZIP File</span>
       </label>
-      <input 
-        #otaFileInput
-        type="file" 
-        class="file-input file-input-bordered file-input-accent w-full" 
-        accept=".zip,application/zip,application/x-zip-compressed"
-        (change)="onOtaUpdateFileChange($event)"
-        [disabled]="loading()"
-        [class.file-input-error]="otaUpdateFileError()"
-      />
+      <input #otaFileInput type="file" class="file-input file-input-bordered file-input-accent w-full"
+        accept=".zip,application/zip,application/x-zip-compressed" (change)="onOtaUpdateFileChange($event)"
+        [disabled]="loading()" [class.file-input-error]="otaUpdateFileError()" />
       @if (otaUpdateFileError()) {
-        <div class="mt-1">
-          <span class="text-xs text-error">{{ otaUpdateFileError() }}</span>
-        </div>
+      <div class="mt-1">
+        <span class="text-xs text-error">{{ otaUpdateFileError() }}</span>
+      </div>
       }
       <div class="label mt-2">
-        
+
       </div>
       @if (otaUpdateForm().file) {
-        <div class="mt-2 p-2 bg-base-200 rounded-lg">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-              </svg>
-              <span class="text-sm font-medium">{{ otaUpdateForm().file?.name }}</span>
-              <span class="text-xs text-base-content/60">({{ (otaUpdateForm().file?.size || 0) / 1024 / 1024 | number:'1.2-2' }} MB)</span>
-            </div>
-            <button 
-              type="button"
-              class="btn btn-ghost btn-xs text-error"
-              (click)="removeOtaUpdateFile(otaFileInput)"
-              [disabled]="loading()"
-            >
-              Remove
-            </button>
+      <div class="mt-2 p-2 bg-base-200 rounded-lg">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <span class="text-sm font-medium">{{ otaUpdateForm().file?.name }}</span>
+            <span class="text-xs text-base-content/60">({{ (otaUpdateForm().file?.size || 0) / 1024 / 1024 |
+              number:'1.2-2' }} MB)</span>
           </div>
+          <button type="button" class="btn btn-ghost btn-xs text-error" (click)="removeOtaUpdateFile(otaFileInput)"
+            [disabled]="loading()">
+            Remove
+          </button>
         </div>
+      </div>
       }
     </div>
-    
-    
+
+
   </div>
 </app-generic-modal>
 
 <!-- Tenant Profile Modal -->
-<app-generic-modal
-  [isOpen]="isTenantProfileModalOpen()"
-  [title]="'Update Tenant Information'"
-  [actions]="tenantProfileModalActions()"
-  size="lg"
-  (close)="closeTenantProfileModal()"
-  (actionClick)="onTenantProfileModalAction($event)"
->
+<app-generic-modal [isOpen]="isTenantProfileModalOpen()" [title]="'Update Tenant Information'"
+  [actions]="tenantProfileModalActions()" size="lg" (close)="closeTenantProfileModal()"
+  (actionClick)="onTenantProfileModalAction($event)">
   <div class="space-y-6">
     <!-- Tenant Name Field -->
     <div class="form-control w-full">
       <label class="label">
         <span class="label-text font-medium">Tenant Name <span class="text-error">*</span></span>
       </label>
-      <input 
-        type="text" 
-        class="input input-bordered input-accent w-full" 
-        placeholder="Enter tenant name"
-        [value]="tenantProfileForm().name"
-        (input)="onTenantProfileNameChange($event)"
-        [disabled]="loading()"
-        maxlength="100"
-      />
+      <input type="text" class="input input-bordered input-accent w-full" placeholder="Enter tenant name"
+        [value]="tenantProfileForm().name" (input)="onTenantProfileNameChange($event)" [disabled]="loading()"
+        maxlength="100" />
     </div>
-    
+
     <!-- Description Field -->
     <div class="form-control w-full">
       <label class="label">
         <span class="label-text font-medium">Description</span>
       </label>
-      <textarea 
-        class="textarea textarea-bordered textarea-accent w-full resize-none" 
-        placeholder="Enter tenant description"
-        [value]="tenantProfileForm().description"
-        (input)="onTenantProfileDescriptionChange($event)"
-        [disabled]="loading()"
-        rows="3"
-        maxlength="500"
-      ></textarea>
+      <textarea class="textarea textarea-bordered textarea-accent w-full resize-none"
+        placeholder="Enter tenant description" [value]="tenantProfileForm().description"
+        (input)="onTenantProfileDescriptionChange($event)" [disabled]="loading()" rows="3" maxlength="500"></textarea>
       <div class="label">
         <span class="label-text-alt text-base-content/60">Optional description for your tenant</span>
       </div>
     </div>
-    
+
     <!-- Logo Upload Field -->
     <div class="form-control w-full">
       <label class="label">
         <span class="label-text font-medium">Logo</span>
       </label>
-      <input 
-        type="file" 
-        class="file-input file-input-bordered file-input-accent w-full" 
-        accept="image/*"
-        (change)="onTenantProfileLogoChange($event)"
-        [disabled]="loading()"
-      />
+      <input type="file" class="file-input file-input-bordered file-input-accent w-full" accept="image/*"
+        (change)="onTenantProfileLogoChange($event)" [disabled]="loading()" />
       <div class="label">
         <span class="label-text-alt text-base-content/60">Upload a logo for your tenant (PNG, JPG, etc.)</span>
       </div>
     </div>
-      
+
     <!-- Logo Preview and Current Logo -->
     @if (tenantProfilePreviewUrl() || (currentTenant()?.logo && !tenantProfilePreviewUrl())) {
-      <div class="form-control w-full">
-        <label class="label">
-          <span class="label-text font-medium">
-            @if (tenantProfilePreviewUrl()) {
-              Preview
-            } @else {
-              Current Logo
-            }
-          </span>
-        </label>
-        <div class="flex justify-start">
-          <div class="w-32 h-32 border-2 border-base-300 rounded-lg flex items-center justify-center overflow-hidden bg-base-100">
-            @if (tenantProfilePreviewUrl()) {
-              <img 
-                [src]="tenantProfilePreviewUrl()!" 
-                alt="Logo preview" 
-                class="max-w-full max-h-full object-contain"
-              />
-            } @else {
-              <img 
-                [src]="currentTenant()!.logo!" 
-                alt="Current logo" 
-                class="max-w-full max-h-full object-contain"
-              />
-            }
-          </div>
+    <div class="form-control w-full">
+      <label class="label">
+        <span class="label-text font-medium">
+          @if (tenantProfilePreviewUrl()) {
+          Preview
+          } @else {
+          Current Logo
+          }
+        </span>
+      </label>
+      <div class="flex justify-start">
+        <div
+          class="w-32 h-32 border-2 border-base-300 rounded-lg flex items-center justify-center overflow-hidden bg-base-100">
+          @if (tenantProfilePreviewUrl()) {
+          <img [src]="tenantProfilePreviewUrl()!" alt="Logo preview" class="max-w-full max-h-full object-contain" />
+          } @else {
+          <img [src]="currentTenant()!.logo!" alt="Current logo" class="max-w-full max-h-full object-contain" />
+          }
         </div>
       </div>
+    </div>
     }
   </div>
 </app-generic-modal>
 
 <!-- API Key Create Modal -->
-<app-generic-modal
-  [isOpen]="isApiKeyCreateModalOpen()"
-  [title]="createdApiKey() ? 'API Key Created' : 'Create API Key'"
-  [actions]="createdApiKey() ? [] : apiKeyCreateModalActions()"
-  size="lg"
-  [closable]="!loading()"
-  (close)="closeApiKeyCreateModal()"
-  (actionClick)="onApiKeyCreateModalAction($event)"
->
+<app-generic-modal [isOpen]="isApiKeyCreateModalOpen()" [title]="createdApiKey() ? 'API Key Created' : 'Create API Key'"
+  [actions]="createdApiKey() ? [] : apiKeyCreateModalActions()" size="lg" [closable]="!loading()"
+  (close)="closeApiKeyCreateModal()" (actionClick)="onApiKeyCreateModalAction($event)">
   @if (createdApiKey(); as created) {
-    <div class="space-y-4">
-      <div class="alert alert-success">
-        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        <span>API Key created successfully!</span>
-      </div>
-      
-      <div class="alert alert-warning">
-        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-        <span>Copy this key now! It won't be shown again.</span>
-      </div>
-      
-      <div class="form-control">
-        <label class="label">
-          <span class="label-text font-medium">API Key Name</span>
-        </label>
-        <input 
-          type="text" 
-          class="input input-bordered" 
-          [value]="created.name"
-          readonly
-        />
-      </div>
-      
-      <div class="form-control">
-        <label class="label">
-          <span class="label-text font-medium">API Key</span>
-        </label>
-        <div class="flex gap-2">
-          <input 
-            type="text" 
-            class="input input-bordered flex-1 font-mono text-sm" 
-            [value]="created.key"
-            readonly
-          />
-          <button 
-            class="btn btn-accent"
-            (click)="copyApiKey(created.key)"
-          >
-            Copy
-          </button>
-        </div>
-      </div>
-      
-      <div class="flex justify-end mt-4">
-        <button class="btn btn-primary" (click)="closeApiKeyCreateModal()">
-          Done
+  <div class="space-y-4">
+    <div class="alert alert-success">
+      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>API Key created successfully!</span>
+    </div>
+
+    <div class="alert alert-warning">
+      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      <span>Copy this key now! It won't be shown again.</span>
+    </div>
+
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium">API Key Name</span>
+      </label>
+      <input type="text" class="input input-bordered" [value]="created.name" readonly />
+    </div>
+
+    <div class="form-control">
+      <label class="label">
+        <span class="label-text font-medium">API Key</span>
+      </label>
+      <div class="flex gap-2">
+        <input type="text" class="input input-bordered flex-1 font-mono text-sm" [value]="created.key" readonly />
+        <button class="btn btn-accent" (click)="copyApiKey(created.key)">
+          Copy
         </button>
       </div>
     </div>
-  } @else {
-    <div class="space-y-6">
-      <div class="form-control w-full">
-        <label class="block mb-2">
-          <span class="text-sm font-medium">Name <span class="text-error">*</span></span>
-        </label>
-        <input 
-          type="text" 
-          class="input input-accent w-full" 
-          placeholder="Enter API key name"
-          [value]="apiKeyCreateForm().name"
-          (input)="onApiKeyNameChange($event)"
-          [disabled]="loading()"
-          maxlength="255"
-        />
-      </div>
-      
-      <div class="form-control w-full">
-        <label class="block mb-2">
-          <span class="text-sm font-medium">Tenant <span class="text-error">*</span></span>
-        </label>
-        <select 
-          class="select select-accent w-full"
-          [value]="apiKeyCreateForm().tenant_id ?? ''"
-          (change)="onApiKeyTenantChange($event)"
-          [disabled]="loading()"
-        >
-          <option value="">Select tenant...</option>
-          @for (opt of tenantOptions(); track opt.value) {
-            <option [value]="opt.value">{{ opt.label }}</option>
-          }
-        </select>
-      </div>
+
+    <div class="flex justify-end mt-4">
+      <button class="btn btn-primary" (click)="closeApiKeyCreateModal()">
+        Done
+      </button>
     </div>
+  </div>
+  } @else {
+  <div class="space-y-6">
+    <div class="form-control w-full">
+      <label class="block mb-2">
+        <span class="text-sm font-medium">Name <span class="text-error">*</span></span>
+      </label>
+      <input type="text" class="input input-accent w-full" placeholder="Enter API key name"
+        [value]="apiKeyCreateForm().name" (input)="onApiKeyNameChange($event)" [disabled]="loading()" maxlength="255" />
+    </div>
+
+    <div class="form-control w-full">
+      <label class="block mb-2">
+        <span class="text-sm font-medium">Tenant <span class="text-error">*</span></span>
+      </label>
+      <select class="select select-accent w-full" [value]="apiKeyCreateForm().tenant_id ?? ''"
+        (change)="onApiKeyTenantChange($event)" [disabled]="loading()">
+        <option value="">Select tenant...</option>
+        @for (opt of tenantOptions(); track opt.value) {
+        <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
+    </div>
+  </div>
   }
 </app-generic-modal>
 
 <!-- Diagnostic Question Set Assignment Modal -->
-<app-generic-modal
-  [isOpen]="isDiagnosticAssignModalOpen()"
-  [title]="'Assign Question Set to User'"
-  [actions]="diagnosticAssignModalActions()"
-  size="md"
-  (close)="closeDiagnosticAssignModal()"
-  (actionClick)="onDiagnosticAssignModalAction($event)"
->
+<app-generic-modal [isOpen]="isDiagnosticAssignModalOpen()" [title]="'Assign Question Set to User'"
+  [actions]="diagnosticAssignModalActions()" size="md" (close)="closeDiagnosticAssignModal()"
+  (actionClick)="onDiagnosticAssignModalAction($event)">
   <div class="space-y-4">
     <!-- Display selected question set (read-only) -->
     <div class="form-control">
@@ -657,7 +469,8 @@
       </label>
       <div class="alert alert-info">
         <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
         <span class="font-medium">{{ getSelectedDiagnosticQuestionSetTitle() }}</span>
       </div>
@@ -668,15 +481,11 @@
       <label class="label mb-1">
         <span class="label-text">Select User <span class="text-error">*</span></span>
       </label>
-      <select 
-        class="select select-accent select-bordered w-full" 
-        (change)="onDiagnosticTesterSelect($event)"
-        [value]="selectedDiagnosticTesterId() ?? ''"
-        [disabled]="loading()"
-      >
+      <select class="select select-accent select-bordered w-full" (change)="onDiagnosticTesterSelect($event)"
+        [value]="selectedDiagnosticTesterId() ?? ''" [disabled]="loading()">
         <option value="">Select a user…</option>
         @for (opt of testerOptions(); track opt.value) {
-          <option [value]="opt.value">{{ opt.label }}</option>
+        <option [value]="opt.value">{{ opt.label }}</option>
         }
       </select>
     </div>
@@ -684,17 +493,11 @@
 </app-generic-modal>
 
 <!-- Delete Confirmation Modal -->
-<app-generic-modal
-  [isOpen]="isDeleteModalOpen()"
-  [title]="'Confirm Deletion'"
-  [actions]="deleteModalActions()"
-  size="md"
-  (close)="closeDeleteModal()"
-  (actionClick)="onDeleteModalAction($event)"
->
+<app-generic-modal [isOpen]="isDeleteModalOpen()" [title]="'Confirm Deletion'" [actions]="deleteModalActions()"
+  size="md" (close)="closeDeleteModal()" (actionClick)="onDeleteModalAction($event)">
   <div class="text-sm text-base-content/70">
     @if (deleteContext(); as ctx) {
-      <p>Are you sure you want to delete this {{ ctx.tab.slice(0, -1) }}? This action cannot be undone.</p>
+    <p>Are you sure you want to delete this {{ ctx.tab.slice(0, -1) }}? This action cannot be undone.</p>
     }
   </div>
 </app-generic-modal>

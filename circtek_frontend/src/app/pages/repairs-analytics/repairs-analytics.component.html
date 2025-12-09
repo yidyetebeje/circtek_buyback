@@ -11,7 +11,7 @@
   <div class="card bg-base-100 shadow-sm">
     <div class="card-body">
       <h2 class="card-title text-lg">Filters</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
         <!-- Date From -->
         <div class="form-control">
           <label class="label">
@@ -20,12 +20,7 @@
               Date From
             </span>
           </label>
-          <input 
-            type="date" 
-            class="input input-bordered" 
-            [(ngModel)]="dateFrom"
-            (change)="loadAnalytics()"
-          />
+          <input type="date" class="input input-bordered" [(ngModel)]="dateFrom" (change)="loadAnalytics()" />
         </div>
 
         <!-- Date To -->
@@ -36,12 +31,7 @@
               Date To
             </span>
           </label>
-          <input 
-            type="date" 
-            class="input input-bordered" 
-            [(ngModel)]="dateTo"
-            (change)="loadAnalytics()"
-          />
+          <input type="date" class="input input-bordered" [(ngModel)]="dateTo" (change)="loadAnalytics()" />
         </div>
 
         <!-- Warehouse Filter -->
@@ -52,14 +42,10 @@
               Warehouse
             </span>
           </label>
-          <select 
-            class="select select-bordered" 
-            [(ngModel)]="selectedWarehouse"
-            (change)="loadAnalytics()"
-          >
+          <select class="select select-bordered" [(ngModel)]="selectedWarehouse" (change)="loadAnalytics()">
             <option [ngValue]="null">All Warehouses</option>
             @for (warehouse of warehouses(); track warehouse.id) {
-              <option [ngValue]="warehouse.id">{{ warehouse.name }}</option>
+            <option [ngValue]="warehouse.id">{{ warehouse.name }}</option>
             }
           </select>
         </div>
@@ -67,16 +53,15 @@
         <!-- Model Filter -->
         <div class="form-control">
           <label class="label">
-            <span class="label-text">Phone Model</span>
+            <span class="label-text flex items-center gap-2">
+              <lucide-icon [img]="PackageIcon" class="size-4"></lucide-icon>
+              Phone Model
+            </span>
           </label>
-          <select 
-            class="select select-bordered" 
-            [(ngModel)]="selectedModel"
-            (change)="loadAnalytics()"
-          >
+          <select class="select select-bordered" [(ngModel)]="selectedModel" (change)="loadAnalytics()">
             <option value="">All Models</option>
             @for (model of models(); track model) {
-              <option [value]="model">{{ model }}</option>
+            <option [value]="model">{{ model }}</option>
             }
           </select>
         </div>
@@ -84,16 +69,15 @@
         <!-- Repair Reason Filter -->
         <div class="form-control">
           <label class="label">
-            <span class="label-text">Repair Reason</span>
+            <span class="label-text flex items-center gap-2">
+              <lucide-icon [img]="ActivityIcon" class="size-4"></lucide-icon>
+              Repair Reason
+            </span>
           </label>
-          <select 
-            class="select select-bordered" 
-            [(ngModel)]="selectedReason"
-            (change)="loadAnalytics()"
-          >
+          <select class="select select-bordered" [(ngModel)]="selectedReason" (change)="loadAnalytics()">
             <option [ngValue]="null">All Reasons</option>
             @for (reason of reasons(); track reason.id) {
-              <option [ngValue]="reason.id">{{ reason.name }}</option>
+            <option [ngValue]="reason.id">{{ reason.name }}</option>
             }
           </select>
         </div>
@@ -112,492 +96,457 @@
   </div>
 
   @if (loading()) {
-    <!-- Loading State -->
-    <div class="flex justify-center items-center py-20">
-      <span class="loading loading-spinner loading-lg"></span>
-    </div>
+  <!-- Loading State -->
+  <div class="flex justify-center items-center py-20">
+    <span class="loading loading-spinner loading-lg"></span>
+  </div>
   } @else if (summary()) {
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-      <!-- Total Repairs -->
-      <div class="stat bg-base-100 shadow-sm rounded-lg">
-        <div class="stat-figure text-primary">
-          <lucide-icon [img]="ActivityIcon" class="size-8"></lucide-icon>
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <!-- Total Repairs -->
+    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+      <div class="flex items-center justify-between">
+        <div class="min-w-0 flex-1 mr-3">
+          <p class="text-sm font-medium text-base-content/70">Total Repairs</p>
+          <p class="text-3xl font-bold text-primary">{{ formatNumber(summary()!.total_repairs) }}</p>
         </div>
-        <div class="stat-title">Total Repairs</div>
-        <div class="stat-value text-primary">{{ formatNumber(summary()!.total_repairs) }}</div>
-        <div class="stat-desc">All repair records</div>
-      </div>
-
-      <!-- Total Parts Used -->
-      <div class="stat bg-base-100 shadow-sm rounded-lg">
-        <div class="stat-figure text-secondary">
-          <lucide-icon [img]="PackageIcon" class="size-8"></lucide-icon>
+        <div class="bg-primary/20 p-3 rounded-full flex-shrink-0">
+          <lucide-icon [img]="ActivityIcon" class="size-6 text-primary"></lucide-icon>
         </div>
-        <div class="stat-title">Total Parts Used</div>
-        <div class="stat-value text-secondary">{{ formatNumber(summary()!.total_parts_used) }}</div>
-        <div class="stat-desc">Unique part entries</div>
       </div>
-
-      <!-- Total Quantity -->
-      <div class="stat bg-base-100 shadow-sm rounded-lg">
-        <div class="stat-figure text-accent">
-          <lucide-icon [img]="TrendingUpIcon" class="size-8"></lucide-icon>
-        </div>
-        <div class="stat-title">Total Quantity</div>
-        <div class="stat-value text-accent">{{ formatNumber(summary()!.total_quantity_consumed) }}</div>
-        <div class="stat-desc">Parts consumed</div>
-      </div>
-
-      <!-- Total Cost -->
-      <div class="stat bg-base-100 shadow-sm rounded-lg">
-        <div class="stat-figure text-success">
-          <lucide-icon [img]="DollarSignIcon" class="size-8"></lucide-icon>
-        </div>
-        <div class="stat-title">Total Spend</div>
-        <div class="stat-value text-success text-2xl">{{ summary()!.total_cost | appCurrency }}</div>
-        <div class="stat-desc">All repairs</div>
-      </div>
-
-      <!-- Average Cost -->
-      <div class="stat bg-base-100 shadow-sm rounded-lg">
-        <div class="stat-figure text-warning">
-          <lucide-icon [img]="DollarSignIcon" class="size-8"></lucide-icon>
-        </div>
-        <div class="stat-title">Avg Cost/Device</div>
-        <div class="stat-value text-warning text-2xl">{{ summary()!.average_cost_per_repair | appCurrency }}</div>
-        <div class="stat-desc">Per unique device</div>
-      </div>
+      <div class="mt-4 text-sm text-base-content/60">All repair records</div>
     </div>
 
-    <!-- Tabs Navigation -->
-    <nav class="mb-6 overflow-x-auto">
-      <div role="tablist" class="tabs tabs-boxed bg-base-100 p-1 rounded-xl w-fit">
-        <button
-          role="tab"
-          class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
-          [class.bg-primary]="activeTab() === 'overview'"
-          [class.text-white]="activeTab() === 'overview'"
-          [class.text-base-content]="activeTab() !== 'overview'"
-          [class.hover:bg-primary/10]="activeTab() !== 'overview'"
-          (click)="activeTab.set('overview')"
-        >
-          <span>Overview & Warehouses</span>
-        </button>
-        <button
-          role="tab"
-          class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
-          [class.bg-primary]="activeTab() === 'by-model'"
-          [class.text-white]="activeTab() === 'by-model'"
-          [class.text-base-content]="activeTab() !== 'by-model'"
-          [class.hover:bg-primary/10]="activeTab() !== 'by-model'"
-          (click)="activeTab.set('by-model')"
-        >
-          <span>By Phone Model</span>
-        </button>
-        <button
-          role="tab"
-          class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
-          [class.bg-primary]="activeTab() === 'by-reason'"
-          [class.text-white]="activeTab() === 'by-reason'"
-          [class.text-base-content]="activeTab() !== 'by-reason'"
-          [class.hover:bg-primary/10]="activeTab() !== 'by-reason'"
-          (click)="activeTab.set('by-reason')"
-        >
-          <span>By Repair Reason</span>
-        </button>
-        <button
-          role="tab"
-          class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
-          [class.bg-primary]="activeTab() === 'by-user'"
-          [class.text-white]="activeTab() === 'by-user'"
-          [class.text-base-content]="activeTab() !== 'by-user'"
-          [class.hover:bg-primary/10]="activeTab() !== 'by-user'"
-          (click)="activeTab.set('by-user')"
-        >
-          <span>By Repairer</span>
-        </button>
-        <button
-          role="tab"
-          class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
-          [class.bg-primary]="activeTab() === 'by-imei'"
-          [class.text-white]="activeTab() === 'by-imei'"
-          [class.text-base-content]="activeTab() !== 'by-imei'"
-          [class.hover:bg-primary/10]="activeTab() !== 'by-imei'"
-          (click)="activeTab.set('by-imei'); loadIMEIAnalytics()"
-        >
-          <span>By IMEI</span>
-        </button>
-      </div>
-    </nav>
-
-    <!-- Overview Tab: Warehouse Analytics -->
-    @if (activeTab() === 'overview') {
-      <div class="card bg-base-100 shadow-sm">
-      <div class="card-body">
-        <h2 class="card-title">
-          <lucide-icon [img]="WarehouseIcon" class="size-5"></lucide-icon>
-          Per Warehouse Statistics
-        </h2>
-        
-        @if (warehouseData().length === 0) {
-          <div class="alert alert-info">
-            <span>No warehouse data available for the selected filters.</span>
-          </div>
-        } @else {
-          <div class="overflow-x-auto">
-            <table class="table table-zebra">
-              <thead>
-                <tr>
-                  <th>Warehouse</th>
-                  <th class="text-right">Total Repairs</th>
-                  <th class="text-right">Parts Used</th>
-                  <th class="text-right">Quantity</th>
-                  <th class="text-right">Total Cost</th>
-                  <th class="text-right">Avg Cost/Device</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (warehouse of warehouseData(); track warehouse.warehouse_id) {
-                  <tr class="hover">
-                    <td class="font-semibold">{{ warehouse.warehouse_name }}</td>
-                    <td class="text-right">{{ formatNumber(warehouse.total_repairs) }}</td>
-                    <td class="text-right">{{ formatNumber(warehouse.total_parts_used) }}</td>
-                    <td class="text-right">{{ formatNumber(warehouse.total_quantity_consumed) }}</td>
-                    <td class="text-right font-semibold">{{ formatCurrency(warehouse.total_cost) }}</td>
-                    <td class="text-right">{{ formatCurrency(warehouse.average_cost_per_repair) }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-      </div>
-      </div>
-    }
-
-    <!-- By Model Tab: Model Analytics -->
-    @if (activeTab() === 'by-model') {
-      <div class="card bg-base-100 shadow-sm">
-        <div class="card-body">
-          <h2 class="card-title">
-            <lucide-icon [img]="PackageIcon" class="size-5"></lucide-icon>
-            Per Phone Model Statistics
-          </h2>
-        
-        @if (modelData().length === 0) {
-          <div class="alert alert-info">
-            <span>No model data available for the selected filters.</span>
-          </div>
-        } @else {
-          <div class="overflow-x-auto">
-            <table class="table table-zebra">
-              <thead>
-                <tr>
-                  <th>Phone Model</th>
-                  
-                  <th class="text-right">Repairs</th>
-                  <th class="text-right">Unique Devices</th>
-                  <th class="text-right">Parts</th>
-                  <th class="text-right">Quantity</th>
-                  <th class="text-right">Total Spend</th>
-                  <th class="text-right">Avg Spend/Device</th>
-                  <th class="text-center">Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (model of modelData(); track model.model_name + model.warehouse_id) {
-                  <tr class="hover">
-                    <td class="font-semibold">{{ model.model_name }}</td>
-                    
-                    <td class="text-right">{{ formatNumber(model.total_repairs) }}</td>
-                    <td class="text-right">{{ formatNumber(model.unique_devices) }}</td>
-                    <td class="text-right">{{ formatNumber(model.total_parts_used) }}</td>
-                    <td class="text-right">{{ formatNumber(model.total_quantity_consumed) }}</td>
-                    <td class="text-right font-semibold">{{ formatCurrency(model.total_cost) }}</td>
-                    <td class="text-right">{{ formatCurrency(model.average_cost_per_repair) }}</td>
-                    <td class="text-center">
-                      @if (model.most_common_parts.length > 0) {
-                        <button 
-                          class="btn btn-ghost btn-xs" 
-                          (click)="toggleModelExpansion(model.model_name + (model.warehouse_id || ''))"
-                        >
-                          {{ isModelExpanded(model.model_name + (model.warehouse_id || '')) ? 'Hide' : 'Show' }} Parts
-                        </button>
-                      } @else {
-                        <span class="text-base-content/40">No parts</span>
-                      }
-                    </td>
-                  </tr>
-                  
-                  @if (isModelExpanded(model.model_name + (model.warehouse_id || ''))) {
-                    <tr>
-                      <td colspan="9" class="bg-base-200">
-                        <div class="p-4">
-                          <h4 class="font-semibold mb-3">Most Common Parts for {{ model.model_name }}</h4>
-                          <div class="overflow-x-auto">
-                            <table class="table table-sm">
-                              <thead>
-                                <tr>
-                                  <th>SKU</th>
-                                  <th class="text-right">Usage Count</th>
-                                  <th class="text-right">Total Quantity</th>
-                                  <th class="text-right">Total Cost</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                @for (part of model.most_common_parts; track part.sku) {
-                                  <tr>
-                                    <td class="font-mono">{{ part.sku }}</td>
-                                    <td class="text-right">{{ formatNumber(part.usage_count) }}</td>
-                                    <td class="text-right">{{ formatNumber(part.total_quantity) }}</td>
-                                    <td class="text-right">{{ formatCurrency(part.total_cost) }}</td>
-                                  </tr>
-                                }
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  }
-                }
-              </tbody>
-            </table>
-          </div>
-        }
+    <!-- Unique Devices Repaired -->
+    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+      <div class="flex items-center justify-between">
+        <div class="min-w-0 flex-1 mr-3">
+          <p class="text-sm font-medium text-base-content/70">Unique Devices</p>
+          <p class="text-3xl font-bold text-secondary">{{ formatNumber(summary()!.unique_devices) }}</p>
+        </div>
+        <div class="bg-secondary/20 p-3 rounded-full flex-shrink-0">
+          <lucide-icon [img]="PackageIcon" class="size-6 text-secondary"></lucide-icon>
         </div>
       </div>
-    }
+      <div class="mt-4 text-sm text-base-content/60">Distinct devices repaired</div>
+    </div>
 
-    <!-- By Reason Tab: Repair Reason Analytics -->
-    @if (activeTab() === 'by-reason') {
-      <div class="card bg-base-100 shadow-sm">
-        <div class="card-body">
-          <h2 class="card-title">
-            <lucide-icon [img]="ActivityIcon" class="size-5"></lucide-icon>
-            Per Repair Reason Statistics
-          </h2>
-        
-        @if (reasonData().length === 0) {
-          <div class="alert alert-info">
-            <span>No reason data available for the selected filters.</span>
-          </div>
-        } @else {
-          <div class="overflow-x-auto">
-            <table class="table table-zebra">
-              <thead>
-                <tr>
-                  <th>Repair Reason</th>
-                  <th class="text-right">Total Repairs</th>
-                  <th class="text-right">Parts Used</th>
-                  <th class="text-right">Quantity</th>
-                  <th class="text-right">Total Spend</th>
-                  <th class="text-right">Avg Spend/Device</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (reason of reasonData(); track reason.reason_id) {
-                  <tr class="hover">
-                    <td class="font-semibold">{{ reason.reason_name }}</td>
-                    <td class="text-right">{{ formatNumber(reason.total_repairs) }}</td>
-                    <td class="text-right">{{ formatNumber(reason.total_parts_used) }}</td>
-                    <td class="text-right">{{ formatNumber(reason.total_quantity_consumed) }}</td>
-                    <td class="text-right font-semibold">{{ formatCurrency(reason.total_cost) }}</td>
-                    <td class="text-right">{{ formatCurrency(reason.average_cost_per_repair) }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
+    <!-- Total Cost -->
+    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+      <div class="flex items-center justify-between">
+        <div class="min-w-0 flex-1 mr-3">
+          <p class="text-sm font-medium text-base-content/70">Total Spend</p>
+          <p class="text-3xl font-bold text-success">{{ summary()!.total_cost | appCurrency }}</p>
+        </div>
+        <div class="bg-success/20 p-3 rounded-full flex-shrink-0">
+          <lucide-icon [img]="DollarSignIcon" class="size-6 text-success"></lucide-icon>
         </div>
       </div>
-    }
+      <div class="mt-4 text-sm text-base-content/60">All repairs</div>
+    </div>
 
-    <!-- By User Tab: Repairer Analytics -->
-    @if (activeTab() === 'by-user') {
-      <div class="card bg-base-100 shadow-sm">
-        <div class="card-body">
-          <h2 class="card-title">
-            <lucide-icon [img]="ActivityIcon" class="size-5"></lucide-icon>
-            Per Repairer Statistics
-          </h2>
-        
-        @if (userData().length === 0) {
-          <div class="alert alert-info">
-            <span>No user data available for the selected filters.</span>
-          </div>
-        } @else {
-          <div class="overflow-x-auto">
-            <table class="table table-zebra">
-              <thead>
-                <tr>
-                  <th>Repairer Name</th>
-                  <th class="text-right">Total Repairs</th>
-                  <th class="text-right">Parts Used</th>
-                  <th class="text-right">Quantity</th>
-                  <th class="text-right">Total Spend</th>
-                  <th class="text-right">Avg Spend/Device</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (user of userData(); track user.user_id) {
-                  <tr class="hover">
-                    <td class="font-semibold">{{ user.user_name }}</td>
-                    <td class="text-right">{{ formatNumber(user.total_repairs) }}</td>
-                    <td class="text-right">{{ formatNumber(user.total_parts_used) }}</td>
-                    <td class="text-right">{{ formatNumber(user.total_quantity_consumed) }}</td>
-                    <td class="text-right font-semibold">{{ formatCurrency(user.total_cost) }}</td>
-                    <td class="text-right">{{ formatCurrency(user.average_cost_per_repair) }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
+    <!-- Average Cost -->
+    <div class="bg-base-100 rounded-xl p-6 border border-base-300">
+      <div class="flex items-center justify-between">
+        <div class="min-w-0 flex-1 mr-3">
+          <p class="text-sm font-medium text-base-content/70">Avg Cost/Device</p>
+          <p class="text-3xl font-bold text-warning">{{ summary()!.average_cost_per_repair | appCurrency }}</p>
+        </div>
+        <div class="bg-warning/20 p-3 rounded-full flex-shrink-0">
+          <lucide-icon [img]="DollarSignIcon" class="size-6 text-warning"></lucide-icon>
         </div>
       </div>
-    }
+      <div class="mt-4 text-sm text-base-content/60">Per unique device</div>
+    </div>
+  </div>
 
-    <!-- By IMEI Tab: Device-level Analytics -->
-    @if (activeTab() === 'by-imei') {
-      <div class="card bg-base-100 shadow-sm">
-        <div class="card-body">
-          <h2 class="card-title">
-            <lucide-icon [img]="SearchIcon" class="size-5"></lucide-icon>
-            Per Device (IMEI) Statistics
-          </h2>
+  <!-- Tabs Navigation -->
+  <nav class="mb-6 overflow-x-auto">
+    <div role="tablist" class="tabs tabs-boxed bg-base-100 p-1 rounded-xl w-fit">
+      <button role="tab" class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium "
+        [class.bg-primary]="activeTab() === 'overview'" [class.text-white]="activeTab() === 'overview'"
+        [class.text-base-content]="activeTab() !== 'overview'" [class.hover:bg-primary/10]="activeTab() !== 'overview'"
+        (click)="activeTab.set('overview')">
+        <span class="text-dark">Overview &amp; Warehouses</span>
+      </button>
+      <button role="tab" class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
+        [class.bg-primary]="activeTab() === 'by-model'" [class.text-white]="activeTab() === 'by-model'"
+        [class.text-base-content]="activeTab() !== 'by-model'" [class.hover:bg-primary/10]="activeTab() !== 'by-model'"
+        (click)="activeTab.set('by-model')">
+        <span>By Phone Model</span>
+      </button>
+      <button role="tab" class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
+        [class.bg-primary]="activeTab() === 'by-reason'" [class.text-white]="activeTab() === 'by-reason'"
+        [class.text-base-content]="activeTab() !== 'by-reason'"
+        [class.hover:bg-primary/10]="activeTab() !== 'by-reason'" (click)="activeTab.set('by-reason')">
+        <span>By Repair Reason</span>
+      </button>
+      <button role="tab" class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
+        [class.bg-primary]="activeTab() === 'by-user'" [class.text-white]="activeTab() === 'by-user'"
+        [class.text-base-content]="activeTab() !== 'by-user'" [class.hover:bg-accent/10]="activeTab() !== 'by-user'"
+        (click)="activeTab.set('by-user')">
+        <span>By Repairer</span>
+      </button>
+      <button role="tab" class="tab whitespace-nowrap transition-all duration-200 rounded-xl font-medium"
+        [class.bg-primary]="activeTab() === 'by-imei'" [class.text-white]="activeTab() === 'by-imei'"
+        [class.text-base-content]="activeTab() !== 'by-imei'" [class.hover:bg-primary/10]="activeTab() !== 'by-imei'"
+        (click)="activeTab.set('by-imei'); loadIMEIAnalytics()">
+        <span>By IMEI</span>
+      </button>
+    </div>
+  </nav>
 
-          <!-- Search Bar -->
-          <div class="flex gap-2 mb-4">
-            <input 
-              type="text" 
-              placeholder="Search by IMEI or Serial..." 
-              class="input input-bordered w-80" 
-              [(ngModel)]="imeiSearch"
-              (keyup.enter)="onIMEISearch()"
-            />
-            <button class="btn btn-accent" (click)="onIMEISearch()">
-              <lucide-icon [img]="SearchIcon" class="size-4"></lucide-icon>
-              Search
-            </button>
-          </div>
-          
-          @if (imeiData().length === 0 && !loading()) {
-            <div class="alert alert-info">
-              <span>No devices found. Try adjusting your search or filters.</span>
-            </div>
-          } @else {
-            <div class="overflow-x-auto">
-              <table class="table table-zebra">
-                <thead>
-                  <tr>
-                    <th>IMEI</th>
-                    <th>Serial</th>
-                    <th>Model</th>
-                    <th>Warehouse</th>
-                    <th class="text-right">Repairs</th>
-                    <th class="text-right">Parts</th>
-                    <th class="text-right">Total Cost</th>
-                    <th class="text-center">Parts Used</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (device of imeiData(); track device.device_id) {
-                    <tr class="hover">
-                      <td class="font-mono">{{ device.device_imei }}</td>
-                      <td class="font-mono">{{ device.device_serial || '-' }}</td>
-                      <td>{{ device.model_name || '-' }}</td>
-                      <td>{{ device.warehouse_name || '-' }}</td>
-                      <td class="text-right">{{ formatNumber(device.total_repairs) }}</td>
-                      <td class="text-right">{{ formatNumber(device.total_parts_used) }}</td>
-                      <td class="text-right font-semibold">{{ formatCurrency(device.total_cost) }}</td>
-                      <td class="text-center">
-                        @if (device.parts_breakdown && device.parts_breakdown.length > 0) {
-                          <button 
-                            class="btn btn-ghost btn-xs" 
-                            (click)="toggleIMEIExpansion(device.device_id)"
-                          >
-                            {{ isIMEIExpanded(device.device_id) ? 'Hide' : 'Show' }}
-                          </button>
-                        } @else {
-                          <span class="text-base-content/40">None</span>
+  <!-- Overview Tab: Warehouse Analytics -->
+  @if (activeTab() === 'overview') {
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body">
+      <h2 class="card-title">
+        <lucide-icon [img]="WarehouseIcon" class="size-5"></lucide-icon>
+        Per Warehouse Statistics
+      </h2>
+
+      @if (warehouseData().length === 0) {
+      <div class="alert alert-info">
+        <span>No warehouse data available for the selected filters.</span>
+      </div>
+      } @else {
+      <div class="overflow-x-auto">
+        <table class="table table-zebra">
+          <thead>
+            <tr>
+              <th>Warehouse</th>
+              <th class="text-right">Total Repairs</th>
+              <th class="text-right">Parts Used</th>
+              <th class="text-right">Quantity</th>
+              <th class="text-right">Total Cost</th>
+              <th class="text-right">Avg Cost/Device</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (warehouse of warehouseData(); track warehouse.warehouse_id) {
+            <tr class="hover">
+              <td class="font-semibold">{{ warehouse.warehouse_name }}</td>
+              <td class="text-right">{{ formatNumber(warehouse.total_repairs) }}</td>
+              <td class="text-right">{{ formatNumber(warehouse.total_parts_used) }}</td>
+              <td class="text-right">{{ formatNumber(warehouse.total_quantity_consumed) }}</td>
+              <td class="text-right font-semibold">{{ formatCurrency(warehouse.total_cost) }}</td>
+              <td class="text-right">{{ formatCurrency(warehouse.average_cost_per_repair) }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- By Model Tab: Model Analytics -->
+  @if (activeTab() === 'by-model') {
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body">
+      <h2 class="card-title">
+        <lucide-icon [img]="PackageIcon" class="size-5"></lucide-icon>
+        Per Phone Model Statistics
+      </h2>
+
+      @if (modelData().length === 0) {
+      <div class="alert alert-info">
+        <span>No model data available for the selected filters.</span>
+      </div>
+      } @else {
+      <div class="overflow-x-auto">
+        <table class="table table-zebra">
+          <thead>
+            <tr>
+              <th>Phone Model</th>
+
+              <th class="text-right">Repairs</th>
+              <th class="text-right">Unique Devices</th>
+              <th class="text-right">Parts</th>
+              <th class="text-right">Quantity</th>
+              <th class="text-right">Total Spend</th>
+              <th class="text-right">Avg Spend/Device</th>
+              <th class="text-center">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (model of modelData(); track model.model_name + model.warehouse_id) {
+            <tr class="hover">
+              <td class="font-semibold">{{ model.model_name }}</td>
+
+              <td class="text-right">{{ formatNumber(model.total_repairs) }}</td>
+              <td class="text-right">{{ formatNumber(model.unique_devices) }}</td>
+              <td class="text-right">{{ formatNumber(model.total_parts_used) }}</td>
+              <td class="text-right">{{ formatNumber(model.total_quantity_consumed) }}</td>
+              <td class="text-right font-semibold">{{ formatCurrency(model.total_cost) }}</td>
+              <td class="text-right">{{ formatCurrency(model.average_cost_per_repair) }}</td>
+              <td class="text-center">
+                @if (model.most_common_parts.length > 0) {
+                <button class="btn btn-ghost btn-xs"
+                  (click)="toggleModelExpansion(model.model_name + (model.warehouse_id || ''))">
+                  {{ isModelExpanded(model.model_name + (model.warehouse_id || '')) ? 'Hide' : 'Show' }} Parts
+                </button>
+                } @else {
+                <span class="text-base-content/40">No parts</span>
+                }
+              </td>
+            </tr>
+
+            @if (isModelExpanded(model.model_name + (model.warehouse_id || ''))) {
+            <tr>
+              <td colspan="9" class="bg-base-200">
+                <div class="p-4">
+                  <h4 class="font-semibold mb-3">Most Common Parts for {{ model.model_name }}</h4>
+                  <div class="overflow-x-auto">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>SKU</th>
+                          <th class="text-right">Usage Count</th>
+                          <th class="text-right">Total Quantity</th>
+                          <th class="text-right">Total Cost</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (part of model.most_common_parts; track part.sku) {
+                        <tr>
+                          <td class="font-mono">{{ part.sku }}</td>
+                          <td class="text-right">{{ formatNumber(part.usage_count) }}</td>
+                          <td class="text-right">{{ formatNumber(part.total_quantity) }}</td>
+                          <td class="text-right">{{ formatCurrency(part.total_cost) }}</td>
+                        </tr>
                         }
-                      </td>
-                    </tr>
-                    
-                    @if (isIMEIExpanded(device.device_id)) {
-                      <tr>
-                        <td colspan="8" class="bg-base-200">
-                          <div class="p-4">
-                            <h4 class="font-semibold mb-3">Parts Used for {{ device.device_imei }}</h4>
-                            <div class="overflow-x-auto">
-                              <table class="table table-sm">
-                                <thead>
-                                  <tr>
-                                    <th>SKU / Service</th>
-                                    <th class="text-right">Usage Count</th>
-                                    <th class="text-right">Total Quantity</th>
-                                    <th class="text-right">Total Cost</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  @for (part of device.parts_breakdown; track part.sku) {
-                                    <tr>
-                                      <td class="font-mono">{{ part.sku }}</td>
-                                      <td class="text-right">{{ formatNumber(part.usage_count) }}</td>
-                                      <td class="text-right">{{ formatNumber(part.total_quantity) }}</td>
-                                      <td class="text-right">{{ formatCurrency(part.total_cost) }}</td>
-                                    </tr>
-                                  }
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    }
-                  }
-                </tbody>
-              </table>
-            </div>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            }
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </div>
+  </div>
+  }
 
-            <!-- Pagination -->
-            <div class="flex justify-between items-center mt-4">
-              <div class="text-sm text-base-content/60">
-                Showing {{ (imeiPage() - 1) * imeiPageSize() + 1 }} to {{ Math.min(imeiPage() * imeiPageSize(), imeiTotal()) }} of {{ imeiTotal() }} devices
-              </div>
-              <div class="join">
-                <button 
-                  class="join-item btn btn-sm" 
-                  [disabled]="imeiPage() === 1"
-                  (click)="onIMEIPageChange(imeiPage() - 1)"
-                >
-                  «
+  <!-- By Reason Tab: Repair Reason Analytics -->
+  @if (activeTab() === 'by-reason') {
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body">
+      <h2 class="card-title">
+        <lucide-icon [img]="ActivityIcon" class="size-5"></lucide-icon>
+        Per Repair Reason Statistics
+      </h2>
+
+      @if (reasonData().length === 0) {
+      <div class="alert alert-info">
+        <span>No reason data available for the selected filters.</span>
+      </div>
+      } @else {
+      <div class="overflow-x-auto">
+        <table class="table table-zebra">
+          <thead>
+            <tr>
+              <th>Repair Reason</th>
+              <th class="text-right">Total Repairs</th>
+              <th class="text-right">Parts Used</th>
+              <th class="text-right">Quantity</th>
+              <th class="text-right">Total Spend</th>
+              <th class="text-right">Avg Spend/Device</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (reason of reasonData(); track reason.reason_id) {
+            <tr class="hover">
+              <td class="font-semibold">{{ reason.reason_name }}</td>
+              <td class="text-right">{{ formatNumber(reason.total_repairs) }}</td>
+              <td class="text-right">{{ formatNumber(reason.total_parts_used) }}</td>
+              <td class="text-right">{{ formatNumber(reason.total_quantity_consumed) }}</td>
+              <td class="text-right font-semibold">{{ formatCurrency(reason.total_cost) }}</td>
+              <td class="text-right">{{ formatCurrency(reason.average_cost_per_repair) }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- By User Tab: Repairer Analytics -->
+  @if (activeTab() === 'by-user') {
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body">
+      <h2 class="card-title">
+        <lucide-icon [img]="ActivityIcon" class="size-5"></lucide-icon>
+        Per Repairer Statistics
+      </h2>
+
+      @if (userData().length === 0) {
+      <div class="alert alert-info">
+        <span>No user data available for the selected filters.</span>
+      </div>
+      } @else {
+      <div class="overflow-x-auto">
+        <table class="table table-zebra">
+          <thead>
+            <tr>
+              <th>Repairer Name</th>
+              <th class="text-right">Total Repairs</th>
+              <th class="text-right">Parts Used</th>
+              <th class="text-right">Quantity</th>
+              <th class="text-right">Total Spend</th>
+              <th class="text-right">Avg Spend/Device</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of userData(); track user.user_id) {
+            <tr class="hover">
+              <td class="font-semibold">{{ user.user_name }}</td>
+              <td class="text-right">{{ formatNumber(user.total_repairs) }}</td>
+              <td class="text-right">{{ formatNumber(user.total_parts_used) }}</td>
+              <td class="text-right">{{ formatNumber(user.total_quantity_consumed) }}</td>
+              <td class="text-right font-semibold">{{ formatCurrency(user.total_cost) }}</td>
+              <td class="text-right">{{ formatCurrency(user.average_cost_per_repair) }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- By IMEI Tab: Device-level Analytics -->
+  @if (activeTab() === 'by-imei') {
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body">
+      <h2 class="card-title">
+        <lucide-icon [img]="SearchIcon" class="size-5"></lucide-icon>
+        Per Device (IMEI) Statistics
+      </h2>
+
+      <!-- Search Bar -->
+      <div class="flex gap-2 mb-4">
+        <input type="text" placeholder="Search by IMEI or Serial..." class="input input-bordered w-80"
+          [(ngModel)]="imeiSearch" (keyup.enter)="onIMEISearch()" />
+        <button class="btn btn-accent" (click)="onIMEISearch()">
+          <lucide-icon [img]="SearchIcon" class="size-4"></lucide-icon>
+          Search
+        </button>
+      </div>
+
+      @if (imeiData().length === 0 && !loading()) {
+      <div class="alert alert-info">
+        <span>No devices found. Try adjusting your search or filters.</span>
+      </div>
+      } @else {
+      <div class="overflow-x-auto">
+        <table class="table table-zebra">
+          <thead>
+            <tr>
+              <th>IMEI</th>
+              <th>Serial</th>
+              <th>Model</th>
+              <th>Warehouse</th>
+              <th class="text-right">Repairs</th>
+              <th class="text-right">Parts</th>
+              <th class="text-right">Total Cost</th>
+              <th class="text-center">Parts Used</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (device of imeiData(); track device.device_id) {
+            <tr class="hover">
+              <td class="font-mono">{{ device.device_imei }}</td>
+              <td class="font-mono">{{ device.device_serial || '-' }}</td>
+              <td>{{ device.model_name || '-' }}</td>
+              <td>{{ device.warehouse_name || '-' }}</td>
+              <td class="text-right">{{ formatNumber(device.total_repairs) }}</td>
+              <td class="text-right">{{ formatNumber(device.total_parts_used) }}</td>
+              <td class="text-right font-semibold">{{ formatCurrency(device.total_cost) }}</td>
+              <td class="text-center">
+                @if (device.parts_breakdown && device.parts_breakdown.length > 0) {
+                <button class="btn btn-ghost btn-xs" (click)="toggleIMEIExpansion(device.device_id)">
+                  {{ isIMEIExpanded(device.device_id) ? 'Hide' : 'Show' }}
                 </button>
-                <button class="join-item btn btn-sm">Page {{ imeiPage() }}</button>
-                <button 
-                  class="join-item btn btn-sm" 
-                  [disabled]="imeiPage() * imeiPageSize() >= imeiTotal()"
-                  (click)="onIMEIPageChange(imeiPage() + 1)"
-                >
-                  »
-                </button>
-              </div>
-            </div>
-          }
+                } @else {
+                <span class="text-base-content/40">None</span>
+                }
+              </td>
+            </tr>
+
+            @if (isIMEIExpanded(device.device_id)) {
+            <tr>
+              <td colspan="8" class="bg-base-200">
+                <div class="p-4">
+                  <h4 class="font-semibold mb-3">Parts Used for {{ device.device_imei }}</h4>
+                  <div class="overflow-x-auto">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>SKU / Service</th>
+                          <th class="text-right">Usage Count</th>
+                          <th class="text-right">Total Quantity</th>
+                          <th class="text-right">Total Cost</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (part of device.parts_breakdown; track part.sku) {
+                        <tr>
+                          <td class="font-mono">{{ part.sku }}</td>
+                          <td class="text-right">{{ formatNumber(part.usage_count) }}</td>
+                          <td class="text-right">{{ formatNumber(part.total_quantity) }}</td>
+                          <td class="text-right">{{ formatCurrency(part.total_cost) }}</td>
+                        </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex justify-between items-center mt-4">
+        <div class="text-sm text-base-content/60">
+          Showing {{ (imeiPage() - 1) * imeiPageSize() + 1 }} to {{ Math.min(imeiPage() * imeiPageSize(), imeiTotal())
+          }} of {{ imeiTotal() }} devices
+        </div>
+        <div class="join">
+          <button class="join-item btn btn-sm" [disabled]="imeiPage() === 1" (click)="onIMEIPageChange(imeiPage() - 1)">
+            «
+          </button>
+          <button class="join-item btn btn-sm">Page {{ imeiPage() }}</button>
+          <button class="join-item btn btn-sm" [disabled]="imeiPage() * imeiPageSize() >= imeiTotal()"
+            (click)="onIMEIPageChange(imeiPage() + 1)">
+            »
+          </button>
         </div>
       </div>
-    }
-  } @else {
-    <!-- Empty State -->
-    <div class="card bg-base-100 shadow-sm">
-      <div class="card-body items-center text-center py-20">
-        <lucide-icon [img]="ActivityIcon" class="size-16 text-base-content/20"></lucide-icon>
-        <h3 class="text-xl font-semibold mt-4">No Analytics Data</h3>
-        <p class="text-base-content/60 mt-2">Try adjusting your filters or check back later.</p>
-      </div>
+      }
     </div>
+  </div>
+  }
+  } @else {
+  <!-- Empty State -->
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body items-center text-center py-20">
+      <lucide-icon [img]="ActivityIcon" class="size-16 text-base-content/20"></lucide-icon>
+      <h3 class="text-xl font-semibold mt-4">No Analytics Data</h3>
+      <p class="text-base-content/60 mt-2">Try adjusting your filters or check back later.</p>
+    </div>
+  </div>
   }
 </div>

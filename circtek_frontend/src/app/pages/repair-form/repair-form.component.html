@@ -1,66 +1,51 @@
-<app-generic-form-page
-  [title]="title"
-  [subtitle]="subtitle"
-  [form]="form()"
-  [fields]="fields()"
-  [actions]="[]"
-  [loading]="loading()"
-  [error]="error()"
-  [hideSubmitButton]="true"
-  (backClick)="onBackClick()"
->
+<app-generic-form-page [title]="title" [subtitle]="subtitle" [form]="form()" [fields]="fields()" [actions]="[]"
+  [loading]="loading()" [error]="error()" [hideSubmitButton]="true" (backClick)="onBackClick()">
   <!-- Custom content starts: we keep the header from GenericFormPage -->
   <div [formGroup]="form()">
-  <section class="">
-    <!-- Step 1: Warehouse + Identifier scanner (always visible) -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-      <div class="md:col-span-1">
-        <label class="label"><span class="label-text">Warehouse</span><span class="text-error ml-1">*</span></label>
-        <select class="select select-accent w-full" formControlName="warehouse_id">
-          <option [ngValue]="null">Select Warehouse</option>
-          @for (w of warehouses(); track w.id) { <option [ngValue]="w.id">{{ w.name }}</option> }
-        </select>
-      </div>
+    <section class="">
+      <!-- Step 1: Warehouse + Identifier scanner (always visible) -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div class="md:col-span-1">
+          <label class="label"><span class="label-text">Warehouse</span><span class="text-error ml-1">*</span></label>
+          <select class="select select-accent w-full" formControlName="warehouse_id" [disabled]="isWarehouseDisabled()">
+            <option [ngValue]="null">Select Warehouse</option>
+            @for (w of filteredWarehouses(); track w.id) { <option [ngValue]="w.id">{{ w.name }}</option> }
+          </select>
+        </div>
 
-      <div class="md:col-span-2">
-        <div class="flex gap-2 items-start">
-          <div class="flex-1">
-            <app-barcode-scanner 
-              #imeiScanner
-              label="Scan IMEI/Serial"
-              placeholder="Scan or enter IMEI/Serial..."
-              [autoClear]="false"
-              [required]="true"
-              (scanned)="onImeiScanned($event)"
-              (inputChanged)="onImeiInputChanged($event)"
-              (keydown.enter)="onImeiKey($event)"
-              (keydown.tab)="onImeiKey($event)"
-              [disabled]="isImeiScannerDisabled()"
-            ></app-barcode-scanner>
+        <div class="md:col-span-2">
+          <div class="flex gap-2 items-start">
+            <div class="flex-1">
+              <app-barcode-scanner #imeiScanner label="Scan IMEI/Serial" placeholder="Scan or enter IMEI/Serial..."
+                [autoClear]="false" [required]="true" (scanned)="onImeiScanned($event)"
+                (inputChanged)="onImeiInputChanged($event)" (keydown.enter)="onImeiKey($event)"
+                (keydown.tab)="onImeiKey($event)" [disabled]="isImeiScannerDisabled()"></app-barcode-scanner>
+            </div>
+
           </div>
-         
+        </div>
+        <div>
+          <label class="label"><span class="label-text"></span><span class="text-error ml-1"></span></label><br />
+          <button type="button" class="btn btn-outline md:col-span-1" (click)="fetchDeviceDetails()">Fetch
+            Details</button>
         </div>
       </div>
-      <div>
-        <label class="label"><span class="label-text"></span><span class="text-error ml-1"></span></label><br/>
-        <button type="button" class="btn btn-outline md:col-span-1"  (click)="fetchDeviceDetails()">Fetch Details</button>
-      </div>
-    </div>
 
-    <!-- Step 2: Test results and parts form (only show when device is found) -->
-    @if (deviceFound()) {
+      <!-- Step 2: Test results and parts form (only show when device is found) -->
+      @if (deviceFound()) {
       <!-- Test summary -->
       <div class="border border-base-300/40 rounded-lg p-3 mb-4">
         <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-medium">Test results</span>
-          <span class="text-xs" [class.text-success]="!testResultsText().includes('failed')" [class.text-error]="testResultsText().includes('failed')">{{ testResultsText() }}</span>
+          <span class="text-xs" [class.text-success]="!testResultsText().includes('failed')"
+            [class.text-error]="testResultsText().includes('failed')">{{ testResultsText() }}</span>
         </div>
         @if (testResultsText() && testResultsText().includes('failed')) {
-          <div class="flex flex-wrap gap-2">
-            @for (name of failedComponents(); track name) {
-              <span class="badge badge-error badge-sm">{{ name }}</span>
-            }
-          </div>
+        <div class="flex flex-wrap gap-2">
+          @for (name of failedComponents(); track name) {
+          <span class="badge badge-error badge-sm">{{ name }}</span>
+          }
+        </div>
         }
       </div>
 
@@ -69,7 +54,8 @@
       <!-- Grid header -->
       <div class="" (focusin)="disableImeiScanner()" (focusout)="enableImeiScanner()">
         <div class="grid grid-cols-12 gap-0 border border-base-300/40 rounded-lg">
-          <div class="col-span-12 grid grid-cols-12 gap-0 text-xs text-base-content/60 px-3 py-2 border-b border-base-300/40">
+          <div
+            class="col-span-12 grid grid-cols-12 gap-0 text-xs text-base-content/60 px-3 py-2 border-b border-base-300/40">
             <div class="col-span-5">PART SKU</div>
             <div class="col-span-1">QTY</div>
             <div class="col-span-4">REASON</div>
@@ -81,40 +67,29 @@
           <div formArrayName="parts" class="col-span-12">
             @for (partGroup of parts.controls; track $index) {
 
-              <div [formGroupName]="$index" class="grid grid-cols-12 items-start px-3 py-2 relative" [style.z-index]="parts.length - $index">
-                <!-- SKU field: user types the SKU directly -->
-                <div class="col-span-5 pr-3">
-                  <input 
-                    type="text" 
-                    class="input input-bordered w-full" 
-                    formControlName="sku" 
-                    placeholder="Enter part SKU" 
-                    autocomplete="off"
-                  />
-                </div>
-
-                <div class="col-span-1 pr-3">
-                  <input 
-                    type="number" 
-                    class="input input-bordered w-full" 
-                    formControlName="quantity" 
-                    placeholder="Qty"
-                    min="1"
-                  />
-                </div>
-                <div class="col-span-4 pr-3">
-                  <app-repair-reason-autocomplete
-                    [placeholder]="'Search reason...'"
-                    (valueChange)="parts.at($index)?.get('reason_id')?.setValue($event)"
-                  ></app-repair-reason-autocomplete>
-                </div>
-                <div class="col-span-1 pr-3">
-                  <input class="input input-bordered w-full" formControlName="remarks" placeholder="Notes" />
-                </div>
-                <div class="col-span-1 flex justify-end items-center">
-                  <button type="button" class="btn btn-error btn-xs" (click)="removePart($index)">Remove</button>
-                </div>
+            <div [formGroupName]="$index" class="grid grid-cols-12 items-start px-3 py-2 relative"
+              [style.z-index]="parts.length - $index">
+              <!-- SKU field: user types the SKU directly -->
+              <div class="col-span-5 pr-3">
+                <input type="text" class="input input-bordered w-full" formControlName="sku"
+                  placeholder="Enter part SKU" autocomplete="off" />
               </div>
+
+              <div class="col-span-1 pr-3">
+                <input type="number" class="input input-bordered w-full" formControlName="quantity" placeholder="Qty"
+                  min="1" />
+              </div>
+              <div class="col-span-4 pr-3">
+                <app-repair-reason-autocomplete [placeholder]="'Search reason...'"
+                  (valueChange)="parts.at($index)?.get('reason_id')?.setValue($event)"></app-repair-reason-autocomplete>
+              </div>
+              <div class="col-span-1 pr-3">
+                <input class="input input-bordered w-full" formControlName="remarks" placeholder="Notes" />
+              </div>
+              <div class="col-span-1 flex justify-end items-center">
+                <button type="button" class="btn btn-error btn-xs" (click)="removePart($index)">Remove</button>
+              </div>
+            </div>
             }
           </div>
         </div>
@@ -126,22 +101,12 @@
 
       <!-- Action Buttons -->
       <div class="mt-6 flex gap-3 justify-end border-t border-base-300/40 pt-4">
-        <button 
-          type="button" 
-          class="btn btn-ghost" 
-          (click)="onCancel()"
-          [disabled]="submitting()"
-        >
+        <button type="button" class="btn btn-ghost" (click)="onCancel()" [disabled]="submitting()">
           Cancel
         </button>
-        <button 
-          type="button" 
-          class="btn btn-accent" 
-          (click)="onSubmit()"
-          [disabled]="!isFormValid() || submitting()"
-        >
+        <button type="button" class="btn btn-accent" (click)="onSubmit()" [disabled]="!isFormValid() || submitting()">
           @if (submitting()) {
-            <span class="loading loading-spinner loading-sm"></span>
+          <span class="loading loading-spinner loading-sm"></span>
           }
           Create Repair
         </button>
@@ -149,90 +114,90 @@
 
       <!-- Repair History -->
       @if (repairHistory().length > 0) {
-        <div class="border border-base-300/40 rounded-lg p-3 mt-6">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-sm font-medium">Repair History</span>
-            <span class="badge badge-sm">{{ repairHistory().length }} repair(s)</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="table table-sm">
-              <thead>
-                <tr>
-                  <th class="text-xs">Date</th>
-                  <th class="text-xs">SKUs Used</th>
-                  <th class="text-xs">Reason</th>
-                  <th class="text-xs">User</th>
-                  <th class="text-xs">Warehouse</th>
-                  <th class="text-xs">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (repair of repairHistory(); track repair.id) {
-                  <tr class="hover">
-                    <td class="text-xs">{{ repair.created_at ? (repair.created_at | date: 'short') : 'N/A' }}</td>
-                    <td class="text-xs">
-                      @if (getFormattedSkus(repair.consumed_items)) {
-                        {{ getFormattedSkus(repair.consumed_items) }}
-                      } @else {
-                        <span class="text-base-content/40">No parts consumed</span>
-                      }
-                    </td>
-                    <td class="text-xs">
-                      @if (getFormattedReasons(repair.consumed_items)) {
-                        {{ getFormattedReasons(repair.consumed_items) }}
-                      } @else {
-                        <span class="text-base-content/40">N/A</span>
-                      }
-                    </td>
-                    <td class="text-xs">{{ repair.repairer_name || 'Unknown' }}</td>
-                    <td class="text-xs">{{ repair.warehouse_name || 'Unknown' }}</td>
-                    <td class="text-xs">
-                      <button 
-                        type="button"
-                        class="btn btn-ghost btn-xs text-error"
-                        (click)="deleteRepair(repair.id)"
-                        title="Delete repair"
-                      >
-                        <lucide-icon [img]="Trash2Icon" class="size-4"></lucide-icon>
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+      <div class="border border-base-300/40 rounded-lg p-3 mt-6">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-sm font-medium">Repair History</span>
+          <span class="badge badge-sm">{{ repairHistory().length }} repair(s)</span>
         </div>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th class="text-xs">Date</th>
+                <th class="text-xs">SKUs Used</th>
+                <th class="text-xs">Reason</th>
+                <th class="text-xs">User</th>
+                <th class="text-xs">Warehouse</th>
+                @if (canDeleteRepairs()) {
+                <th class="text-xs">Actions</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (repair of repairHistory(); track repair.id) {
+              <tr class="hover">
+                <td class="text-xs">{{ repair.created_at ? (repair.created_at | date: 'short') : 'N/A' }}</td>
+                <td class="text-xs">
+                  @if (getFormattedSkus(repair.consumed_items)) {
+                  {{ getFormattedSkus(repair.consumed_items) }}
+                  } @else {
+                  <span class="text-base-content/40">No parts consumed</span>
+                  }
+                </td>
+                <td class="text-xs">
+                  @if (getFormattedReasons(repair.consumed_items)) {
+                  {{ getFormattedReasons(repair.consumed_items) }}
+                  } @else {
+                  <span class="text-base-content/40">N/A</span>
+                  }
+                </td>
+                <td class="text-xs">{{ repair.repairer_name || 'Unknown' }}</td>
+                <td class="text-xs">{{ repair.warehouse_name || 'Unknown' }}</td>
+                @if (canDeleteRepairs()) {
+                <td class="text-xs">
+                  <button type="button" class="btn btn-ghost btn-xs text-error" (click)="deleteRepair(repair.id)"
+                    title="Delete repair">
+                    <lucide-icon [img]="Trash2Icon" class="size-4"></lucide-icon>
+                  </button>
+                </td>
+                }
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
       }
-    }
-    
-    @if (!deviceFound() && (form().get('warehouse_id')?.value || form().get('identifier')?.value?.trim())) {
+      }
+
+      @if (!deviceFound() && (form().get('warehouse_id')?.value || form().get('identifier')?.value?.trim())) {
       <div class="text-center py-8 text-base-content/60">
         <div class="text-lg mb-2">📱</div>
         @if (!form().get('warehouse_id')?.value) {
-          <p class="text-sm">Please select a warehouse first</p>
+        <p class="text-sm">Please select a warehouse first</p>
         } @else if (!form().get('identifier')?.value?.trim()) {
-          <p class="text-sm">Please enter device IMEI/Serial</p>
-          <p class="text-xs">Scan or type the IMEI/Serial and click "Fetch Details"</p>
+        <p class="text-sm">Please enter device IMEI/Serial</p>
+        <p class="text-xs">Scan or type the IMEI/Serial and click "Fetch Details"</p>
         } @else {
-          <p class="text-sm">Device not found</p>
-          <p class="text-xs">Please verify the IMEI/Serial and try fetching details again</p>
+        <p class="text-sm">Device not found</p>
+        <p class="text-xs">Please verify the IMEI/Serial and try fetching details again</p>
         }
       </div>
-    }
+      }
 
-  </section>
+    </section>
   </div>
 </app-generic-form-page>
 
 <!-- SKU Scanner Modal -->
 @if (isSkuScannerOpen()) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-base-300/60">
-    <div class="bg-base-100 rounded-xl shadow-xl w-full max-w-md p-6">
-      <h3 class="font-bold text-lg mb-4">Scan Part SKU</h3>
-      <app-barcode-scanner (scanned)="onSkuScanned($event)"></app-barcode-scanner>
-      <div class="mt-6 flex justify-end">
-        <button class="btn" (click)="closeSkuScanner()">Close</button>
-      </div>
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-base-300/60">
+  <div class="bg-base-100 rounded-xl shadow-xl w-full max-w-md p-6">
+    <h3 class="font-bold text-lg mb-4">Scan Part SKU</h3>
+    <app-barcode-scanner (scanned)="onSkuScanned($event)"></app-barcode-scanner>
+    <div class="mt-6 flex justify-end">
+      <button class="btn" (click)="closeSkuScanner()">Close</button>
     </div>
   </div>
+</div>
 }

@@ -60,6 +60,9 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
   subtitle = input<string | null>(null);
   primaryAction = input<{ label: string; icon?: string } | null>(null);
   primaryActionClick = output<void>();
+  // Support for multiple header actions
+  headerActions = input<Array<{ key: string; label: string; icon?: string; variant?: string }> | null>(null);
+  headerActionClick = output<string>();
 
   // Loading state
   loading = input<boolean>(false);
@@ -235,11 +238,11 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
 
   updateFacet(key: string, value: string) {
     const next = { ...this.facetModel() };
-    
+
     // Find the facet definition to check its input type
     const facet = this.facets()?.find(f => f.key === key);
     const inputType = facet?.type === 'text' ? (facet as TextFacet).inputType : undefined;
-    
+
     // For number inputs, validate that the value is not negative
     if (inputType === 'number' && value) {
       const numValue = Number(value);
@@ -248,7 +251,7 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
         return;
       }
     }
-    
+
     next[key] = value;
     // If updating a start_date, ensure paired end_date is not before or equal to it
     if (key.endsWith('start_date')) {
@@ -312,17 +315,17 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
     // Only apply to text facets
     if (f.type !== 'text') return null;
     const inputType = (f as TextFacet).inputType ?? 'text';
-    
+
     // For date inputs, use the existing date logic
     if (inputType === 'date') {
       return this.minDateForFacet(f);
     }
-    
+
     // For number inputs, enforce minimum of 0
     if (inputType === 'number') {
       return '0';
     }
-    
+
     return null;
   }
 
@@ -423,14 +426,14 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
     if (!this.canPrev()) return;
     try {
       this.table().previousPage();
-    } catch {}
+    } catch { }
   }
 
   nextPage() {
     if (!this.canNext()) return;
     try {
       this.table().nextPage();
-    } catch {}
+    } catch { }
   }
 
   updatePageSize(size: number) {
