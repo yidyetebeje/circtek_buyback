@@ -60,7 +60,12 @@ export function StepProcessTranslationEditor({
   const handleConfigChange = (locale: string, field: keyof StepProcessConfig, value: string) => {
     const updatedConfig = { ...localConfig };
 
-    if (!updatedConfig[field] || typeof updatedConfig[field] !== 'object') {
+    // Skip non-translatable fields
+    if (field === 'backgroundColor' || field === 'textColor' || field === 'numberColor') {
+      return;
+    }
+
+    if (!updatedConfig[field]) {
       (updatedConfig as Record<string, TranslatableText>)[field] = {};
     }
 
@@ -134,10 +139,13 @@ export function StepProcessTranslationEditor({
         const updatedConfig = { ...localConfig };
 
         Object.entries(translatedTexts).forEach(([field, translation]) => {
-          if (!updatedConfig[field as keyof StepProcessConfig] || typeof updatedConfig[field as keyof StepProcessConfig] !== 'object') {
-            (updatedConfig as Record<string, TranslatableText>)[field] = {};
+          // Only update translatable text fields
+          if (field !== 'backgroundColor' && field !== 'textColor' && field !== 'numberColor') {
+            if (!updatedConfig[field as keyof StepProcessConfig]) {
+              (updatedConfig as Record<string, TranslatableText>)[field] = {};
+            }
+            (updatedConfig[field as keyof StepProcessConfig] as TranslatableText)[targetLocale] = translation;
           }
-          (updatedConfig[field as keyof StepProcessConfig] as TranslatableText)[targetLocale] = translation;
         });
 
         setLocalConfig(updatedConfig);

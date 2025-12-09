@@ -151,15 +151,13 @@ export function GlobalEarthTranslationEditor({
         const updatedConfig = { ...localConfig };
 
         Object.entries(translatedTexts).forEach(([field, translation]) => {
-          const fieldKey = field as keyof GlobalEarthConfig;
-          // Skip non-translatable fields
-          if (fieldKey === 'imageUrl' || fieldKey === 'backgroundColor' || fieldKey === 'textColor') {
-            return;
+          // Only update translatable text fields (not imageUrl, backgroundColor, textColor)
+          if (field !== 'imageUrl' && field !== 'backgroundColor' && field !== 'textColor') {
+            if (!updatedConfig[field as keyof GlobalEarthConfig]) {
+              (updatedConfig as Record<string, TranslatableText>)[field] = {};
+            }
+            (updatedConfig[field as keyof GlobalEarthConfig] as TranslatableText)[targetLocale] = translation;
           }
-          if (!updatedConfig[fieldKey] || typeof updatedConfig[fieldKey] !== 'object') {
-            (updatedConfig as Record<string, TranslatableText>)[field] = {};
-          }
-          (updatedConfig[fieldKey] as TranslatableText)[targetLocale] = translation;
         });
 
         setLocalConfig(updatedConfig);
