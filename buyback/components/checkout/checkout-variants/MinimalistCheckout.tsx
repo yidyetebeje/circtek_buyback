@@ -145,7 +145,6 @@ export function MinimalistCheckout({
 
     const tenantId = parseInt(tenantIdString, 10);
     const shopId = parseInt(shopIdString, 10);
-    const tenantId = parseInt(tenantIdString, 10);
 
     if (isNaN(shopId) || isNaN(tenantId)) {
       console.error("Tenant ID or Shop ID from env is not a valid number.");
