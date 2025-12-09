@@ -156,7 +156,7 @@ export class ApiClient {
     if (response.status === 204) {
       return {} as T;
     }
-    if (response.status === 401 || response.status === 403) { // Use strict equality for status check
+    if (response.status === 401) { // Only sign out on 401 Unauthorized
       let errorBody = {};
       try {
         errorBody = await response.json();
@@ -170,7 +170,7 @@ export class ApiClient {
         await signOut({ callbackUrl: '/admin/login' }); 
         throw {
           status: response.status, // Use the actual response status
-          message: 'Your session has expired or access is unauthorized. Please log in again.'
+          message: 'Your session has expired. Please log in again.'
         };
       } else {
        
@@ -290,6 +290,29 @@ export class ApiClient {
     
     const response = await fetch(url, {
       method: 'PUT',
+      headers,
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+      ...fetchOptions,
+    });
+    
+    return this.processResponse<T>(response);
+  }
+
+  /**
+   * Make a PATCH request
+   */
+  async patch<T>(endpoint: string, data?: unknown, options: FetchOptions = {}): Promise<T> {
+    const { params, isProtected, ...fetchOptions } = options;
+    const url = this.buildUrl(endpoint, params);
+    const isFormData = data instanceof FormData;
+    const baseHeaders = await this.prepareHeaders(fetchOptions.headers, isProtected);
+    const headers: HeadersInit = {
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...baseHeaders,
+    };
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
       headers,
       body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
       ...fetchOptions,

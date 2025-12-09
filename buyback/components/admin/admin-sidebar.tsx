@@ -39,6 +39,8 @@ import {
   MapPin,
   LogOut,
   Menu,
+  RefreshCw,
+  Coins,
 } from "lucide-react";
 
 interface TopBarItemProps {
@@ -182,6 +184,7 @@ export function AdminTopBar() {
     { href: `/admin/shops/${process.env.NEXT_PUBLIC_SHOP_ID}`, icon: Building, label: t('myShop') || "My Shop" },
     { href: "/admin/orders", icon: Package, label: t('orders') },
     { href: "/admin/stock", icon: Layers, label: t('stock') || 'Stock' },
+    { href: "/admin/backmarket", icon: RefreshCw, label: "Back Market" },
   ];
 
   const catalogItems = [

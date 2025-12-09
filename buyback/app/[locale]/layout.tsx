@@ -25,11 +25,20 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const shopId = process.env.NEXT_PUBLIC_SHOP_ID ? 
     parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) : 
     0;
-  const shopInfo = await shopService.getShopById(shopId);
-  // Get shop configuration, but we don't actually need to use it for metadata
-  await getShopConfig("default");
-  const logoUrl = shopInfo.data.logo || "";
-  const shopName = shopInfo.data.name || "Buyback Service";
+  let shopName = "Buyback Service";
+  let logoUrl = "";
+  try {
+    const shopInfo = await shopService.getShopById(shopId);
+    // Get shop configuration, but we don't actually need to use it for metadata
+    await getShopConfig("default");
+    logoUrl = shopInfo?.data?.logo || "";
+    shopName = shopInfo?.data?.name || shopName;
+  } catch (err) {
+    // If shop fetch fails (404 or other), fall back to default config
+    // Avoid throwing from metadata generation
+    console.warn('[layout] Failed to load shop info for metadata, using defaults', err);
+    await getShopConfig("default");
+  }
   const domain = process.env.NEXT_PUBLIC_DOMAIN || "buyback.example.com";
   
   return {
@@ -91,10 +100,18 @@ export default async function RootLayout({
   const shopId = process.env.NEXT_PUBLIC_SHOP_ID ? 
     parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) : 
     0;
-  const shopInfo = await shopService.getShopById(shopId);
-  const shopConfig = shopInfo.data.config as unknown as ShopConfig || await getShopConfig("default");
-  shopConfig.shopName = shopInfo.data.name;
-  shopConfig.logoUrl = shopInfo.data.logo || "";
+  let shopConfig: ShopConfig;
+  try {
+    const shopInfo = await shopService.getShopById(shopId);
+    shopConfig = (shopInfo?.data?.config as unknown as ShopConfig) || await getShopConfig("default");
+    shopConfig.shopName = shopInfo?.data?.name || shopConfig.shopName || "Buyback Service";
+    shopConfig.logoUrl = shopInfo?.data?.logo || shopConfig.logoUrl || "";
+  } catch (err) {
+    console.warn('[layout] Failed to load shop info, falling back to default shop config', err);
+    shopConfig = await getShopConfig("default");
+    shopConfig.shopName = shopConfig.shopName || "Buyback Service";
+    shopConfig.logoUrl = shopConfig.logoUrl || "";
+  }
   
   // Set favicon URL with priority: environment variable, shop config, or default
   shopConfig.faviconUrl = process.env.NEXT_PUBLIC_FAVICON_URL || 

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Settings, Globe, DollarSign } from 'lucide-react';
+import { ArrowLeft, Loader2, Settings, Globe, Banknote } from 'lucide-react';
 import { AdminEditCard } from '@/components/admin/AdminEditCard';
 
 import { Button } from '@/components/ui/button';
@@ -455,7 +455,7 @@ export default function ModelDetailPage() {
             Translations
           </TabsTrigger>
           <TabsTrigger value="price">
-            <DollarSign className="mr-2 h-4 w-4" />
+            <Banknote className="mr-2 h-4 w-4" />
             Price Management
           </TabsTrigger>
         </TabsList>
