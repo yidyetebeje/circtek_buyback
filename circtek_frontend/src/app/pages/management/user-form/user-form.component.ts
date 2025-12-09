@@ -37,15 +37,15 @@ export class UserFormComponent {
   showConfirmModal = signal(false);
   pendingFormData = signal<any>(null);
   isEditMode = computed(() => this.userId() !== null);
-  
+
   // Loading states for different components
   tenantsLoading = signal(false);
   warehousesLoading = signal(false);
-  
+
   // Error states for different components
   tenantsError = signal<string | null>(null);
   warehousesError = signal<string | null>(null);
-  
+
   // Computed loading state - page loading until tenants are loaded (for super admin)
   pageLoading = computed(() => {
     if (this.isSuperAdmin()) {
@@ -95,21 +95,21 @@ export class UserFormComponent {
       }
     });
   }
-  
+
   // Show message when tenant is selected but no warehouses are available
   showNoWarehousesMessage = computed(() => {
     const tenantSelected = this.isSuperAdmin() ? !!this.selectedTenantId() : true;
-    return tenantSelected && 
-           !this.warehousesLoading() && 
-           !this.warehousesError() && 
-           this.warehouseOptions().length === 0;
+    return tenantSelected &&
+      !this.warehousesLoading() &&
+      !this.warehousesError() &&
+      this.warehouseOptions().length === 0;
   });
-  
+
   // Options
   roleOptions = signal<Array<{ label: string; value: number }>>([]);
   tenantOptions = signal<Array<{ label: string; value: number }>>([]);
   warehouseOptions = signal<Array<{ label: string; value: number }>>([]);
-  
+
   // Track selected tenant for reactivity
   selectedTenantId = signal<number | null>(null);
 
@@ -180,10 +180,10 @@ export class UserFormComponent {
     }
 
     // Include Warehouse field (tenant-scoped for non-super_admin, conditional for super_admin)
-    const shouldShowWarehouse = this.isSuperAdmin() 
+    const shouldShowWarehouse = this.isSuperAdmin()
       ? !!this.selectedTenantId() // For super admin, only show if tenant is selected
       : true; // For non-super admin, always show
-      
+
     if (shouldShowWarehouse) {
       fields.push({
         key: 'warehouse_id',
@@ -268,16 +268,16 @@ export class UserFormComponent {
   private strongPasswordValidator(control: AbstractControl): ValidationErrors | null {
     const value = control.value;
     if (!value) return null;
-    
+
     const hasUpperCase = /[A-Z]/.test(value);
     const hasLowerCase = /[a-z]/.test(value);
     const hasNumeric = /[0-9]/.test(value);
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(value);
     const isValidLength = value.length >= 8;
     const noWhitespace = !/\s/.test(value);
-    
+
     const passwordValid = hasUpperCase && hasLowerCase && hasNumeric && hasSpecialChar && isValidLength && noWhitespace;
-    
+
     if (!passwordValid) {
       return {
         strongPassword: {
@@ -290,7 +290,7 @@ export class UserFormComponent {
         }
       };
     }
-    
+
     return null;
   }
 
@@ -331,28 +331,37 @@ export class UserFormComponent {
     }
 
     const form = this.fb.group(formConfig);
-    
+
     // Set warehouse field validation based on current state
     setTimeout(() => {
       this.updateWarehouseFieldValidation();
     }, 0);
-    
+
     return form;
+  }
+
+  /**
+   * Transforms a role name from snake_case to Title Case.
+   * Example: 'super_admin' -> 'Super Admin'
+   */
+  private formatRoleName(name: string): string {
+    return name
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }
 
   private loadRoleOptions() {
     this.api.getRoles(new HttpParams().set('limit', '1000')).subscribe({
       next: (res) => {
         let roles = res.data ?? [];
-        // Filter out super_admin role for non-super_admin users
-        if (!this.isSuperAdmin()) {
-          roles = roles.filter(role => role.name !== 'super_admin');
-        }
-        const options = roles.map(role => ({ label: role.name, value: role.id }));
+        // Filter out super_admin role for all users
+        roles = roles.filter(role => role.name !== 'super_admin');
+        const options = roles.map(role => ({ label: this.formatRoleName(role.name), value: role.id }));
         this.roleOptions.set(options);
       },
       error: () => {
-        // Fallback for non-super_admin when /roles is forbidden
+        // Fallback when /roles is forbidden
         // Use real IDs per seed order: 1=super_admin, 2=admin, 3=tester, 4=repair_manager, 5=repair_technician, 6=stock_manager
         const fallback = [
           { name: 'admin', id: 2 },
@@ -361,7 +370,7 @@ export class UserFormComponent {
           { name: 'repair_technician', id: 5 },
           { name: 'stock_manager', id: 6 },
         ];
-        this.roleOptions.set(fallback.map(r => ({ label: r.name, value: r.id })));
+        this.roleOptions.set(fallback.map(r => ({ label: this.formatRoleName(r.name), value: r.id })));
       }
     });
   }
@@ -369,7 +378,7 @@ export class UserFormComponent {
   loadTenantOptions() {
     this.tenantsLoading.set(true);
     this.tenantsError.set(null);
-    
+
     // Only load active tenants
     this.api.getTenants(new HttpParams().set('limit', '1000').set('status', 'true')).subscribe({
       next: (res) => {
@@ -394,11 +403,11 @@ export class UserFormComponent {
   private updateWarehouseFieldValidation() {
     const warehouseControl = this.userForm().get('warehouse_id');
     if (!warehouseControl) return;
-    
-    const shouldRequireWarehouse = this.isSuperAdmin() 
-      ? !!this.selectedTenantId() 
+
+    const shouldRequireWarehouse = this.isSuperAdmin()
+      ? !!this.selectedTenantId()
       : true;
-    
+
     if (shouldRequireWarehouse) {
       warehouseControl.setValidators([Validators.required]);
     } else {
@@ -411,18 +420,18 @@ export class UserFormComponent {
   loadWarehousesForTenant(tenantId?: number | null) {
     this.warehousesLoading.set(true);
     this.warehousesError.set(null);
-    
+
     // Update warehouse field validation
     this.updateWarehouseFieldValidation();
-    
+
     // Clear existing warehouses when loading
     this.warehouseOptions.set([]);
-    
+
     let params = new HttpParams().set('limit', '1000').set('status', 'true');
     if (this.isSuperAdmin() && tenantId) {
       params = params.set('tenant_id', String(tenantId));
     }
-    
+
     this.api.getWarehouses(params).subscribe({
       next: (res) => {
         const options = (res.data ?? [])
@@ -468,12 +477,12 @@ export class UserFormComponent {
         // Recreate form with loaded data
         this.userForm.set(this.createForm());
         this.userForm().patchValue(formValue);
-        
+
         // Update warehouse field validation after patching data
         setTimeout(() => {
           this.updateWarehouseFieldValidation();
         }, 0);
-        
+
         this.loading.set(false);
       },
       error: (error) => {
@@ -489,7 +498,7 @@ export class UserFormComponent {
       this.markAllFieldsAsTouched();
       return;
     }
-    
+
     // Trim all string values
     const userData = { ...formValue };
     Object.keys(userData).forEach(key => {
@@ -501,24 +510,24 @@ export class UserFormComponent {
     if (this.isEditMode() && !userData.password) {
       delete userData.password;
     }
-    
+
     // For edit mode, show confirmation modal
     if (this.isEditMode()) {
       this.pendingFormData.set(userData);
       this.showConfirmModal.set(true);
       return;
     }
-    
+
     // For create mode, proceed directly
     this.submitForm(userData);
   }
-  
+
   private markAllFieldsAsTouched() {
     Object.keys(this.userForm().controls).forEach(key => {
       this.userForm().get(key)?.markAsTouched();
     });
   }
-  
+
   onConfirmModalAction(action: string) {
     if (action === 'confirm') {
       const userData = this.pendingFormData();
@@ -529,12 +538,12 @@ export class UserFormComponent {
     this.showConfirmModal.set(false);
     this.pendingFormData.set(null);
   }
-  
+
   private submitForm(userData: any) {
     this.errorMessage.set(null);
     this.successMessage.set(null);
     this.submitting.set(true);
-    
+
     // Set tenant_id from current user if not super admin
     if (!this.isSuperAdmin()) {
       userData.tenant_id = this.auth.currentUser()?.tenant_id;
@@ -554,12 +563,12 @@ export class UserFormComponent {
         error: (error) => {
           console.error('Failed to update user:', error);
           let msg = error?.error?.message || error?.message || 'Failed to update user';
-          
+
           // Check for 409 status code (username already taken)
           if (error?.status === 409 || error?.error?.status === 409) {
             msg = 'Username already taken. Please choose a different username.';
           }
-          
+
           this.errorMessage.set(msg);
           this.submitting.set(false);
         }
@@ -577,12 +586,12 @@ export class UserFormComponent {
         error: (error) => {
           console.error('Failed to create user:', error);
           let msg = error?.error?.message || error?.message || 'Failed to create user';
-          
+
           // Check for 409 status code (username already taken)
           if (error?.status === 409 || error?.error?.status === 409) {
             msg = 'Username already taken. Please choose a different username.';
           }
-          
+
           this.errorMessage.set(msg);
           this.submitting.set(false);
         }

@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, output, signal, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { RoleService } from '../../../core/services/role.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { LucideAngularModule } from 'lucide-angular';
 import { CurrencySelectorComponent } from '../currency-selector/currency-selector.component';
+import { ROLE_NAME } from '../../../core/constants/role.constants';
 import {
   LayoutDashboard,
   Stethoscope,
@@ -23,13 +25,17 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit {
   protected readonly themeService = inject(ThemeService);
   protected readonly authService = inject(AuthService);
+  protected readonly roleService = inject(RoleService);
   protected readonly isDarkMode = computed(() => this.themeService.theme() === 'dim');
   protected readonly themeTooltip = computed(() =>
     this.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'
   );
+
+  // Track initialization state
+  protected readonly isInitialized = signal(false);
 
   // Icons
   readonly LayoutDashboard = LayoutDashboard;
@@ -46,6 +52,44 @@ export class NavbarComponent {
   // Expose auth state to template
   protected readonly isAuthenticated = this.authService.isAuthenticated;
   protected readonly currentUser = this.authService.currentUser;
+
+  ngOnInit(): void {
+    // Subscribe to auth initialization to ensure user data is loaded
+    this.authService.initialized$.subscribe(() => {
+      this.isInitialized.set(true);
+    });
+  }
+
+  // Role-based menu visibility
+  protected readonly canAccessManagement = computed(() => {
+    const roleId = this.currentUser()?.role_id;
+    return this.roleService.hasAnyRole(roleId, [ROLE_NAME.ADMIN, ROLE_NAME.SUPER_ADMIN]);
+  });
+
+  protected readonly canAccessStock = computed(() => {
+    const roleId = this.currentUser()?.role_id;
+    return this.roleService.hasAnyRole(roleId, [
+      ROLE_NAME.STOCK_MANAGER,
+      ROLE_NAME.REPAIR_MANAGER,
+      ROLE_NAME.ADMIN,
+      ROLE_NAME.SUPER_ADMIN
+    ]);
+  });
+
+  protected readonly canAccessRepair = computed(() => {
+    const roleId = this.currentUser()?.role_id;
+    return this.roleService.hasAnyRole(roleId, [
+      ROLE_NAME.REPAIR_MANAGER,
+      ROLE_NAME.REPAIR_TECHNICIAN,
+      ROLE_NAME.ADMIN,
+      ROLE_NAME.SUPER_ADMIN
+    ]);
+  });
+
+  protected readonly canAccessLicensing = computed(() => {
+    const roleId = this.currentUser()?.role_id;
+    return this.roleService.hasAnyRole(roleId, [ROLE_NAME.ADMIN, ROLE_NAME.SUPER_ADMIN]);
+  });
 
   toggleTheme(): void {
     this.themeService.toggleTheme();

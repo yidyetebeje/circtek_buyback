@@ -143,7 +143,7 @@ export function MinimalistCheckout({
       return;
     }
 
-
+    const tenantId = parseInt(tenantIdString, 10);
     const shopId = parseInt(shopIdString, 10);
     const tenantId = parseInt(tenantIdString, 10);
 

@@ -5,7 +5,7 @@
         <img src="img/brand/icon1.png" alt="Circtek Logo" class="sidebar-logo">
       </a>
     </div>
-    
+
     <!-- Mobile navigation menu -->
     <nav class="mobile-nav">
       <ul class="mobile-nav-links">
@@ -27,30 +27,38 @@
             <span>Device History</span>
           </a>
         </li>
+        @if (canAccessManagement()) {
         <li>
           <a routerLink="/management" (click)="closeSidebar()" class="sidebar-nav-link">
             <lucide-icon [img]="Users" size="20"></lucide-icon>
             <span>Management</span>
           </a>
         </li>
+        }
+        @if (canAccessStock()) {
         <li>
           <a routerLink="/stock-management" (click)="closeSidebar()" class="sidebar-nav-link">
             <lucide-icon [img]="Package" size="20"></lucide-icon>
             <span>Stock Management</span>
           </a>
         </li>
+        }
+        @if (canAccessRepair()) {
         <li>
           <a routerLink="/repair" (click)="closeSidebar()" class="sidebar-nav-link">
             <lucide-icon [img]="Wrench" size="20"></lucide-icon>
             <span>Repair</span>
           </a>
         </li>
+        }
+        @if (canAccessLicensing()) {
         <li>
           <a routerLink="/licensing" (click)="closeSidebar()" class="sidebar-nav-link">
             <lucide-icon [img]="CreditCard" size="20"></lucide-icon>
             <span>Licensing</span>
           </a>
         </li>
+        }
       </ul>
     </nav>
   </div>
@@ -58,5 +66,5 @@
 
 <!-- Mobile overlay -->
 @if (isOpen()) {
-  <div class="sidebar-overlay" (click)="closeSidebar()"></div>
+<div class="sidebar-overlay" (click)="closeSidebar()"></div>
 }

@@ -1,10 +1,11 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from './api.service';
+import { RoleService } from './role.service';
 import { User } from '../models/user';
 import { AuthResponse } from '../models/auth';
 import { ApiResponse } from '../models/api';
-import { tap } from 'rxjs';
+import { tap, of, Observable, shareReplay, switchMap, catchError } from 'rxjs';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 
@@ -14,18 +15,28 @@ const AUTH_TOKEN_KEY = 'auth_token';
 export class AuthService {
   private readonly apiService = inject(ApiService);
   private readonly router = inject(Router);
+  private readonly roleService = inject(RoleService);
 
   currentUser = signal<User | null>(null);
   isAuthenticated = signal<boolean>(false);
   token = signal<string | null>(null);
+
+  /** Observable that completes when initial auth check is done */
+  readonly initialized$: Observable<boolean>;
 
   constructor() {
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
     if (token) {
       this.token.set(token);
       this.isAuthenticated.set(true);
-      // Optionally, you can fetch user profile here
-      this.me();
+      // Create an initialization observable that waits for both roles and user data
+      this.initialized$ = this.roleService.loadRoles().pipe(
+        switchMap(() => this.fetchMe()),
+        shareReplay(1)
+      );
+    } else {
+      // No token, immediately resolve as not authenticated
+      this.initialized$ = of(false);
     }
   }
 
@@ -41,15 +52,27 @@ export class AuthService {
 
   logout() {
     this.clearAuth();
+    this.roleService.clearCache();
     this.router.navigate(['/login']);
   }
 
   me() {
+    return this.fetchMe().subscribe();
+  }
+
+  /** Fetch current user - returns Observable for async flows */
+  private fetchMe(): Observable<boolean> {
     return this.apiService.get<ApiResponse<User>>('/auth/me').pipe(
       tap(response => {
         this.currentUser.set(response.data);
+      }),
+      switchMap(() => of(true)),
+      catchError(() => {
+        // If fetching user fails, clear auth and return false
+        this.clearAuth();
+        return of(false);
       })
-    ).subscribe();
+    );
   }
 
   private setAuth(authResponse: AuthResponse) {
@@ -57,6 +80,8 @@ export class AuthService {
     this.currentUser.set(authResponse.user);
     this.isAuthenticated.set(true);
     localStorage.setItem(AUTH_TOKEN_KEY, authResponse.token);
+    // Load roles after successful login
+    this.roleService.loadRoles().subscribe();
   }
 
   private clearAuth() {

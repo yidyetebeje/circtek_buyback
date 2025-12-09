@@ -35,6 +35,8 @@ export type RepairRecord = {
   id: number
   device_id: number
   device_sku: string
+  device_imei: string | null
+  device_serial: string | null
   remarks: string | null
   status: boolean
   actor_id: number

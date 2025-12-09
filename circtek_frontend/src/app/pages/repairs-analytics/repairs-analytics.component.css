@@ -1,7 +1,7 @@
 :host {
   display: block;
-  min-height: 100vh;
-  background: var(--fallback-b1, oklch(var(--b1)));
+  --primary-rgb: 153, 248, 152;
+  /* #99F898 in RGB */
 }
 
 .container {
@@ -46,24 +46,64 @@
 }
 
 /* Tab styling for proper contrast in all themes */
-.tabs-boxed .tab-active,
-.tab.bg-primary {
-  color: #1a1a1a !important;
-  font-weight: 600;
-  text-shadow: 0 0 1px rgba(255, 255, 255, 0.1);
+.btn:hover {
+  transition: all 0.15s ease;
 }
 
-/* Ensure inactive tabs have good contrast */
+/* Override DaisyUI btn-primary to use solid primary background */
+.btn-primary {
+  background: #A7D48E !important;
+  border: 1px solid #A7D48E !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: #92c76a !important;
+  border-color: #92c76a !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(167, 212, 142, 0.3);
+}
+
+.btn-primary:focus {
+  background: #92c76a !important;
+  border-color: #92c76a !important;
+  color: #ffffff !important;
+  outline: 2px solid #A7D48E;
+  outline-offset: 2px;
+}
+
+.btn-primary:active {
+  background: #7db04d !important;
+  border-color: #7db04d !important;
+  color: #ffffff !important;
+  transform: translateY(0px);
+}
+
+/* Clean tab styling */
+.tabs-boxed .tab-active {
+  background: oklch(var(--p));
+  color: oklch(var(--pc));
+}
+
+/* Improve contrast for active tab in dark theme and general tab styling */
+.tabs-boxed .tab-active,
+.tab.bg-primary {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+/* Ensure inactive tabs have good contrast too */
 .tabs-boxed .tab:not(.tab-active):not(.bg-primary) {
   color: oklch(var(--bc)) !important;
 }
 
-/* Dark theme specific adjustments - use dark text for better contrast */
+/* Dark theme specific adjustments */
 [data-theme="dim"] .tabs-boxed .tab-active,
 [data-theme="dim"] .tab.bg-primary {
-  color: #1a1a1a !important;
+  color: #ffffff !important;
   font-weight: 600;
-  text-shadow: none;
 }
 
 [data-theme="dim"] .tabs-boxed .tab:not(.tab-active):not(.bg-primary) {
@@ -73,9 +113,8 @@
 /* Light theme specific adjustments */
 [data-theme="light"] .tabs-boxed .tab-active,
 [data-theme="light"] .tab.bg-primary {
-  color: #1a1a1a !important;
+  color: #ffffff !important;
   font-weight: 600;
-  text-shadow: none;
 }
 
 [data-theme="light"] .tabs-boxed .tab:not(.tab-active):not(.bg-primary) {

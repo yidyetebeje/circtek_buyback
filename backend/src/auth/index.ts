@@ -13,11 +13,16 @@ export const auth_routes = new Elysia({ prefix: '/auth' })
 	.post('/register', async ({ body }) => controller.register(body as any), { body: RegisterBody, detail: { tags: ['Auth'], summary: 'Register new user' } })
 	.post('/login', async (ctx) => {
 		const { body, jwt } = ctx as any
-		return controller.login(body, (payload) => jwt.sign(payload))
+
+		let res = await controller.login(body, (payload) => jwt.sign(payload));
+		ctx.set.status = res.status;
+		return res;
 	}, { body: LoginBody, detail: { tags: ['Auth'], summary: 'Login and get JWT' } })
 	.post('/tester-login', async (ctx) => {
 		const { body, jwt } = ctx as any
-		return controller.testerLogin(body, (payload) => jwt.sign(payload))
+		let res = await controller.testerLogin(body, (payload) => jwt.sign(payload));
+		ctx.set.status = res.status;
+		return res;
 	}, { body: LoginBody, detail: { tags: ['Auth'], summary: 'Login for tester users only' } })
 	.post('/shop-login', async (ctx) => {
 		const { body, jwt } = ctx as any
@@ -27,8 +32,10 @@ export const auth_routes = new Elysia({ prefix: '/auth' })
 		const token = (ctx as any).bearer as string | undefined
 		if (!token) return { data: null, message: 'Access Denied', status: 401 }
 		const payload = await (ctx as any).jwt.verify(token)
-		if (!payload) return { data: null, message: 'Invalid Token', status: 401 }
-		return controller.me(Number((payload as any).sub))
+		if (!payload) return { data: null, message: 'Invalid Token', status: 403 }
+		let res = await controller.me(Number((payload as any).sub))
+		ctx.set.status = res.status;
+		return res;
 	}, { detail: { tags: ['Auth'], summary: 'Get current user profile' } })
 
 export const requireRole = (roles: string[]) =>

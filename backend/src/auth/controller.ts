@@ -8,19 +8,19 @@ export class AuthController {
 	constructor(
 		private readonly usersRepo: UsersRepository,
 		private readonly authRepo: AuthRepository
-	) {}
+	) { }
 
 	async register(payload: RegisterBodyInput): Promise<response<any>> {
 		try {
 			const existing = await this.authRepo.findUserByIdentifier(payload.user_name)
-		if (existing) return { data: null as any, message: 'Username already taken', status: 409 }
-		const existingEmail = await this.authRepo.findUserByIdentifier(payload.email)
-		if (existingEmail) return { data: null as any, message: 'Email already registered', status: 409 }
-		const hash = await bcrypt.hash(payload.password, 10)
+			if (existing) return { data: null as any, message: 'Username already taken', status: 409 }
+			const existingEmail = await this.authRepo.findUserByIdentifier(payload.email)
+			if (existingEmail) return { data: null as any, message: 'Email already registered', status: 409 }
+			const hash = await bcrypt.hash(payload.password, 10)
 
-		const created = await this.usersRepo.createUser({ ...payload, status: true, password: hash })
+			const created = await this.usersRepo.createUser({ ...payload, status: true, password: hash })
 
-		return { data: created, message: 'Registered', status: 201 }
+			return { data: created, message: 'Registered', status: 201 }
 		} catch (error) {
 			console.log(error);
 			return { data: null as any, message: 'Failed to register', status: 500, error: (error as Error).message }
@@ -49,7 +49,7 @@ export class AuthController {
 		const user = await this.authRepo.findUserByIdentifier(payload.identifier)
 		if (!user) return { data: null as any, message: 'Invalid credentials', status: 401 }
 		if (!user.status) return { data: null as any, message: 'User inactive', status: 403 }
-		
+
 		// Check if user has tester role
 		const roleName = await this.authRepo.getRoleName(user.role_id ?? null)
 		if (roleName !== 'tester' && roleName !== 'admin') {
@@ -57,7 +57,7 @@ export class AuthController {
 		}
 		const match = await bcrypt.compare(payload.password, (user as any).password)
 		if (!match) return { data: null as any, message: 'Invalid credentials', status: 401 }
-		
+
 		delete (user as any).password
 		const token = await signJwt({ sub: user.id, role: roleName, tenant_id: user.tenant_id, warehouse_id: user.warehouse_id, managed_shop_id: user.managed_shop_id })
 		return { data: { token, user }, message: 'Tester login successful', status: 200 }
@@ -126,7 +126,7 @@ export class AuthController {
 			}
 
 			if (!authorizedForShop) {
-				const message = isShopManager 
+				const message = isShopManager
 					? 'Shop Manager can only access their managed shop or shops with explicit permission'
 					: 'User not authorized for this shop'
 				return { data: null as any, message, status: 403 }
