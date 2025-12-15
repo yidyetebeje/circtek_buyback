@@ -1,6 +1,6 @@
 import { modelRepository } from "../repositories/modelRepository";
 import { TModelCreate, TModelUpdate, TModelTranslationInsert, ModelTranslationCreateSingleSchema, ModelTranslationUpdateSingleSchema } from "../types/modelTypes";
-import { NotFoundError, InternalServerError, BadRequestError } from "../utils/errors"; 
+import { NotFoundError, InternalServerError, BadRequestError } from "../utils/errors";
 import { db } from "../../db";
 import { model_translations } from "../../db/shops.schema";
 import { model_test_price_drops, languages } from "../../db/buyback_catalogue.schema";
@@ -23,7 +23,7 @@ export class ModelService {
     seriesIds?: number[],
     tenantId?: number
   ) {
-    return modelRepository.findAll(page, limit, orderBy, order, categoryIds, brandIds, seriesIds, tenantId, true,search);
+    return modelRepository.findAll(page, limit, orderBy, order, categoryIds, brandIds, seriesIds, tenantId, true, search);
   }
 
   async getModelById(id: number) {
@@ -113,7 +113,7 @@ export class ModelService {
     const priceDrops = (data as any).price_drops as TModelTestPriceDrop[] | undefined;
 
     // Check if model exists
-    const existingModel = await modelRepository.findById(id, false); 
+    const existingModel = await modelRepository.findById(id, false);
     if (!existingModel) {
       throw new NotFoundError(`Model with ID ${id} not found.`);
     }
@@ -152,34 +152,34 @@ export class ModelService {
 
     // Handle translations
     if (translations) {
-        const existingTranslationIds = (await modelRepository.findTranslationsForModel(id)).map(t => t.language_id);
-        const updatedTranslationLangIds = translations.map(t => t.language_id);
+      const existingTranslationIds = (await modelRepository.findTranslationsForModel(id)).map(t => t.language_id);
+      const updatedTranslationLangIds = translations.map(t => t.language_id);
 
-        // 1. Delete translations that are not in the new list
-        const translationsToDelete = existingTranslationIds.filter(langId => !updatedTranslationLangIds.includes(langId));
-        if(translationsToDelete.length > 0){
-           const transRecordsToDelete = await db.select({ id: model_translations.id })
-             .from(model_translations)
-             .where(and(
-               eq(model_translations.model_id, id),
-               inArray(model_translations.language_id, translationsToDelete)
-             ));
-           if (transRecordsToDelete.length > 0) {
-                await db.delete(model_translations).where(inArray(model_translations.id, transRecordsToDelete.map(t => t.id)));
-           }
+      // 1. Delete translations that are not in the new list
+      const translationsToDelete = existingTranslationIds.filter(langId => !updatedTranslationLangIds.includes(langId));
+      if (translationsToDelete.length > 0) {
+        const transRecordsToDelete = await db.select({ id: model_translations.id })
+          .from(model_translations)
+          .where(and(
+            eq(model_translations.model_id, id),
+            inArray(model_translations.language_id, translationsToDelete)
+          ));
+        if (transRecordsToDelete.length > 0) {
+          await db.delete(model_translations).where(inArray(model_translations.id, transRecordsToDelete.map(t => t.id)));
         }
+      }
 
-        // 2. Update existing or create new translations
-        for (const transData of translations) {
-            const existingTranslation = await modelRepository.findTranslation(id, transData.language_id);
-            if (existingTranslation) {
-                // Update existing
-                await modelRepository.updateTranslation(existingTranslation.id, transData);
-            } else {
-                // Create new
-                await modelRepository.createTranslation({ ...transData, model_id: id });
-            }
+      // 2. Update existing or create new translations
+      for (const transData of translations) {
+        const existingTranslation = await modelRepository.findTranslation(id, transData.language_id);
+        if (existingTranslation) {
+          // Update existing
+          await modelRepository.updateTranslation(existingTranslation.id, transData);
+        } else {
+          // Create new
+          await modelRepository.createTranslation({ ...transData, model_id: id });
         }
+      }
     }
 
     // Return the updated model with translations
@@ -202,7 +202,7 @@ export class ModelService {
         // Continue with deletion even if image deletion fails
       }
     }
-    
+
     // Repository handles deleting model and its translations
     const success = await modelRepository.delete(id);
     if (!success) {
@@ -244,23 +244,23 @@ export class ModelService {
     const languageExists = await db.select().from(languages).where(eq(languages.id, data.language_id)).limit(1);
     const language = languageExists[0];
     if (!language) {
-        throw new NotFoundError(`Language with ID ${data.language_id} not found.`);
+      throw new NotFoundError(`Language with ID ${data.language_id} not found.`);
     }
 
     // 3. Check if translation already exists (optional, handled by DB constraint but cleaner here)
     const existing = await modelRepository.findTranslation(modelId, data.language_id);
     if (existing) {
-        throw new BadRequestError(`Translation for model ID ${modelId} and language ID ${data.language_id} already exists.`);
+      throw new BadRequestError(`Translation for model ID ${modelId} and language ID ${data.language_id} already exists.`);
     }
 
     // 4. Create translation
     const translationData: TModelTranslationInsert = {
-        ...data,
-        model_id: modelId
+      ...data,
+      model_id: modelId
     };
     const newTranslation = await modelRepository.createTranslation(translationData);
     if (!newTranslation) {
-        throw new InternalServerError('Failed to create model translation.');
+      throw new InternalServerError('Failed to create model translation.');
     }
     return newTranslation;
   }
@@ -275,7 +275,7 @@ export class ModelService {
     // Use the specific update method we added
     const updatedTranslation = await modelRepository.updateTranslationByModelAndLanguage(modelId, languageId, data);
     if (!updatedTranslation) {
-        throw new InternalServerError('Failed to update model translation.');
+      throw new InternalServerError('Failed to update model translation.');
     }
     return updatedTranslation;
   }
@@ -302,29 +302,29 @@ export class ModelService {
     const languageExists = await db.select().from(languages).where(eq(languages.id, languageId)).limit(1);
     const language = languageExists[0];
     if (!language) {
-        throw new NotFoundError(`Language with ID ${languageId} not found.`);
+      throw new NotFoundError(`Language with ID ${languageId} not found.`);
     }
 
     // 3. Check if translation already exists
     const existingTranslation = await modelRepository.findTranslation(modelId, languageId);
-    
+
     if (existingTranslation) {
       // Update existing translation
       const updatedTranslation = await modelRepository.updateTranslationByModelAndLanguage(modelId, languageId, data);
       if (!updatedTranslation) {
-          throw new InternalServerError('Failed to update model translation.');
+        throw new InternalServerError('Failed to update model translation.');
       }
       return updatedTranslation;
     } else {
       // Create new translation
       const translationData: TModelTranslationInsert = {
-          ...data,
-          model_id: modelId,
-          language_id: languageId
+        ...data,
+        model_id: modelId,
+        language_id: languageId
       };
       const newTranslation = await modelRepository.createTranslation(translationData);
       if (!newTranslation) {
-          throw new InternalServerError('Failed to create model translation.');
+        throw new InternalServerError('Failed to create model translation.');
       }
       return newTranslation;
     }
@@ -355,7 +355,7 @@ export class ModelService {
     const chunkSize = 5; // Process 5 at a time to avoid overwhelming the database
     for (let i = 0; i < translations.length; i += chunkSize) {
       const chunk = translations.slice(i, i + chunkSize);
-      
+
       await Promise.all(
         chunk.map(async (translation) => {
           try {
@@ -374,7 +374,7 @@ export class ModelService {
 
             // Check if translation exists
             const existingTranslation = await modelRepository.findTranslation(
-              modelId, 
+              modelId,
               translation.language_id
             );
 
@@ -426,7 +426,7 @@ export class ModelService {
     }
 
     // Delete old image if it exists
-    if (model.models.model_image) {
+    if (model.models && model.models.model_image) {
       try {
         await s3Service.deleteFile(model.models.model_image);
       } catch (error) {
@@ -560,18 +560,18 @@ export class ModelService {
     if (!shopId) {
       throw new BadRequestError('Shop ID is required');
     }
-    
+
     if (!modelSefUrl) {
       throw new BadRequestError('Model SEF URL is required');
     }
-    
+
     // Get the model with question sets from the repository
     const model = await modelRepository.findPublishedModelBySlugInShop(shopId, modelSefUrl);
-    
+
     if (!model) {
       throw new NotFoundError(`Model with SEF URL "${modelSefUrl}" not found in shop ${shopId} or is not published`);
     }
-    
+
     return model;
   }
 }

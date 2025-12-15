@@ -85,7 +85,7 @@
         "variants": {
             "classicSideBySide": "Clássico Lado a Lado",
             "classicSideBySideDescription": "Layout de checkout tradicional com formulário à esquerda e resumo do pedido à direita.",
-            "multiStepFlow": "Fluxo Multi-Etapas", 
+            "multiStepFlow": "Fluxo Multi-Etapas",
             "multiStepFlowDescription": "Fluxo de checkout progressivo com carrinho, envio e etapas de revisão.",
             "minimalistDesign": "Design Minimalista",
             "minimalistDesignDescription": "Checkout limpo e simplificado com campos simplificados e hierarquia visual.",
@@ -109,7 +109,7 @@
             "accountNumberPlaceholder": "ex. PT50000201231234567890154",
             "firstName": "Nome",
             "firstNamePlaceholder": "Nome",
-            "lastName": "Sobrenome", 
+            "lastName": "Sobrenome",
             "lastNamePlaceholder": "Sobrenome",
             "streetName": "Nome da Rua",
             "streetNamePlaceholder": "Nome da rua",
@@ -162,7 +162,7 @@
         },
         "steps": {
             "cart": "Carrinho",
-            "shipping": "Envio", 
+            "shipping": "Envio",
             "review": "Revisão",
             "reviewAndComplete": "Revisar e Finalizar Pedido"
         },
@@ -172,6 +172,7 @@
             "configurationError": "O envio do pedido falhou devido a um erro de configuração. Por favor entre em contato com o suporte.",
             "invalidConfigError": "O envio do pedido falhou devido a uma configuração inválida. Por favor entre em contato com o suporte.",
             "orderError": "Não foi possível enviar o pedido. Por favor tente novamente.",
+            "pleaseWait": "Por favor aguarde enquanto processamos seu pedido...",
             "termsAndConditions": "Ao finalizar seu pedido, você concorda com nossos Termos e Condições. Enviaremos um e-mail de confirmação junto com uma etiqueta de envio para seu endereço de e-mail.",
             "termsAndConditionsSimple": "Ao fazer este pedido, você concorda com nossos Termos de Serviço e Política de Privacidade. Uma etiqueta de envio será enviada para seu endereço de e-mail após a confirmação do pedido.",
             "termsAndConditionsShort": "Ao fazer o pedido, você concorda com nossos termos e condições."
@@ -179,7 +180,7 @@
         "validation": {
             "emailRequired": "O e-mail é obrigatório",
             "emailInvalid": "Endereço de e-mail inválido",
-            "phoneRequired": "O número de telefone é obrigatório", 
+            "phoneRequired": "O número de telefone é obrigatório",
             "phoneInvalid": "Número de telefone inválido",
             "ibanInvalid": "Formato IBAN inválido",
             "firstNameRequired": "O nome é obrigatório",

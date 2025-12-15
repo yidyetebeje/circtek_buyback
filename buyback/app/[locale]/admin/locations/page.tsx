@@ -24,7 +24,7 @@ export default function LocationsPage() {
     error,
   } = useWarehouses({
     page: pagination.pageIndex + 1,
-    pageSize: pagination.pageSize,
+    limit: pagination.pageSize,
   });
 
   const locations = locationsData?.data || [];

@@ -6,12 +6,10 @@ export const createUserWithRoleSchema = t.Object({
   fName: t.String({ minLength: 1, maxLength: 255 }),
   lName: t.String({ minLength: 1, maxLength: 255 }),
   userName: t.String({ minLength: 3, maxLength: 255 }),
-  email: t.String({ format: 'email', maxLength: 255 }),
-  password: t.String({ minLength: 8, maxLength: 255 }),
-  roleSlug: t.String({ minLength: 1, maxLength: 255 }), 
+  password: t.String({ minLength: 6, maxLength: 255 }),
+  roleSlug: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
   warehouseId: t.Optional(t.Numeric({ default: 0 })),
-  organizationName: t.Optional(t.String({ maxLength: 255 })),
-  managed_shop_id: t.Optional(t.Numeric()), // Added for shop_manager role
+  managed_shop_id: t.Optional(t.Numeric()),
 });
 
 // Schema for updating user's role
@@ -24,13 +22,11 @@ export const updateUserSchema = t.Object({
   fName: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
   lName: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
   userName: t.Optional(t.String({ minLength: 3, maxLength: 255 })),
-  email: t.Optional(t.String({ format: 'email', maxLength: 255 })),
-  password: t.Optional(t.String({ minLength: 8, maxLength: 255 })),
+  password: t.Optional(t.String({ minLength: 6, maxLength: 255 })),
   roleSlug: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
   status: t.Optional(t.Boolean()),
   tenantId: t.Optional(t.Numeric()),
   warehouseId: t.Optional(t.Numeric()),
-  organizationName: t.Optional(t.String({ maxLength: 255 })),
   managed_shop_id: t.Optional(t.Nullable(t.Numeric())),
 });
 
@@ -48,7 +44,6 @@ export const userWithRoleResponseSchema = t.Object({
     fName: t.String(),
     lName: t.String(),
     userName: t.String(),
-    email: t.String(),
     roleName: t.Nullable(t.String()),
     roleSlug: t.Nullable(t.String()),
   })),
@@ -63,14 +58,12 @@ export const userUpdateResponseSchema = t.Object({
     fName: t.String(),
     lName: t.String(),
     userName: t.String(),
-    email: t.String(),
     status: t.Boolean(),
     roleId: t.Number(),
     roleName: t.String(),
     roleSlug: t.String(),
     tenantId: t.Optional(t.Numeric()),
     warehouseId: t.Optional(t.Numeric()),
-    organizationName: t.Optional(t.String()),
     managed_shop_id: t.Optional(t.Nullable(t.Numeric())),
   })),
 });
@@ -91,7 +84,7 @@ export const listUsersQuerySchema = t.Object({
   roleSlug: t.Optional(t.String()), // Added roleSlug filtering support
   roleName: t.Optional(t.String()), // Added roleName filtering support
   status: t.Optional(t.Boolean()), // This was previously t.Nullable(t.Boolean()) in userListItemSchema, ensuring consistency or specific use. For query, boolean is fine.
-  tenantId: t.Optional(t.Numeric()), 
+  tenantId: t.Optional(t.Numeric()),
   shopId: t.Optional(t.Numeric()),
 });
 
@@ -101,11 +94,9 @@ const userListItemSchema = t.Object({
   fName: t.Nullable(t.String()),
   lName: t.Nullable(t.String()),
   userName: t.Nullable(t.String()),
-  email: t.Nullable(t.String()),
-  status: t.Nullable(t.Boolean()), // Allowing null as status can be null in DB or join
+  status: t.Nullable(t.Boolean()),
   createdAt: t.Nullable(t.String()),
   updatedAt: t.Nullable(t.String()),
-  organizationName: t.Nullable(t.String()),
   role: t.Optional(t.Nullable(t.Object({
     id: t.Number(),
     title: t.String(),

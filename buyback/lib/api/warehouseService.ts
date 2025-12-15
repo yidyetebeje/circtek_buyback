@@ -5,12 +5,12 @@ import { ApiResponse } from './types';
 export interface Warehouse {
   id: number;
   name: string;
-  location: string;
-  active: boolean;
-  tenantId: number;
-  timeZone?: string;
-  shopId?: number;
-  publishedInShops?: { shop_id: number }[];
+  description: string;
+  status: boolean | null;
+  tenant_id: number;
+  shop_id?: number | null;
+  tenant_name?: string | null;
+  created_at?: string | null;
 }
 
 export interface PaginatedWarehouseResponse {
@@ -19,10 +19,13 @@ export interface PaginatedWarehouseResponse {
 }
 
 export interface WarehouseListParams {
-  tenantId?: number;
-  shopId?: number;
+  tenant_id?: number;
+  shop_id?: number;
+  search?: string;
   page?: number;
-  pageSize?: number;
+  limit?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
 }
 
 /**
@@ -61,9 +64,10 @@ class WarehouseService {
   }
 
   async createWarehouse(data: {
-    warehouseName: string;
-    tenantId?: number;
-    timeZone?: string;
+    name: string;
+    description: string;
+    tenant_id: number;
+    shop_id?: number;
     status?: boolean;
   }): Promise<ApiResponse<Warehouse>> {
     return this.apiClient.post<ApiResponse<Warehouse>>(this.baseEndpoint, data);
@@ -73,10 +77,9 @@ class WarehouseService {
    * Update a warehouse by ID
    */
   async updateWarehouse(id: number, data: {
-    warehouseName?: string;
-    timeZone?: string;
+    name?: string;
+    description?: string;
     status?: boolean;
-    shopId?: number;
   }): Promise<ApiResponse<Warehouse>> {
     return this.apiClient.put<ApiResponse<Warehouse>>(this.baseEndpoint + `/${id}`, data);
   }

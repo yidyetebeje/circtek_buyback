@@ -25,6 +25,8 @@ import emailModule from "./email/email-module";
 import { external_api_routes } from "./external-api";
 import { devices_routes } from "./devices";
 import { licensing_routes } from "./licensing";
+import { shipping_routes } from "./shipping";
+import { rolesApi } from "./buyback_roles";
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
 		.use(cors({
@@ -68,6 +70,9 @@ export const buildApp = () =>
 					{ name: 'Email', description: 'Email' },
 					{ name: 'Devices', description: 'Device LPN lookup and management' },
 					{ name: 'Licensing', description: 'License management and authorization' },
+					{ name: 'Shipping', description: 'Parcel shipping and Sendcloud integration' },
+					{ name: 'Labels', description: 'Shipping label generation' },
+					{ name: 'Sendcloud', description: 'Sendcloud API configuration' },
 				],
 			},
 		}))
@@ -105,6 +110,8 @@ export const buildApp = () =>
 		.use(external_api_routes)
 		.use(devices_routes)
 		.use(licensing_routes)
+		.use(shipping_routes)
+		.use(rolesApi)
 		.use(catalogApi)
 
 

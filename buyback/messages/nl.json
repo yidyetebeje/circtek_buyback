@@ -167,7 +167,7 @@
         "variants": {
             "classicSideBySide": "Klassiek Naast Elkaar",
             "classicSideBySideDescription": "Traditionele checkout lay-out met formulier links en besteloverzicht rechts.",
-            "multiStepFlow": "Meerstaps Verloop", 
+            "multiStepFlow": "Meerstaps Verloop",
             "multiStepFlowDescription": "Progressieve checkout verloop met winkelwagen, verzending en beoordelingsstappen.",
             "minimalistDesign": "Minimalistisch Ontwerp",
             "minimalistDesignDescription": "Schoon, gestroomlijnd checkout met vereenvoudigde velden en visuele hiërarchie.",
@@ -191,7 +191,7 @@
             "accountNumberPlaceholder": "bijv. NL91ABNA0417164300",
             "firstName": "Voornaam",
             "firstNamePlaceholder": "Voornaam",
-            "lastName": "Achternaam", 
+            "lastName": "Achternaam",
             "lastNamePlaceholder": "Achternaam",
             "streetName": "Straatnaam",
             "streetNamePlaceholder": "Straatnaam",
@@ -244,7 +244,7 @@
         },
         "steps": {
             "cart": "Winkelwagen",
-            "shipping": "Verzending", 
+            "shipping": "Verzending",
             "review": "Beoordeling",
             "reviewAndComplete": "Bekijken & Bestelling Voltooien"
         },
@@ -254,6 +254,7 @@
             "configurationError": "Bestelling indienen mislukt door een configuratiefout. Neem contact op met de klantenservice.",
             "invalidConfigError": "Bestelling indienen mislukt door een ongeldige configuratie. Neem contact op met de klantenservice.",
             "orderError": "Kon bestelling niet indienen. Probeer het opnieuw.",
+            "pleaseWait": "Even geduld terwijl we je bestelling verwerken...",
             "termsAndConditions": "Door je bestelling te voltooien, ga je akkoord met onze Algemene Voorwaarden. We sturen een bevestigingsmail samen met een verzendlabel naar je e-mailadres.",
             "termsAndConditionsSimple": "Door deze bestelling te plaatsen, ga je akkoord met onze Servicevoorwaarden en Privacybeleid. Een verzendlabel wordt naar je e-mailadres gestuurd na bestellingsbevestiging.",
             "termsAndConditionsShort": "Door de bestelling te plaatsen, ga je akkoord met onze algemene voorwaarden."
@@ -261,7 +262,7 @@
         "validation": {
             "emailRequired": "E-mail is verplicht",
             "emailInvalid": "Ongeldig e-mailadres",
-            "phoneRequired": "Telefoonnummer is verplicht", 
+            "phoneRequired": "Telefoonnummer is verplicht",
             "phoneInvalid": "Ongeldig telefoonnummer",
             "ibanInvalid": "Ongeldig IBAN-formaat",
             "firstNameRequired": "Voornaam is verplicht",
@@ -363,4 +364,4 @@
         "chooseFromDevices": "Kies uit ons uitgebreide assortiment ondersteunde modellen",
         "unnamedModel": "Naamloos Model"
     }
-} 
+}

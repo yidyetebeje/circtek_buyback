@@ -27,7 +27,7 @@ export class UserRepository {
 
     return result[0] || null;
   }
-  
+
   async findRoleById(roleId: number) {
     const result = await db
       .select({
@@ -87,14 +87,17 @@ export class UserRepository {
 
   async createUserWithRole(userData: CreateUserWithRoleDTO, roleId: number, tenantId: number) {
     const hashedPassword = await this.hashPassword(userData.password);
-    
+
+    // Convert warehouseId of 0 to null (for foreign key constraint)
+    const warehouseId = userData.warehouseId && userData.warehouseId > 0 ? userData.warehouseId : null;
+
     await db.insert(users).values({
       name: userData.fName + ' ' + (userData.lName || ''),
       user_name: userData.userName,
       password: hashedPassword,
       role_id: roleId,
       tenant_id: tenantId,
-      warehouse_id: userData.warehouseId,
+      warehouse_id: warehouseId,
       managed_shop_id: userData.managed_shop_id,
       created_at: new Date(),
       updated_at: new Date(),
@@ -114,7 +117,6 @@ export class UserRepository {
       id: result[0].id,
       name: userData.fName + ' ' + (userData.lName || ''),
       user_name: userData.userName,
-      email: userData.email,
     };
   }
 
@@ -140,7 +142,6 @@ export class UserRepository {
   async updateUser(userId: number, updateData: Partial<{
     name?: string;
     user_name?: string;
-    email?: string;
     password?: string;
     role_id?: number;
     status?: boolean;
@@ -161,7 +162,7 @@ export class UserRepository {
         .from(users)
         .where(and(eq(users.user_name, updateData.user_name), ne(users.id, userId)))
         .limit(1);
-      
+
       if (userNameExists.length > 0) {
         throw new Error('User name is already in use by another user.');
       }
@@ -173,7 +174,7 @@ export class UserRepository {
         .from(users)
         .where(and(eq(users.user_name, updateData.user_name), ne(users.id, userId)))
         .limit(1);
-      
+
       if (usernameExists.length > 0) {
         throw new Error('Username is already in use by another user.');
       }
@@ -187,7 +188,6 @@ export class UserRepository {
     // Add fields that are being updated
     if (updateData.name !== undefined) updateFields.name = updateData.name;
     if (updateData.user_name !== undefined) updateFields.user_name = updateData.user_name;
-    if (updateData.email !== undefined) updateFields.email = updateData.email;
     if (updateData.role_id !== undefined) updateFields.role_id = updateData.role_id;
     if (updateData.status !== undefined) updateFields.status = updateData.status;
     if (updateData.tenant_id !== undefined) updateFields.tenant_id = updateData.tenant_id;
@@ -217,7 +217,7 @@ export class UserRepository {
     const effectiveTenantId = filterByAuthTenantId !== undefined ? filterByAuthTenantId : queryTenantId;
 
     if (effectiveTenantId !== undefined) {
-        conditions.push(eq(users.tenant_id, effectiveTenantId));
+      conditions.push(eq(users.tenant_id, effectiveTenantId));
     }
 
     if (search) {
@@ -226,9 +226,9 @@ export class UserRepository {
         users.name,
         users.user_name,
       ];
-      
+
       const searchSqlConditions = searchableStringColumns
-        .filter((col): col is typeof col => col !== undefined && col !== null) 
+        .filter((col): col is typeof col => col !== undefined && col !== null)
         .map(col => like(col, searchPattern));
 
       if (searchSqlConditions.length > 0) {
@@ -242,12 +242,12 @@ export class UserRepository {
     if (roleId !== undefined) {
       conditions.push(eq(users.role_id, roleId));
     }
-    
+
     // Add roleName filtering support
     if (roleName !== undefined) {
       conditions.push(eq(roles.name, roleName));
     }
-    
+
     if (status !== undefined) {
       conditions.push(eq(users.status, status));
     }
@@ -263,7 +263,7 @@ export class UserRepository {
         id: users.id, name: users.name, user_name: users.user_name,
         status: users.status, created_at: users.created_at, updated_at: users.updated_at,
         role_id: users.role_id, roleName: roles.name,
-        tenant_id: users.tenant_id, 
+        tenant_id: users.tenant_id,
       })
       .from(users)
       .leftJoin(roles, eq(users.role_id, roles.id));
@@ -274,11 +274,11 @@ export class UserRepository {
       .leftJoin(roles, eq(users.role_id, roles.id));
 
     // Apply conditions if they exist
-    const queryBuilder = conditions.length > 0 
+    const queryBuilder = conditions.length > 0
       ? baseQuery.where(and(...conditions))
       : baseQuery;
-      
-    const countQueryBuilder = conditions.length > 0 
+
+    const countQueryBuilder = conditions.length > 0
       ? baseCountQuery.where(and(...conditions))
       : baseCountQuery;
 
@@ -286,12 +286,12 @@ export class UserRepository {
     // Ensure sortBy is a valid key of userTableColumns, otherwise default to users.created_at
     const sortKey = sortBy as keyof typeof userTableColumns;
     const sortColumnToUse = userTableColumns[sortKey] || users.created_at;
-        
+
     const result = await queryBuilder
-        .orderBy(sortOrder === 'asc' ? asc(sortColumnToUse) : dizzleDesc(sortColumnToUse))
-        .limit(limit)
-        .offset((page - 1) * limit);
-    
+      .orderBy(sortOrder === 'asc' ? asc(sortColumnToUse) : dizzleDesc(sortColumnToUse))
+      .limit(limit)
+      .offset((page - 1) * limit);
+
     const totalCountResult = await countQueryBuilder;
     const total = totalCountResult[0]?.total || 0;
 

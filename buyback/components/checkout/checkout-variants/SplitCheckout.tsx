@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useAtom } from 'jotai';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,6 +34,9 @@ export function SplitCheckout({
   const router = useRouter();
   const createOrderMutation = useCreateOrder();
   const t = useTranslations('Checkout');
+
+  // Track when order has been submitted to prevent showing empty cart during redirect
+  const [isOrderSubmitted, setIsOrderSubmitted] = useState(false);
 
   // Updated Zod Schema for Checkout Form Validation with enhanced address validation
   const checkoutFormSchema = useMemo(() => z.object({
@@ -141,11 +144,11 @@ export function SplitCheckout({
     const cartItem = relevantCartItems[0] as InProgressEstimation;
 
     if (!cartItem || !cartItem.deviceModel || typeof cartItem.deviceModel.id !== 'number') {
-        console.error("Device model ID is missing or invalid in the cart item.", cartItem);
-        createOrderMutation.reset();
-        alert(t('messages.deviceConfigError'));
-        setCurrentStep('cart');
-        return;
+      console.error("Device model ID is missing or invalid in the cart item.", cartItem);
+      createOrderMutation.reset();
+      alert(t('messages.deviceConfigError'));
+      setCurrentStep('cart');
+      return;
     }
 
     const tenantIdString = process.env.NEXT_PUBLIC_TENANT_ID;
@@ -161,9 +164,9 @@ export function SplitCheckout({
     const shopId = parseInt(shopIdString, 10);
 
     if (isNaN(tenantId) || isNaN(shopId)) {
-        console.error("Client ID or Shop ID from env is not a valid number.");
-        alert(t('messages.invalidConfigError'));
-        return;
+      console.error("Client ID or Shop ID from env is not a valid number.");
+      alert(t('messages.invalidConfigError'));
+      return;
     }
 
     const orderPayload: CreateOrderPayload = {
@@ -213,6 +216,9 @@ export function SplitCheckout({
       shopId: shopId,
     };
 
+    // Mark order as submitted to prevent empty cart UI during redirect
+    setIsOrderSubmitted(true);
+
     createOrderMutation.mutate(orderPayload, {
       onSuccess: (response: CreateOrderResponseData) => {
         try {
@@ -226,6 +232,8 @@ export function SplitCheckout({
       },
       onError: (err) => {
         console.error("Order submission caught an error:", err);
+        // Reset the submitted flag on error so user can try again
+        setIsOrderSubmitted(false);
       }
     });
   };
@@ -269,17 +277,31 @@ export function SplitCheckout({
     });
   };
 
+  // Show loading state if order was submitted (redirecting to thank-you page)
+  // This prevents the empty cart message from flashing during navigation
+  if (isOrderSubmitted || createOrderMutation.isPending) {
+    return (
+      <div className="flex flex-col min-h-screen items-center justify-center p-4" style={{ backgroundColor }}>
+        <div className="bg-white p-10 rounded-lg shadow-xl text-center max-w-md">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: primaryColor }}></div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">{t('buttons.processing')}</h2>
+          <p className="text-gray-600">{t('messages.pleaseWait') || 'Please wait...'}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (relevantCartItems.length === 0 && currentStep !== 'cart') {
     setCurrentStep('cart');
   }
-  
+
   if (relevantCartItems.length === 0 && currentStep === 'cart') {
     return (
       <div className="flex flex-col min-h-screen items-center justify-center p-4" style={{ backgroundColor }}>
         <div className="bg-white p-10 rounded-lg shadow-xl text-center max-w-md">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">{t('emptyCart.title')}</h2>
           <p className="text-gray-600 mb-8">{t('emptyCart.description')}</p>
-          <a 
+          <a
             href={`/${currentLocale}`}
             className="px-6 py-3 text-white font-semibold rounded-md hover:bg-opacity-90 transition-colors duration-150 text-sm"
             style={{ backgroundColor: primaryColor }}
@@ -290,11 +312,11 @@ export function SplitCheckout({
       </div>
     );
   }
-  
+
   const renderCartStep = () => (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-bold mb-4">{t('sections.yourDevices')}</h2>
-      
+
       <div className="space-y-4 mb-8">
         {relevantCartItems.map((item) => {
           const deviceModel = item.deviceModel;
@@ -305,24 +327,24 @@ export function SplitCheckout({
 
           return (
             <div key={item.deviceId} className="flex items-start border-b pb-4 mb-4 last:border-b-0 last:pb-0 last:mb-0">
-              <img src={deviceImageUrl} alt={deviceName} className="w-20 h-20 object-contain mr-4"/>
+              <img src={deviceImageUrl} alt={deviceName} className="w-20 h-20 object-contain mr-4" />
               <div className="flex-grow">
                 <div className="flex justify-between">
                   <h3 className="font-medium">{deviceName}</h3>
                   <span className="font-bold">€ {item.estimatedPrice?.toFixed(2) ?? '0.00'}</span>
                 </div>
                 <p className="text-sm text-gray-600 mt-1">
-                  {deviceModel.brand?.title ? getLocalizedText(deviceModel.brand.title, currentLocale, defaultLocale) : ''} {storage !== 'N/A' ? `- ${storage}`: ''}
+                  {deviceModel.brand?.title ? getLocalizedText(deviceModel.brand.title, currentLocale, defaultLocale) : ''} {storage !== 'N/A' ? `- ${storage}` : ''}
                 </p>
                 <div className="flex mt-2 gap-2">
-                  <button 
-                    onClick={() => handleEditItem(item.deviceId)} 
+                  <button
+                    onClick={() => handleEditItem(item.deviceId)}
                     className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-600 flex items-center"
                   >
                     <Pencil size={12} className="mr-1" /> {t('buttons.edit')}
                   </button>
-                  <button 
-                    onClick={() => handleRemoveItem(item.deviceId)} 
+                  <button
+                    onClick={() => handleRemoveItem(item.deviceId)}
                     className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-red-600 flex items-center"
                   >
                     <Trash2 size={12} className="mr-1" /> {t('buttons.remove')}
@@ -333,24 +355,24 @@ export function SplitCheckout({
           );
         })}
       </div>
-      
+
       <div className="border-t pt-4 mt-6">
         <div className="flex justify-between items-center text-lg font-bold mb-6">
           <span>{t('summary.total')}</span>
           <span style={{ color: primaryColor }}>€ {totalEstimatedPrice.toFixed(2)}</span>
         </div>
-        
-        <button 
-          onClick={() => setCurrentStep('info')} 
+
+        <button
+          onClick={() => setCurrentStep('info')}
           disabled={estimationCart.length === 0}
           className="w-full flex justify-center items-center py-3 px-4 text-white font-medium rounded-md transition-all disabled:opacity-50"
           style={{ backgroundColor: primaryColor }}
         >
           {t('buttons.continueToShipping')} <ChevronRight size={16} className="ml-2" />
         </button>
-        
-        <button 
-          onClick={() => router.push(`/${currentLocale}/#categories`)} 
+
+        <button
+          onClick={() => router.push(`/${currentLocale}/#categories`)}
           className="w-full mt-3 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium"
         >
           {t('buttons.addAnotherDevice')}
@@ -362,13 +384,13 @@ export function SplitCheckout({
   const renderInfoStep = () => (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-bold mb-4">{t('sections.shippingInformation')}</h2>
-      
+
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.firstName')}</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               {...register("firstName")}
               className={`w-full p-2 border ${errors.firstName ? 'border-red-500' : 'border-gray-300'} rounded-md`}
               placeholder={t('form.firstNamePlaceholder')}
@@ -377,8 +399,8 @@ export function SplitCheckout({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.lastName')}</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               {...register("lastName")}
               className={`w-full p-2 border ${errors.lastName ? 'border-red-500' : 'border-gray-300'} rounded-md`}
               placeholder={t('form.lastNamePlaceholder')}
@@ -386,18 +408,18 @@ export function SplitCheckout({
             {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName.message}</p>}
           </div>
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.email')}</label>
-          <input 
-            type="email" 
+          <input
+            type="email"
             {...register("email")}
             className={`w-full p-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md`}
             placeholder={t('form.emailPlaceholder')}
           />
           {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.phoneNumber')}</label>
           <Controller
@@ -415,23 +437,23 @@ export function SplitCheckout({
           />
           {errors.phoneNumber && <p className="text-xs text-red-500 mt-1">{errors.phoneNumber.message}</p>}
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.accountNumberOptional')}</label>
-          <input 
-            type="text" 
+          <input
+            type="text"
             {...register("accountNumber")}
             className={`w-full p-2 border ${errors.accountNumber ? 'border-red-500' : 'border-gray-300'} rounded-md`}
             placeholder={t('form.ibanPlaceholder')}
           />
           {errors.accountNumber && <p className="text-xs text-red-500 mt-1">{errors.accountNumber.message}</p>}
         </div>
-        
+
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.streetName')}</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               {...register("streetName")}
               className={`w-full p-2 border ${errors.streetName ? 'border-red-500' : 'border-gray-300'} rounded-md`}
               placeholder={t('form.streetNamePlaceholder')}
@@ -440,8 +462,8 @@ export function SplitCheckout({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.houseNumber')}</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               {...register("houseNumber")}
               className={`w-full p-2 border ${errors.houseNumber ? 'border-red-500' : 'border-gray-300'} rounded-md`}
               placeholder={t('form.houseNumberPlaceholder')}
@@ -449,12 +471,12 @@ export function SplitCheckout({
             {errors.houseNumber && <p className="text-xs text-red-500 mt-1">{errors.houseNumber.message}</p>}
           </div>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.postalCode')}</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               {...register("postalCode")}
               className={`w-full p-2 border ${errors.postalCode ? 'border-red-500' : 'border-gray-300'} rounded-md`}
               placeholder={t('form.postalCodePlaceholder')}
@@ -463,8 +485,8 @@ export function SplitCheckout({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.city')}</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               {...register("city")}
               className={`w-full p-2 border ${errors.city ? 'border-red-500' : 'border-gray-300'} rounded-md`}
               placeholder={t('form.cityPlaceholder')}
@@ -472,7 +494,7 @@ export function SplitCheckout({
             {errors.city && <p className="text-xs text-red-500 mt-1">{errors.city.message}</p>}
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
             <label htmlFor="stateProvince" className="block text-sm font-medium text-gray-700 mb-1">
@@ -507,16 +529,16 @@ export function SplitCheckout({
           </div>
         </div>
       </div>
-      
+
       <div className="mt-6 flex justify-between">
-        <button 
-          onClick={() => setCurrentStep('cart')} 
+        <button
+          onClick={() => setCurrentStep('cart')}
           className="py-2 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
         >
           {t('buttons.back')}
         </button>
-        <button 
-          onClick={() => { if (isValid) setCurrentStep('review'); else handleSubmit(() => {})() }}
+        <button
+          onClick={() => { if (isValid) setCurrentStep('review'); else handleSubmit(() => { })() }}
           disabled={!isValid}
           className="py-2 px-6 text-white font-medium rounded-md transition-all disabled:opacity-50"
           style={{ backgroundColor: primaryColor }}
@@ -530,30 +552,30 @@ export function SplitCheckout({
   const renderReviewStep = () => (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-bold mb-6">{t('steps.reviewAndComplete')}</h2>
-      
+
       <div className="mb-6 border rounded-md p-4">
         <h3 className="text-lg font-semibold mb-3">{t('sections.yourDevices')}:</h3>
         {estimationCart.map(item => {
-            const answered = getAnsweredQuestionsListForItem(item);
-            return (
-              <div key={item.deviceId} className="py-2 border-b last:border-b-0">
-                <div className="flex justify-between items-center">
-                  <p className="font-medium">{getLocalizedText(item.deviceModel.title, currentLocale, defaultLocale)}</p>
-                  <p className="text-xs text-gray-500">€ {item.estimatedPrice?.toFixed(2) ?? '0.00'}</p>
-                </div>
-                {answered.length > 0 && (
-                  <ul className="ml-4 mt-1 space-y-0.5">
-                    {answered.map((qa, idx) => (
-                      <li key={idx} className="text-xs text-gray-500"><span className="font-medium text-gray-700">{qa.question}:</span> {qa.answer}</li>
-                    ))}
-                  </ul>
-                )}
+          const answered = getAnsweredQuestionsListForItem(item);
+          return (
+            <div key={item.deviceId} className="py-2 border-b last:border-b-0">
+              <div className="flex justify-between items-center">
+                <p className="font-medium">{getLocalizedText(item.deviceModel.title, currentLocale, defaultLocale)}</p>
+                <p className="text-xs text-gray-500">€ {item.estimatedPrice?.toFixed(2) ?? '0.00'}</p>
               </div>
-            );
+              {answered.length > 0 && (
+                <ul className="ml-4 mt-1 space-y-0.5">
+                  {answered.map((qa, idx) => (
+                    <li key={idx} className="text-xs text-gray-500"><span className="font-medium text-gray-700">{qa.question}:</span> {qa.answer}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
         })}
         <div className="flex justify-between items-center mt-3 pt-3 border-t font-bold">
-            <p>{t('summary.total')}:</p>
-            <p style={{color: primaryColor}}>€ {totalEstimatedPrice.toFixed(2)}</p>
+          <p>{t('summary.total')}:</p>
+          <p style={{ color: primaryColor }}>€ {totalEstimatedPrice.toFixed(2)}</p>
         </div>
       </div>
 
@@ -571,32 +593,32 @@ export function SplitCheckout({
 
       {createOrderMutation.isError && (
         <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative flex items-center" role="alert">
-            <AlertCircle className="h-5 w-5 mr-2" />
-            <div>
+          <AlertCircle className="h-5 w-5 mr-2" />
+          <div>
             <strong className="font-bold">Error!</strong>
             <span className="block sm:inline ml-1">
-                {createOrderMutation.error instanceof Error ? createOrderMutation.error.message : t('messages.orderError')}
+              {createOrderMutation.error instanceof Error ? createOrderMutation.error.message : t('messages.orderError')}
             </span>
-            </div>
+          </div>
         </div>
       )}
 
       <div className="flex justify-between items-center pt-4 border-t">
-        <button 
+        <button
           type="button"
-          onClick={() => setCurrentStep('info')} 
+          onClick={() => setCurrentStep('info')}
           className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md"
         >
           {t('buttons.backToInformation')}
         </button>
-        <button 
-          type="button" 
+        <button
+          type="button"
           onClick={handleSubmit(handleFinalSubmit)}
           disabled={createOrderMutation.isPending}
           className="px-6 py-2 text-white font-medium rounded-md flex items-center disabled:opacity-50"
           style={{ backgroundColor: primaryColor }}
         >
-          {createOrderMutation.isPending ? t('buttons.processing') : t('buttons.confirmAndPlaceOrder')} 
+          {createOrderMutation.isPending ? t('buttons.processing') : t('buttons.confirmAndPlaceOrder')}
           {!createOrderMutation.isPending && <ChevronRight size={16} className="ml-2" />}
         </button>
       </div>

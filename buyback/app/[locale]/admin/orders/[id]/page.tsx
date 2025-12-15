@@ -10,30 +10,30 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from '@/components/ui/tabs';
-import { 
-  AlertDialog, 
-  AlertDialogContent, 
-  AlertDialogHeader, 
-  AlertDialogFooter, 
-  AlertDialogTitle, 
-  AlertDialogDescription, 
-  AlertDialogCancel, 
-  AlertDialogAction 
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction
 } from '@/components/ui/alert-dialog';
-import { 
+import {
   AdminTable,
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/admin/ui/admin-table';
 import { Badge } from '@/components/ui/badge';
 import { DeviceSerialSearch } from '@/components/admin/buy-device/DeviceSerialSearch';
@@ -47,7 +47,7 @@ import { useGetOrderDetailsAdmin, useUpdateOrderStatusAdmin } from '@/hooks/useO
 
 const ORDER_STATUSES = [
   'PENDING',
-  'ARRIVED', 
+  'ARRIVED',
   'PAID',
   'REJECTED',
 ] as const;
@@ -129,7 +129,7 @@ const OrderStatusBadge = ({ status }: { status: string }) => {
   const statusText = status?.replace(/_/g, " ").toLowerCase() || "Unknown";
 
   return (
-    <Badge 
+    <Badge
       variant={config.variant}
       className={`px-3 py-1 flex items-center gap-1.5 ${config.bgColor} ${config.borderColor} ${config.color} capitalize font-medium`}
     >
@@ -140,17 +140,17 @@ const OrderStatusBadge = ({ status }: { status: string }) => {
 };
 
 // Status Change Button with visual cues
-const StatusChangeButton = ({ 
-  currentStatus, 
-  onStatusChange, 
-  isUpdating 
-}: { 
+const StatusChangeButton = ({
+  currentStatus,
+  onStatusChange,
+  isUpdating
+}: {
   currentStatus: string;
   onStatusChange: (status: string) => void;
   isUpdating: boolean;
 }) => {
   const isPaid = currentStatus?.toUpperCase() === "PAID";
-  
+
   // Show all statuses except the current one
   const availableStatuses = ORDER_STATUSES.filter(status => status !== currentStatus?.toUpperCase());
 
@@ -314,15 +314,15 @@ export default function OrderDetailPage() {
     // Set final price based on base, admin answers, and test deductions
     const finalSuggestedPrice = (product.base_price || 0) + modifierTotal - deduction;
     setFinalPrice(finalSuggestedPrice.toFixed(2));
-    
+
     setDialogStep('confirm');
   };
 
   const requestStatusChange = (status: string) => {
     if (status === currentStatus) return;
-    
+
     setPendingStatus(status);
-    
+
     // Reset all fields for the dialog
     setFinalPrice('');
     setAdminNotes('');
@@ -336,22 +336,22 @@ export default function OrderDetailPage() {
     setAnswersBreakdown([]);
     setMatchedProduct(null);
     setDialogStep('search');
-    
+
     setIsDialogOpen(true);
   };
 
   const confirmStatusChange = () => {
     if (!pendingStatus || !order) return;
-    
-    if ((pendingStatus === 'PAID') && 
-        (!imei || !sku || !warehouseId || !finalPrice)) {
+
+    if ((pendingStatus === 'PAID') &&
+      (!imei || !sku || !warehouseId || !finalPrice)) {
       toast.error('IMEI, SKU, Warehouse, and Final Price are required for Paid status');
       return;
     }
-    
-    const payload = { 
+
+    const payload = {
       newStatus: pendingStatus as 'PENDING' | 'ARRIVED' | 'PAID' | 'REJECTED',
-      ...(pendingStatus === 'PAID' && { 
+      ...(pendingStatus === 'PAID' && {
         finalPrice: finalPrice ? parseFloat(finalPrice) : undefined,
         imei,
         sku,
@@ -360,7 +360,7 @@ export default function OrderDetailPage() {
       }),
       ...(adminNotes && { adminNotes })
     };
-    
+
     updateStatus(
       { orderId: order.id, payload },
       {
@@ -395,7 +395,7 @@ export default function OrderDetailPage() {
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto" />
           <h3 className="text-lg font-semibold">Order Not Found</h3>
           <p className="text-muted-foreground">The requested order could not be found or you don&apos;t have permission to access it.</p>
-          <Button variant="outline" onClick={() => router.push('/admin/orders')}>        
+          <Button variant="outline" onClick={() => router.push('/admin/orders')}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Orders
           </Button>
         </div>
@@ -415,7 +415,7 @@ export default function OrderDetailPage() {
       actionButtons={
         <div className="flex items-center gap-4">
           <OrderStatusBadge status={order.status} />
-          <StatusChangeButton 
+          <StatusChangeButton
             currentStatus={currentStatus || order.status}
             onStatusChange={requestStatusChange}
             isUpdating={isUpdating}
@@ -502,7 +502,7 @@ export default function OrderDetailPage() {
             Device
           </TabsTrigger>
         </TabsList>
-      
+
         <TabsContent value="details" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border-0 shadow-sm">
@@ -527,7 +527,7 @@ export default function OrderDetailPage() {
                         <p className="text-xs text-muted-foreground uppercase tracking-wide">
                           {key.replace(/([A-Z])/g, ' $1').trim()}
                         </p>
-                                                 <p className="font-medium">{value ? String(value) : 'N/A'}</p>
+                        <p className="font-medium">{value ? String(value) : 'N/A'}</p>
                       </div>
                     ))}
                 </div>
@@ -707,7 +707,7 @@ export default function OrderDetailPage() {
             </Card>
           </div>
         </TabsContent>
-        
+
         <TabsContent value="device" className="mt-6">
           <Card className="border-0 shadow-sm">
             <CardHeader className="pb-4">
@@ -780,14 +780,14 @@ export default function OrderDetailPage() {
           }
         }
       }}>
-        <AlertDialogContent className="max-h-[90vh] overflow-y-auto max-w-4xl">
+        <AlertDialogContent className="max-h-[90vh] overflow-y-auto max-w-7xl w-[90vw]">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5" />
-                             Change Order Status to &quot;{pendingStatus}&quot;
+              Change Order Status to &quot;{pendingStatus}&quot;
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingStatus === 'PAID' 
+              {pendingStatus === 'PAID'
                 ? 'Find the tested device and confirm conditions to mark this order as paid.'
                 : `Are you sure you want to change status to ${pendingStatus?.replace(/_/g, ' ').toLowerCase()}?`
               }
@@ -796,146 +796,146 @@ export default function OrderDetailPage() {
 
           <div className="text-sm">
             {pendingStatus === 'PAID' && (
-             <div className="my-4 border-t border-b py-6 space-y-6">
-               {dialogStep === 'search' && (
-                 <DeviceSerialSearch onDeviceFound={handleDeviceFound} locale={locale} />
-               )}
+              <div className="my-4 border-t border-b py-6 space-y-6">
+                {dialogStep === 'search' && (
+                  <DeviceSerialSearch onDeviceFound={handleDeviceFound} locale={locale} />
+                )}
 
-               {dialogStep === 'questions' && matchedProduct && (
-                 <QuestionFlow
-                   productSefUrl={matchedProduct.sef_url}
-                   shopId={order.shop_id}
-                   onCompleted={handleQuestionsCompleted}
-                   onBack={() => setDialogStep('search')}
-                   locale={locale}
-                 />
-               )}
+                {dialogStep === 'questions' && matchedProduct && (
+                  <QuestionFlow
+                    productSefUrl={matchedProduct.sef_url}
+                    shopId={order.shop_id}
+                    onCompleted={handleQuestionsCompleted}
+                    onBack={() => setDialogStep('search')}
+                    locale={locale}
+                  />
+                )}
 
-               {dialogStep === 'confirm' && selectedDevice && matchedProduct && (
-                 <>
-                   {/* Selected Device Summary */}
-                   <Card className="border-blue-200 bg-blue-50/50">
-                     <CardHeader className="pb-3">
-                       <CardTitle className="text-md">Selected Device</CardTitle>
-                     </CardHeader>
-                     <CardContent className="space-y-2">
-                       <p className="font-semibold">{selectedDevice.make} {selectedDevice.modelName}</p>
-                       <p className="text-sm text-muted-foreground">
-                         Serial: {selectedDevice.serial} • IMEI: {selectedDevice.imei}
-                       </p>
-                       {selectedDevice.warehouseName && (
-                         <p className="text-sm text-muted-foreground">Warehouse: {selectedDevice.warehouseName}</p>
-                       )}
-                       {selectedDevice.testInfo?.failedResult && (
-                         <div className="bg-red-50 border border-red-200 p-3 rounded-lg">
-                           <p className="text-sm text-red-800">
-                             <span className="font-semibold">Failed Tests:</span> {selectedDevice.testInfo.failedResult}
-                           </p>
-                         </div>
-                       )}
-                     </CardContent>
-                   </Card>
-                   
-                   {/* Customer&apos;s Original Answers */}
-                   <Card className="border-yellow-200 bg-yellow-50/50">
-                     <CardHeader className="pb-3">
-                       <CardTitle className="text-md">Customer&apos;s Original Answers</CardTitle>
-                     </CardHeader>
-                     <CardContent>
-                       <div className="space-y-2">
-                         {order.condition_answers.map(ans => (
-                           <div key={ans.questionKey} className="flex justify-between items-center py-2 border-b border-yellow-200 last:border-b-0">
-                             <span className="text-sm">{ans.questionTextSnapshot}</span>
-                             <span className="text-sm font-semibold">{ans.answerTextSnapshot || String(ans.answerValue)}</span>
-                           </div>
-                         ))}
-                         {order.condition_answers.length === 0 && (
-                           <p className="text-sm text-muted-foreground">No condition answers were provided.</p>
-                         )}
-                       </div>
-                     </CardContent>
-                   </Card>
+                {dialogStep === 'confirm' && selectedDevice && matchedProduct && (
+                  <>
+                    {/* Selected Device Summary */}
+                    <Card className="border-blue-200 bg-blue-50/50">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-md">Selected Device</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <p className="font-semibold">{selectedDevice.make} {selectedDevice.modelName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Serial: {selectedDevice.serial} • IMEI: {selectedDevice.imei}
+                        </p>
+                        {selectedDevice.warehouseName && (
+                          <p className="text-sm text-muted-foreground">Warehouse: {selectedDevice.warehouseName}</p>
+                        )}
+                        {selectedDevice.testInfo?.failedResult && (
+                          <div className="bg-red-50 border border-red-200 p-3 rounded-lg">
+                            <p className="text-sm text-red-800">
+                              <span className="font-semibold">Failed Tests:</span> {selectedDevice.testInfo.failedResult}
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
 
-                   {/* Admin&apos;s Price Assessment */}
-                   {modelBasePrice !== 0 && (
-                     <Card className="border-gray-200">
-                       <CardHeader className="pb-3">
-                         <CardTitle className="text-md">Admin&apos;s Price Assessment</CardTitle>
-                       </CardHeader>
-                       <CardContent>
-                         <div className="space-y-3">
-                           <div className="flex justify-between items-center">
-                             <span>Base Price</span>
-                             <span className="font-semibold">€{modelBasePrice.toFixed(2)}</span>
-                           </div>
-                           {answersBreakdown.map((item, idx) => (
-                             <div key={idx} className="flex justify-between items-center text-sm">
-                               <span>{item.question}: {item.answer}</span>
-                               <span className={`font-medium ${item.modifier >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                 {item.modifier >= 0 ? '+' : ''}€{item.modifier.toFixed(2)}
-                               </span>
-                             </div>
-                           ))}
-                           {selectedDevice?.testInfo?.failedResult && (
-                             <div className="flex justify-between items-center text-sm">
-                               <span>Failed Tests Deduction</span>
-                               <span className="font-medium text-red-600">-€{priceDeduction.toFixed(2)}</span>
-                             </div>
-                           )}
-                           <Separator />
-                           <div className="flex justify-between items-center font-semibold text-lg">
-                             <span>Suggested Price</span>
-                             <span className="text-primary">€{((modelBasePrice + answerModifierTotal) - priceDeduction).toFixed(2)}</span>
-                           </div>
-                         </div>
-                       </CardContent>
-                     </Card>
-                   )}
+                    {/* Customer&apos;s Original Answers */}
+                    <Card className="border-yellow-200 bg-yellow-50/50">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-md">Customer&apos;s Original Answers</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {order.condition_answers.map(ans => (
+                            <div key={ans.questionKey} className="flex justify-between items-center py-2 border-b border-yellow-200 last:border-b-0">
+                              <span className="text-sm">{ans.questionTextSnapshot}</span>
+                              <span className="text-sm font-semibold">{ans.answerTextSnapshot || String(ans.answerValue)}</span>
+                            </div>
+                          ))}
+                          {order.condition_answers.length === 0 && (
+                            <p className="text-sm text-muted-foreground">No condition answers were provided.</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                   {/* Form Fields */}
-                   <Card>
-                     <CardHeader className="pb-3">
-                       <CardTitle className="text-md">Final Details</CardTitle>
-                     </CardHeader>
-                     <CardContent className="space-y-4">
-                       <div className="grid grid-cols-2 gap-4">
-                         <div>
-                           <Label htmlFor="imei">IMEI <span className="text-red-500">*</span></Label>
-                           <Input id="imei" value={imei} disabled className="bg-muted" />
-                         </div>
-                         <div>
-                           <Label htmlFor="sku">SKU <span className="text-red-500">*</span></Label>
-                           <Input id="sku" value={sku} onChange={(e) => setSku(e.target.value)} required />
-                         </div>
-                       </div>
-                       <div>
-                         <Label>Warehouse</Label>
-                         <Input value={selectedDevice?.warehouseName || ''} disabled className="bg-muted" />
-                       </div>
-                       <div>
-                         <Label htmlFor="final-price">Final Price (EUR) <span className="text-red-500">*</span></Label>
-                         <Input 
-                           id="final-price" 
-                           type="number" 
-                           step="0.01" 
-                           value={finalPrice} 
-                           onChange={(e) => setFinalPrice(e.target.value)} 
-                           required 
-                         />
-                       </div>
-                       <div>
-                         <Label htmlFor="admin-notes">Admin Notes (Optional)</Label>
-                         <Input 
-                           id="admin-notes" 
-                           value={adminNotes} 
-                           onChange={(e) => setAdminNotes(e.target.value)} 
-                         />
-                       </div>
-                     </CardContent>
-                   </Card>
-                 </>
-               )}
-             </div>
+                    {/* Admin&apos;s Price Assessment */}
+                    {modelBasePrice !== 0 && (
+                      <Card className="border-gray-200">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-md">Admin&apos;s Price Assessment</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span>Base Price</span>
+                              <span className="font-semibold">€{modelBasePrice.toFixed(2)}</span>
+                            </div>
+                            {answersBreakdown.map((item, idx) => (
+                              <div key={idx} className="flex justify-between items-center text-sm">
+                                <span>{item.question}: {item.answer}</span>
+                                <span className={`font-medium ${item.modifier >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {item.modifier >= 0 ? '+' : ''}€{item.modifier.toFixed(2)}
+                                </span>
+                              </div>
+                            ))}
+                            {selectedDevice?.testInfo?.failedResult && (
+                              <div className="flex justify-between items-center text-sm">
+                                <span>Failed Tests Deduction</span>
+                                <span className="font-medium text-red-600">-€{priceDeduction.toFixed(2)}</span>
+                              </div>
+                            )}
+                            <Separator />
+                            <div className="flex justify-between items-center font-semibold text-lg">
+                              <span>Suggested Price</span>
+                              <span className="text-primary">€{((modelBasePrice + answerModifierTotal) - priceDeduction).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Form Fields */}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-md">Final Details</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="imei">IMEI <span className="text-red-500">*</span></Label>
+                            <Input id="imei" value={imei} disabled className="bg-muted" />
+                          </div>
+                          <div>
+                            <Label htmlFor="sku">SKU <span className="text-red-500">*</span></Label>
+                            <Input id="sku" value={sku} onChange={(e) => setSku(e.target.value)} required />
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Warehouse</Label>
+                          <Input value={selectedDevice?.warehouseName || ''} disabled className="bg-muted" />
+                        </div>
+                        <div>
+                          <Label htmlFor="final-price">Final Price (EUR) <span className="text-red-500">*</span></Label>
+                          <Input
+                            id="final-price"
+                            type="number"
+                            step="0.01"
+                            value={finalPrice}
+                            onChange={(e) => setFinalPrice(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="admin-notes">Admin Notes (Optional)</Label>
+                          <Input
+                            id="admin-notes"
+                            value={adminNotes}
+                            onChange={(e) => setAdminNotes(e.target.value)}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </div>
             )}
 
             {pendingStatus !== 'PAID' && (
@@ -953,7 +953,7 @@ export default function OrderDetailPage() {
               </div>
             )}
           </div>
-          
+
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isUpdating}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmStatusChange} disabled={isUpdating}>

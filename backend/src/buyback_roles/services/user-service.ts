@@ -18,21 +18,19 @@ export class UserService {
   }
 
   async createUserWithRole(userData: CreateUserWithRoleDTO & { tenantId: number }) {
-    // Check if username or email already exists
-    const existingByEmail = await this.userRepository.findByEmail(userData.email);
-    if (existingByEmail) {
-      throw new Error('User with this email already exists.');
-    }
-
+    // Check if username already exists
     const existingByUsername = await this.userRepository.findByUserName(userData.userName);
     if (existingByUsername) {
       throw new Error('User with this username already exists.');
     }
 
+    // Use provided roleSlug or default to 'shop_manager'
+    const roleSlug = userData.roleSlug || 'shop_manager';
+
     // Find the role by name
-    const role = await this.userRepository.findRoleByName(userData.roleSlug);
+    const role = await this.userRepository.findRoleByName(roleSlug);
     if (!role) {
-      throw new Error(`Role with name '${userData.roleSlug}' not found.`);
+      throw new Error(`Role with name '${roleSlug}' not found.`);
     }
 
     // Create the user with the role
@@ -40,7 +38,7 @@ export class UserService {
     if (!newUser) {
       throw new InternalServerError('Failed to create user or retrieve it after creation.');
     }
-    
+
     // If managed_shop_id is provided, add it to user's accessible shops
     if (userData.managed_shop_id) {
       try {
@@ -60,7 +58,6 @@ export class UserService {
       id: newUser.id,
       name: newUser.name,
       user_name: newUser.user_name,
-      email: newUser.email,
       roleName: role.name,
       roleSlug: role.name,
       managed_shop_id: userData.managed_shop_id,
@@ -110,7 +107,6 @@ export class UserService {
     if (updateData.fName !== undefined) repositoryUpdateData.name = updateData.fName;
     if (updateData.lName !== undefined) repositoryUpdateData.name = updateData.lName;
     if (updateData.userName !== undefined) repositoryUpdateData.user_name = updateData.userName;
-    if (updateData.email !== undefined) repositoryUpdateData.email = updateData.email;
     if (updateData.password !== undefined) repositoryUpdateData.password = updateData.password;
     if (updateData.status !== undefined) repositoryUpdateData.status = updateData.status;
     if (updateData.tenantId !== undefined) repositoryUpdateData.tenant_id = updateData.tenantId;
@@ -156,7 +152,7 @@ export class UserService {
   // Method to list users with pagination, sorting, and filtering
   async listUsers(queryParams: ListUsersQueryDTO, authContext?: AuthContext) {
     let filterByAuthTenantId: number | undefined = undefined;
-    if(authContext?.roleSlug != 'super_admin'){
+    if (authContext?.roleSlug != 'super_admin') {
       queryParams.tenantId = authContext?.tenantId;
       filterByAuthTenantId = authContext?.tenantId;
     }
@@ -164,32 +160,32 @@ export class UserService {
     const result = await this.userRepository.findManyPaginated(queryParams, filterByAuthTenantId);
     return result;
   }
-  
+
   // Method to get a user by ID with role information
   async getUserById(userId: number, authContext?: AuthContext) {
-    if(!authContext){
+    if (!authContext) {
       throw new ForbiddenError('Authentication required to get user details.');
     }
-    
+
     // Get the user
     const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new NotFoundError(`User with ID ${userId} not found.`);
     }
-    
+
     // For 'client' role, they can only access users from their own client account.
     // The client's own user ID is the `tenant_id` for all users under their account.
     if (authContext.roleSlug != 'super_admin' && user.tenant_id !== authContext.tenantId) {
       throw new ForbiddenError(`You do not have permission to access this user.`);
     }
-    
+
     const role = user.role_id ? await this.userRepository.findRoleById(user.role_id) : null;
-    
+
     return {
       id: user.id,
       name: user.name,
       user_name: user.user_name,
-   
+
       role_id: user.role_id,
       roleName: role?.name || '',
       roleSlug: role?.name || '',

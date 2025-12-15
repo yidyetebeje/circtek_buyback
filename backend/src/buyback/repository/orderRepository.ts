@@ -1,12 +1,13 @@
 import { and, eq, desc, asc, gte, lte, like, inArray, sql, or, count } from "drizzle-orm";
 import { db } from "../../db";
+import { randomUUID } from "crypto";
 
 import { orders, order_status_history, order_device_condition_answers, shipping_details, OrderStatus } from "../../db/order.schema";
 import { shops } from "../../db/shops.schema";
 import { users } from "../../db/circtek.schema";
 import { models } from "../../db/buyback_catalogue.schema";
-// Note: Drizzle migrations will handle the actual creation of UUIDs
-// We use string IDs that look like UUIDs in this implementation for compatibility 
+
+// Using crypto.randomUUID() for secure, collision-resistant ID generation 
 
 export type CreateOrderParams = {
   deviceId: number;
@@ -30,7 +31,7 @@ export type CreateOrderParams = {
     email?: string;
   };
   sellerNotes?: string;
- 
+
   shopId: number;
 };
 
@@ -69,58 +70,67 @@ export type OrdersFilter = {
   allowedShopIds?: number[];
 };
 
-// Generate a unique order number
-const generateOrderNumber = async (): Promise<string> => {
+/**
+ * Generate a unique order number within a transaction to prevent race conditions.
+ * Must be called inside a transaction (tx) to ensure proper locking.
+ * @param tx - The Drizzle transaction object or db instance
+ */
+const generateOrderNumber = async (tx: { select: typeof db.select }): Promise<string> => {
   const date = new Date();
   const year = date.getFullYear().toString().slice(-2);
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const day = date.getDate().toString().padStart(2, "0");
-  
+
   // Get count of orders for today to generate sequential number
+  // Running inside transaction prevents race conditions
   const todayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const todayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-  
-  const result = await db.select({ count: count() })
+
+  const result = await tx.select({ count: count() })
     .from(orders)
     .where(and(
       gte(orders.created_at, todayStart),
       lte(orders.created_at, todayEnd)
     ));
-  
+
   const todayCount = (result[0]?.count || 0) + 1;
   const sequence = todayCount.toString().padStart(4, "0");
-  
+
   return `ORD-${year}${month}${day}-${sequence}`;
 };
 
-// Generate a simple ID for use in tests and prototyping
-// In production, use a proper UUID library or let the database generate IDs
+/**
+ * Generate a cryptographically secure UUID for record IDs.
+ * Uses Node.js crypto module for collision-resistant IDs.
+ */
 const generateId = (): string => {
-  return Math.random().toString(36).substring(2, 15) + 
-         Math.random().toString(36).substring(2, 15);
+  return randomUUID();
 };
 
 export const orderRepository = {
   // Create a new order with all related records in a transaction
   createOrder: async (params: CreateOrderParams) => {
-    const { 
-      deviceId, 
-      deviceSnapshot, 
-      estimatedPrice, 
+    const {
+      deviceId,
+      deviceSnapshot,
+      estimatedPrice,
       conditionAnswers,
       sellerAddress,
       sellerNotes,
-      
+
       shopId
     } = params;
-    const shop = await db.select().from(shops).where(eq(shops.id, shopId)).limit(1);
-    if(!shop || shop.length == 0){
-      throw new Error("Shop not found");
-    }
-    const tenant_id = shop[0].tenant_id;
+
     return await db.transaction(async (tx) => {
+      // Validate shop exists inside transaction for atomicity
+      const shop = await tx.select().from(shops).where(eq(shops.id, shopId)).limit(1);
+      if (!shop || shop.length == 0) {
+        throw new Error("Shop not found");
+      }
+      const tenant_id = shop[0].tenant_id;
+
       const orderId = generateId();
-      const orderNumber = await generateOrderNumber();
+      const orderNumber = await generateOrderNumber(tx);
       await tx.insert(orders).values({
         id: orderId,
         order_number: orderNumber,
@@ -146,7 +156,7 @@ export const orderRepository = {
           created_at: new Date()
         });
       }
-      
+
       // Insert shipping details
       await tx.insert(shipping_details).values({
         id: generateId(),
@@ -163,13 +173,13 @@ export const orderRepository = {
         created_at: new Date(),
         updated_at: new Date()
       });
-      
+
       // Get shipping details
       const newShippingDetails = await tx.select().from(shipping_details)
         .where(eq(shipping_details.orderId, orderId))
         .limit(1)
         .then(rows => rows[0]);
-      
+
       // Insert initial status history
       await tx.insert(order_status_history).values({
         id: generateId(),
@@ -178,22 +188,22 @@ export const orderRepository = {
         changed_at: new Date(),
         notes: "Order created"
       });
-      
+
       return { ...newOrder, shippingDetails: newShippingDetails };
     });
   },
-  
+
   // Create a new order as an Admin
   createAdminOrder: async (params: CreateAdminOrderParams, adminUserId: number) => {
-    const { 
-      deviceId, 
-      deviceSnapshot, 
+    const {
+      deviceId,
+      deviceSnapshot,
       estimatedPrice,
       finalPrice,
       conditionAnswers,
       sellerAddress,
       sellerNotes,
-      
+
       shopId,
       status,
       imei,
@@ -204,10 +214,10 @@ export const orderRepository = {
 
     return await db.transaction(async (tx) => {
       const orderId = generateId();
-      const orderNumber = await generateOrderNumber();
-      
+      const orderNumber = await generateOrderNumber(tx);
+
       const shop = await tx.select().from(shops).where(eq(shops.id, shopId)).limit(1);
-      if(!shop || shop.length == 0){
+      if (!shop || shop.length == 0) {
         throw new Error("Shop not found");
       }
       const tenant_id = shop[0].tenant_id;
@@ -232,7 +242,7 @@ export const orderRepository = {
       });
 
       const newOrder = await tx.select().from(orders).where(eq(orders.id, orderId)).limit(1).then(rows => rows[0]);
-      
+
       for (const answer of conditionAnswers) {
         await tx.insert(order_device_condition_answers).values({
           id: generateId(),
@@ -244,7 +254,7 @@ export const orderRepository = {
           created_at: new Date()
         });
       }
-      
+
       await tx.insert(shipping_details).values({
         id: generateId(),
         orderId: orderId,
@@ -260,7 +270,7 @@ export const orderRepository = {
         created_at: new Date(),
         updated_at: new Date()
       });
-      
+
       await tx.insert(order_status_history).values({
         id: generateId(),
         order_id: orderId,
@@ -269,42 +279,42 @@ export const orderRepository = {
         notes: "Order created by admin.",
         changed_by_user_id: adminUserId
       });
-      
+
       return newOrder;
     });
   },
-  
+
   // Get a single order with all related data
   getOrderById: async (orderId: string, allowedShopIds?: number[]) => {
     // Get the order record
     const orderResults = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
-    
+
     if (!orderResults.length) {
       return null;
     }
-    
+
     const order = orderResults[0];
-    
+
     // Check if the user has access to this order's shop
     if (allowedShopIds && !allowedShopIds.includes(order.shop_id)) {
       return null; // User doesn't have access to this order
     }
-    
+
     // Continue with normal order retrieval
     const deviceResults = await db.select().from(models).where(eq(models.id, order.device_id)).limit(1);
     const device = deviceResults.length ? deviceResults[0] : null;
-    
+
     const conditionAnswers = await db
       .select()
       .from(order_device_condition_answers)
       .where(eq(order_device_condition_answers.order_id, orderId));
-    
+
     const shipping = await db
       .select()
       .from(shipping_details)
       .where(eq(shipping_details.orderId, orderId))
       .limit(1);
-    
+
     const statusHistory = await db
       .select({
         id: order_status_history.id,
@@ -316,7 +326,7 @@ export const orderRepository = {
       .from(order_status_history)
       .where(eq(order_status_history.order_id, orderId))
       .orderBy(desc(order_status_history.changed_at));
-    
+
     // Get user names for status history
     const adminUserIds = statusHistory.map(history => history.changed_by_user_id).filter(id => id !== null) as number[];
     const adminUserNames = adminUserIds.length ? await db
@@ -326,14 +336,14 @@ export const orderRepository = {
       })
       .from(users)
       .where(inArray(users.id, adminUserIds)) : [];
-    
+
     const adminUserNameMap = new Map(adminUserNames.map(u => [u.id, u.fullName]));
-    
+
     const statusHistoryWithNames = statusHistory.map(history => ({
       ...history,
       changedByUserName: history.changed_by_user_id ? adminUserNameMap.get(history.changed_by_user_id) : null
     }));
-    
+
     return {
       ...order,
       device,
@@ -342,7 +352,7 @@ export const orderRepository = {
       statusHistory: statusHistoryWithNames
     };
   },
-  
+
   // List orders with filtering and pagination
   listOrders: async (filters: OrdersFilter = {}) => {
     const {
@@ -358,10 +368,10 @@ export const orderRepository = {
       sortOrder = "desc",
       allowedShopIds
     } = filters;
-    
+
     // Build the WHERE conditions
     const whereConditions = [];
-    
+
     if (status) {
       if (Array.isArray(status)) {
         whereConditions.push(inArray(orders.status, status));
@@ -369,23 +379,23 @@ export const orderRepository = {
         whereConditions.push(eq(orders.status, status));
       }
     }
-    
+
     if (dateFrom) {
       whereConditions.push(gte(orders.created_at, dateFrom));
     }
-    
+
     if (dateTo) {
       whereConditions.push(lte(orders.created_at, dateTo));
     }
-    
+
     if (tenantId) {
       whereConditions.push(eq(orders.tenant_id, tenantId));
     }
-    
+
     if (shopId) {
       whereConditions.push(eq(orders.shop_id, shopId));
     }
-    
+
     // Shop access restriction: if allowedShopIds is provided, limit to only those shops
     if (allowedShopIds) {
       if (allowedShopIds.length === 0) {
@@ -400,10 +410,10 @@ export const orderRepository = {
           }
         };
       }
-      
+
       whereConditions.push(inArray(orders.shop_id, allowedShopIds));
     }
-    
+
     if (search) {
       whereConditions.push(
         or(
@@ -412,23 +422,23 @@ export const orderRepository = {
         )
       );
     }
-    
+
     // Calculate pagination values
     const offset = (page - 1) * limit;
-    
+
     // Execute count query for pagination metadata
     let countQuery = db
       .select({ count: count() })
       .from(orders)
       .leftJoin(shops, eq(orders.shop_id, shops.id));
-      
+
     if (whereConditions.length > 0) {
       countQuery = countQuery.where(and(...whereConditions)) as typeof countQuery;
     }
-    
+
     const [countResult] = await countQuery;
     const totalCount = countResult?.count || 0;
-    
+
     // Execute the main query
     let mainQuery = db
       .select({
@@ -452,11 +462,11 @@ export const orderRepository = {
       })
       .from(orders)
       .leftJoin(shops, eq(orders.shop_id, shops.id));
-      
+
     if (whereConditions.length > 0) {
       mainQuery = mainQuery.where(and(...whereConditions)) as typeof mainQuery;
     }
-    
+
     // Apply sorting
     if (sortBy === "createdAt") {
       mainQuery = mainQuery.orderBy(sortOrder === "asc" ? asc(orders.created_at) : desc(orders.created_at)) as typeof mainQuery;
@@ -467,12 +477,12 @@ export const orderRepository = {
     } else if (sortBy === "estimatedPrice") {
       mainQuery = mainQuery.orderBy(sortOrder === "asc" ? asc(orders.estimated_price) : desc(orders.estimated_price)) as typeof mainQuery;
     }
-    
+
     // Apply pagination
     mainQuery = mainQuery.limit(limit).offset(offset) as typeof mainQuery;
-    
+
     const results = await mainQuery;
-    
+
     return {
       orders: results,
       pagination: {
@@ -483,11 +493,11 @@ export const orderRepository = {
       }
     };
   },
-  
+
   // Update order status
   updateOrderStatus: async (params: UpdateOrderStatusParams & { serialNumber?: string; notes?: string }) => {
     const { orderId, newStatus, changedByUserId, notes, finalPrice, imei, sku, warehouseId, serialNumber } = params;
-    
+
     return await db.transaction(async (tx) => {
       // Update the order status
       await tx
@@ -502,14 +512,14 @@ export const orderRepository = {
           updated_at: new Date()
         })
         .where(eq(orders.id, orderId));
-      
+
       // Get the updated order
       const updatedOrders = await tx.select().from(orders).where(eq(orders.id, orderId)).limit(1);
-      
+
       if (!updatedOrders.length) {
         throw new Error(`Order with ID ${orderId} not found`);
       }
-      
+
       // Add status history record
       await tx.insert(order_status_history).values({
         id: generateId(),
@@ -519,11 +529,11 @@ export const orderRepository = {
         changed_by_user_id: changedByUserId ?? null,
         notes: notes || null
       });
-      
+
       return updatedOrders[0];
     });
   },
-  
+
   // Get shipping details for an order
   getShippingDetails: async (orderId: string) => {
     const shipping = await db
@@ -531,13 +541,13 @@ export const orderRepository = {
       .from(shipping_details)
       .where(eq(shipping_details.orderId, orderId))
       .limit(1);
-    
+
     return shipping[0] || null;
   },
-  
+
   // Update shipping details
   updateShippingDetails: async (
-    orderId: string, 
+    orderId: string,
     data: {
       shipping_label_url?: string;
       tracking_number?: string;
@@ -552,40 +562,53 @@ export const orderRepository = {
         updated_at: new Date()
       })
       .where(eq(shipping_details.orderId, orderId));
-    
+
     // Return the updated record
     const updated = await db
       .select()
       .from(shipping_details)
       .where(eq(shipping_details.orderId, orderId))
       .limit(1);
-    
+
     return updated[0] || null;
   },
-  
+
   /**
    * Find an order with status PAID that matches a given IMEI or serial number.
    * Used to prevent purchasing a device that has already been bought.
+   * @param params.imei - Device IMEI to check
+   * @param params.serialNumber - Device serial number to check
+   * @param params.tenantId - Tenant ID for isolation (required for security)
    */
   findPaidOrderByIdentifier: async (
-    params: { imei?: string; serialNumber?: string }
+    params: { imei?: string; serialNumber?: string; tenantId?: number }
   ) => {
-    const { imei, serialNumber } = params;
+    const { imei, serialNumber, tenantId } = params;
 
     // At least one identifier must be provided
     if (!imei && !serialNumber) {
       throw new Error("IMEI or serialNumber must be provided");
     }
 
-    // Build dynamic where conditions
+    // Build dynamic where conditions with tenant isolation
     const conditions: any[] = [eq(orders.status, "PAID")];
 
-    if (imei) {
-      conditions.push(eq(orders.imei, imei));
+    // Add tenant filter for proper data isolation
+    if (tenantId) {
+      conditions.push(eq(orders.tenant_id, tenantId));
     }
 
+    // Check for matching IMEI or serial number (OR logic for identifiers)
+    const identifierConditions: any[] = [];
+    if (imei) {
+      identifierConditions.push(eq(orders.imei, imei));
+    }
     if (serialNumber) {
-      conditions.push(eq(orders.serial_number, serialNumber));
+      identifierConditions.push(eq(orders.serial_number, serialNumber));
+    }
+
+    if (identifierConditions.length > 0) {
+      conditions.push(or(...identifierConditions));
     }
 
     const result = await db

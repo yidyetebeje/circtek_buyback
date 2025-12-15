@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { devices, stock, stock_movements, sku_specs } from "../db/circtek.schema";
+import { devices, stock, stock_movements, sku_specs, stock_device_ids } from "../db/circtek.schema";
 import { eq, and, sql } from "drizzle-orm";
 
 export interface AddDeviceParams {
@@ -34,7 +34,7 @@ export interface StockCheckResult {
  * Handles device creation, stock checking, and inventory management
  */
 export class DeviceService {
-  
+
   /**
    * Check if a device SKU is in stock at a specific warehouse
    * @param sku The SKU to check
@@ -44,9 +44,9 @@ export class DeviceService {
    * @returns Stock check result with availability and quantity
    */
   async checkStock(
-    sku: string, 
-    warehouseId: number, 
-    tenantId: number, 
+    sku: string,
+    warehouseId: number,
+    tenantId: number,
     minQuantity: number = 1
   ): Promise<StockCheckResult> {
     try {
@@ -111,7 +111,7 @@ export class DeviceService {
               )
             )
             .limit(1);
-          
+
           if (specs.length > 0) {
             skuSpecs = specs[0];
           }
@@ -129,61 +129,97 @@ export class DeviceService {
           )
           .limit(1);
 
+        let deviceId: number;
+        let deviceRecord: any;
+
         if (existingDevice.length > 0) {
-          throw new Error(`Device with IMEI ${params.imei} already exists in inventory`);
-        }
-
-        // Create the device record, using SKU specs as fallback for missing data
-        const deviceData = {
-          sku: params.sku,
-          lpn: params.lpn,
-          make: params.make || skuSpecs?.make,
-          model_no: params.model_no || skuSpecs?.model_no,
-          model_name: params.model_name || skuSpecs?.model_name,
-          storage: params.storage || skuSpecs?.storage,
-          memory: params.memory || skuSpecs?.memory,
-          color: params.color || skuSpecs?.color,
-          device_type: params.device_type || skuSpecs?.device_type,
-          serial: params.serial,
-          imei: params.imei,
-          guid: params.guid,
-          description: params.description,
-          tenant_id: params.tenant_id,
-          warehouse_id: params.warehouse_id,
-          status: true
-        };
-
-        const [newDevice] = await tx
-          .insert(devices)
-          .values(deviceData)
-          .$returningId();
-
-        // Update or create stock record
-        if (params.sku) {
-          await this.updateStockForDevice(tx, params.sku, params.warehouse_id, params.tenant_id, 1);
-          
-          // Record stock movement
-          await tx.insert(stock_movements).values({
+          // Device already exists, use the existing record
+          deviceRecord = existingDevice[0];
+          deviceId = deviceRecord.id;
+          console.log(`[DeviceService] Device with IMEI ${params.imei} already exists, checking stock status`);
+        } else {
+          // Create the device record, using SKU specs as fallback for missing data
+          const deviceData = {
             sku: params.sku,
-            warehouse_id: params.warehouse_id,
-            delta: 1,
-            reason: 'buyback',
-            ref_type: 'order',
-            ref_id: params.order_id || newDevice.id,
-            actor_id: 1, // TODO: Get actual user ID from context
+            lpn: params.lpn,
+            make: params.make || skuSpecs?.make,
+            model_no: params.model_no || skuSpecs?.model_no,
+            model_name: params.model_name || skuSpecs?.model_name,
+            storage: params.storage || skuSpecs?.storage,
+            memory: params.memory || skuSpecs?.memory,
+            color: params.color || skuSpecs?.color,
+            device_type: params.device_type || skuSpecs?.device_type,
+            serial: params.serial,
+            imei: params.imei,
+            guid: params.guid,
+            description: params.description,
             tenant_id: params.tenant_id,
+            warehouse_id: params.warehouse_id,
             status: true
-          });
+          };
+
+          const [newDevice] = await tx
+            .insert(devices)
+            .values(deviceData)
+            .$returningId();
+
+          deviceId = newDevice.id;
+
+          // Fetch the complete device record
+          const completeDevice = await tx
+            .select()
+            .from(devices)
+            .where(eq(devices.id, deviceId))
+            .limit(1);
+
+          deviceRecord = completeDevice[0];
         }
 
-        // Fetch the complete device record to return
-        const completeDevice = await tx
-          .select()
-          .from(devices)
-          .where(eq(devices.id, newDevice.id))
-          .limit(1);
+        // Check if device is already in stock_device_ids
+        if (params.sku) {
+          const existingStockEntry = await tx
+            .select()
+            .from(stock_device_ids)
+            .where(
+              and(
+                eq(stock_device_ids.device_id, deviceId),
+                eq(stock_device_ids.tenant_id, params.tenant_id)
+              )
+            )
+            .limit(1);
 
-        return completeDevice[0];
+          // Only add to stock if device is not already tracked
+          if (existingStockEntry.length === 0) {
+            const stockId = await this.updateStockForDevice(tx, params.sku, params.warehouse_id, params.tenant_id, 1);
+
+            // Record stock movement
+            await tx.insert(stock_movements).values({
+              sku: params.sku,
+              warehouse_id: params.warehouse_id,
+              delta: 1,
+              reason: 'buyback',
+              ref_type: 'order',
+              ref_id: params.order_id || deviceId,
+              actor_id: 1, // TODO: Get actual user ID from context
+              tenant_id: params.tenant_id,
+              status: true
+            });
+
+            // Add device to stock_device_ids for tracking
+            if (stockId) {
+              await tx.insert(stock_device_ids).values({
+                stock_id: stockId,
+                device_id: deviceId,
+                tenant_id: params.tenant_id
+              });
+            }
+            console.log(`[DeviceService] Device ${params.imei} added to stock`);
+          } else {
+            console.log(`[DeviceService] Device ${params.imei} is already in stock, skipping stock update`);
+          }
+        }
+
+        return deviceRecord;
       });
     } catch (error) {
       console.error("[DeviceService] Error adding device:", error);
@@ -199,13 +235,22 @@ export class DeviceService {
    * @param tenantId The tenant ID
    * @param delta The quantity change (positive for increase, negative for decrease)
    */
+  /**
+   * Update stock levels for a device SKU
+   * @param tx Database transaction
+   * @param sku The SKU to update
+   * @param warehouseId The warehouse ID
+   * @param tenantId The tenant ID
+   * @param delta The quantity change (positive for increase, negative for decrease)
+   * @returns The stock ID
+   */
   private async updateStockForDevice(
     tx: any,
     sku: string,
     warehouseId: number,
     tenantId: number,
     delta: number
-  ): Promise<void> {
+  ): Promise<number | null> {
     // Check if stock record exists
     const existingStock = await tx
       .select()
@@ -234,16 +279,18 @@ export class DeviceService {
             eq(stock.tenant_id, tenantId)
           )
         );
+      return existingStock[0].id;
     } else {
       // Create new stock record
-      await tx.insert(stock).values({
+      const [newStock] = await tx.insert(stock).values({
         sku,
         warehouse_id: warehouseId,
         tenant_id: tenantId,
         quantity: Math.max(0, delta), // Ensure non-negative quantity
         is_part: false,
         status: true
-      });
+      }).$returningId();
+      return newStock.id;
     }
   }
 
@@ -341,6 +388,72 @@ export class DeviceService {
       return device !== null;
     } catch (error) {
       console.error("[DeviceService] Error checking device existence:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if a device is currently in stock using the stock_device_ids table
+   * @param imei The IMEI to check
+   * @param tenantId The tenant ID for scoping
+   * @returns True if device is in stock, false otherwise
+   */
+  async isDeviceInStockByImei(imei: string, tenantId: number): Promise<boolean> {
+    try {
+      // First find the device by IMEI
+      const device = await this.getDeviceByImei(imei, tenantId);
+      if (!device) {
+        return false;
+      }
+
+      // Check if device exists in stock_device_ids
+      const stockEntry = await db
+        .select({ id: stock_device_ids.id })
+        .from(stock_device_ids)
+        .where(
+          and(
+            eq(stock_device_ids.device_id, device.id),
+            eq(stock_device_ids.tenant_id, tenantId)
+          )
+        )
+        .limit(1);
+
+      return stockEntry.length > 0;
+    } catch (error) {
+      console.error("[DeviceService] Error checking if device is in stock by IMEI:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if a device is currently in stock by serial using the stock_device_ids table
+   * @param serial The serial number to check
+   * @param tenantId The tenant ID for scoping
+   * @returns True if device is in stock, false otherwise
+   */
+  async isDeviceInStockBySerial(serial: string, tenantId: number): Promise<boolean> {
+    try {
+      // First find the device by serial
+      const device = await this.getDeviceBySerial(serial, tenantId);
+      if (!device) {
+        return false;
+      }
+
+      // Check if device exists in stock_device_ids
+      const stockEntry = await db
+        .select({ id: stock_device_ids.id })
+        .from(stock_device_ids)
+        .where(
+          and(
+            eq(stock_device_ids.device_id, device.id),
+            eq(stock_device_ids.tenant_id, tenantId)
+          )
+        )
+        .limit(1);
+
+      return stockEntry.length > 0;
+    } catch (error) {
+      console.error("[DeviceService] Error checking if device is in stock by serial:", error);
       return false;
     }
   }

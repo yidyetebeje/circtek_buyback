@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { User, Mail, Key, Briefcase, Building2 } from "lucide-react";
+import { User, Key, Briefcase, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -27,10 +27,8 @@ const baseUserSchema = z.object({
   fName: z.string().min(1, { message: "First name is required." }),
   lName: z.string().min(1, { message: "Last name is required." }),
   userName: z.string().min(1, { message: "Username is required." }),
-  email: z.string().email({ message: "Invalid email address." }),
   roleId: z.string().optional(),
   status: z.boolean(),
-  organizationName: z.string().optional(),
   warehouseId: z.string().optional(),
 });
 
@@ -87,10 +85,8 @@ export function UserForm({
     fName: initialData?.fName || '',
     lName: initialData?.lName || '',
     userName: initialData?.userName || '',
-    email: initialData?.email || '',
     roleId: initialData?.roleId || '',
     status: initialData?.status === undefined ? true : initialData.status,
-    organizationName: initialData?.organizationName || '',
     warehouseId: initialData?.warehouseId || '',
     password: '',
     confirmPassword: '',
@@ -117,14 +113,14 @@ export function UserForm({
       roleSlug = selectedRole?.slug;
 
       if (!roleSlug && values.roleId) {
-          console.error("Selected role not found or slug is missing for roleId:", values.roleId);
-          form.setError("roleId", { type: "manual", message: "Could not find role details. Please try again." });
-          return;
+        console.error("Selected role not found or slug is missing for roleId:", values.roleId);
+        form.setError("roleId", { type: "manual", message: "Could not find role details. Please try again." });
+        return;
       }
 
       if (roleSlug === 'shop_manager' && !values.warehouseId) {
-          form.setError('warehouseId', { type: 'manual', message: 'Warehouse is required for Shop Manager' });
-          return;
+        form.setError('warehouseId', { type: 'manual', message: 'Warehouse is required for Shop Manager' });
+        return;
       }
     } else {
       // If role selection is hidden, we might want to ensure roleSlug isn't part of the submission
@@ -134,21 +130,21 @@ export function UserForm({
     const { warehouseId: warehouseIdStr, roleId, ...restValues } = values;
 
     const submissionValues: UserFormSubmitValues = {
-        ...restValues,
-        warehouseId: warehouseIdStr ? Number(warehouseIdStr) : undefined,
+      ...restValues,
+      warehouseId: warehouseIdStr ? Number(warehouseIdStr) : undefined,
     };
-    
+
     if (roleSlug) {
       submissionValues.roleSlug = roleSlug;
     }
 
     if (initialData?.id) {
-        submissionValues.id = initialData.id;
+      submissionValues.id = initialData.id;
     }
     // Remove password fields if they are empty (important for updates)
     if (!submissionValues.password) {
-        delete submissionValues.password;
-        delete submissionValues.confirmPassword;
+      delete submissionValues.password;
+      delete submissionValues.confirmPassword;
     }
     // roleId might not be needed by the backend if roleSlug is used for creation/update.
     // Decide if it should be removed, e.g., delete submissionValues.roleId;
@@ -214,24 +210,6 @@ export function UserForm({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email *</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <div className="absolute left-3 top-3 text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                    </div>
-                    <Input type="email" placeholder="john.doe@example.com" {...field} disabled={isLoading} className="pl-9" />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           {/* Render role select only if no forcedRoleSlug */}
           {showRoleSelection && (
             <FormField
@@ -244,9 +222,9 @@ export function UserForm({
                     <div className="absolute left-3 top-2.5 text-muted-foreground z-10 pointer-events-none">
                       <Briefcase className="h-4 w-4" />
                     </div>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      value={field.value} 
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
                       disabled={isLoading || isLoadingRoles}
                     >
                       <FormControl>
@@ -268,25 +246,7 @@ export function UserForm({
               )}
             />
           )}
-          <FormField
-            control={form.control}
-            name="organizationName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Organization Name</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <div className="absolute left-3 top-3 text-muted-foreground">
-                      <Building2 className="h-4 w-4" />
-                    </div>
-                    <Input placeholder="Client Inc." {...field} disabled={isLoading} className="pl-9" />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        
+
           <FormField
             control={form.control}
             name="status"
@@ -392,16 +352,16 @@ export function UserForm({
           );
         })()}
         <div className="flex justify-end space-x-3 pt-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onCancel} 
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
             disabled={isLoading}
           >
             Cancel
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={isLoading}
           >
             {isLoading ? "Saving..." : (initialData?.id ? "Update User" : "Create User")}

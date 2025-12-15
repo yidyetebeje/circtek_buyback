@@ -107,11 +107,11 @@ export const devices = mysqlTable('devices', {
   storage: varchar('storage', { length: 255 }),
   memory: varchar('memory', { length: 255 }),
   color: varchar('color', { length: 255 }),
-  edited_color: varchar('edited_color', {length: 255}),
+  edited_color: varchar('edited_color', { length: 255 }),
   device_type: mysqlEnum('device_type', ['iPhone', 'Macbook', 'Airpods', 'Android']),
   serial: varchar('serial', { length: 255 }),
   imei: varchar('imei', { length: 255 }),
-  imei2: varchar('imei2',  { length: 255 }),
+  imei2: varchar('imei2', { length: 255 }),
   guid: varchar('guid', { length: 255 }),
   description: varchar('description', { length: 255 }),
   status: boolean('status').default(true),
@@ -156,7 +156,7 @@ export const stock = mysqlTable('stock', {
   created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
 }, (stock) => [
- uniqueIndex('stock_unique').on(stock.sku, stock.warehouse_id),
+  uniqueIndex('stock_unique').on(stock.sku, stock.warehouse_id),
 ]);
 export const stock_device_ids = mysqlTable('stock_device_ids', {
   id: serial('id').primaryKey(),
@@ -308,7 +308,7 @@ export const repairs = mysqlTable('repairs', {
   status: boolean('status').default(true),
   actor_id: bigint('actor_id', { mode: 'number', unsigned: true }).references(() => users.id).notNull(),
   tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
-  warehouse_id: bigint('warehouse_id', {mode: 'number', unsigned: true}).references(() => warehouses.id).notNull(),
+  warehouse_id: bigint('warehouse_id', { mode: 'number', unsigned: true }).references(() => warehouses.id).notNull(),
   created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
 });
@@ -334,7 +334,7 @@ export const device_events = mysqlTable('device_events', {
   id: serial('id').primaryKey(),
   device_id: bigint('device_id', { mode: 'number', unsigned: true }).references(() => devices.id).notNull(),
   actor_id: bigint('actor_id', { mode: 'number', unsigned: true }).references(() => users.id).notNull(),
-  event_type: mysqlEnum('device_event_type', ['DEAD_IMEI','REPAIR_STARTED','REPAIR_COMPLETED','TRANSFER_IN','TRANSFER_OUT','ADJUSTMENT','TEST_COMPLETED', 'REPAIR_DELETED']).notNull(),
+  event_type: mysqlEnum('device_event_type', ['DEAD_IMEI', 'REPAIR_STARTED', 'REPAIR_COMPLETED', 'TRANSFER_IN', 'TRANSFER_OUT', 'ADJUSTMENT', 'TEST_COMPLETED', 'REPAIR_DELETED']).notNull(),
   details: json('details'),
   status: boolean('status').default(true),
   tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
@@ -648,3 +648,110 @@ export const sku_mappings = mysqlTable('sku_mappings', {
   index('idx_sku_mappings_tenant').on(table.tenant_id),
 ]);
 
+// ========== SHIPPING MODULE ==========
+
+// Shipment status enum
+export const shipment_status = mysqlEnum('shipment_status', [
+  'draft', 'pending', 'label_generated', 'shipped',
+  'in_transit', 'delivered', 'cancelled', 'returned'
+]);
+
+// Main shipments table
+export const shipments = mysqlTable('shipments', {
+  id: serial('id').primaryKey(),
+  shipment_number: varchar('shipment_number', { length: 50 }).notNull(),
+
+  // Sendcloud integration
+  sendcloud_parcel_id: bigint('sendcloud_parcel_id', { mode: 'number', unsigned: true }),
+  sendcloud_tracking_number: varchar('sendcloud_tracking_number', { length: 255 }),
+  sendcloud_tracking_url: text('sendcloud_tracking_url'),
+  carrier_name: varchar('carrier_name', { length: 100 }).default('UPS'),
+  shipping_method_id: int('shipping_method_id'), // Sendcloud shipping method ID
+
+  // Origin warehouse
+  from_warehouse_id: bigint('from_warehouse_id', { mode: 'number', unsigned: true })
+    .references(() => warehouses.id).notNull(),
+  // Destination warehouse (for inter-warehouse transfers)
+  to_warehouse_id: bigint('to_warehouse_id', { mode: 'number', unsigned: true })
+    .references(() => warehouses.id),
+
+  // External recipient (for non-warehouse deliveries)
+  recipient_name: varchar('recipient_name', { length: 255 }),
+  recipient_company: varchar('recipient_company', { length: 255 }),
+  recipient_address: varchar('recipient_address', { length: 255 }),
+  recipient_house_number: varchar('recipient_house_number', { length: 20 }),
+  recipient_city: varchar('recipient_city', { length: 100 }),
+  recipient_postal_code: varchar('recipient_postal_code', { length: 20 }),
+  recipient_country: varchar('recipient_country', { length: 2 }), // ISO 2-letter code
+  recipient_phone: varchar('recipient_phone', { length: 50 }),
+  recipient_email: varchar('recipient_email', { length: 255 }),
+
+  // Parcel details
+  parcel_type: mysqlEnum('parcel_type', ['individual', 'group']).default('individual'),
+  total_weight_kg: decimal('total_weight_kg', { precision: 10, scale: 3 }),
+  total_items: int('total_items').default(1),
+  total_value: decimal('total_value', { precision: 10, scale: 2 }),
+
+  // Labels
+  label_url: text('label_url'),
+  label_generated_at: timestamp('label_generated_at'),
+
+  // Status & Audit
+  status: shipment_status.default('draft'),
+  shipped_at: timestamp('shipped_at'),
+  delivered_at: timestamp('delivered_at'),
+  notes: text('notes'),
+
+  // Multi-tenant
+  created_by: bigint('created_by', { mode: 'number', unsigned: true })
+    .references(() => users.id).notNull(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true })
+    .references(() => tenants.id).notNull(),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_shipments_tenant').on(table.tenant_id),
+  index('idx_shipments_status').on(table.status),
+  index('idx_shipments_sendcloud').on(table.sendcloud_parcel_id),
+  unique('uq_shipment_number_tenant').on(table.shipment_number, table.tenant_id),
+]);
+
+// Shipment items (devices/parts in the shipment)
+export const shipment_items = mysqlTable('shipment_items', {
+  id: serial('id').primaryKey(),
+  shipment_id: bigint('shipment_id', { mode: 'number', unsigned: true })
+    .references(() => shipments.id).notNull(),
+  device_id: bigint('device_id', { mode: 'number', unsigned: true })
+    .references(() => devices.id),
+  sku: varchar('sku', { length: 255 }),
+  imei: varchar('imei', { length: 255 }),
+  serial_number: varchar('serial_number', { length: 255 }),
+  model_name: varchar('model_name', { length: 255 }),
+  quantity: int('quantity').default(1),
+  weight_kg: decimal('weight_kg', { precision: 10, scale: 3 }).default('0.200'),
+  unit_value: decimal('unit_value', { precision: 10, scale: 2 }),
+  hs_code: varchar('hs_code', { length: 20 }).default('851712'), // Mobile phones HS code
+  description: varchar('description', { length: 500 }),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true })
+    .references(() => tenants.id).notNull(),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_shipment_items_shipment').on(table.shipment_id),
+  index('idx_shipment_items_device').on(table.device_id),
+]);
+
+// Sendcloud configuration per tenant
+export const sendcloud_config = mysqlTable('sendcloud_config', {
+  id: serial('id').primaryKey(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true })
+    .references(() => tenants.id).notNull().unique(),
+  public_key: varchar('public_key', { length: 255 }).notNull(),
+  secret_key: varchar('secret_key', { length: 255 }).notNull(), // Should be encrypted in production
+  default_sender_address_id: int('default_sender_address_id'),
+  default_shipping_method_id: int('default_shipping_method_id'), // UPS method ID
+  is_active: boolean('is_active').default(true),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_sendcloud_config_tenant').on(table.tenant_id),
+]);

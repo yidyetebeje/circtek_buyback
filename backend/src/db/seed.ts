@@ -7,7 +7,7 @@ import { sql } from 'drizzle-orm';
 
 async function cleanup() {
     console.log('🧹 Cleaning up existing data...');
-    
+
     // Delete in reverse order of dependencies to avoid foreign key constraints
     await db.delete(test_results);
     await db.delete(devices);
@@ -16,7 +16,7 @@ async function cleanup() {
     await db.delete(users);
     await db.delete(roles);
     await db.delete(tenants);
-    
+
     console.log('✅ Cleanup completed');
 }
 
@@ -54,7 +54,7 @@ async function seed_warehouses() {
             description: 'Main warehouse for all stock',
             tenant_id: 1,
             shop_id: 1,
-            
+
         }
     ];
     await db.insert(warehouses).values(warehouses_data);
@@ -63,31 +63,35 @@ async function seed_warehouses() {
 
 async function seed_roles() {
     const roles_data = [
+        // {
+        //     name: 'super_admin',
+        //     description: 'Super Admin',
+        // },
+        // {
+        //     name: 'admin',
+        //     description: 'Admin',
+        // },
+        // {
+        //     name: 'tester',
+        //     description: 'Tester',
+        // },
+        // {
+        //     name: "repair_manager",
+        //     description: "Repair Manager",
+        // },
+        // {
+        //     name: "repair_technician",
+        //     description: "Repair Technician",
+        // },
+        // {
+        //     name: "stock_manager",
+        //     description: "Stock Manager",
+        // },
         {
-            name: 'super_admin',
-            description: 'Super Admin',
-        },
-        {
-            name: 'admin',
-            description: 'Admin',
-        },
-        {
-            name: 'tester',
-            description: 'Tester',
-        },
-        {
-            name: "repair_manager",
-            description: "Repair Manager",
-        },
-        {
-            name: "repair_technician",
-            description: "Repair Technician",
-        },
-        {
-            name: "stock_manager",
-            description: "Stock Manager",
-        },        
-        
+            name: 'shop_manager',
+            description: 'Shop Manager',
+        }
+
     ]
     await db.insert(roles).values(roles_data)
 }
@@ -165,10 +169,10 @@ async function seed_test_results() {
             tester_id: 1,
             passed_components: 'screen, camera',
             failed_components: 'battery, accelerometer',
-            serial_number: faker.string.alphanumeric(12).toUpperCase(),
-            imei: faker.string.numeric(15),
+            serial_number: "K1RUJBELN3KE",
+            imei: "362109476572756",
             device_type: 'iPhone',
-        
+
         });
     }
     await db.insert(test_results).values(test_results_data);
@@ -275,7 +279,7 @@ async function seed_shop() {
     console.log('Detailed shops seeded successfully');
 }
 async function seed() {
-   
+
     await seed_tenants();
     await seed_roles();
     await seed_users();
@@ -286,5 +290,5 @@ async function seed() {
 
 
 // Choose which approach to use:
-seed(); // This will clean up first
+seed_test_results(); // This will clean up first
 // seedWithoutCleanup(); // This will skip duplicates

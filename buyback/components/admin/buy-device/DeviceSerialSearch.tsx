@@ -45,13 +45,13 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
   const handleSerialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSerial(value);
-    
+
     // Auto-search when user stops typing
     if (value.length >= 3) {
       const timeoutId = setTimeout(() => {
         setSearchTerm(value.trim());
       }, 500);
-      
+
       return () => clearTimeout(timeoutId);
     }
   };
@@ -104,8 +104,8 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
               autoFocus
             />
           </div>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={serial.length < 3 || isLoading}
             className="px-6 bg-primary hover:bg-primary/90 text-primary-foreground"
           >
@@ -142,17 +142,17 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
                 <div className="text-center py-8">
                   <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                   <h3 className="text-lg font-medium text-gray-900 mb-1">Device Not Found</h3>
-                                     <p className="text-gray-600">
-                     No tested device found with serial &quot;{searchTerm}&quot;. 
-                     Please verify the serial number or ensure the device has been tested.
-                   </p>
+                  <p className="text-gray-600">
+                    No tested device found with serial &quot;{searchTerm}&quot;.
+                    Please verify the serial number or ensure the device has been tested.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <h3 className="text-lg font-medium text-gray-900">
                     Found {searchResults.data.length} device(s)
                   </h3>
-                  
+
                   <div className="grid gap-3">
                     {searchResults.data.map((device) => (
                       <div
@@ -171,13 +171,15 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
                                 </span>
                               )}
                             </div>
-                            
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                              <div>
-                                <span className="font-medium">Serial:</span> {device.serial}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm text-gray-600">
+                              <div className="min-w-0">
+                                <span className="font-medium">Serial:</span>
+                                <span className="ml-1 break-all">{device.serial}</span>
                               </div>
-                              <div>
-                                <span className="font-medium">IMEI:</span> {device.imei}
+                              <div className="min-w-0">
+                                <span className="font-medium">IMEI:</span>
+                                <span className="ml-1 break-all">{device.imei}</span>
                               </div>
                               {device.storage && (
                                 <div>
@@ -214,7 +216,7 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
                               </div>
                             )}
                           </div>
-                          
+
                           <Button
                             onClick={() => handleSelectDevice(device)}
                             className="ml-4 bg-primary hover:bg-primary/90 text-primary-foreground"

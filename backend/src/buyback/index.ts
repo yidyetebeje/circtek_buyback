@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { swagger } from "@elysiajs/swagger";
 import { orderRoutes } from "./routes/orderRoutes";
+import { storeTransferRoutes } from "./routes/storeTransferRoutes";
 
 export const buybackApi = new Elysia({ prefix: "/buyback" })
   .use(swagger({
@@ -12,10 +13,12 @@ export const buybackApi = new Elysia({ prefix: "/buyback" })
       },
       tags: [
         { name: "Orders", description: "Device buyback order management endpoints" },
-        { name: "Admin", description: "Admin-specific endpoints for order management" }
+        { name: "Admin", description: "Admin-specific endpoints for order management" },
+        { name: "Store Transfers", description: "Store to warehouse transfer endpoints" }
       ]
     }
   }))
-  .use(orderRoutes);
+  .use(orderRoutes)
+  .use(storeTransferRoutes);
 
 export default buybackApi; 

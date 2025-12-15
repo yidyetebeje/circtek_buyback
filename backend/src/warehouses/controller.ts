@@ -3,7 +3,7 @@ import { WarehousesRepository } from './repository'
 import { WarehouseCreateInput, WarehouseListQueryInput, WarehousePublic, WarehouseUpdateInput } from './types'
 
 export class WarehousesController {
-	constructor(private readonly repo: WarehousesRepository) {}
+	constructor(private readonly repo: WarehousesRepository) { }
 
 	async create(payload: WarehouseCreateInput): Promise<response<WarehousePublic | null>> {
 		const created = await this.repo.createWarehouse(payload)
@@ -15,7 +15,7 @@ export class WarehousesController {
 		return { data: rows, message: 'OK', status: 200, meta: { total, page, limit } }
 	}
 
-	async getOne(id: number, requiredTenantId?: string): Promise<response<WarehousePublic | null>> {
+	async getOne(id: number, requiredTenantId?: number): Promise<response<WarehousePublic | null>> {
 		const found = await this.repo.findOne(id)
 		if (!found) return { data: null, message: 'Warehouse not found', status: 404 }
 		if (requiredTenantId && found.tenant_id !== requiredTenantId)
@@ -23,7 +23,7 @@ export class WarehousesController {
 		return { data: found, message: 'OK', status: 200 }
 	}
 
-	async update(id: number, payload: WarehouseUpdateInput, requiredTenantId?: string): Promise<response<WarehousePublic | null>> {
+	async update(id: number, payload: WarehouseUpdateInput, requiredTenantId?: number): Promise<response<WarehousePublic | null>> {
 		if (requiredTenantId) {
 			const existing = await this.repo.findOne(id)
 			if (!existing) return { data: null, message: 'Warehouse not found', status: 404 }
@@ -35,7 +35,7 @@ export class WarehousesController {
 		return { data: updated, message: 'Warehouse updated', status: 200 }
 	}
 
-	async remove(id: number, requiredTenantId?: string): Promise<response<{ id: number } | null>> {
+	async remove(id: number, requiredTenantId?: number): Promise<response<{ id: number } | null>> {
 		if (requiredTenantId) {
 			const existing = await this.repo.findOne(id)
 			if (!existing) return { data: null, message: 'Warehouse not found', status: 404 }

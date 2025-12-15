@@ -1,5 +1,5 @@
 import { ApiClient, createApiClient } from './base';
-import { ApiResponse, PaginatedResponse } from './types';
+import { PaginatedResponse } from './types';
 
 export interface StockItem {
   id: number;
@@ -44,14 +44,14 @@ export interface StockListResponse extends PaginatedResponse<StockItem> {
 
 class StockService {
   private apiClient: ApiClient;
-  private baseEndpoint = '/stock';
+  private baseEndpoint = '/stock/device-stock';
 
   constructor(apiClient?: ApiClient) {
     this.apiClient = apiClient || createApiClient();
   }
 
-  async getStocks(params: StockListParams): Promise<ApiResponse<StockListResponse>> {
-    const response = await this.apiClient.get<{ data: StockListResponse }>(this.baseEndpoint, {
+  async getStocks(params: StockListParams): Promise<StockListResponse> {
+    const response = await this.apiClient.get<StockListResponse>(this.baseEndpoint, {
       params: params as Record<string, string | number | boolean | number[] | undefined>,
       isProtected: true,
     });

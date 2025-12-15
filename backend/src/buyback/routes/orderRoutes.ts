@@ -57,7 +57,7 @@ const updateOrderStatusSchema = {
     }),
     // Schema for other statuses - additional fields are optional
     t.Object({
-      newStatus: t.Enum(ORDER_STATUS, { error: "Invalid status" }), 
+      newStatus: t.Enum(ORDER_STATUS, { error: "Invalid status" }),
       adminNotes: t.Optional(t.String()),
       finalPrice: t.Optional(t.Number({ minimum: 0 })),
       imei: t.Optional(t.String()),
@@ -76,14 +76,14 @@ const createAdminOrderSchema = {
     ...baseOrderObject,
     shopId: t.Number({ minimum: 1, error: "Shop ID is required" }),
     tenantId: t.Optional(t.Number({ minimum: 1 })), // Optional for admin creation, will be determined by service
-    
+
     status: t.Optional(t.Enum(ORDER_STATUS)),
     finalPrice: t.Number({ minimum: 0, error: "Final price is required" }),
     imei: t.String({ minLength: 1, error: "IMEI is required" }),
     sku: t.String({ minLength: 1, error: "SKU is required" }),
     serialNumber: t.String({ minLength: 1, error: "Serial number is required" }),
     warehouseId: t.Number({ minimum: 1, error: "Warehouse ID is required" }),
-    
+
     testingInfo: t.Optional(t.Object({
       deviceTransactionId: t.String(),
       testedAt: t.String(),
@@ -123,34 +123,34 @@ export const orderRoutes = new Elysia({ prefix: "/orders" })
   // Public endpoints - create order doesn't require auth
   .post("/", orderController.createOrder, {
     body: createOrderSchema.body,
-    detail: { 
-      summary: "Create a new buyback order", 
+    detail: {
+      summary: "Create a new buyback order",
       description: "Allows a client or shop to create a new device buyback order, providing all necessary device, seller, and condition information.",
-      tags: ["Orders"] 
+      tags: ["Orders"]
     }
   })
-  
+
   // Authenticated endpoints - following warehouse pattern
   .group("", (app) => app
     .use(requireRole([]))
     .get("/:orderId", orderController.getOrderById, {
       params: orderIdParamsSchema,
-      detail: { 
-        summary: "Get order details", 
+      detail: {
+        summary: "Get order details",
         description: "Retrieves the full details of a specific buyback order by its unique ID. Access is controlled based on user role and shop permissions.",
-        tags: ["Orders"] 
+        tags: ["Orders"]
       }
     })
     .get("/", orderController.listOrders, {
       query: listOrdersQuerySchema,
-      detail: { 
-        summary: "List orders with role-based filtering", 
+      detail: {
+        summary: "List orders with role-based filtering",
         description: "Retrieves a list of buyback orders. Access is filtered based on user role and shop permissions. Admin users can optionally filter by tenantId. Supports filtering by status, date range, and pagination.",
-        tags: ["Orders"] 
+        tags: ["Orders"]
       }
     })
   )
-  
+
   // Admin/ShopManager specific endpoints - following warehouse pattern
   .group("/admin", (app) => app
     .use(requireRole(['admin', 'super_admin', 'shop_manager']))
@@ -164,19 +164,19 @@ export const orderRoutes = new Elysia({ prefix: "/orders" })
     })
     .get("/:orderId", orderController.getOrderById, {
       params: orderIdParamsSchema,
-      detail: { 
-        summary: "Get order details (admin/shop manager)", 
+      detail: {
+        summary: "Get order details (admin/shop manager)",
         description: "Retrieves the full details of a specific buyback order by its unique ID. Shop managers can only access orders for their accessible shops. Admins can access any order.",
-        tags: ["Admin", "ShopManager", "Orders"] 
+        tags: ["Admin", "ShopManager", "Orders"]
       }
     })
     .put("/:orderId/status", orderController.updateOrderStatus, {
       body: updateOrderStatusSchema.body,
       params: updateOrderStatusSchema.params,
-      detail: { 
-        summary: "Update order status (admin/shop manager)", 
+      detail: {
+        summary: "Update order status (admin/shop manager)",
         description: "Allows an admin or shop manager to update the status of a buyback order (e.g., from 'Pending' to 'Received'). Shop managers can only update orders for their accessible shops. Can also include admin notes and the final assessed price if applicable.",
-        tags: ["Admin", "ShopManager", "Orders"] 
+        tags: ["Admin", "ShopManager", "Orders"]
       }
     })
     .get("/device-check", orderController.checkDeviceEligibility, {
@@ -187,4 +187,23 @@ export const orderRoutes = new Elysia({ prefix: "/orders" })
         tags: ["Admin", "ShopManager", "Orders"]
       }
     })
-  ); 
+    .post("/:orderId/regenerate-label", orderController.regenerateShippingLabel, {
+      params: orderIdParamsSchema,
+      detail: {
+        summary: "Regenerate shipping label for an order",
+        description: "Regenerates the shipping label for an order using Sendcloud API. Useful if the original label was not generated or needs to be refreshed.",
+        tags: ["Admin", "ShopManager", "Orders", "Shipping"]
+      }
+    })
+    .get("/:orderId/label-pdf", orderController.downloadLabelPdf, {
+      params: orderIdParamsSchema,
+      query: t.Object({
+        format: t.Optional(t.Union([t.Literal("a4"), t.Literal("a6")]))
+      }),
+      detail: {
+        summary: "Download shipping label PDF for an order",
+        description: "Downloads the shipping label as a PDF file. Use format=a4 for normal printers or format=a6 for label printers.",
+        tags: ["Admin", "ShopManager", "Orders", "Shipping"]
+      }
+    })
+  );

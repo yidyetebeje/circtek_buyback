@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAtom } from 'jotai';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,6 +29,9 @@ export function CardCheckout({
   const router = useRouter();
   const createOrderMutation = useCreateOrder();
   const t = useTranslations('Checkout');
+
+  // Track when order has been submitted to prevent showing empty cart during redirect
+  const [isOrderSubmitted, setIsOrderSubmitted] = useState(false);
 
   // Updated Zod Schema for Checkout Form Validation with enhanced address validation
   const checkoutFormSchema = useMemo(() => z.object({
@@ -123,12 +126,12 @@ export function CardCheckout({
     // For now, we still process only the first item as the current backend API only supports
     // creating orders for one device at a time
     const cartItem = relevantCartItems[0] as InProgressEstimation;
-    
+
     if (!cartItem || !cartItem.deviceModel || typeof cartItem.deviceModel.id !== 'number') {
-        console.error("Device model ID is missing or invalid in the cart item.", cartItem);
-        createOrderMutation.reset();
-        alert(t('messages.deviceConfigError'));
-        return;
+      console.error("Device model ID is missing or invalid in the cart item.", cartItem);
+      createOrderMutation.reset();
+      alert(t('messages.deviceConfigError'));
+      return;
     }
 
     const tenantIdString = process.env.NEXT_PUBLIC_TENANT_ID;
@@ -144,9 +147,9 @@ export function CardCheckout({
     const shopId = parseInt(shopIdString, 10);
 
     if (isNaN(tenantId) || isNaN(shopId)) {
-        console.error("Client ID or Shop ID from env is not a valid number.");
-        alert(t('messages.invalidConfigError'));
-        return;
+      console.error("Client ID or Shop ID from env is not a valid number.");
+      alert(t('messages.invalidConfigError'));
+      return;
     }
 
     const orderPayload: CreateOrderPayload = {
@@ -197,6 +200,9 @@ export function CardCheckout({
       shopId: shopId,
     };
 
+    // Mark order as submitted to prevent empty cart UI during redirect
+    setIsOrderSubmitted(true);
+
     createOrderMutation.mutate(orderPayload, {
       onSuccess: (response: CreateOrderResponseData) => {
         try {
@@ -210,6 +216,8 @@ export function CardCheckout({
       },
       onError: (err) => {
         console.error("Order submission caught an error:", err);
+        // Reset the submitted flag on error so user can try again
+        setIsOrderSubmitted(false);
       }
     });
   };
@@ -319,13 +327,27 @@ export function CardCheckout({
     return sortedAnswers;
   };
 
+  // Show loading state if order was submitted (redirecting to thank-you page)
+  // This prevents the empty cart message from flashing during navigation
+  if (isOrderSubmitted || createOrderMutation.isPending) {
+    return (
+      <div className="flex flex-col min-h-screen items-center justify-center p-4" style={{ backgroundColor }}>
+        <div className="bg-white p-10 rounded-xl shadow-lg text-center max-w-md">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: primaryColor }}></div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">{t('buttons.processing')}</h2>
+          <p className="text-gray-600">{t('messages.pleaseWait') || 'Please wait...'}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (relevantCartItems.length === 0) {
     return (
       <div className="flex flex-col min-h-screen items-center justify-center p-4" style={{ backgroundColor }}>
         <div className="bg-white p-10 rounded-xl shadow-lg text-center max-w-md">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">{t('emptyCart.title')}</h2>
           <p className="text-gray-600 mb-8">{t('emptyCart.description')}</p>
-          <a 
+          <a
             href={`/${currentLocale}`}
             className="px-6 py-3 text-white font-medium rounded-lg hover:bg-opacity-90 transition-colors duration-150 inline-block"
             style={{ backgroundColor: primaryColor }}
@@ -341,7 +363,7 @@ export function CardCheckout({
     <div style={{ backgroundColor }} className="min-h-screen py-12">
       <div className="container mx-auto px-4">
         <h1 className="text-3xl font-bold text-center mb-10">{t('title')}</h1>
-        
+
         {/* Global Error Message Area */}
         {createOrderMutation.isError && (
           <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative flex items-center" role="alert">
@@ -364,7 +386,7 @@ export function CardCheckout({
                   <ShoppingBag size={20} className="mr-2" style={{ color: primaryColor }} />
                   <h2 className="text-xl font-semibold">{t('sections.orderSummary')}</h2>
                 </div>
-                
+
                 <div className="divide-y divide-gray-100">
                   {relevantCartItems.map((item) => {
                     const deviceName = getLocalizedText(item.deviceModel.title, currentLocale, defaultLocale);
@@ -373,7 +395,7 @@ export function CardCheckout({
                     const storage = specifications && typeof specifications.storage === 'string' ? specifications.storage : 'N/A';
                     // Generate answered questions list for display
                     const answeredQuestions = getAnsweredQuestionsListForItem(item);
-                    
+
                     return (
                       <div key={item.deviceId} className="py-4">
                         <div className="flex items-center">
@@ -387,15 +409,15 @@ export function CardCheckout({
                           <div className="flex flex-col items-end">
                             <span className="font-medium">€ {item.estimatedPrice?.toFixed(2) ?? '0.00'}</span>
                             <div className="flex mt-1 space-x-1">
-                              <button 
-                                onClick={() => handleEditItem(item.deviceId)} 
+                              <button
+                                onClick={() => handleEditItem(item.deviceId)}
                                 className="text-gray-500 hover:text-blue-600"
                                 title={t('buttons.editItem')}
                               >
                                 <Pencil size={14} />
                               </button>
-                              <button 
-                                onClick={() => handleRemoveItem(item.deviceId)} 
+                              <button
+                                onClick={() => handleRemoveItem(item.deviceId)}
                                 className="text-gray-500 hover:text-red-600"
                                 title={t('buttons.removeItem')}
                               >
@@ -422,7 +444,7 @@ export function CardCheckout({
                   })}
                 </div>
               </div>
-              
+
               <div className="p-6">
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">{t('summary.subtotal')}</span>
@@ -436,9 +458,9 @@ export function CardCheckout({
                   <span>{t('summary.total')}</span>
                   <span style={{ color: primaryColor }}>€ {totalEstimatedPrice.toFixed(2)}</span>
                 </div>
-                
+
                 <div className="mt-6">
-                  <button 
+                  <button
                     onClick={handleSubmit(onSubmit)}
                     disabled={createOrderMutation.isPending}
                     className="w-full py-3 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
@@ -446,7 +468,7 @@ export function CardCheckout({
                   >
                     {createOrderMutation.isPending ? t('buttons.processing') : t('buttons.completeOrder')}
                   </button>
-                  <button 
+                  <button
                     onClick={() => router.push(`/${currentLocale}`)}
                     className="w-full mt-3 text-gray-600 font-medium py-2"
                   >
@@ -456,7 +478,7 @@ export function CardCheckout({
               </div>
             </div>
           </div>
-          
+
           {/* Right Column - Shipping Information */}
           <div className="lg:order-1">
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -466,19 +488,19 @@ export function CardCheckout({
                   <CreditCard size={20} className="mr-2" style={{ color: primaryColor }} />
                   <h2 className="text-xl font-semibold">{t('sections.customerInformation')}</h2>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.email')}</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       {...register("email")}
                       className={`w-full p-3 border ${errors.email ? 'border-red-500' : 'border-gray-200'} rounded-lg bg-gray-50`}
                       placeholder={t('form.emailPlaceholder')}
                     />
                     {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.phoneNumber')}</label>
                     <Controller
@@ -496,11 +518,11 @@ export function CardCheckout({
                     />
                     {errors.phoneNumber && <p className="mt-1 text-xs text-red-500">{errors.phoneNumber.message}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.accountNumberOptional')}</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       {...register("accountNumber")}
                       className={`w-full p-3 border ${errors.accountNumber ? 'border-red-500' : 'border-gray-200'} rounded-lg bg-gray-50`}
                       placeholder={t('form.ibanPlaceholder')}
@@ -509,20 +531,20 @@ export function CardCheckout({
                   </div>
                 </div>
               </div>
-              
+
               {/* Shipping Address Card */}
               <div className="bg-white rounded-xl shadow-md p-6">
                 <div className="flex items-center mb-4">
                   <Truck size={20} className="mr-2" style={{ color: primaryColor }} />
                   <h2 className="text-xl font-semibold">{t('sections.shippingAddress')}</h2>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.firstName')}</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("firstName")}
                         className={`w-full p-3 border ${errors.firstName ? 'border-red-500' : 'border-gray-200'} rounded-lg bg-gray-50`}
                         placeholder={t('form.firstNamePlaceholder')}
@@ -531,8 +553,8 @@ export function CardCheckout({
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.lastName')}</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("lastName")}
                         className={`w-full p-3 border ${errors.lastName ? 'border-red-500' : 'border-gray-200'} rounded-lg bg-gray-50`}
                         placeholder={t('form.lastNamePlaceholder')}
@@ -540,12 +562,12 @@ export function CardCheckout({
                       {errors.lastName && <p className="mt-1 text-xs text-red-500">{errors.lastName.message}</p>}
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-4">
                     <div className="col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.streetName')}</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("streetName")}
                         className={`w-full p-3 border ${errors.streetName ? 'border-red-500' : 'border-gray-200'} rounded-lg bg-gray-50`}
                         placeholder={t('form.streetNamePlaceholder')}
@@ -554,8 +576,8 @@ export function CardCheckout({
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.houseNumber')}</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("houseNumber")}
                         className={`w-full p-3 border ${errors.houseNumber ? 'border-red-500' : 'border-gray-200'} rounded-lg bg-gray-50`}
                         placeholder={t('form.houseNumberPlaceholder')}
@@ -563,12 +585,12 @@ export function CardCheckout({
                       {errors.houseNumber && <p className="mt-1 text-xs text-red-500">{errors.houseNumber.message}</p>}
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.postalCode')}</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("postalCode")}
                         className={`w-full p-3 border ${errors.postalCode ? 'border-red-500' : 'border-gray-200'} rounded-lg bg-gray-50`}
                         placeholder={t('form.postalCodePlaceholder')}
@@ -577,8 +599,8 @@ export function CardCheckout({
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.city')}</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("city")}
                         className={`w-full p-3 border ${errors.city ? 'border-red-500' : 'border-gray-200'} rounded-lg bg-gray-50`}
                         placeholder={t('form.cityPlaceholder')}
@@ -586,12 +608,12 @@ export function CardCheckout({
                       {errors.city && <p className="mt-1 text-xs text-red-500">{errors.city.message}</p>}
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.stateProvince')}</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("stateProvince")}
                         className={`w-full p-3 border ${errors.stateProvince ? 'border-red-500' : 'border-gray-200'} rounded-lg bg-gray-50`}
                         placeholder={t('form.stateProvincePlaceholder')}

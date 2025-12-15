@@ -2,6 +2,7 @@ import { t, type Static } from 'elysia'
 
 export type WarehouseFilters = {
 	tenant_id?: number
+	shop_id?: number
 	search?: string
 	page?: number
 	limit?: number
@@ -14,6 +15,7 @@ export const WarehouseCreate = t.Object({
 	description: t.String(),
 	status: t.Optional(t.Boolean()),
 	tenant_id: t.Number(),
+	shop_id: t.Optional(t.Number()),
 })
 
 export const WarehouseUpdate = t.Object({
@@ -25,6 +27,7 @@ export const WarehouseUpdate = t.Object({
 
 export const WarehouseListQuery = t.Object({
 	tenant_id: t.Optional(t.Number()),
+	shop_id: t.Optional(t.Number()),
 	search: t.Optional(t.String()),
 	page: t.Optional(t.Number({ default: 1 })),
 	limit: t.Optional(t.Number({ default: 10 })),
@@ -42,6 +45,7 @@ export type WarehousePublic = {
 	description: string
 	status: boolean | null
 	tenant_id: number
+	shop_id: number | null
 	tenant_name?: string | null
 	created_at: Date | null
 }

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useAtom } from 'jotai';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,6 +31,9 @@ export function MinimalistCheckout({
   const router = useRouter();
   const createOrderMutation = useCreateOrder();
   const t = useTranslations('Checkout');
+
+  // Track when order has been submitted to prevent showing empty cart during redirect
+  const [isOrderSubmitted, setIsOrderSubmitted] = useState(false);
 
   const checkoutFormSchema = useMemo(() => z.object({
     email: z.string().trim().email({ message: t('validation.emailInvalid') }).min(1, { message: t('validation.emailRequired') }),
@@ -199,6 +202,9 @@ export function MinimalistCheckout({
       shopId: shopId,
     };
 
+    // Mark order as submitted to prevent empty cart UI during redirect
+    setIsOrderSubmitted(true);
+
     createOrderMutation.mutate(orderPayload, {
       onSuccess: (response: CreateOrderResponseData) => {
         try {
@@ -212,6 +218,8 @@ export function MinimalistCheckout({
       },
       onError: (err) => {
         console.error("Order submission caught an error:", err);
+        // Reset the submitted flag on error so user can try again
+        setIsOrderSubmitted(false);
       }
     });
   };
@@ -261,6 +269,20 @@ export function MinimalistCheckout({
     });
     return answeredQuestions;
   };
+
+  // Show loading state if order was submitted (redirecting to thank-you page)
+  // This prevents the empty cart message from flashing during navigation
+  if (isOrderSubmitted || createOrderMutation.isPending) {
+    return (
+      <div className="flex flex-col min-h-screen items-center justify-center p-4" style={{ backgroundColor }}>
+        <div className="bg-white p-10 rounded-md shadow-sm text-center max-w-md">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: primaryColor }}></div>
+          <h2 className="text-xl font-medium text-gray-800 mb-2">{t('buttons.processing')}</h2>
+          <p className="text-gray-600">{t('messages.pleaseWait') || 'Please wait...'}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (relevantCartItems.length === 0) {
     return (

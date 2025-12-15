@@ -15,14 +15,17 @@ export default function NewLocationPage() {
   const router = useRouter();
   const { mutate: createLocation, isPending: isCreating } =
     useCreateWarehouse();
+  const envTenantId = process.env.NEXT_PUBLIC_TENANT_ID ? parseInt(process.env.NEXT_PUBLIC_TENANT_ID, 10) : 1;
   const envShopId = process.env.NEXT_PUBLIC_SHOP_ID ? parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) : undefined;
 
   const handleSubmit = (values: LocationFormValues) => {
     createLocation(
       {
-        warehouseName: values.warehouseName,
+        name: values.warehouseName,
+        description: values.description || "",
+        tenant_id: envTenantId,
+        shop_id: envShopId,
         status: values.status,
-        shopId: envShopId,
       },
       {
         onSuccess: () => {

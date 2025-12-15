@@ -112,7 +112,7 @@
         "variants": {
             "classicSideBySide": "Classic Side-by-Side",
             "classicSideBySideDescription": "Traditional checkout layout with form on left and order summary on right.",
-            "multiStepFlow": "Multi-Step Flow", 
+            "multiStepFlow": "Multi-Step Flow",
             "multiStepFlowDescription": "Progressive checkout flow with cart, shipping, and review steps.",
             "minimalistDesign": "Minimalist Design",
             "minimalistDesignDescription": "Clean, streamlined checkout with simplified fields and visual hierarchy.",
@@ -137,7 +137,7 @@
             "ibanPlaceholder": "e.g. NL91ABNA0417164300",
             "firstName": "First Name",
             "firstNamePlaceholder": "First name",
-            "lastName": "Last Name", 
+            "lastName": "Last Name",
             "lastNamePlaceholder": "Last name",
             "streetName": "Street Name",
             "streetNamePlaceholder": "Street name",
@@ -190,7 +190,7 @@
         },
         "steps": {
             "cart": "Cart",
-            "shipping": "Shipping", 
+            "shipping": "Shipping",
             "review": "Review",
             "reviewAndComplete": "Review & Complete Order"
         },
@@ -200,6 +200,7 @@
             "configurationError": "Order submission failed due to a configuration error. Please contact support.",
             "invalidConfigError": "Order submission failed due to an invalid configuration. Please contact support.",
             "orderError": "Could not submit order. Please try again.",
+            "pleaseWait": "Please wait while we process your order...",
             "termsAndConditions": "By completing your order, you agree to our Terms and Conditions. We will send a confirmation email along with a shipping label to your email address.",
             "termsAndConditionsSimple": "By placing this order, you agree to our Terms of Service and Privacy Policy. A shipping label will be sent to your email address after order confirmation.",
             "termsAndConditionsShort": "By placing the order, you agree to our terms and conditions."
@@ -207,7 +208,7 @@
         "validation": {
             "emailRequired": "Email is required",
             "emailInvalid": "Invalid email address",
-            "phoneRequired": "Phone number is required", 
+            "phoneRequired": "Phone number is required",
             "phoneInvalid": "Invalid phone number",
             "ibanInvalid": "Invalid IBAN format",
             "firstNameRequired": "First name is required",

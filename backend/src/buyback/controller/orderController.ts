@@ -13,8 +13,8 @@ export class OrderController {
   createOrder = async (context: Context) => {
     try {
       const { body } = context;
-      console.log("body sent from the frontend", body)
-      
+
+
       const {
         deviceId,
         deviceSnapshot,
@@ -22,14 +22,13 @@ export class OrderController {
         conditionAnswers,
         sellerAddress,
         sellerNotes,
-        tenantId,
         shopId
       } = body as any; // Use 'as any' for now or define a proper type for body
-      
+
       if (!deviceId || !estimatedPrice || !conditionAnswers || !sellerAddress || !shopId) {
-        throw new BadRequestError("Missing required fields (deviceId, estimatedPrice, conditionAnswers, sellerAddress, tenantId, shopId)");
+        throw new BadRequestError("Missing required fields (deviceId, estimatedPrice, conditionAnswers, sellerAddress, shopId)");
       }
-      
+
       const result = await orderService.createOrder({
         deviceId,
         deviceSnapshot,
@@ -37,15 +36,15 @@ export class OrderController {
         conditionAnswers,
         sellerAddress,
         sellerNotes,
-        shopId 
+        shopId
       });
-      
+
       // Send order confirmation email
       try {
         // Send notification asynchronously - don't await
         orderNotificationService.sendOrderStatusNotification(
-          result.id, 
-          result.status, 
+          result.id,
+          result.status,
           shopId
         ).then(emailResult => {
           if (!emailResult.success) {
@@ -58,14 +57,14 @@ export class OrderController {
         // Don't block the API response if email fails
         console.error(`[OrderController] Error preparing order confirmation email for order ${result.id}:`, emailError);
       }
-      
+
       context.set.status = 201;
       return {
         data: {
-            orderId: result.id,
-            orderNumber: result.orderNumber,
-            status: result.status,
-            shippingLabelUrl: result.shippingDetails?.shipping_label_url,
+          orderId: result.id,
+          orderNumber: result.orderNumber,
+          status: result.status,
+          shippingLabelUrl: result.shippingDetails?.shipping_label_url,
         },
         message: "Order created successfully. Please check your email for shipping instructions."
       };
@@ -79,14 +78,14 @@ export class OrderController {
       return { error: error.message || "An error occurred while creating the order" };
     }
   }
-  
+
   /**
    * Create a new order as an Admin/ShopManager
    * Uses warehouse pattern for role management
    */
   createAdminOrder = async (context: Context) => {
     try {
-      const { body, currentRole, currentTenantId, currentUserId, warehouseId} = context as any;
+      const { body, currentRole, currentTenantId, currentUserId, warehouseId } = context as any;
 
       if (!currentUserId) {
         throw new ForbiddenError("Authentication required");
@@ -95,7 +94,7 @@ export class OrderController {
       // Determine effective tenant ID based on user role (following warehouse pattern)
       let effectiveTenantId: number | undefined;
       const isPrivileged = currentRole === 'super_admin' || currentRole === 'admin';
-      
+
       effectiveTenantId = currentTenantId;
 
       // Handle warehouse restrictions for non-privileged users
@@ -115,9 +114,9 @@ export class OrderController {
       context.set.status = 201;
       return {
         data: {
-            orderId: result.id,
-            orderNumber: result.orderNumber,
-            status: result.status,
+          orderId: result.id,
+          orderNumber: result.orderNumber,
+          status: result.status,
         },
         message: "Admin order created successfully."
       };
@@ -135,7 +134,7 @@ export class OrderController {
       return { error: error.message || "An error occurred while creating the admin order" };
     }
   }
-  
+
   /**
    * Get an order by ID
    * Uses warehouse pattern for access control
@@ -144,7 +143,7 @@ export class OrderController {
     try {
       const { params, currentRole, currentTenantId, currentUserId, warehouseId } = context as any;
       const { orderId } = params as { orderId: string };
-      
+
       // Create user object for service call
       const user = currentUserId ? {
         id: currentUserId,
@@ -154,9 +153,9 @@ export class OrderController {
         managed_shop_id: warehouseId,
         email: ''
       } : undefined;
-      
+
       const order = await orderService.getOrderById(orderId, user);
-      
+
       if (!order) {
         throw new NotFoundError("Order not found or you don't have access to it");
       }
@@ -180,43 +179,43 @@ export class OrderController {
         // Condition answers -> camel-cased keys expected by FE
         condition_answers: Array.isArray(order.conditionAnswers)
           ? order.conditionAnswers.map((a: any) => ({
-              questionKey: a.question_key,
-              questionTextSnapshot: a.question_text_snapshot,
-              answerValue: a.answer_value,
-              answerTextSnapshot: a.answer_text_snapshot ?? undefined
-            }))
+            questionKey: a.question_key,
+            questionTextSnapshot: a.question_text_snapshot,
+            answerValue: a.answer_value,
+            answerTextSnapshot: a.answer_text_snapshot ?? undefined
+          }))
           : [],
         // Shipping -> camel-cased nested object
         shipping: order.shipping
           ? {
-              id: order.shipping.id,
-              orderId: order.shipping.orderId,
-              sellerName: order.shipping.sellerName,
-              sellerStreet1: order.shipping.seller_street1,
-              sellerStreet2: order.shipping.seller_street2 ?? undefined,
-              sellerCity: order.shipping.seller_city,
-              sellerStateProvince: order.shipping.seller_state_province,
-              sellerPostalCode: order.shipping.seller_postal_code,
-              sellerCountryCode: order.shipping.seller_country_code,
-              sellerPhoneNumber: order.shipping.seller_phone_number ?? undefined,
-              sellerEmail: order.shipping.seller_email ?? undefined,
-              shippingLabelUrl: order.shipping.shipping_label_url ?? undefined,
-              trackingNumber: order.shipping.tracking_number ?? undefined,
-              shippingProvider: order.shipping.shipping_provider ?? undefined,
-              labelData: order.shipping.label_data ?? undefined,
-              createdAt: order.shipping.created_at,
-              updatedAt: order.shipping.updated_at
-            }
+            id: order.shipping.id,
+            orderId: order.shipping.orderId,
+            sellerName: order.shipping.sellerName,
+            sellerStreet1: order.shipping.seller_street1,
+            sellerStreet2: order.shipping.seller_street2 ?? undefined,
+            sellerCity: order.shipping.seller_city,
+            sellerStateProvince: order.shipping.seller_state_province,
+            sellerPostalCode: order.shipping.seller_postal_code,
+            sellerCountryCode: order.shipping.seller_country_code,
+            sellerPhoneNumber: order.shipping.seller_phone_number ?? undefined,
+            sellerEmail: order.shipping.seller_email ?? undefined,
+            shippingLabelUrl: order.shipping.shipping_label_url ?? undefined,
+            trackingNumber: order.shipping.tracking_number ?? undefined,
+            shippingProvider: order.shipping.shipping_provider ?? undefined,
+            labelData: order.shipping.label_data ?? undefined,
+            createdAt: order.shipping.created_at,
+            updatedAt: order.shipping.updated_at
+          }
           : null,
         // Status history -> keep snake_case keys that FE expects
         status_history: Array.isArray(order.statusHistory)
           ? order.statusHistory.map((h: any) => ({
-              id: h.id,
-              status: h.status,
-              changed_at: h.changed_at,
-              notes: h.notes ?? undefined,
-              changed_by_user_name: h.changedByUserName ?? undefined
-            }))
+            id: h.id,
+            status: h.status,
+            changed_at: h.changed_at,
+            notes: h.notes ?? undefined,
+            changed_by_user_name: h.changedByUserName ?? undefined
+          }))
           : []
       } as any;
 
@@ -227,7 +226,7 @@ export class OrderController {
         context.set.status = 404;
         return { error: error.message };
       }
-      if (error instanceof BadRequestError) { 
+      if (error instanceof BadRequestError) {
         context.set.status = 400;
         return { error: error.message };
       }
@@ -235,7 +234,7 @@ export class OrderController {
       return { error: error.message || "An error occurred while retrieving the order" };
     }
   }
-  
+
   /**
    * List orders with filtering based on user role
    * Uses warehouse pattern for role-based access control
@@ -256,7 +255,7 @@ export class OrderController {
         search,
         tenantId: queryTenantId // Rename to avoid confusion
       } = query as any;
-      
+
       // Parse and validate query params
       const parsedPage = parseInt(page as string, 10);
       const parsedLimit = parseInt(limit as string, 10);
@@ -270,8 +269,8 @@ export class OrderController {
 
       // Determine effective tenant ID based on user role (following warehouse pattern)
       let effectiveTenantId: number | undefined;
-      const isAdmin = currentRole === 'admin' || currentRole === 'super-admin';
-      
+      const isAdmin = currentRole === 'admin' || currentRole === 'super_admin';
+
       if (isAdmin && parsedQueryTenantId) {
         // Admin can filter by specific tenant ID
         effectiveTenantId = parsedQueryTenantId;
@@ -302,12 +301,12 @@ export class OrderController {
         managed_shop_id: warehouseId,
         email: ''
       } : undefined;
-      
+
       const result = await orderService.listOrders(filter, user);
       return { data: result };
     } catch (error: any) {
       console.error("[OrderController] List orders error:", error);
-       if (error instanceof BadRequestError) {
+      if (error instanceof BadRequestError) {
         context.set.status = 400;
         return { error: error.message };
       }
@@ -315,17 +314,17 @@ export class OrderController {
       return { error: error.message || "An error occurred while retrieving orders" };
     }
   }
-  
+
   /**
    * Update order status (admin or shop manager)
    * Uses simplified role checking following warehouse pattern
    */
   updateOrderStatus = async (context: Context) => {
     try {
-      const { params, body, currentUserId, currentRole, currentTenantId, currentWarehouseId } = context as any; 
-      
+      const { params, body, currentUserId, currentRole, currentTenantId, currentWarehouseId } = context as any;
+
       const { orderId } = params as { orderId: string };
-      
+
       if (!currentUserId) {
         throw new ForbiddenError("Authentication required");
       }
@@ -334,7 +333,7 @@ export class OrderController {
       const isAdmin = currentRole === 'admin' || currentRole === 'super_admin';
       const isClient = currentRole === 'client';
       const isShopManager = currentRole === 'shop_manager';
-      
+
       if (!isAdmin && !isShopManager && !isClient) {
         throw new ForbiddenError("Admin or Shop Manager permissions required");
       }
@@ -344,7 +343,7 @@ export class OrderController {
         console.error(`Shop manager ${currentUserId} (${currentRole}) has no managed_shop_id assigned.`);
         throw new ForbiddenError("Shop manager configuration error: No managed shop ID assigned.");
       }
-      
+
       const { newStatus, adminNotes, finalPrice, imei, sku, warehouseId, serialNumber } = body as any;
       if (!newStatus) {
         throw new BadRequestError("New status is required");
@@ -354,7 +353,7 @@ export class OrderController {
       if (newStatus === 'PAID' && (!finalPrice || !imei || !sku || !warehouseId)) {
         throw new BadRequestError("Final price, IMEI, SKU, and Warehouse ID are required for PAID status");
       }
-      
+
       // Create user object for service call
       const user = {
         id: currentUserId,
@@ -364,7 +363,7 @@ export class OrderController {
         managed_shop_id: currentWarehouseId,
         email: ''
       };
-      
+
       const updatedOrder = await orderService.updateOrderStatus({
         orderId,
         newStatus: newStatus as OrderStatus,
@@ -376,15 +375,15 @@ export class OrderController {
         warehouseId,
         serialNumber
       }, user);
-      
+
       // Send email notification for status change
       try {
         const shopId = updatedOrder?.shop_id;
         if (shopId) {
           // Send notification asynchronously - don't await
           orderNotificationService.sendOrderStatusNotification(
-            orderId, 
-            newStatus as OrderStatus, 
+            orderId,
+            newStatus as OrderStatus,
             shopId
           ).then(result => {
             if (!result.success) {
@@ -400,7 +399,7 @@ export class OrderController {
         // Don't block the API response if email fails
         console.error(`[OrderController] Error preparing notification email for order ${orderId}:`, emailError);
       }
-      
+
       return {
         data: updatedOrder,
         message: `Order status updated to ${newStatus}`
@@ -432,7 +431,7 @@ export class OrderController {
     try {
       const { query } = context as any;
       const { currentUserId, currentTenantId } = context as any;
-      if(!currentUserId) {
+      if (!currentUserId) {
         throw new ForbiddenError("Authentication required");
       }
       const tenantId = currentTenantId;
@@ -446,7 +445,153 @@ export class OrderController {
       return { error: error.message || "Unable to check device eligibility" };
     }
   }
+
+  /**
+   * Regenerate shipping label for an order
+   * Useful if the original label was not generated or needs to be refreshed
+   */
+  regenerateShippingLabel = async (context: Context) => {
+    try {
+      const { params, currentUserId, currentRole, currentTenantId, warehouseId } = context as any;
+      const { orderId } = params as { orderId: string };
+
+      if (!currentUserId) {
+        throw new ForbiddenError("Authentication required");
+      }
+
+      // Create user object for access check
+      const user = {
+        id: currentUserId,
+        tenant_id: currentTenantId,
+        roleSlug: currentRole,
+        warehouseId: warehouseId,
+        managed_shop_id: warehouseId,
+        email: ''
+      };
+
+      // Get the order to verify access and get seller address
+      const order = await orderService.getOrderById(orderId, user);
+      if (!order) {
+        throw new NotFoundError("Order not found or you don't have access to it");
+      }
+
+      // Get shipping details for seller address
+      const shipping = order.shipping;
+      if (!shipping) {
+        throw new BadRequestError("Order has no shipping information");
+      }
+
+      // Import shipping service
+      const { shippingService } = await import("../services/shippingService");
+
+      // Regenerate the label
+      const labelResult = await shippingService.generateAndSaveShippingLabel(
+        orderId,
+        {
+          name: shipping.sellerName,
+          street1: shipping.seller_street1,
+          street2: shipping.seller_street2,
+          city: shipping.seller_city,
+          stateProvince: shipping.seller_state_province,
+          postalCode: shipping.seller_postal_code,
+          countryCode: shipping.seller_country_code,
+          phoneNumber: shipping.seller_phone_number,
+          email: shipping.seller_email,
+        },
+        currentTenantId
+      );
+
+      return {
+        data: {
+          shippingLabelUrl: labelResult.shippingLabelUrl,
+          trackingNumber: labelResult.trackingNumber,
+          shippingProvider: labelResult.shippingProvider,
+        },
+        message: "Shipping label regenerated successfully"
+      };
+    } catch (error: any) {
+      console.error("[OrderController] Regenerate shipping label error:", error);
+      if (error instanceof ForbiddenError) {
+        context.set.status = 403;
+        return { error: error.message };
+      }
+      if (error instanceof NotFoundError) {
+        context.set.status = 404;
+        return { error: error.message };
+      }
+      if (error instanceof BadRequestError) {
+        context.set.status = 400;
+        return { error: error.message };
+      }
+      context.set.status = 500;
+      return { error: error.message || "An error occurred while regenerating the shipping label" };
+    }
+  }
+
+  /**
+   * Download shipping label PDF for an order
+   * Returns the PDF file directly
+   */
+  downloadLabelPdf = async (context: Context) => {
+    try {
+      const { params, query, currentUserId, currentRole, currentTenantId, warehouseId } = context as any;
+      const { orderId } = params as { orderId: string };
+      const format = (query.format as 'a4' | 'a6') || 'a4';
+
+      if (!currentUserId) {
+        throw new ForbiddenError("Authentication required");
+      }
+
+      // Create user object for access check
+      const user = {
+        id: currentUserId,
+        tenant_id: currentTenantId,
+        roleSlug: currentRole,
+        warehouseId: warehouseId,
+        managed_shop_id: warehouseId,
+        email: ''
+      };
+
+      // Verify access to order
+      const order = await orderService.getOrderById(orderId, user);
+      if (!order) {
+        throw new NotFoundError("Order not found or you don't have access to it");
+      }
+
+      // Import shipping service
+      const { shippingService } = await import("../services/shippingService");
+
+      // Download the PDF
+      const pdfBuffer = await shippingService.downloadLabelPdf(orderId, format, currentTenantId);
+
+      if (!pdfBuffer) {
+        throw new BadRequestError("Could not download label PDF. The label may not have been generated yet or was created with mock data.");
+      }
+
+      // Set headers for PDF download
+      context.set.headers['Content-Type'] = 'application/pdf';
+      context.set.headers['Content-Disposition'] = `attachment; filename="shipping-label-${orderId}.pdf"`;
+
+      return pdfBuffer;
+    } catch (error: any) {
+      console.error("[OrderController] Download label PDF error:", error);
+      if (error instanceof ForbiddenError) {
+        context.set.status = 403;
+        return { error: error.message };
+      }
+      if (error instanceof NotFoundError) {
+        context.set.status = 404;
+        return { error: error.message };
+      }
+      if (error instanceof BadRequestError) {
+        context.set.status = 400;
+        return { error: error.message };
+      }
+      context.set.status = 500;
+      return { error: error.message || "An error occurred while downloading the label" };
+    }
+  }
 }
 
 // Export a singleton instance
-export const orderController = new OrderController(); 
+export const orderController = new OrderController();

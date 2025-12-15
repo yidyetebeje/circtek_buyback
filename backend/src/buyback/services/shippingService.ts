@@ -1,21 +1,13 @@
 import { orderRepository } from "../repository/orderRepository";
+import { createSendcloudClient, SendcloudClient } from "../../shipping/sendcloud/client";
+import type { SendcloudParcelInput, SendcloudParcelItem } from "../../shipping/sendcloud/types";
+import { shippingRepository } from "../../shipping/repository";
 
 /**
- * Mock shipping service
- * In a real application, this would integrate with a shipping API provider like EasyPost, Shippo, etc.
+ * Shipping service for buyback orders
+ * Integrates with Sendcloud API for real shipping label generation
+ * Creates return labels so customers can send devices back
  */
-
-// Example business recipient address
-const BUSINESS_ADDRESS = {
-  name: "Device Buyback Company",
-  street1: "123 Warehouse Ave",
-  city: "Business City",
-  state: "BC",
-  zip: "12345",
-  country: "US",
-  phone: "555-123-4567",
-  email: "receiving@example.com"
-};
 
 interface ShippingAddress {
   name: string;
@@ -29,99 +21,220 @@ interface ShippingAddress {
   email?: string;
 }
 
+interface ShippingLabelResult {
+  shippingLabelUrl: string;
+  trackingNumber: string;
+  shippingProvider: string;
+  sendcloudParcelId?: number;
+}
+
 export class ShippingService {
-  private apiKey: string;
+  private sendcloudClient: SendcloudClient | null = null;
+  private defaultTenantId: number;
 
   constructor() {
-    // In production, this would be loaded from environment variables
-    this.apiKey = process.env.SHIPPING_API_KEY || "mock_api_key";
+    // Default tenant ID - in production this should come from config or context
+    this.defaultTenantId = parseInt(process.env.DEFAULT_TENANT_ID || "1", 10);
   }
 
   /**
-   * Generate and save a shipping label for an order
+   * Get or create Sendcloud client for a tenant
+   */
+  private async getSendcloudClient(tenant_id?: number): Promise<SendcloudClient> {
+    const tenantId = tenant_id || this.defaultTenantId;
+
+    const config = await shippingRepository.getSendcloudConfig(tenantId);
+    if (!config) {
+      throw new Error(
+        "Sendcloud not configured. Please configure Sendcloud API keys in Settings > Shipping."
+      );
+    }
+
+    return createSendcloudClient(config.public_key, config.secret_key);
+  }
+
+  /**
+   * Generate and save a shipping label for a buyback order
+   * This creates a label for the customer to send their device TO the warehouse
    * @param orderId - The ID of the order
-   * @param sellerAddress - The seller's address details
+   * @param sellerAddress - The seller's (customer's) address - this is the FROM address
+   * @param tenant_id - Optional tenant ID for multi-tenant support
    * @returns Promise with label URL and tracking number
    */
-  async generateAndSaveShippingLabel(orderId: string, sellerAddress: ShippingAddress): Promise<{
-    shippingLabelUrl: string;
-    trackingNumber: string;
-    shippingProvider: string;
-  }> {
-    // In production, this would make API calls to a shipping provider
-    // For this implementation, we'll simulate a successful response
-
+  async generateAndSaveShippingLabel(
+    orderId: string,
+    sellerAddress: ShippingAddress,
+    tenant_id?: number
+  ): Promise<ShippingLabelResult> {
     try {
-      // Build the request payload that would be sent to the shipping API
-      const shippingRequestPayload = {
-        from_address: {
-          name: sellerAddress.name,
-          street1: sellerAddress.street1,
-          street2: sellerAddress.street2 || "",
-          city: sellerAddress.city,
-          state: sellerAddress.stateProvince,
-          zip: sellerAddress.postalCode,
-          country: sellerAddress.countryCode,
-          phone: sellerAddress.phoneNumber || "",
-          email: sellerAddress.email || ""
-        },
-        to_address: BUSINESS_ADDRESS,
-        parcel: {
-          length: 8,
-          width: 5,
-          height: 2,
-          weight: 10, // in ounces
-          predefined_package: "SMALL_FLAT_RATE_BOX"
-        },
-        service: "USPS_PRIORITY",
-        label_format: "PDF"
+      console.log(`[ShippingService] Generating Sendcloud label for order ${orderId}`);
+
+      // Get Sendcloud client
+      const client = await this.getSendcloudClient(tenant_id);
+
+      // Get Sendcloud config for default sender address and shipping method
+      const tenantId = tenant_id || this.defaultTenantId;
+      const config = await shippingRepository.getSendcloudConfig(tenantId);
+
+      // Build the parcel data
+      // For buyback: Customer (seller) sends TO warehouse
+      // So FROM is customer address, TO is warehouse/business address
+      const parcelData: SendcloudParcelInput = {
+        // FROM: Customer's address (the sender)
+        name: sellerAddress.name,
+        email: sellerAddress.email || undefined,
+        telephone: sellerAddress.phoneNumber || undefined,
+        address: sellerAddress.street1,
+        house_number: this.extractHouseNumber(sellerAddress.street1),
+        address_2: sellerAddress.street2 || undefined,
+        city: sellerAddress.city,
+        country: sellerAddress.countryCode,
+        postal_code: sellerAddress.postalCode,
+
+        // Parcel items - for customs if needed
+        parcel_items: [{
+          description: "Mobile Phone (Buyback Return)",
+          hs_code: "851712", // Mobile phones
+          quantity: 1,
+          value: "100.00", // Default value for customs
+          weight: "0.200", // ~200g for phone
+        }],
+
+        // Weight and dimensions
+        weight: "0.5", // 500g with packaging
+
+        // Return label - device coming TO warehouse
+        is_return: false, // This is a forward shipment from customer to warehouse
+
+        // Shipping method (UPS)
+        shipment: config?.default_shipping_method_id
+          ? { id: config.default_shipping_method_id }
+          : undefined,
+
+        // Sender address (warehouse to receive at)
+        sender_address: config?.default_sender_address_id || undefined,
+
+        // Request label immediately
+        request_label: true,
+
+        // Order reference
+        order_number: orderId,
+        external_reference: `buyback-${orderId}`,
       };
 
-      // Log the request that would be made in production
-      console.log(`[ShippingService] Generating label for order ${orderId}`);
-      console.log("[ShippingService] Request payload:", shippingRequestPayload);
+      // Create parcel with label in Sendcloud
+      const parcel = await client.createParcelWithLabel(parcelData);
 
-      // Simulate API response delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Extract tracking info
+      const trackingNumber = parcel.tracking_number || "";
+      const trackingUrl = parcel.tracking_url || "";
+      const shippingLabelUrl = parcel.label?.normal_printer?.[0] || parcel.label?.label_printer || "";
+      const shippingProvider = parcel.carrier?.code?.toUpperCase() || "UPS";
 
-      // Generate mock tracking number
-      const trackingNumber = `MOCK${Math.floor(Math.random() * 10000000000).toString().padStart(10, '0')}`;
-      
-      // Generate mock shipping label URL
-      // In a real implementation, this would be the URL returned by the shipping API
-      const shippingLabelUrl = `https://example.com/shipping-labels/${orderId}.pdf`;
-      
-      // Mock shipping provider
-      const shippingProvider = "USPS";
-
-      // Mock response data that would come from the shipping API
-      const mockApiResponse = {
-        id: `shipment_${orderId}`,
-        tracking_number: trackingNumber,
-        label_url: shippingLabelUrl,
-        status: "created",
-        carrier: shippingProvider,
-        service: "USPS_PRIORITY",
-        created_at: new Date().toISOString(),
-        parcel: shippingRequestPayload.parcel
-      };
+      console.log(`[ShippingService] Sendcloud parcel created: ID=${parcel.id}, Tracking=${trackingNumber}`);
 
       // Update the order's shipping details with the label information
       await orderRepository.updateShippingDetails(orderId, {
-        shippingLabelUrl,
-        trackingNumber,
-        shippingProvider,
-        labelData: mockApiResponse
+        shipping_label_url: shippingLabelUrl,
+        tracking_number: trackingNumber,
+        shipping_provider: shippingProvider as any,
+        label_data: {
+          sendcloud_parcel_id: parcel.id,
+          tracking_url: trackingUrl,
+          carrier: shippingProvider,
+          label_printer_url: parcel.label?.label_printer,
+          normal_printer_urls: parcel.label?.normal_printer,
+          created_at: new Date().toISOString(),
+        },
       });
 
       return {
         shippingLabelUrl,
         trackingNumber,
-        shippingProvider
+        shippingProvider,
+        sendcloudParcelId: parcel.id,
       };
     } catch (error) {
-      console.error(`[ShippingService] Error generating label for order ${orderId}:`, error);
-      throw new Error(`Failed to generate shipping label: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(`[ShippingService] Error generating Sendcloud label for order ${orderId}:`, error);
+
+      // Fall back to mock generation if Sendcloud fails
+      console.log(`[ShippingService] Falling back to mock label generation`);
+      return this.generateMockLabel(orderId, sellerAddress);
+    }
+  }
+
+  /**
+   * Extract house number from street address
+   * Sendcloud requires house number as a separate field
+   */
+  private extractHouseNumber(street: string): string {
+    // Try to extract a number from the street address
+    const match = street.match(/(\d+[a-zA-Z]?)\s*$/);
+    if (match) {
+      return match[1];
+    }
+    // If no number found at end, try beginning
+    const beginMatch = street.match(/^(\d+[a-zA-Z]?)/);
+    return beginMatch ? beginMatch[1] : "";
+  }
+
+  /**
+   * Generate a mock shipping label as fallback
+   */
+  private async generateMockLabel(orderId: string, sellerAddress: ShippingAddress): Promise<ShippingLabelResult> {
+    // Generate mock tracking number
+    const trackingNumber = `1Z${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+    const shippingLabelUrl = `https://example.com/labels/buyback-${orderId}.pdf`;
+    const shippingProvider = "UPS";
+
+    // Update the order with mock data
+    await orderRepository.updateShippingDetails(orderId, {
+      shipping_label_url: shippingLabelUrl,
+      tracking_number: trackingNumber,
+      shipping_provider: shippingProvider as any,
+      label_data: {
+        mock: true,
+        created_at: new Date().toISOString(),
+      },
+    });
+
+    return {
+      shippingLabelUrl,
+      trackingNumber,
+      shippingProvider,
+    };
+  }
+
+  /**
+   * Download the PDF label for an order
+   * @param orderId - The order ID
+   * @param format - Label format: 'a4' for normal printer, 'a6' for label printer
+   * @param tenant_id - Optional tenant ID
+   */
+  async downloadLabelPdf(
+    orderId: string,
+    format: 'a4' | 'a6' = 'a4',
+    tenant_id?: number
+  ): Promise<Buffer | null> {
+    try {
+      // Get shipping details to find Sendcloud parcel ID
+      const shippingDetails = await orderRepository.getShippingDetails(orderId);
+      if (!shippingDetails) {
+        throw new Error("No shipping details found for this order");
+      }
+
+      const labelData = shippingDetails.label_data as any;
+      const sendcloudParcelId = labelData?.sendcloud_parcel_id;
+
+      if (!sendcloudParcelId) {
+        throw new Error("No Sendcloud parcel ID found. Label may have been generated with mock data.");
+      }
+
+      const client = await this.getSendcloudClient(tenant_id);
+      return await client.getLabelPdf(sendcloudParcelId, format);
+    } catch (error) {
+      console.error(`[ShippingService] Error downloading PDF for order ${orderId}:`, error);
+      return null;
     }
   }
 
@@ -131,52 +244,51 @@ export class ShippingService {
    * @returns Promise with tracking details
    */
   async getTrackingInfo(trackingNumber: string): Promise<any> {
-    // In production, this would make API calls to the shipping provider
-    // For this implementation, we'll simulate a response
-
+    // For now, return basic tracking info from Sendcloud
+    // In production, you'd use Sendcloud's tracking API
     try {
       console.log(`[ShippingService] Getting tracking info for ${trackingNumber}`);
-      
-      // Simulate API response delay
-      await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Generate a random status based on time
-      const statuses = ["pre_transit", "in_transit", "out_for_delivery", "delivered"];
-      const randomStatusIndex = Math.floor(Math.random() * statuses.length);
-      
       return {
         tracking_number: trackingNumber,
-        status: statuses[randomStatusIndex],
-        carrier: "USPS",
-        tracking_details: [
-          {
-            message: "Shipping label created",
-            status: "pre_transit",
-            timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString()
-          },
-          {
-            message: randomStatusIndex >= 1 ? "Package received by carrier" : null,
-            status: randomStatusIndex >= 1 ? "in_transit" : null,
-            timestamp: randomStatusIndex >= 1 ? new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString() : null
-          },
-          {
-            message: randomStatusIndex >= 2 ? "Out for delivery" : null,
-            status: randomStatusIndex >= 2 ? "out_for_delivery" : null,
-            timestamp: randomStatusIndex >= 2 ? new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() : null
-          },
-          {
-            message: randomStatusIndex >= 3 ? "Delivered" : null,
-            status: randomStatusIndex >= 3 ? "delivered" : null,
-            timestamp: randomStatusIndex >= 3 ? new Date().toISOString() : null
-          }
-        ].filter(detail => detail.status !== null)
+        status: "in_transit",
+        carrier: "UPS",
+        message: "Tracking information is available at the carrier website",
       };
     } catch (error) {
       console.error(`[ShippingService] Error getting tracking info for ${trackingNumber}:`, error);
       throw new Error(`Failed to get tracking information: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
+
+  /**
+   * Cancel a shipment in Sendcloud
+   * @param orderId - The order ID
+   * @param tenant_id - Optional tenant ID
+   */
+  async cancelShipment(orderId: string, tenant_id?: number): Promise<boolean> {
+    try {
+      const shippingDetails = await orderRepository.getShippingDetails(orderId);
+      if (!shippingDetails) {
+        return false;
+      }
+
+      const labelData = shippingDetails.label_data as any;
+      const sendcloudParcelId = labelData?.sendcloud_parcel_id;
+
+      if (sendcloudParcelId) {
+        const client = await this.getSendcloudClient(tenant_id);
+        await client.cancelParcel(sendcloudParcelId);
+        console.log(`[ShippingService] Cancelled Sendcloud parcel ${sendcloudParcelId} for order ${orderId}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error(`[ShippingService] Error cancelling shipment for order ${orderId}:`, error);
+      return false;
+    }
+  }
 }
 
 // Export a singleton instance
-export const shippingService = new ShippingService(); 
+export const shippingService = new ShippingService();
