@@ -4,7 +4,7 @@ import { orders, ORDER_STATUS, shipping_details } from "../../db/order.schema";
 import { shops } from "../../db/shops.schema";
 import { transfers, transfer_items, warehouses, shipments, shipment_items, sendcloud_config } from "../../db/circtek.schema";
 import { createSendcloudClient } from "../../shipping/sendcloud/client";
-import type { SendcloudParcelInput } from "../../shipping/sendcloud/types";
+import type { SendcloudV3ShipmentInput, SendcloudV3Item } from "../../shipping/sendcloud/types";
 
 interface GetCandidatesParams {
     days: number;
@@ -88,7 +88,7 @@ export const storeTransferService = {
     },
 
     /**
-     * Create a store-to-warehouse transfer with shipping label generation
+     * Create a store-to-warehouse transfer with shipping label generation (V3 API)
      */
     createStoreTransfer: async (params: CreateTransferParams) => {
         const { orderIds, toWarehouseId, createdByUserId, tenantId, shopManagerShopId } = params;
@@ -197,53 +197,86 @@ export const storeTransferService = {
 
             await tx.insert(transfer_items).values(transferItemsData);
 
-            // 3. Generate Sendcloud label
-            let sendcloudParcel = null;
+            // 3. Generate Sendcloud V3 label
+            let sendcloudParcel: any = null;
             let trackingNumber = "";
             let trackingUrl = "";
             let labelUrl = "";
 
             if (sendcloudCfg) {
                 try {
-                    const client = createSendcloudClient(sendcloudCfg.public_key, sendcloudCfg.secret_key);
+                    const client = createSendcloudClient(
+                        sendcloudCfg.public_key,
+                        sendcloudCfg.secret_key,
+                        sendcloudCfg.use_test_mode ?? false
+                    );
 
-                    // Build parcel data - shipping FROM shop TO warehouse
-                    const parcelData: SendcloudParcelInput = {
-                        name: destWarehouse.name,
-                        address: destWarehouse.description || "Warehouse Address", // Use description as address placeholder
-                        house_number: "",
-                        city: "City", // Would need warehouse address fields
-                        country: "NL", // Default to Netherlands
-                        postal_code: "1000AA", // Would need warehouse postal code
-                        telephone: "",
-                        email: "",
-                        parcel_items: ordersToTransfer.map((order) => {
-                            const snapshot = order.deviceSnapshot as any;
-                            return {
-                                description: snapshot?.modelName || "Mobile Phone",
-                                hs_code: "851712",
-                                quantity: 1,
-                                value: String(100), // Default value
-                                weight: "0.200",
-                            };
-                        }),
-                        weight: String(0.2 * ordersToTransfer.length),
-                        is_return: false,
-                        shipment: sendcloudCfg.default_shipping_method_id
-                            ? { id: sendcloudCfg.default_shipping_method_id }
-                            : undefined,
-                        sender_address: sendcloudCfg.default_sender_address_id || undefined,
+                    // Validate required shipping product code
+                    if (!sendcloudCfg.default_shipping_option_code) {
+                        throw new Error("Sendcloud shipping_product_code not configured");
+                    }
+
+                    // Build V3 shipment items
+                    const items: SendcloudV3Item[] = ordersToTransfer.map((order) => {
+                        const snapshot = order.deviceSnapshot as any;
+                        return {
+                            description: snapshot?.modelName || "Mobile Phone",
+                            quantity: 1,
+                            weight: "0.200",
+                            value: "100.00",
+                            hs_code: "851712",
+                        };
+                    });
+
+                    // Calculate total weight
+                    const totalWeight = 0.2 * ordersToTransfer.length;
+
+                    // Build V3 shipment data - shipping FROM shop TO warehouse
+                    const shipmentData: SendcloudV3ShipmentInput = {
+                        // FROM: Source warehouse (shop's warehouse)
+                        from_address: {
+                            name: sourceWarehouse.name,
+                            address_line_1: sourceWarehouse.description || "Shop Address",
+                            city: "City", // TODO: Add address fields to warehouse table
+                            postal_code: "1000AA",
+                            country_code: "NL",
+                        },
+                        // TO: Destination warehouse
+                        to_address: {
+                            name: destWarehouse.name,
+                            address_line_1: destWarehouse.description || "Warehouse Address",
+                            city: "City", // TODO: Add address fields to warehouse table
+                            postal_code: "1000AA",
+                            country_code: "NL",
+                        },
+                        parcels: [{
+                            weight: { value: totalWeight, unit: "kg" }, // V3 requires weight as object!
+                            items,
+                        }],
+                        ship_with: {
+                            type: 'shipping_option_code',
+                            properties: {
+                                shipping_option_code: sendcloudCfg.default_shipping_option_code,
+                            },
+                        },
                         request_label: true,
                         order_number: `TRF-${transferId}`,
                         external_reference: `store-transfer-${transferId}`,
+                        total_order_value: String(100 * ordersToTransfer.length),
+                        total_order_value_currency: "EUR",
                     };
 
-                    sendcloudParcel = await client.createParcelWithLabel(parcelData);
-                    trackingNumber = sendcloudParcel.tracking_number || "";
-                    trackingUrl = sendcloudParcel.tracking_url || "";
-                    labelUrl = sendcloudParcel.label?.normal_printer?.[0] || sendcloudParcel.label?.label_printer || "";
+                    const response = await client.createShipment(shipmentData);
+                    sendcloudParcel = response.parcels?.[0];
+
+                    if (sendcloudParcel) {
+                        trackingNumber = sendcloudParcel.tracking_number || "";
+                        trackingUrl = sendcloudParcel.tracking_url || "";
+                        const labelDoc = sendcloudParcel.documents?.find((d: any) => d.type === 'label');
+                        labelUrl = labelDoc?.link || "";
+                    }
                 } catch (error) {
-                    console.error("[StoreTransferService] Sendcloud label generation failed:", error);
+                    console.error("[StoreTransferService] Sendcloud V3 label generation failed:", error);
                     // Continue without label - will use mock
                     trackingNumber = `MOCK-${Date.now()}`;
                     labelUrl = "";

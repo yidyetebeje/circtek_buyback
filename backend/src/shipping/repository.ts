@@ -406,14 +406,16 @@ export class ShippingRepository {
     // ============ SENDCLOUD CONFIG ============
 
     /**
-     * Get Sendcloud config for a tenant
+     * Get Sendcloud config for a shop
+     * Returns decrypted secret key for API usage
      */
-    async getSendcloudConfig(tenant_id: number): Promise<SendcloudConfigRecord | null> {
+    async getSendcloudConfig(shop_id: number, tenant_id: number): Promise<SendcloudConfigRecord | null> {
         const [config] = await this.database
             .select()
             .from(sendcloud_config)
             .where(
                 and(
+                    eq(sendcloud_config.shop_id, shop_id),
                     eq(sendcloud_config.tenant_id, tenant_id),
                     eq(sendcloud_config.is_active, true)
                 )
@@ -424,29 +426,67 @@ export class ShippingRepository {
     }
 
     /**
+     * Get Sendcloud config with decrypted secret key
+     * Use this when you need the actual secret key for API calls
+     */
+    async getSendcloudConfigDecrypted(shop_id: number, tenant_id: number): Promise<(Omit<SendcloudConfigRecord, 'secret_key_encrypted'> & { secret_key: string }) | null> {
+        const { decrypt } = await import('../utils/encryption')
+        const config = await this.getSendcloudConfig(shop_id, tenant_id)
+
+        if (!config) return null
+
+        const { secret_key_encrypted, ...rest } = config
+        return {
+            ...rest,
+            secret_key: decrypt(secret_key_encrypted)
+        }
+    }
+
+    /**
      * Save or update Sendcloud config
+     * Encrypts secret key before storage (only if provided)
      */
     async saveSendcloudConfig(data: SendcloudConfigInput, tenant_id: number): Promise<void> {
-        const existing = await this.getSendcloudConfig(tenant_id)
+        const { encrypt } = await import('../utils/encryption')
+        const shop_id = data.shop_id
+        const existing = await this.getSendcloudConfig(shop_id, tenant_id)
 
         if (existing) {
-            await this.database
-                .update(sendcloud_config)
-                .set({
-                    public_key: data.public_key,
-                    secret_key: data.secret_key,
-                    default_sender_address_id: data.default_sender_address_id || null,
-                    default_shipping_method_id: data.default_shipping_method_id || null,
-                    updated_at: new Date(),
-                })
-                .where(eq(sendcloud_config.id, existing.id))
-        } else {
-            await this.database.insert(sendcloud_config).values({
-                tenant_id,
+            // Build update object - only include secret_key if provided
+            const updateData: Record<string, unknown> = {
                 public_key: data.public_key,
-                secret_key: data.secret_key,
                 default_sender_address_id: data.default_sender_address_id || null,
                 default_shipping_method_id: data.default_shipping_method_id || null,
+                default_shipping_option_code: data.default_shipping_option_code || null,
+                use_test_mode: data.use_test_mode ?? false,
+                updated_at: new Date(),
+            }
+
+            // Only update secret_key if a new one is provided
+            if (data.secret_key && data.secret_key.trim().length > 0) {
+                updateData.secret_key_encrypted = encrypt(data.secret_key)
+            }
+
+            await this.database
+                .update(sendcloud_config)
+                .set(updateData)
+                .where(eq(sendcloud_config.id, existing.id))
+        } else {
+            // New config - secret_key is required
+            if (!data.secret_key || data.secret_key.trim().length === 0) {
+                throw new Error('Secret key is required for new configuration')
+            }
+
+            const encryptedSecretKey = encrypt(data.secret_key)
+            await this.database.insert(sendcloud_config).values({
+                tenant_id,
+                shop_id,
+                public_key: data.public_key,
+                secret_key_encrypted: encryptedSecretKey,
+                default_sender_address_id: data.default_sender_address_id || null,
+                default_shipping_method_id: data.default_shipping_method_id || null,
+                default_shipping_option_code: data.default_shipping_option_code || null,
+                use_test_mode: data.use_test_mode ?? false,
                 is_active: true,
             })
         }
@@ -455,3 +495,4 @@ export class ShippingRepository {
 
 // Export singleton instance
 export const shippingRepository = new ShippingRepository(db)
+

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { MapPin } from 'lucide-react';
+import { MapPin, Truck } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 
 import { ShopForm, ShopFormValues } from '@/components/admin/catalog/shop-form';
@@ -17,7 +17,7 @@ export default function EditShopPage() {
   const params = useParams();
   const shopId = params.id ? parseInt(params.id as string, 10) : null;
   const { data: session } = useSession();
-  
+
   // Verify shop manager can only access their managed shop
   useEffect(() => {
     if (session?.user?.roleSlug === 'shop_manager') {
@@ -33,18 +33,18 @@ export default function EditShopPage() {
       }
     }
   }, [session, shopId, router]);
-  
+
   // Logo state management
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  
+
   // Use API hooks
   const { data: shopResponse, isLoading, error } = useShop(shopId as number);
   const { mutateAsync: updateShopAsync, isPending: isUpdating } = useUpdateShop();
   const { mutate: uploadLogo } = useUploadShopLogo();
-  
+
   // Get shop data from response
   const shop = shopResponse?.data;
-  
+
   const handleUpdateShop = async (values: ShopFormValues) => {
     if (!shop || !shopId) return;
 
@@ -93,23 +93,23 @@ export default function EditShopPage() {
       toast.error(errMessage);
     }
   };
-  
+
   const handleLogoUpload = async (file: File): Promise<string> => {
     setLogoFile(file);
     console.log('Logo file selected:', file.name, file.type, file.size);
     return Promise.resolve(URL.createObjectURL(file));
   };
-  
+
   const handleLogoRemove = () => {
     setLogoFile(null);
   };
-  
 
-  
+
+
   const handleCancel = () => {
     router.push('/admin/shops');
   };
-  
+
   // Form initial data from the shop object
   const initialData = shop ? {
     id: shop.id,
@@ -119,7 +119,7 @@ export default function EditShopPage() {
     logo: shop.logo || '',
     active: shop.active === null ? true : shop.active,
   } : undefined;
-  
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-10">
@@ -129,14 +129,14 @@ export default function EditShopPage() {
       </div>
     );
   }
-  
+
   if (error || !shop) {
     return (
       <div className="container mx-auto py-10">
         <div className="bg-red-50 p-4 rounded-md">
           <h1 className="text-xl font-semibold text-red-600">Error</h1>
           <p>{error?.message || 'Failed to load shop'}</p>
-          <Button 
+          <Button
             className="mt-4"
             onClick={() => router.push('/admin/shops')}
           >
@@ -154,18 +154,28 @@ export default function EditShopPage() {
           <h1 className="text-2xl font-bold">Edit Shop</h1>
           <p className="text-muted-foreground">ID: {shop.id} | Created: {new Date(shop.createdAt).toLocaleDateString()}</p>
         </div>
-        <Button 
-          onClick={() => router.push(`/admin/shops/${shop.id}/locations`)}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <MapPin size={16} />
-          Manage Locations
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => router.push(`/admin/shops/${shop.id}/shipping`)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Truck size={16} />
+            Shipping Settings
+          </Button>
+          <Button
+            onClick={() => router.push(`/admin/shops/${shop.id}/locations`)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <MapPin size={16} />
+            Manage Locations
+          </Button>
+        </div>
       </div>
-      
+
       <Separator className="mb-8" />
-      
+
       <ShopForm
         initialData={initialData}
         onSubmit={handleUpdateShop}

@@ -572,18 +572,32 @@ async function seed_email_template_dynamic_fields() {
 
 async function seed_sendcloud_config() {
     console.log('📦 Seeding Sendcloud config...');
+
+    // Import encryption utility
+    const { encrypt } = await import('./index').then(() => import('../utils/encryption'));
+
+    // NOTE: Replace these with actual Sendcloud API keys from your dashboard
+    // Go to: Sendcloud Dashboard > Settings > Integrations > API Keys
+    // The public_key is your API public key (NOT your email)
+    // The secret_key is your API secret key (NOT your password)
+    const secretKey = 'YOUR_SENDCLOUD_SECRET_KEY'; // Get from Sendcloud dashboard
+
     const config_data = {
         tenant_id: 1,
-        public_key: 'sander@remarketed.com',
-        secret_key: 'S*8Yn-!8YLKxwz+',
-        default_sender_address_id: 1,
-        default_shipping_method_id: 1,
+        shop_id: 1, // Associated with Main Shop
+        public_key: 'YOUR_SENDCLOUD_PUBLIC_KEY', // Get from Sendcloud dashboard
+        secret_key_encrypted: encrypt(secretKey), // Encrypted secret key
+        default_sender_address_id: null as number | null, // Not used - sender comes from form or warehouse
+        default_shipping_method_id: null as number | null, // Legacy v2 field
+        default_shipping_option_code: null as string | null, // V3: Set your preferred shipping option code
+        use_test_mode: true, // Enable test mode for development
         is_active: true
     };
 
     try {
         await db.insert(sendcloud_config).values(config_data);
         console.log('✅ Sendcloud config seeded successfully');
+        console.log('⚠️  Remember to update public_key and secret_key with real API keys from Sendcloud!');
     } catch (error: any) {
         if (error.code === 'ER_DUP_ENTRY') {
             console.log('⚠️ Sendcloud config already exists, skipping...');

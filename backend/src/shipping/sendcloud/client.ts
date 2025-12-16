@@ -41,6 +41,12 @@ export class SendcloudClient {
     ): Promise<T> {
         const url = `${this.v3BaseUrl}${endpoint}`
 
+        // Debug: Log the request details
+        console.log(`[Sendcloud] Request: ${options.method || 'GET'} ${url}`)
+        if (options.body) {
+            console.log('[Sendcloud] Request Body:', options.body)
+        }
+
         const response = await fetch(url, {
             ...options,
             headers: {
@@ -51,25 +57,112 @@ export class SendcloudClient {
         })
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({})) as SendcloudV3ApiError
+            const errorText = await response.text()
+            console.error('[Sendcloud] Error Response Status:', response.status)
+            console.error('[Sendcloud] Error Response Body:', errorText)
+
+            // Try to parse as JSON for structured error
+            let errorData: SendcloudV3ApiError = {}
+            try {
+                errorData = JSON.parse(errorText)
+            } catch {
+                // Not JSON, use raw text
+            }
+
             const errorMessage = errorData.error?.message
                 || errorData.errors?.[0]?.message
+                || errorText
                 || response.statusText
+
             throw new Error(
                 `Sendcloud API error: ${response.status} - ${errorMessage}`
             )
         }
 
-        return response.json()
+        const responseData = await response.json()
+        console.log('[Sendcloud] Response:', JSON.stringify(responseData, null, 2))
+        return responseData
+    }
+
+    // ============ SHIPPING PRODUCTS (V2) ============
+
+    /**
+     * Get available shipping products from Sendcloud V2
+     * V3 doesn't have a shipping products list endpoint, so we use V2
+     * @param fromCountry - ISO-2 country code for origin (e.g., "NL", "ET") - defaults to NL
+     * @param toCountry - ISO-2 country code for destination (e.g., "NL") - defaults to NL
+     */
+    async getShippingOptions(fromCountry: string = 'NL', toCountry: string = 'NL'): Promise<any> {
+        // Use V2 API for shipping-products (not available in V3)
+        const params = new URLSearchParams()
+        params.append('from_country', fromCountry)
+        params.append('to_country', toCountry)
+
+        const url = `${SENDCLOUD_V2_URL}/shipping-products?${params.toString()}`
+
+        console.log(`[Sendcloud] Fetching shipping products (V2): ${url}`)
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': this.authHeader,
+                'Content-Type': 'application/json',
+            },
+        })
+
+        if (!response.ok) {
+            const errorText = await response.text()
+            console.error('[Sendcloud] V2 Error Response Status:', response.status)
+            console.error('[Sendcloud] V2 Error Response Body:', errorText)
+            throw new Error(`Sendcloud V2 API error: ${response.status} - ${errorText}`)
+        }
+
+        const data = await response.json()
+        console.log('[Sendcloud] V2 Shipping Products Response:', JSON.stringify(data, null, 2))
+        return data
+    }
+
+    // ============ PARCEL CREATION (V2) ============
+
+    /**
+     * Create a parcel with label using V2 API
+     * Use this if V3 announce returns "User not allowed to announce"
+     */
+    async createParcelV2(parcelData: any): Promise<any> {
+        const url = `${SENDCLOUD_V2_URL}/parcels`
+
+        console.log('[Sendcloud] Creating V2 parcel with data:', JSON.stringify(parcelData, null, 2))
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': this.authHeader,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ parcel: parcelData }),
+        })
+
+        if (!response.ok) {
+            const errorText = await response.text()
+            console.error('[Sendcloud] V2 Parcel Error Status:', response.status)
+            console.error('[Sendcloud] V2 Parcel Error Body:', errorText)
+            throw new Error(`Sendcloud V2 parcel error: ${response.status} - ${errorText}`)
+        }
+
+        const data = await response.json()
+        console.log('[Sendcloud] V2 Parcel Response:', JSON.stringify(data, null, 2))
+        return data.parcel
     }
 
     // ============ SHIPMENT MANAGEMENT (V3) ============
 
     /**
-     * Create and announce a shipment synchronously
-     * This creates the shipment and generates the label in one call
+     * Create and announce a shipment synchronously (V3)
+     * NOTE: Requires V3 API permissions on Sendcloud account
+     * If you get "User not allowed to announce", use createParcelV2 instead
      */
     async createShipment(data: SendcloudV3ShipmentInput): Promise<SendcloudV3ShipmentResponse> {
+        console.log('[Sendcloud] Creating V3 shipment with data:', JSON.stringify(data, null, 2))
         return this.request<SendcloudV3ShipmentResponse>('/shipments/announce', {
             method: 'POST',
             body: JSON.stringify(data),

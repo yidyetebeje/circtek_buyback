@@ -190,6 +190,14 @@ export type LabelStartPosition = 0 | 1 | 2 | 3 // 0=top-left, 1=top-right, 2=bot
 // ============ SENDCLOUD API V3 TYPES ============
 
 /**
+ * V3 Weight object format
+ */
+export interface SendcloudV3Weight {
+    value: number
+    unit: 'kg' | 'g' | 'lbs' | 'oz'
+}
+
+/**
  * V3 Address format - used for both sender and recipient
  * Field names match Sendcloud API v3 documentation
  */
@@ -197,14 +205,14 @@ export interface SendcloudV3Address {
     name: string
     company_name?: string
     email?: string
-    phone_number?: string // Changed from 'phone' to match API
-    address_line_1: string // Changed from 'address_1' to match API
+    phone_number?: string
+    address_line_1: string
     address_line_2?: string
     house_number?: string
     city: string
     postal_code: string
-    country_code: string // Changed from 'country' to match API
-    state_province_code?: string // Changed from 'state_code'
+    country_code: string // ISO-2 code
+    state_province_code?: string // ISO state code, not city name!
     po_box?: string
 }
 
@@ -214,7 +222,7 @@ export interface SendcloudV3Address {
 export interface SendcloudV3Item {
     description: string
     quantity: number
-    weight: string // kg as string
+    weight: string // kg as string for items
     value: string // decimal as string
     hs_code?: string
     origin_country?: string // ISO-2 code
@@ -225,23 +233,40 @@ export interface SendcloudV3Item {
  * V3 Parcel input (within a shipment)
  */
 export interface SendcloudV3ParcelInput {
-    weight: string // kg
-    length?: string // cm
-    width?: string // cm
-    height?: string // cm
+    weight: SendcloudV3Weight // V3 requires object, not string!
+    length?: number // cm
+    width?: number // cm
+    height?: number // cm
     items?: SendcloudV3Item[]
+}
+
+/**
+ * V3 ship_with properties when using shipping_option_code type
+ */
+export interface SendcloudV3ShipWithProperties {
+    shipping_option_code: string // e.g., "postnl:standard" - get from shipping options endpoint
+    contract_id?: number // Optional contract ID if you have multiple
+}
+
+/**
+ * V3 ship_with object - specifies how to select shipping method
+ * The type determines how the carrier is selected
+ */
+export interface SendcloudV3ShipWith {
+    type: 'shipping_option_code' | 'shipping_product_code' // Type of selection method
+    properties: SendcloudV3ShipWithProperties // Properties based on the type
 }
 
 /**
  * V3 Shipment input for creating shipments
  */
 export interface SendcloudV3ShipmentInput {
-    from_address?: SendcloudV3Address
+    from_address: SendcloudV3Address // REQUIRED in V3!
     to_address: SendcloudV3Address
     parcels: SendcloudV3ParcelInput[]
-    shipping_option_code?: string // Replaces shipping_method_id in v3
+    ship_with: SendcloudV3ShipWith // REQUIRED in V3! Has type + properties
     request_label?: boolean
-    label_notes?: string // NEW in v3 - custom notes on the label
+    label_notes?: string
     order_number?: string
     external_reference?: string
     total_order_value?: string

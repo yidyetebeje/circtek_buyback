@@ -36,7 +36,7 @@ export class OrderService {
 
       // TODO: Replace fire-and-forget with proper job queue (e.g., BullMQ, AWS SQS) for production reliability
       // These operations should be idempotent and have retry logic
-      this.generateShippingLabel(newOrder.id, params.sellerAddress).catch(err =>
+      this.generateShippingLabel(newOrder.id, params.sellerAddress, params.shopId).catch(err =>
         console.error("[OrderService] Shipping label generation failed (will need manual retry):", err)
       );
 
@@ -247,15 +247,17 @@ export class OrderService {
    * Generate a shipping label for an order
    * @param orderId The order ID
    * @param sellerAddress The seller's address
+   * @param shopId The shop ID (required for shop-scoped Sendcloud config)
    * @returns Results of the shipping label generation
    */
   private async generateShippingLabel(
     orderId: string,
-    sellerAddress: CreateOrderParams["sellerAddress"]
+    sellerAddress: CreateOrderParams["sellerAddress"],
+    shopId: number
   ): Promise<void> {
     try {
-      // Generate the label
-      const labelInfo = await shippingService.generateAndSaveShippingLabel(orderId, sellerAddress);
+      // Generate the label using shop-specific Sendcloud config
+      const labelInfo = await shippingService.generateAndSaveShippingLabel(orderId, sellerAddress, shopId);
 
       console.log(`[OrderService] Shipping label generated for order ${orderId}:`, labelInfo.trackingNumber);
 

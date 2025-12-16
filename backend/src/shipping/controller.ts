@@ -23,10 +23,10 @@ export class ShippingController {
 
     // ============ SENDCLOUD CLIENT ============
 
-    private async getSendcloudClient(tenant_id: number): Promise<SendcloudClient> {
-        const config = await this.repository.getSendcloudConfig(tenant_id)
+    private async getSendcloudClient(shop_id: number, tenant_id: number): Promise<SendcloudClient> {
+        const config = await this.repository.getSendcloudConfigDecrypted(shop_id, tenant_id)
         if (!config) {
-            throw new Error('Sendcloud not configured for this tenant. Please configure API keys first.')
+            throw new Error('Sendcloud not configured for this shop. Please configure API keys first.')
         }
         return createSendcloudClient(
             config.public_key,
@@ -43,6 +43,7 @@ export class ShippingController {
     async createShipment(
         data: ShipmentCreateInput,
         actor_id: number,
+        shop_id: number,
         tenant_id: number
     ): Promise<ControllerResponse> {
         try {
@@ -61,6 +62,7 @@ export class ShippingController {
             if (data.request_label) {
                 const labelResult = await this.generateLabel(
                     { shipment_id: shipment.id, format: 'a4' },
+                    shop_id,
                     tenant_id
                 )
                 if (labelResult.status !== 200) {
@@ -179,7 +181,7 @@ export class ShippingController {
     /**
      * Delete (cancel) a shipment
      */
-    async deleteShipment(id: number, tenant_id?: number): Promise<ControllerResponse> {
+    async deleteShipment(id: number, shop_id: number, tenant_id: number): Promise<ControllerResponse> {
         try {
             const existing = await this.repository.findShipmentById(id, tenant_id)
             if (!existing) {
@@ -193,7 +195,7 @@ export class ShippingController {
             // If already sent to Sendcloud, try to cancel there too
             if (existing.sendcloud_parcel_id) {
                 try {
-                    const client = await this.getSendcloudClient(tenant_id!)
+                    const client = await this.getSendcloudClient(shop_id, tenant_id)
                     await client.cancelParcel(existing.sendcloud_parcel_id)
                 } catch (err) {
                     // Log but continue with local cancellation
@@ -224,6 +226,7 @@ export class ShippingController {
      */
     async generateLabel(
         input: GenerateLabelInput,
+        shop_id: number,
         tenant_id: number
     ): Promise<ControllerResponse> {
         try {
@@ -245,16 +248,16 @@ export class ShippingController {
                 }
             }
 
-            const client = await this.getSendcloudClient(tenant_id)
-            const config = await this.repository.getSendcloudConfig(tenant_id)
-
+            const config = await this.repository.getSendcloudConfig(shop_id, tenant_id)
             if (!config) {
                 return {
                     data: null,
-                    message: 'Sendcloud not configured for this tenant',
+                    message: 'Sendcloud not configured for this shop',
                     status: 400,
                 }
             }
+
+            const client = await this.getSendcloudClient(shop_id, tenant_id)
 
             // Build shipment data and create
             const shipmentData = this.buildShipment(shipment, config)
@@ -305,6 +308,7 @@ export class ShippingController {
     async downloadLabelPdf(
         shipment_id: number,
         format: 'a4' | 'a6' = 'a4',
+        shop_id: number,
         tenant_id: number
     ): Promise<ControllerResponse<Buffer | null>> {
         try {
@@ -325,7 +329,7 @@ export class ShippingController {
                 }
             }
 
-            const client = await this.getSendcloudClient(tenant_id)
+            const client = await this.getSendcloudClient(shop_id, tenant_id)
             const pdfBuffer = await client.getLabelPdf(shipment.sendcloud_parcel_id, format)
 
             return {
@@ -360,7 +364,19 @@ export class ShippingController {
             sku: item.sku || undefined,
         }))
 
+        // Parse weight as number for V3
+        const weightValue = parseFloat(shipment.total_weight_kg || '0.5')
+
         return {
+            // FROM: Source warehouse (where shipment originates)
+            from_address: {
+                name: 'Remarketed Warehouse', // TODO: Get from warehouse table
+                address_line_1: 'Warehouse Street 1',
+                city: 'Amsterdam',
+                postal_code: '1000AA',
+                country_code: 'NL',
+            },
+            // TO: Destination (recipient or warehouse)
             to_address: {
                 name: shipment.recipient_name || 'Warehouse',
                 company_name: shipment.recipient_company || undefined,
@@ -373,10 +389,15 @@ export class ShippingController {
                 country_code: shipment.recipient_country || 'NL',
             },
             parcels: [{
-                weight: shipment.total_weight_kg || '0.5',
+                weight: { value: weightValue, unit: 'kg' }, // V3 requires weight as object!
                 items,
             }],
-            shipping_option_code: config.default_shipping_option_code || undefined,
+            ship_with: {
+                type: 'shipping_option_code',
+                properties: {
+                    shipping_option_code: config.default_shipping_option_code || 'ups_standard',
+                },
+            },
             request_label: true,
             order_number: shipment.shipment_number,
             external_reference: String(shipment.id),
@@ -390,9 +411,9 @@ export class ShippingController {
     /**
      * Get available UPS shipping methods
      */
-    async getShippingMethods(tenant_id: number): Promise<ControllerResponse> {
+    async getShippingMethods(shop_id: number, tenant_id: number): Promise<ControllerResponse> {
         try {
-            const client = await this.getSendcloudClient(tenant_id)
+            const client = await this.getSendcloudClient(shop_id, tenant_id)
             const methods = await client.getUpsShippingMethods()
             return {
                 data: methods,
@@ -410,21 +431,27 @@ export class ShippingController {
     }
 
     /**
-     * Get sender addresses
+     * Get available shipping options from Sendcloud V3 API
+     * These are valid shipping_option_codes for use in ship_with
      */
-    async getSenderAddresses(tenant_id: number): Promise<ControllerResponse> {
+    async getShippingOptions(
+        shop_id: number,
+        tenant_id: number,
+        from_country?: string,
+        to_country?: string
+    ): Promise<ControllerResponse> {
         try {
-            const client = await this.getSendcloudClient(tenant_id)
-            const addresses = await client.getSenderAddresses()
+            const client = await this.getSendcloudClient(shop_id, tenant_id)
+            const options = await client.getShippingOptions(from_country, to_country)
             return {
-                data: addresses,
-                message: 'Sender addresses retrieved successfully',
+                data: options,
+                message: 'Shipping options retrieved successfully',
                 status: 200,
             }
         } catch (error) {
             return {
                 data: null,
-                message: 'Failed to retrieve sender addresses',
+                message: 'Failed to retrieve shipping options',
                 status: 500,
                 error: (error as Error).message,
             }
@@ -434,21 +461,24 @@ export class ShippingController {
     // ============ CONFIGURATION ============
 
     /**
-     * Configure Sendcloud for tenant
+     * Configure Sendcloud for a shop
      */
     async configureSendcloud(
         data: SendcloudConfigInput,
         tenant_id: number
     ): Promise<ControllerResponse> {
         try {
-            // Test the credentials first
-            const testClient = createSendcloudClient(data.public_key, data.secret_key)
-            await testClient.getSenderAddresses() // This will throw if credentials are invalid
+            // Only test credentials if secret_key is provided
+            // (When updating existing config, secret_key might be empty to keep existing value)
+            if (data.secret_key && data.secret_key.trim().length > 0) {
+                const testClient = createSendcloudClient(data.public_key, data.secret_key)
+                await testClient.getShippingMethods() // This will throw if credentials are invalid
+            }
 
             await this.repository.saveSendcloudConfig(data, tenant_id)
 
             return {
-                data: { configured: true },
+                data: { configured: true, shop_id: data.shop_id },
                 message: 'Sendcloud configured successfully',
                 status: 200,
             }
@@ -463,15 +493,15 @@ export class ShippingController {
     }
 
     /**
-     * Get Sendcloud configuration status
+     * Get Sendcloud configuration status for a shop
      */
-    async getSendcloudConfig(tenant_id: number): Promise<ControllerResponse> {
+    async getSendcloudConfig(shop_id: number, tenant_id: number): Promise<ControllerResponse> {
         try {
-            const config = await this.repository.getSendcloudConfig(tenant_id)
+            const config = await this.repository.getSendcloudConfig(shop_id, tenant_id)
             if (!config) {
                 return {
-                    data: { configured: false },
-                    message: 'Sendcloud not configured',
+                    data: { configured: false, shop_id },
+                    message: 'Sendcloud not configured for this shop',
                     status: 200,
                 }
             }
@@ -479,9 +509,15 @@ export class ShippingController {
             return {
                 data: {
                     configured: true,
+                    shop_id: config.shop_id,
+                    public_key: config.public_key, // Include full public key for form prefill
                     default_sender_address_id: config.default_sender_address_id,
                     default_shipping_method_id: config.default_shipping_method_id,
-                    // Don't expose keys
+                    default_shipping_option_code: config.default_shipping_option_code,
+                    use_test_mode: config.use_test_mode,
+                    is_active: config.is_active,
+                    // Also include preview for display
+                    public_key_preview: config.public_key.substring(0, 8) + '...',
                 },
                 message: 'Sendcloud configuration retrieved',
                 status: 200,

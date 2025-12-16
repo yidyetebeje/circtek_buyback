@@ -487,7 +487,7 @@ export class OrderController {
         throw new BadRequestError("Order has no shipping information");
       }
 
-      // Regenerate the label
+      // Regenerate the label using order's shop_id for shop-scoped Sendcloud config
       const labelResult = await shippingService.generateAndSaveShippingLabel(
         orderId,
         {
@@ -501,7 +501,7 @@ export class OrderController {
           phoneNumber: shipping.seller_phone_number,
           email: shipping.seller_email,
         },
-        currentTenantId
+        order.shop_id // Use order's shop_id for shop-scoped Sendcloud config
       );
 
       return {
@@ -557,8 +557,8 @@ export class OrderController {
         throw new NotFoundError("Order not found or you don't have access to it");
       }
 
-      // Download the PDF
-      const pdfBuffer = await shippingService.downloadLabelPdf(orderId, format, user.tenant_id);
+      // Download the PDF using order's shop_id for shop-scoped Sendcloud config
+      const pdfBuffer = await shippingService.downloadLabelPdf(orderId, format, order.shop_id, user.tenant_id);
 
       if (!pdfBuffer) {
         throw new BadRequestError("Could not download label PDF. The label may not have been generated yet or was created with mock data.");

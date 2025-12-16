@@ -740,20 +740,25 @@ export const shipment_items = mysqlTable('shipment_items', {
   index('idx_shipment_items_device').on(table.device_id),
 ]);
 
-// Sendcloud configuration per tenant
+// Sendcloud configuration per shop (shop-scoped, encrypted secret key)
 export const sendcloud_config = mysqlTable('sendcloud_config', {
   id: serial('id').primaryKey(),
   tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true })
-    .references(() => tenants.id).notNull().unique(),
+    .references(() => tenants.id).notNull(),
+  shop_id: bigint('shop_id', { mode: 'number', unsigned: true })
+    .references(() => shops.id).notNull(),
   public_key: varchar('public_key', { length: 255 }).notNull(),
-  secret_key: varchar('secret_key', { length: 255 }).notNull(), // Should be encrypted in production
+  secret_key_encrypted: varchar('secret_key_encrypted', { length: 512 }).notNull(), // AES-256-GCM encrypted
   default_sender_address_id: int('default_sender_address_id'),
   default_shipping_method_id: int('default_shipping_method_id'), // v2 UPS method ID (deprecated in v3)
   default_shipping_option_code: varchar('default_shipping_option_code', { length: 255 }), // v3 shipping option code
   use_test_mode: boolean('use_test_mode').default(false), // Use mock server for testing
   is_active: boolean('is_active').default(true),
   created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
   index('idx_sendcloud_config_tenant').on(table.tenant_id),
+  index('idx_sendcloud_config_shop').on(table.shop_id),
+  unique('uq_sendcloud_config_shop_tenant').on(table.shop_id, table.tenant_id),
 ]);

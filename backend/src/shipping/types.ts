@@ -64,8 +64,9 @@ export const GenerateLabelRequest = t.Object({
 })
 
 export const SendcloudConfigCreate = t.Object({
+    shop_id: t.Number(),
     public_key: t.String(),
-    secret_key: t.String(),
+    secret_key: t.String(), // Will be encrypted before storage
     default_sender_address_id: t.Optional(t.Number()),
     default_shipping_method_id: t.Optional(t.Number()), // v2 (deprecated)
     default_shipping_option_code: t.Optional(t.String()), // v3
@@ -165,8 +166,9 @@ export interface ShipmentListResult {
 export interface SendcloudConfigRecord {
     id: number
     tenant_id: number
+    shop_id: number
     public_key: string
-    secret_key: string
+    secret_key_encrypted: string // AES-256-GCM encrypted
     default_sender_address_id: number | null
     default_shipping_method_id: number | null // v2 (deprecated)
     default_shipping_option_code: string | null // v3

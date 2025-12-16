@@ -1,4 +1,4 @@
-import Elysia from 'elysia'
+import Elysia, { t } from 'elysia'
 import { shippingController } from './controller'
 import {
     ShipmentCreate,
@@ -7,14 +7,21 @@ import {
     GenerateLabelRequest,
     SendcloudConfigCreate,
 } from './types'
+import { requireRole } from '../auth'
 
 export const shipping_routes = new Elysia({ prefix: '/shipping' })
     // ============ SHIPMENTS ============
 
-    // Create a new shipment
+    // Create a new shipment (requires shop_id in body or query)
+    .use(requireRole([]))
     .post('/', async (ctx) => {
         const { currentUserId, currentTenantId } = ctx as any
-        return shippingController.createShipment(ctx.body as any, currentUserId, currentTenantId)
+        const body = ctx.body as any
+        const shop_id = body.shop_id || Number(ctx.query.shop_id)
+        if (!shop_id) {
+            return { data: null, message: 'shop_id is required', status: 400 }
+        }
+        return shippingController.createShipment(body, currentUserId, shop_id, currentTenantId)
     }, {
         body: ShipmentCreate,
         detail: {
@@ -67,40 +74,46 @@ export const shipping_routes = new Elysia({ prefix: '/shipping' })
 
     // Delete (cancel) a shipment
     .delete('/:id', async (ctx) => {
-        const { currentRole, currentTenantId } = ctx as any
-        const tenant_id = currentRole === 'super_admin' ? undefined : currentTenantId
-        return shippingController.deleteShipment(Number(ctx.params.id), tenant_id)
+        const { currentTenantId } = ctx as any
+        const shop_id = Number(ctx.query.shop_id)
+        if (!shop_id) {
+            return { data: null, message: 'shop_id query parameter is required', status: 400 }
+        }
+        return shippingController.deleteShipment(Number(ctx.params.id), shop_id, currentTenantId)
     }, {
         detail: {
             tags: ['Shipping'],
             summary: 'Cancel a shipment',
-            description: 'Cancel a shipment. If already sent to Sendcloud, will attempt to cancel there too.',
+            description: 'Cancel a shipment. If already sent to Sendcloud, will attempt to cancel there too. Requires shop_id query param.',
         },
     })
 
     // ============ LABELS ============
 
-    // Generate shipping label
-    .post('/labels/generate', async (ctx) => {
+    // Generate shipping label for a shop
+    .post('/shops/:shop_id/labels/generate', async (ctx) => {
         const { currentTenantId } = ctx as any
-        return shippingController.generateLabel(ctx.body as any, currentTenantId)
+        const shop_id = Number(ctx.params.shop_id)
+        return shippingController.generateLabel(ctx.body as any, shop_id, currentTenantId)
     }, {
         body: GenerateLabelRequest,
         detail: {
             tags: ['Shipping', 'Labels'],
             summary: 'Generate shipping label',
-            description: 'Generate a shipping label via Sendcloud API',
+            description: 'Generate a shipping label via Sendcloud API for a specific shop',
         },
     })
 
     // Download label PDF
-    .get('/labels/:id/pdf', async (ctx) => {
+    .get('/shops/:shop_id/labels/:id/pdf', async (ctx) => {
         const { currentTenantId } = ctx as any
+        const shop_id = Number(ctx.params.shop_id)
         const format = (ctx.query.format as 'a4' | 'a6') || 'a4'
 
         const result = await shippingController.downloadLabelPdf(
             Number(ctx.params.id),
             format,
+            shop_id,
             currentTenantId
         )
 
@@ -116,58 +129,77 @@ export const shipping_routes = new Elysia({ prefix: '/shipping' })
         detail: {
             tags: ['Shipping', 'Labels'],
             summary: 'Download label PDF',
-            description: 'Download the shipping label as a PDF file',
+            description: 'Download the shipping label as a PDF file for a specific shop',
         },
     })
 
     // ============ SENDCLOUD INTEGRATION ============
 
-    // Get available shipping methods (UPS)
-    .get('/methods', async (ctx) => {
+    // Get available shipping methods (UPS) for a shop
+    .get('/shops/:shop_id/methods', async (ctx) => {
         const { currentTenantId } = ctx as any
-        return shippingController.getShippingMethods(currentTenantId)
+        const shop_id = Number(ctx.params.shop_id)
+        return shippingController.getShippingMethods(shop_id, currentTenantId)
     }, {
         detail: {
             tags: ['Shipping', 'Sendcloud'],
             summary: 'Get shipping methods',
-            description: 'Get available UPS shipping methods from Sendcloud',
+            description: 'Get available UPS shipping methods from Sendcloud for a specific shop',
         },
     })
 
-    // Get sender addresses
-    .get('/sender-addresses', async (ctx) => {
+    // Get available shipping options (V3) - valid codes for ship_with
+    .get('/shops/:shop_id/shipping-options', async (ctx) => {
         const { currentTenantId } = ctx as any
-        return shippingController.getSenderAddresses(currentTenantId)
+        const shop_id = Number(ctx.params.shop_id)
+        const { from_country, to_country } = ctx.query as any
+        return shippingController.getShippingOptions(shop_id, currentTenantId, from_country, to_country)
     }, {
         detail: {
             tags: ['Shipping', 'Sendcloud'],
-            summary: 'Get sender addresses',
-            description: 'Get configured sender addresses from Sendcloud',
+            summary: 'Get V3 shipping options',
+            description: 'Get available shipping option codes from Sendcloud V3 API for a specific shop. Use from_country (e.g., ET) and to_country (e.g., NL) query params to filter.',
         },
     })
 
-    // Configure Sendcloud
-    .post('/config', async (ctx) => {
+    // Configure Sendcloud for a shop
+    .post('/shops/:shop_id/config', async (ctx) => {
         const { currentTenantId } = ctx as any
-        return shippingController.configureSendcloud(ctx.body as any, currentTenantId)
+        const shop_id = Number(ctx.params.shop_id)
+
+        if (!currentTenantId) {
+            return { data: null, message: 'Tenant ID is required', status: 401 }
+        }
+
+        const body = ctx.body as any
+        // Ensure shop_id from URL is used
+        return shippingController.configureSendcloud({ ...body, shop_id }, currentTenantId)
     }, {
-        body: SendcloudConfigCreate,
+        body: t.Object({
+            public_key: t.String(),
+            secret_key: t.Optional(t.String()), // Optional when updating existing config
+            default_sender_address_id: t.Optional(t.Number()),
+            default_shipping_method_id: t.Optional(t.Number()),
+            default_shipping_option_code: t.Optional(t.String()),
+            use_test_mode: t.Optional(t.Boolean()),
+        }),
         detail: {
             tags: ['Shipping', 'Sendcloud'],
-            summary: 'Configure Sendcloud',
-            description: 'Set up Sendcloud API credentials for the tenant',
+            summary: 'Configure Sendcloud for a shop',
+            description: 'Set up Sendcloud API credentials for a specific shop',
         },
     })
 
-    // Get Sendcloud config status
-    .get('/config', async (ctx) => {
+    // Get Sendcloud config status for a shop
+    .get('/shops/:shop_id/config', async (ctx) => {
         const { currentTenantId } = ctx as any
-        return shippingController.getSendcloudConfig(currentTenantId)
+        const shop_id = Number(ctx.params.shop_id)
+        return shippingController.getSendcloudConfig(shop_id, currentTenantId)
     }, {
         detail: {
             tags: ['Shipping', 'Sendcloud'],
-            summary: 'Get Sendcloud config',
-            description: 'Check if Sendcloud is configured for the tenant',
+            summary: 'Get Sendcloud config for a shop',
+            description: 'Check if Sendcloud is configured for a specific shop',
         },
     })
 
