@@ -28,7 +28,9 @@ const baseOrderObject = {
     iban: t.Optional(t.String({
       validate: (value: string) => {
         if (!value || value.trim() === '') return true;
-        return isValidIBAN(value);
+        // Normalize IBAN: remove whitespace and convert to uppercase
+        const normalized = value.replace(/\s/g, '').toUpperCase();
+        return isValidIBAN(normalized);
       },
       error: "Invalid IBAN format"
     }))

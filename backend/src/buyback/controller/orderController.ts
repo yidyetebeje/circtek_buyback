@@ -4,6 +4,34 @@ import type { OrdersFilter, UpdateOrderStatusParams } from "../repository/orderR
 import { BadRequestError, ForbiddenError, NotFoundError } from "../utils/errors";
 import type { Context } from 'elysia';
 import { orderNotificationService } from "../../email/services/order-notification-service";
+import { shippingService } from "../services/shippingService";
+
+// User context type for service calls
+interface UserContext {
+  id: number;
+  tenant_id: number;
+  roleSlug: string;
+  warehouseId?: number;
+  managed_shop_id?: number;
+  email: string;
+}
+
+/**
+ * Build a user context object from the Elysia context for service calls
+ */
+function buildUserContext(context: any): UserContext | undefined {
+  const { currentUserId, currentTenantId, currentRole, warehouseId } = context;
+  if (!currentUserId) return undefined;
+
+  return {
+    id: currentUserId,
+    tenant_id: currentTenantId,
+    roleSlug: currentRole,
+    warehouseId: warehouseId,
+    managed_shop_id: warehouseId,
+    email: ''
+  };
+}
 
 
 export class OrderController {
@@ -145,14 +173,7 @@ export class OrderController {
       const { orderId } = params as { orderId: string };
 
       // Create user object for service call
-      const user = currentUserId ? {
-        id: currentUserId,
-        tenant_id: currentTenantId,
-        roleSlug: currentRole,
-        warehouseId: warehouseId,
-        managed_shop_id: warehouseId,
-        email: ''
-      } : undefined;
+      const user = buildUserContext(context);
 
       const order = await orderService.getOrderById(orderId, user);
 
@@ -239,7 +260,7 @@ export class OrderController {
    * List orders with filtering based on user role
    * Uses warehouse pattern for role-based access control
    */
-  listOrders = async (context: Context) => {
+  listOrders = async (context: any) => {
     try {
       const { query, currentRole, currentTenantId, currentUserId, warehouseId } = context as any;
 
@@ -247,14 +268,14 @@ export class OrderController {
         status,
         dateFrom,
         dateTo,
-        page = "1",
-        limit = "20",
+        page = 1,
+        limit = 20,
         sortBy = "createdAt",
         sortOrder = "desc",
         shopId,
         search,
-        tenantId: queryTenantId // Rename to avoid confusion
-      } = query as any;
+        tenantId: queryTenantId
+      } = query;
 
       // Parse and validate query params
       const parsedPage = parseInt(page as string, 10);
@@ -293,14 +314,7 @@ export class OrderController {
       };
 
       // Create user object for service call
-      const user = currentUserId ? {
-        id: currentUserId,
-        tenant_id: currentTenantId,
-        roleSlug: currentRole,
-        warehouseId: warehouseId,
-        managed_shop_id: warehouseId,
-        email: ''
-      } : undefined;
+      const user = buildUserContext(context);
 
       const result = await orderService.listOrders(filter, user);
       return { data: result };
@@ -355,14 +369,10 @@ export class OrderController {
       }
 
       // Create user object for service call
-      const user = {
-        id: currentUserId,
-        tenant_id: currentTenantId,
-        roleSlug: currentRole,
-        warehouseId: currentWarehouseId,
-        managed_shop_id: currentWarehouseId,
-        email: ''
-      };
+      const user = buildUserContext(context);
+      if (!user) {
+        throw new ForbiddenError("Authentication required");
+      }
 
       const updatedOrder = await orderService.updateOrderStatus({
         orderId,
@@ -460,14 +470,10 @@ export class OrderController {
       }
 
       // Create user object for access check
-      const user = {
-        id: currentUserId,
-        tenant_id: currentTenantId,
-        roleSlug: currentRole,
-        warehouseId: warehouseId,
-        managed_shop_id: warehouseId,
-        email: ''
-      };
+      const user = buildUserContext(context);
+      if (!user) {
+        throw new ForbiddenError("Authentication required");
+      }
 
       // Get the order to verify access and get seller address
       const order = await orderService.getOrderById(orderId, user);
@@ -480,9 +486,6 @@ export class OrderController {
       if (!shipping) {
         throw new BadRequestError("Order has no shipping information");
       }
-
-      // Import shipping service
-      const { shippingService } = await import("../services/shippingService");
 
       // Regenerate the label
       const labelResult = await shippingService.generateAndSaveShippingLabel(
@@ -543,14 +546,10 @@ export class OrderController {
       }
 
       // Create user object for access check
-      const user = {
-        id: currentUserId,
-        tenant_id: currentTenantId,
-        roleSlug: currentRole,
-        warehouseId: warehouseId,
-        managed_shop_id: warehouseId,
-        email: ''
-      };
+      const user = buildUserContext(context);
+      if (!user) {
+        throw new ForbiddenError("Authentication required");
+      }
 
       // Verify access to order
       const order = await orderService.getOrderById(orderId, user);
@@ -558,11 +557,8 @@ export class OrderController {
         throw new NotFoundError("Order not found or you don't have access to it");
       }
 
-      // Import shipping service
-      const { shippingService } = await import("../services/shippingService");
-
       // Download the PDF
-      const pdfBuffer = await shippingService.downloadLabelPdf(orderId, format, currentTenantId);
+      const pdfBuffer = await shippingService.downloadLabelPdf(orderId, format, user.tenant_id);
 
       if (!pdfBuffer) {
         throw new BadRequestError("Could not download label PDF. The label may not have been generated yet or was created with mock data.");

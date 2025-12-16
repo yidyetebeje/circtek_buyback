@@ -145,16 +145,19 @@ export const orderRepository = {
         updated_at: new Date()
       });
       const newOrder = await tx.select().from(orders).where(eq(orders.id, orderId)).limit(1).then(rows => rows[0]);
-      for (const answer of conditionAnswers) {
-        await tx.insert(order_device_condition_answers).values({
-          id: generateId(),
-          order_id: orderId,
-          question_key: answer.questionKey,
-          question_text_snapshot: answer.questionTextSnapshot,
-          answer_value: answer.answerValue,
-          answer_text_snapshot: answer.answerTextSnapshot || null,
-          created_at: new Date()
-        });
+      // Batch insert condition answers for better performance
+      if (conditionAnswers.length > 0) {
+        await tx.insert(order_device_condition_answers).values(
+          conditionAnswers.map((answer) => ({
+            id: generateId(),
+            order_id: orderId,
+            question_key: answer.questionKey,
+            question_text_snapshot: answer.questionTextSnapshot,
+            answer_value: answer.answerValue,
+            answer_text_snapshot: answer.answerTextSnapshot || null,
+            created_at: new Date()
+          }))
+        );
       }
 
       // Insert shipping details
@@ -243,16 +246,19 @@ export const orderRepository = {
 
       const newOrder = await tx.select().from(orders).where(eq(orders.id, orderId)).limit(1).then(rows => rows[0]);
 
-      for (const answer of conditionAnswers) {
-        await tx.insert(order_device_condition_answers).values({
-          id: generateId(),
-          order_id: orderId,
-          question_key: answer.questionKey,
-          question_text_snapshot: answer.questionTextSnapshot,
-          answer_value: answer.answerValue,
-          answer_text_snapshot: answer.answerTextSnapshot || null,
-          created_at: new Date()
-        });
+      // Batch insert condition answers for better performance
+      if (conditionAnswers.length > 0) {
+        await tx.insert(order_device_condition_answers).values(
+          conditionAnswers.map((answer) => ({
+            id: generateId(),
+            order_id: orderId,
+            question_key: answer.questionKey,
+            question_text_snapshot: answer.questionTextSnapshot,
+            answer_value: answer.answerValue,
+            answer_text_snapshot: answer.answerTextSnapshot || null,
+            created_at: new Date()
+          }))
+        );
       }
 
       await tx.insert(shipping_details).values({
@@ -415,10 +421,12 @@ export const orderRepository = {
     }
 
     if (search) {
+      // Escape special LIKE characters to prevent SQL injection
+      const escapedSearch = search.replace(/[%_\\]/g, '\\$&');
       whereConditions.push(
         or(
-          like(orders.order_number, `%${search}%`),
-          sql`JSON_EXTRACT(${orders.device_snapshot}, '$.modelName') LIKE ${`%${search}%`}`
+          like(orders.order_number, `%${escapedSearch}%`),
+          sql`JSON_EXTRACT(${orders.device_snapshot}, '$.modelName') LIKE ${'%' + escapedSearch + '%'} ESCAPE '\\'`
         )
       );
     }

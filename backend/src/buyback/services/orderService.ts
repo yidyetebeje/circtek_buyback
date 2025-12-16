@@ -348,23 +348,28 @@ export class OrderService {
     }
   }
 
-  async checkDeviceEligibility(params: { imei?: string; serialNumber?: string, tenant_id?: number }): Promise<{ purchasable: boolean; reason?: string }> {
+  async checkDeviceEligibility(params: { imei?: string; serialNumber?: string; tenant_id?: number }): Promise<{ purchasable: boolean; reason?: string }> {
     const { imei, serialNumber, tenant_id } = params;
 
     if (!imei && !serialNumber) {
       throw new Error("IMEI or serialNumber must be provided");
     }
 
+    // Validate tenant_id to ensure proper tenant isolation
+    if (tenant_id === undefined || tenant_id === null) {
+      throw new Error("tenant_id is required for device eligibility check");
+    }
+
     // Check if device is in stock via stock_device_ids table
     if (imei) {
-      const isInStock = await deviceService.isDeviceInStockByImei(imei, tenant_id!);
+      const isInStock = await deviceService.isDeviceInStockByImei(imei, tenant_id);
       if (isInStock) {
         return { purchasable: false, reason: "IN_STOCK" };
       }
     }
 
     if (serialNumber) {
-      const isInStock = await deviceService.isDeviceInStockBySerial(serialNumber, tenant_id!);
+      const isInStock = await deviceService.isDeviceInStockBySerial(serialNumber, tenant_id);
       if (isInStock) {
         return { purchasable: false, reason: "IN_STOCK" };
       }
