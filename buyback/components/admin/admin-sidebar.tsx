@@ -39,6 +39,7 @@ import {
   MapPin,
   LogOut,
   Menu,
+  ArrowRightLeft,
 } from "lucide-react";
 
 interface TopBarItemProps {
@@ -53,8 +54,8 @@ const TopBarItem = ({ icon: Icon, label, href, isActive }: TopBarItemProps) => {
     <Link href={href}>
       <div className={cn(
         "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-        isActive 
-          ? "bg-white/15 text-white shadow-sm" 
+        isActive
+          ? "bg-white/15 text-white shadow-sm"
           : "text-white/90 hover:text-white hover:bg-white/10"
       )}>
         <Icon size={16} />
@@ -77,8 +78,8 @@ const NavigationDropdown = ({ isActive, icon: Icon, label, items }: DropdownProp
       <DropdownMenuTrigger asChild>
         <button className={cn(
           "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-          isActive 
-            ? "bg-white/15 text-white shadow-sm" 
+          isActive
+            ? "bg-white/15 text-white shadow-sm"
             : "text-white/90 hover:text-white hover:bg-white/10"
         )}>
           <Icon size={16} />
@@ -124,13 +125,13 @@ export function AdminSidebar() {
       <div className="flex flex-col h-full pt-20">
         {/* Empty space to push avatar to bottom */}
         <div className="flex-1"></div>
-        
+
         {/* User Avatar at bottom */}
         {session && (
           <div className="p-4 flex justify-start">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button 
+                <button
                   className="w-10 h-10 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center justify-center"
                   title={session.user?.name || 'User Menu'}
                 >
@@ -169,7 +170,7 @@ export function AdminTopBar() {
   const roleSlug = session?.user?.roleSlug;
   const canManageUsersLocations = roleSlug === 'admin' || roleSlug === 'client';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+
   const isActive = (path: string) => {
     if (!pathname) return false;
     const cleanPathname = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
@@ -182,6 +183,7 @@ export function AdminTopBar() {
     { href: `/admin/shops/${process.env.NEXT_PUBLIC_SHOP_ID}`, icon: Building, label: t('myShop') || "My Shop" },
     { href: "/admin/orders", icon: Package, label: t('orders') },
     { href: "/admin/stock", icon: Layers, label: t('stock') || 'Stock' },
+    { href: "/admin/store-transfer", icon: ArrowRightLeft, label: t('storeTransfers') || 'Store Transfers' },
   ];
 
   const catalogItems = [
@@ -216,13 +218,13 @@ export function AdminTopBar() {
         {/* Logo Section */}
         <Link href="/admin" className="flex items-center gap-3 min-w-0 mr-8">
           {config.logoUrl ? (
-            <div className="relative w-8 h-8 flex-shrink-0"> 
+            <div className="relative w-8 h-8 flex-shrink-0">
               <Image
                 src={config.logoUrl}
                 alt={config.shopName || "Company Logo"}
                 fill
                 style={{ objectFit: 'contain' }}
-                className="rounded-md" 
+                className="rounded-md"
               />
             </div>
           ) : (
@@ -231,7 +233,7 @@ export function AdminTopBar() {
             </div>
           )}
           <h1 className="font-semibold tracking-tight text-lg text-white hidden sm:block">
-            {config.shopName || "Refurbished.nl"} 
+            {config.shopName || "Refurbished.nl"}
           </h1>
         </Link>
 
@@ -244,7 +246,7 @@ export function AdminTopBar() {
             href="/admin/dashboards"
             isActive={isActive("/admin/dashboards")}
           />
-          
+
           {/* Shop Management Dropdown */}
           <NavigationDropdown
             isActive={isGroupActive(shopManagementItems)}
@@ -252,7 +254,7 @@ export function AdminTopBar() {
             label="Shop Management"
             items={shopManagementItems}
           />
-          
+
           {/* Catalog Dropdown */}
           <NavigationDropdown
             isActive={isGroupActive(catalogItems)}
@@ -260,7 +262,7 @@ export function AdminTopBar() {
             label={t('catalog')}
             items={catalogItems}
           />
-          
+
           {/* Customer Service Dropdown */}
           <NavigationDropdown
             isActive={isGroupActive(customerServiceItems)}
@@ -268,7 +270,7 @@ export function AdminTopBar() {
             label="Customer Service"
             items={customerServiceItems}
           />
-          
+
           {/* Diagnostics - Separate item */}
           <TopBarItem
             icon={FlaskConical}
@@ -276,7 +278,7 @@ export function AdminTopBar() {
             href="/admin/diagnostics"
             isActive={isActive("/admin/diagnostics")}
           />
-          
+
           {/* Buy Device - Separate item */}
           <TopBarItem
             icon={ShoppingCart}
@@ -284,7 +286,7 @@ export function AdminTopBar() {
             href="/admin/buy-device"
             isActive={isActive("/admin/buy-device")}
           />
-          
+
           {/* Admin Dropdown (if user has permissions) */}
           {adminItems.length > 0 && (
             <NavigationDropdown
@@ -335,10 +337,10 @@ export function AdminTopBar() {
               </div>
               <div className="pl-6 space-y-1">
                 {shopManagementItems.map((item) => (
-                  <Link 
+                  <Link
                     key={item.href}
-                    href={item.href} 
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200" 
+                    href={item.href}
+                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <item.icon size={16} />
@@ -347,7 +349,7 @@ export function AdminTopBar() {
                 ))}
               </div>
             </div>
-            
+
             {/* Catalog Submenu */}
             <div className="space-y-1">
               <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-white">
@@ -356,10 +358,10 @@ export function AdminTopBar() {
               </div>
               <div className="pl-6 space-y-1">
                 {catalogItems.map((item) => (
-                  <Link 
+                  <Link
                     key={item.href}
-                    href={item.href} 
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200" 
+                    href={item.href}
+                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <item.icon size={16} />
@@ -377,10 +379,10 @@ export function AdminTopBar() {
               </div>
               <div className="pl-6 space-y-1">
                 {customerServiceItems.map((item) => (
-                  <Link 
+                  <Link
                     key={item.href}
-                    href={item.href} 
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200" 
+                    href={item.href}
+                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <item.icon size={16} />
@@ -429,10 +431,10 @@ export function AdminTopBar() {
                 </div>
                 <div className="pl-6 space-y-1">
                   {adminItems.map((item) => (
-                    <Link 
+                    <Link
                       key={item.href}
-                      href={item.href} 
-                      className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200" 
+                      href={item.href}
+                      className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <item.icon size={16} />
@@ -445,7 +447,7 @@ export function AdminTopBar() {
           </nav>
         </div>
       )}
-      
+
     </header>
   );
 }

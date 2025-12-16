@@ -1,8 +1,8 @@
 import { Context } from "elysia";
 import { emailTemplateService } from "../services/email-template-service";
-import { 
-  EmailTemplateCreateRequest, 
-  EmailTemplateUpdateRequest, 
+import {
+  EmailTemplateCreateRequest,
+  EmailTemplateUpdateRequest,
   EmailTemplateListQuery,
   EmailTemplatePopulateRequest
 } from "../types";
@@ -11,22 +11,21 @@ export class EmailTemplateController {
   /**
    * Get all email templates for a shop
    */
-  async getTemplates(
-    ctx: Context & { 
-      query: { 
-        page?: string; 
-        limit?: string; 
-        search?: string; 
-        templateType?: string; 
-        isActive?: string; 
-      };
-      user?: { shopId: number };
-    }
-  ) {
+  async getTemplates(ctx: any) {
     try {
-      const { page = "1", limit = "20", search, templateType, isActive } = ctx.query;
-      // Use shopId from user context or default to 1 for testing
-      const shopId = ctx.user?.shopId || 1;
+      const { page = "1", limit = "20", search, templateType, isActive, shopId } = ctx.query;
+      const { currentTenantId } = ctx as any;
+      const tenantId = Number(currentTenantId);
+
+      if (!shopId) {
+        ctx.set.status = 400;
+        return { success: false, message: "shopId is required" };
+      }
+
+      if (!tenantId) {
+        ctx.set.status = 401;
+        return { success: false, message: "Unauthorized" };
+      }
 
       const query: EmailTemplateListQuery = {
         offset: (parseInt(page) - 1) * parseInt(limit),
@@ -36,7 +35,7 @@ export class EmailTemplateController {
         isActive: isActive ? isActive === "true" : undefined,
       };
 
-      const result = await emailTemplateService.getTemplates(shopId, query);
+      const result = await emailTemplateService.getTemplates(parseInt(shopId), tenantId, query);
 
       return {
         success: true,
@@ -48,12 +47,12 @@ export class EmailTemplateController {
           totalPages: Math.ceil(result.total / parseInt(limit))
         }
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching email templates:", error);
-      ctx.set.status = 500;
+      ctx.set.status = error.message === "Invalid shop access" ? 403 : 500;
       return {
         success: false,
-        message: "Failed to fetch email templates"
+        message: error.message || "Failed to fetch email templates"
       };
     }
   }
@@ -62,16 +61,29 @@ export class EmailTemplateController {
    * Get a specific email template
    */
   async getTemplate(
-    ctx: Context & { 
+    ctx: Context & {
       params: { id: string };
-      user?: { shopId: number };
+      query: { shopId: string };
+      user?: { shopId: number; currentTenantId: number };
     }
   ) {
     try {
       const { id } = ctx.params;
-      const shopId = ctx.user?.shopId || 1;
+      const { shopId } = ctx.query;
+      const { currentTenantId } = ctx as any;
+      const tenantId = Number(currentTenantId);
 
-      const template = await emailTemplateService.getTemplateById(id, shopId);
+      if (!shopId) {
+        ctx.set.status = 400;
+        return { success: false, message: "shopId is required" };
+      }
+
+      if (!tenantId) {
+        ctx.set.status = 401;
+        return { success: false, message: "Unauthorized" };
+      }
+
+      const template = await emailTemplateService.getTemplateById(id, parseInt(shopId), tenantId);
 
       if (!template) {
         ctx.set.status = 404;
@@ -85,9 +97,9 @@ export class EmailTemplateController {
         success: true,
         data: template
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching email template:", error);
-      ctx.set.status = 500;
+      ctx.set.status = error.message === "Invalid shop access" ? 403 : 500;
       return {
         success: false,
         message: "Failed to fetch email template"
@@ -99,14 +111,28 @@ export class EmailTemplateController {
    * Create a new email template
    */
   async createTemplate(
-    ctx: Context & { 
-      body: EmailTemplateCreateRequest;
-      user?: { shopId: number };
+    ctx: Context & {
+      body: EmailTemplateCreateRequest & { shopId: number };
+      user?: { shopId: number; currentTenantId: number };
     }
   ) {
     try {
-      const shopId = ctx.user?.shopId || 1;
-      const template = await emailTemplateService.createTemplate(shopId, ctx.body);
+      // shopId is in body as number (from schema validation)
+      const { shopId, ...data } = ctx.body;
+      const { currentTenantId } = ctx as any;
+      const tenantId = Number(currentTenantId);
+
+      if (!shopId) {
+        ctx.set.status = 400;
+        return { success: false, message: "shopId is required" };
+      }
+
+      if (!tenantId) {
+        ctx.set.status = 401;
+        return { success: false, message: "Unauthorized" };
+      }
+
+      const template = await emailTemplateService.createTemplate(shopId, tenantId, data);
 
       ctx.set.status = 201;
       return {
@@ -114,9 +140,9 @@ export class EmailTemplateController {
         data: template,
         message: "Email template created successfully"
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating email template:", error);
-      ctx.set.status = 500;
+      ctx.set.status = error.message === "Invalid shop access" ? 403 : 500;
       return {
         success: false,
         message: "Failed to create email template"
@@ -128,20 +154,33 @@ export class EmailTemplateController {
    * Update an existing email template
    */
   async updateTemplate(
-    ctx: Context & { 
+    ctx: Context & {
       params: { id: string };
-      body: Partial<EmailTemplateCreateRequest>;
-      user?: { shopId: number };
+      body: Partial<EmailTemplateCreateRequest> & { shopId: number };
+      user?: { shopId: number; currentTenantId: number };
     }
   ) {
     try {
       const { id } = ctx.params;
-      const shopId = ctx.user?.shopId || 1;
+      const { shopId, ...data } = ctx.body;
+      const { currentTenantId } = ctx as any;
+      const tenantId = Number(currentTenantId);
+
+      if (!shopId) {
+        ctx.set.status = 400;
+        return { success: false, message: "shopId is required" };
+      }
+
+      if (!tenantId) {
+        ctx.set.status = 401;
+        return { success: false, message: "Unauthorized" };
+      }
 
       const template = await emailTemplateService.updateTemplate(
-        id, 
-        shopId, 
-        { ...ctx.body, id }
+        id,
+        shopId,
+        tenantId,
+        { ...data, id }
       );
 
       if (!template) {
@@ -157,9 +196,9 @@ export class EmailTemplateController {
         data: template,
         message: "Email template updated successfully"
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating email template:", error);
-      ctx.set.status = 500;
+      ctx.set.status = error.message === "Invalid shop access" ? 403 : 500;
       return {
         success: false,
         message: "Failed to update email template"
@@ -171,16 +210,29 @@ export class EmailTemplateController {
    * Delete an email template
    */
   async deleteTemplate(
-    ctx: Context & { 
+    ctx: Context & {
       params: { id: string };
-      user?: { shopId: number };
+      query: { shopId: string };
+      user?: { shopId: number; currentTenantId: number };
     }
   ) {
     try {
       const { id } = ctx.params;
-      const shopId = ctx.user?.shopId || 1;
+      const { shopId } = ctx.query;
+      const { currentTenantId } = ctx as any;
+      const tenantId = Number(currentTenantId);
 
-      const success = await emailTemplateService.deleteTemplate(id, shopId);
+      if (!shopId) {
+        ctx.set.status = 400;
+        return { success: false, message: "shopId is required" };
+      }
+
+      if (!tenantId) {
+        ctx.set.status = 401;
+        return { success: false, message: "Unauthorized" };
+      }
+
+      const success = await emailTemplateService.deleteTemplate(id, parseInt(shopId), tenantId);
 
       if (!success) {
         ctx.set.status = 404;
@@ -195,9 +247,9 @@ export class EmailTemplateController {
         data: { success: true },
         message: "Email template deleted successfully"
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting email template:", error);
-      ctx.set.status = 500;
+      ctx.set.status = error.message === "Invalid shop access" ? 403 : 500;
       return {
         success: false,
         message: "Failed to delete email template"
@@ -229,14 +281,26 @@ export class EmailTemplateController {
    * Populate template with order data (for preview)
    */
   async populateTemplate(
-    ctx: Context & { 
-      body: EmailTemplatePopulateRequest;
-      user?: { shopId: number };
+    ctx: Context & {
+      body: EmailTemplatePopulateRequest & { shopId: number };
+      user?: { shopId: number; currentTenantId: number };
     }
   ) {
     try {
-      const shopId = ctx.user?.shopId || 1;
-      
+      const { shopId } = ctx.body;
+      const { currentTenantId } = ctx as any;
+      const tenantId = Number(currentTenantId);
+
+      if (!shopId) {
+        ctx.set.status = 400;
+        return { success: false, message: "shopId is required" };
+      }
+
+      if (!tenantId) {
+        ctx.set.status = 401;
+        return { success: false, message: "Unauthorized" };
+      }
+
       // Debug logging
       console.log("Populate template request:", {
         templateId: ctx.body.templateId,
@@ -245,8 +309,8 @@ export class EmailTemplateController {
         hasContent: !!ctx.body.content,
         shopId
       });
-      
-      const result = await emailTemplateService.populateTemplate(ctx.body, shopId);
+
+      const result = await emailTemplateService.populateTemplate(ctx.body, shopId, tenantId);
 
       if (!result) {
         console.log("No result returned from service");
@@ -262,9 +326,9 @@ export class EmailTemplateController {
         success: true,
         data: result
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error populating template:", error);
-      ctx.set.status = 500;
+      ctx.set.status = error.message === "Invalid shop access" ? 403 : 500;
       return {
         success: false,
         message: "Failed to populate template"
@@ -276,13 +340,27 @@ export class EmailTemplateController {
    * Create sample email templates for testing and demonstration
    */
   async createSampleTemplates(
-    ctx: Context & { 
-      user?: { shopId: number };
+    ctx: Context & {
+      body: { shopId: number };
+      user?: { shopId: number; currentTenantId: number };
     }
   ) {
     try {
-      const shopId = ctx.user?.shopId || 1;
-      const templates = await emailTemplateService.createSampleTemplates(shopId);
+      const { shopId } = ctx.body;
+      const { currentTenantId } = ctx as any;
+      const tenantId = Number(currentTenantId);
+
+      if (!shopId) {
+        ctx.set.status = 400;
+        return { success: false, message: "shopId is required" };
+      }
+
+      if (!tenantId) {
+        ctx.set.status = 401;
+        return { success: false, message: "Unauthorized" };
+      }
+
+      const templates = await emailTemplateService.createSampleTemplates(shopId, tenantId);
 
       ctx.set.status = 201;
       return {
@@ -290,9 +368,9 @@ export class EmailTemplateController {
         data: templates,
         message: `Created ${templates.length} sample email templates successfully`
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating sample templates:", error);
-      ctx.set.status = 500;
+      ctx.set.status = error.message === "Invalid shop access" ? 403 : 500;
       return {
         success: false,
         message: "Failed to create sample templates"
@@ -301,4 +379,4 @@ export class EmailTemplateController {
   }
 }
 
-export const emailTemplateController = new EmailTemplateController(); 
+export const emailTemplateController = new EmailTemplateController();

@@ -8,10 +8,9 @@ class StoreTransferController {
      */
     getCandidates = async (context: any) => {
         try {
-            const { query } = context;
-            const user = context.user;
+            const { query, currentUserId, currentTenantId, currentRole, managedShopId } = context;
 
-            if (!user) {
+            if (!currentUserId) {
                 throw new ForbiddenError("Authentication required");
             }
 
@@ -20,21 +19,21 @@ class StoreTransferController {
 
             // For shop managers, restrict to their managed shop
             let allowedShopIds: number[] | undefined;
-            if (user.role === "shop_manager") {
-                if (!user.managedShopId) {
+            if (currentRole === "shop_manager") {
+                if (!managedShopId) {
                     throw new ForbiddenError("Shop manager must have a managed shop assigned");
                 }
-                allowedShopIds = [user.managedShopId];
+                allowedShopIds = [managedShopId];
                 // If shopId is provided, ensure it matches managed shop
-                if (shopId && shopId !== user.managedShopId) {
+                if (shopId && shopId !== managedShopId) {
                     throw new ForbiddenError("You can only view candidates for your managed shop");
                 }
             }
 
             const candidates = await storeTransferService.getTransferCandidates({
                 days,
-                shopId: shopId || (user.role === "shop_manager" ? user.managedShopId : undefined),
-                tenantId: user.tenantId,
+                shopId: shopId || (currentRole === "shop_manager" ? managedShopId : undefined),
+                tenantId: currentTenantId,
                 allowedShopIds,
             });
 
@@ -56,10 +55,9 @@ class StoreTransferController {
      */
     createTransfer = async (context: any) => {
         try {
-            const { body } = context;
-            const user = context.user;
+            const { body, currentUserId, currentTenantId, currentRole, managedShopId } = context;
 
-            if (!user) {
+            if (!currentUserId) {
                 throw new ForbiddenError("Authentication required");
             }
 
@@ -76,9 +74,9 @@ class StoreTransferController {
             const result = await storeTransferService.createStoreTransfer({
                 orderIds,
                 toWarehouseId,
-                createdByUserId: user.id,
-                tenantId: user.tenantId,
-                shopManagerShopId: user.role === "shop_manager" ? user.managedShopId : undefined,
+                createdByUserId: currentUserId,
+                tenantId: currentTenantId,
+                shopManagerShopId: currentRole === "shop_manager" ? managedShopId : undefined,
             });
 
             return {
@@ -104,10 +102,9 @@ class StoreTransferController {
      */
     listTransfers = async (context: any) => {
         try {
-            const { query } = context;
-            const user = context.user;
+            const { query, currentUserId, currentTenantId, currentRole } = context;
 
-            if (!user) {
+            if (!currentUserId) {
                 throw new ForbiddenError("Authentication required");
             }
 
@@ -116,8 +113,8 @@ class StoreTransferController {
             const limit = query?.limit ? Number(query.limit) : 20;
 
             const transfers = await storeTransferService.listStoreTransfers({
-                tenantId: user.tenantId,
-                createdByUserId: user.role === "shop_manager" ? user.id : undefined,
+                tenantId: currentTenantId,
+                createdByUserId: currentRole === "shop_manager" ? currentUserId : undefined,
                 status,
                 page,
                 limit,
@@ -138,10 +135,9 @@ class StoreTransferController {
      */
     downloadLabel = async (context: any) => {
         try {
-            const { params, query, set } = context;
-            const user = context.user;
+            const { params, query, set, currentUserId, currentTenantId } = context;
 
-            if (!user) {
+            if (!currentUserId) {
                 throw new ForbiddenError("Authentication required");
             }
 
@@ -151,7 +147,7 @@ class StoreTransferController {
             const labelBuffer = await storeTransferService.getTransferLabel({
                 transferId,
                 format,
-                tenantId: user.tenantId,
+                tenantId: currentTenantId,
             });
 
             if (!labelBuffer) {

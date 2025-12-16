@@ -28,18 +28,19 @@ export class EmailTemplateService {
   /**
    * Get a paginated list of all email templates
    */
-  async getEmailTemplates(params?: QueryParams & EmailTemplateListQuery): Promise<PaginatedResponse<EmailTemplate>> {
-    return this.apiClient.get<PaginatedResponse<EmailTemplate>>(this.baseEndpoint, { 
-      params,
-      isProtected: true 
+  async getEmailTemplates(shopId: number, params?: QueryParams & EmailTemplateListQuery): Promise<PaginatedResponse<EmailTemplate>> {
+    return this.apiClient.get<PaginatedResponse<EmailTemplate>>(this.baseEndpoint, {
+      params: { ...params, shopId },
+      isProtected: true
     });
   }
 
   /**
    * Get an email template by ID
    */
-  async getEmailTemplateById(id: string): Promise<ApiResponse<EmailTemplate>> {
+  async getEmailTemplateById(id: string, shopId: number): Promise<ApiResponse<EmailTemplate>> {
     return this.apiClient.get<ApiResponse<EmailTemplate>>(`${this.baseEndpoint}/${id}`, {
+      params: { shopId },
       isProtected: true
     });
   }
@@ -47,27 +48,27 @@ export class EmailTemplateService {
   /**
    * Get email templates by type
    */
-  async getEmailTemplatesByType(templateType: EmailTemplateType, params?: QueryParams): Promise<PaginatedResponse<EmailTemplate>> {
-    return this.apiClient.get<PaginatedResponse<EmailTemplate>>(this.baseEndpoint, { 
-      params: { ...params, templateType },
-      isProtected: true 
+  async getEmailTemplatesByType(shopId: number, templateType: EmailTemplateType, params?: QueryParams): Promise<PaginatedResponse<EmailTemplate>> {
+    return this.apiClient.get<PaginatedResponse<EmailTemplate>>(this.baseEndpoint, {
+      params: { ...params, templateType, shopId },
+      isProtected: true
     });
   }
 
   /**
    * Get active email templates
    */
-  async getActiveEmailTemplates(params?: QueryParams): Promise<PaginatedResponse<EmailTemplate>> {
-    return this.apiClient.get<PaginatedResponse<EmailTemplate>>(this.baseEndpoint, { 
-      params: { ...params, isActive: true },
-      isProtected: true 
+  async getActiveEmailTemplates(shopId: number, params?: QueryParams): Promise<PaginatedResponse<EmailTemplate>> {
+    return this.apiClient.get<PaginatedResponse<EmailTemplate>>(this.baseEndpoint, {
+      params: { ...params, isActive: true, shopId },
+      isProtected: true
     });
   }
 
   /**
    * Create a new email template
    */
-  async createEmailTemplate(template: EmailTemplateCreateRequest): Promise<ApiResponse<EmailTemplate>> {
+  async createEmailTemplate(template: EmailTemplateCreateRequest & { shopId: number }): Promise<ApiResponse<EmailTemplate>> {
     return this.apiClient.post<ApiResponse<EmailTemplate>>(this.baseEndpoint, template, {
       isProtected: true
     });
@@ -76,7 +77,7 @@ export class EmailTemplateService {
   /**
    * Update an email template
    */
-  async updateEmailTemplate(id: string, template: Partial<EmailTemplateUpdateRequest>): Promise<ApiResponse<EmailTemplate>> {
+  async updateEmailTemplate(id: string, template: Partial<EmailTemplateUpdateRequest> & { shopId: number }): Promise<ApiResponse<EmailTemplate>> {
     return this.apiClient.put<ApiResponse<EmailTemplate>>(`${this.baseEndpoint}/${id}`, template, {
       isProtected: true
     });
@@ -85,8 +86,9 @@ export class EmailTemplateService {
   /**
    * Delete an email template
    */
-  async deleteEmailTemplate(id: string): Promise<ApiResponse<{ success: boolean }>> {
+  async deleteEmailTemplate(id: string, shopId: number): Promise<ApiResponse<{ success: boolean }>> {
     return this.apiClient.delete<ApiResponse<{ success: boolean }>>(`${this.baseEndpoint}/${id}`, {
+      params: { shopId },
       isProtected: true
     });
   }
@@ -108,7 +110,7 @@ export class EmailTemplateService {
     const response = await this.apiClient.get<{ success: boolean; data: DynamicFieldGroup[] }>(`${this.baseEndpoint}/dynamic-fields`, {
       isProtected: true
     });
-    
+
     return {
       data: response.data || []
     };
@@ -117,7 +119,7 @@ export class EmailTemplateService {
   /**
    * Populate/preview an email template with order data
    */
-  async populateEmailTemplate(request: EmailTemplatePopulateRequest): Promise<ApiResponse<EmailTemplatePopulatedResponse>> {
+  async populateEmailTemplate(request: EmailTemplatePopulateRequest & { shopId: number }): Promise<ApiResponse<EmailTemplatePopulatedResponse>> {
     return this.apiClient.post<ApiResponse<EmailTemplatePopulatedResponse>>(
       `${this.baseEndpoint}/populate`,
       request,
@@ -128,38 +130,39 @@ export class EmailTemplateService {
   /**
    * Search email templates
    */
-  async searchEmailTemplates(searchTerm: string, params?: QueryParams): Promise<PaginatedResponse<EmailTemplate>> {
-    return this.apiClient.get<PaginatedResponse<EmailTemplate>>(this.baseEndpoint, { 
-      params: { ...params, search: searchTerm },
-      isProtected: true 
+  async searchEmailTemplates(shopId: number, searchTerm: string, params?: QueryParams): Promise<PaginatedResponse<EmailTemplate>> {
+    return this.apiClient.get<PaginatedResponse<EmailTemplate>>(this.baseEndpoint, {
+      params: { ...params, search: searchTerm, shopId },
+      isProtected: true
     });
   }
 
   /**
    * Toggle email template active status
    */
-  async toggleEmailTemplateStatus(id: string, isActive: boolean): Promise<ApiResponse<EmailTemplate>> {
-    return this.updateEmailTemplate(id, { isActive });
+  async toggleEmailTemplateStatus(id: string, shopId: number, isActive: boolean): Promise<ApiResponse<EmailTemplate>> {
+    return this.updateEmailTemplate(id, { isActive, shopId });
   }
 
   /**
    * Duplicate an email template
    */
-  async duplicateEmailTemplate(id: string, newName: string): Promise<ApiResponse<EmailTemplate>> {
+  async duplicateEmailTemplate(id: string, shopId: number, newName: string): Promise<ApiResponse<EmailTemplate>> {
     try {
-      const templateResponse = await this.getEmailTemplateById(id);
-      
+      const templateResponse = await this.getEmailTemplateById(id, shopId);
+
       if (!templateResponse.data) {
         throw new Error('Failed to fetch template for duplication');
       }
 
       const originalTemplate = templateResponse.data;
-      const duplicateRequest: EmailTemplateCreateRequest = {
+      const duplicateRequest: EmailTemplateCreateRequest & { shopId: number } = {
         name: newName,
         subject: originalTemplate.subject,
         content: originalTemplate.content,
         templateType: originalTemplate.templateType,
-        isActive: false // New duplicates start as inactive
+        isActive: false, // New duplicates start as inactive
+        shopId
       };
 
       return this.createEmailTemplate(duplicateRequest);
@@ -171,10 +174,10 @@ export class EmailTemplateService {
   /**
    * Create sample email templates for testing and demonstration
    */
-  async createSampleTemplates(): Promise<ApiResponse<EmailTemplate[]>> {
+  async createSampleTemplates(shopId: number): Promise<ApiResponse<EmailTemplate[]>> {
     return this.apiClient.post<ApiResponse<EmailTemplate[]>>(
       `${this.baseEndpoint}/samples`,
-      {},
+      { shopId },
       { isProtected: true }
     );
   }

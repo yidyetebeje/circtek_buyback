@@ -15,6 +15,8 @@ import {
   getSortedRowModel,
   useReactTable,
   PaginationState,
+  RowSelectionState,
+  OnChangeFn,
 } from "@tanstack/react-table";
 
 import {
@@ -65,6 +67,8 @@ export interface DataTableProps<TData extends { id?: number | string; publishedI
   >;
   onRowClick?: (row: TData) => void;
   initialColumnVisibility?: VisibilityState;
+  enableRowSelection?: boolean;
+  onRowSelectionChange?: (selection: RowSelectionState) => void;
 }
 
 export function DataTable<TData extends { id?: number | string; publishedInShops?: PublishedShop[] }, TValue>({
@@ -86,6 +90,8 @@ export function DataTable<TData extends { id?: number | string; publishedInShops
   entityType,
   onRowClick,
   initialColumnVisibility = {},
+  enableRowSelection,
+  onRowSelectionChange: externalOnRowSelectionChange,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -120,8 +126,12 @@ export function DataTable<TData extends { id?: number | string; publishedInShops
     manualPagination: manualPagination,
     manualFiltering: manualFiltering,
     rowCount: rowCount,
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
+    enableRowSelection: enableRowSelection ?? true,
+    onRowSelectionChange: (updater) => {
+      const value = typeof updater === 'function' ? updater(rowSelection) : updater;
+      setRowSelection(value);
+      externalOnRowSelectionChange?.(value);
+    },
     onSortingChange: setSorting,
     onColumnFiltersChange: onColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
@@ -182,9 +192,9 @@ export function DataTable<TData extends { id?: number | string; publishedInShops
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}
