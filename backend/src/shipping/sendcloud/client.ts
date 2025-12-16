@@ -1,33 +1,45 @@
 import type {
-    SendcloudParcelInput,
-    SendcloudParcel,
-    SendcloudParcelsResponse,
     SendcloudShippingMethodsResponse,
-    SendcloudSenderAddressesResponse,
-    SendcloudApiError,
-    LabelPrinterFormat,
-    LabelStartPosition
+    // V3 Types
+    SendcloudV3ShipmentInput,
+    SendcloudV3ShipmentResponse,
+    SendcloudV3DocumentType,
+    SendcloudV3LabelFormat,
+    SendcloudV3LabelSize,
+    SendcloudV3ApiError,
 } from './types'
 
-const SENDCLOUD_BASE_URL = 'https://panel.sendcloud.sc/api/v2'
+// API URLs - V3 Only
+const SENDCLOUD_V3_URL = 'https://panel.sendcloud.sc/api/v3'
+const SENDCLOUD_V3_MOCK_URL = 'https://stoplight.io/mocks/sendcloud/sendcloud-public-api/299107077'
+
+// V2 URL for endpoints not yet available in v3 (shipping methods, sender addresses)
+const SENDCLOUD_V2_URL = 'https://panel.sendcloud.sc/api/v2'
 
 export class SendcloudClient {
     private authHeader: string
+    private v3BaseUrl: string
 
     constructor(
         private readonly publicKey: string,
-        private readonly secretKey: string
+        private readonly secretKey: string,
+        private readonly useTestMode: boolean = false
     ) {
         // Create Basic Auth header
         const credentials = Buffer.from(`${publicKey}:${secretKey}`).toString('base64')
         this.authHeader = `Basic ${credentials}`
+
+        // Set base URL - use mock server in test mode
+        this.v3BaseUrl = useTestMode ? SENDCLOUD_V3_MOCK_URL : SENDCLOUD_V3_URL
     }
+
+    // ============ V3 REQUEST METHOD ============
 
     private async request<T>(
         endpoint: string,
         options: RequestInit = {}
     ): Promise<T> {
-        const url = `${SENDCLOUD_BASE_URL}${endpoint}`
+        const url = `${this.v3BaseUrl}${endpoint}`
 
         const response = await fetch(url, {
             ...options,
@@ -39,71 +51,33 @@ export class SendcloudClient {
         })
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({})) as SendcloudApiError
+            const errorData = await response.json().catch(() => ({})) as SendcloudV3ApiError
+            const errorMessage = errorData.error?.message
+                || errorData.errors?.[0]?.message
+                || response.statusText
             throw new Error(
-                `Sendcloud API error: ${response.status} - ${errorData.error?.message || response.statusText}`
+                `Sendcloud API error: ${response.status} - ${errorMessage}`
             )
-        }
-
-        // For label downloads, return the buffer directly
-        if (options.headers && (options.headers as Record<string, string>)['Accept'] === 'application/pdf') {
-            return response.arrayBuffer() as unknown as T
         }
 
         return response.json()
     }
 
-    // ============ PARCEL MANAGEMENT ============
+    // ============ SHIPMENT MANAGEMENT (V3) ============
 
     /**
-     * Create a new parcel in Sendcloud
-     * Set request_label: true to immediately generate a label
+     * Create and announce a shipment synchronously
+     * This creates the shipment and generates the label in one call
      */
-    async createParcel(data: SendcloudParcelInput): Promise<SendcloudParcel> {
-        const response = await this.request<SendcloudParcelsResponse>('/parcels', {
+    async createShipment(data: SendcloudV3ShipmentInput): Promise<SendcloudV3ShipmentResponse> {
+        return this.request<SendcloudV3ShipmentResponse>('/shipments/announce', {
             method: 'POST',
-            body: JSON.stringify({ parcel: data }),
+            body: JSON.stringify(data),
         })
-
-        if (!response.parcel) {
-            throw new Error('Failed to create parcel: No parcel returned')
-        }
-
-        return response.parcel
     }
 
     /**
-     * Update an existing parcel
-     * Use this to request a label by setting request_label: true
-     */
-    async updateParcel(id: number, data: Partial<SendcloudParcelInput>): Promise<SendcloudParcel> {
-        const response = await this.request<SendcloudParcelsResponse>(`/parcels/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify({ parcel: data }),
-        })
-
-        if (!response.parcel) {
-            throw new Error('Failed to update parcel: No parcel returned')
-        }
-
-        return response.parcel
-    }
-
-    /**
-     * Get a parcel by ID
-     */
-    async getParcel(id: number): Promise<SendcloudParcel> {
-        const response = await this.request<SendcloudParcelsResponse>(`/parcels/${id}`)
-
-        if (!response.parcel) {
-            throw new Error('Parcel not found')
-        }
-
-        return response.parcel
-    }
-
-    /**
-     * Cancel a parcel
+     * Cancel a parcel/shipment
      */
     async cancelParcel(id: number): Promise<void> {
         await this.request(`/parcels/${id}/cancel`, {
@@ -111,65 +85,68 @@ export class SendcloudClient {
         })
     }
 
-    // ============ LABEL GENERATION ============
+    // ============ LABEL/DOCUMENT DOWNLOAD (V3) ============
 
     /**
-     * Request a label for an existing parcel
-     */
-    async requestLabel(parcelId: number): Promise<SendcloudParcel> {
-        return this.updateParcel(parcelId, { request_label: true })
-    }
-
-    /**
-     * Create a parcel and immediately request a label
-     */
-    async createParcelWithLabel(data: SendcloudParcelInput): Promise<SendcloudParcel> {
-        return this.createParcel({
-            ...data,
-            request_label: true,
-        })
-    }
-
-    /**
-     * Download the label PDF for a parcel
+     * Get a parcel document (label, customs form, etc.)
      * @param parcelId - The Sendcloud parcel ID
-     * @param format - 'a4' for normal printer (A4 page), 'a6' for label printer
-     * @param startFrom - Position on A4 page (0-3), only used for a4 format
+     * @param type - Document type: 'label', 'cn23', 'commercial_invoice', 'return_label'
+     * @param format - Output format: 'pdf', 'png', 'zpl'
+     * @param size - Paper size: 'a4', 'a5', 'a6'
      */
-    async getLabelPdf(
+    async getParcelDocument(
         parcelId: number,
-        format: LabelPrinterFormat = 'a4',
-        startFrom: LabelStartPosition = 0
+        type: SendcloudV3DocumentType = 'label',
+        format: SendcloudV3LabelFormat = 'pdf',
+        size: SendcloudV3LabelSize = 'a6'
     ): Promise<Buffer> {
-        const printerType = format === 'a6' ? 'label_printer' : 'normal_printer'
-        let endpoint = `/labels/${printerType}/${parcelId}`
-
-        if (format === 'a4') {
-            endpoint += `?start_from=${startFrom}`
-        }
-
-        const response = await fetch(`${SENDCLOUD_BASE_URL}${endpoint}`, {
+        const endpoint = `/parcels/${parcelId}/documents/${type}?format=${format}&size=${size}`
+        const response = await fetch(`${this.v3BaseUrl}${endpoint}`, {
             headers: {
                 'Authorization': this.authHeader,
             },
         })
 
         if (!response.ok) {
-            throw new Error(`Failed to download label: ${response.status} ${response.statusText}`)
+            throw new Error(`Failed to download document: ${response.status} ${response.statusText}`)
         }
 
         const arrayBuffer = await response.arrayBuffer()
         return Buffer.from(arrayBuffer)
     }
 
-    // ============ SHIPPING METHODS ============
+    /**
+     * Download label PDF (convenience method)
+     */
+    async getLabelPdf(
+        parcelId: number,
+        size: SendcloudV3LabelSize = 'a6'
+    ): Promise<Buffer> {
+        return this.getParcelDocument(parcelId, 'label', 'pdf', size)
+    }
+
+    // ============ SHIPPING METHODS & SENDER ADDRESSES ============
+    // Note: These still use v2 as v3 equivalents use different structure (shipping products)
 
     /**
      * Get all available shipping methods
+     * Note: Uses v2 endpoint - v3 uses shipping products instead
      */
     async getShippingMethods(): Promise<SendcloudShippingMethodsResponse['shipping_methods']> {
-        const response = await this.request<SendcloudShippingMethodsResponse>('/shipping_methods')
-        return response.shipping_methods || []
+        const url = `${SENDCLOUD_V2_URL}/shipping_methods`
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': this.authHeader,
+                'Content-Type': 'application/json',
+            },
+        })
+
+        if (!response.ok) {
+            throw new Error(`Failed to get shipping methods: ${response.status}`)
+        }
+
+        const data = await response.json() as SendcloudShippingMethodsResponse
+        return data.shipping_methods || []
     }
 
     /**
@@ -182,34 +159,21 @@ export class SendcloudClient {
         )
     }
 
-    /**
-     * Find a shipping method by ID
-     */
-    async getShippingMethodById(id: number): Promise<SendcloudShippingMethodsResponse['shipping_methods'][0] | undefined> {
-        const methods = await this.getShippingMethods()
-        return methods.find(m => m.id === id)
-    }
-
-    // ============ SENDER ADDRESSES ============
+    // ============ UTILITY METHODS ============
 
     /**
-     * Get all sender addresses configured in Sendcloud
+     * Check if client is in test mode
      */
-    async getSenderAddresses(): Promise<SendcloudSenderAddressesResponse['sender_addresses']> {
-        const response = await this.request<SendcloudSenderAddressesResponse>('/user/addresses/sender')
-        return response.sender_addresses || []
-    }
-
-    /**
-     * Get the default sender address (first one)
-     */
-    async getDefaultSenderAddress(): Promise<SendcloudSenderAddressesResponse['sender_addresses'][0] | undefined> {
-        const addresses = await this.getSenderAddresses()
-        return addresses[0]
+    isTestMode(): boolean {
+        return this.useTestMode
     }
 }
 
 // Factory function to create client from config
-export function createSendcloudClient(publicKey: string, secretKey: string): SendcloudClient {
-    return new SendcloudClient(publicKey, secretKey)
+export function createSendcloudClient(
+    publicKey: string,
+    secretKey: string,
+    useTestMode: boolean = false
+): SendcloudClient {
+    return new SendcloudClient(publicKey, secretKey, useTestMode)
 }

@@ -67,7 +67,9 @@ export const SendcloudConfigCreate = t.Object({
     public_key: t.String(),
     secret_key: t.String(),
     default_sender_address_id: t.Optional(t.Number()),
-    default_shipping_method_id: t.Optional(t.Number()),
+    default_shipping_method_id: t.Optional(t.Number()), // v2 (deprecated)
+    default_shipping_option_code: t.Optional(t.String()), // v3
+    use_test_mode: t.Optional(t.Boolean({ default: false })),
 })
 
 // ============ TYPE EXPORTS ============
@@ -166,7 +168,9 @@ export interface SendcloudConfigRecord {
     public_key: string
     secret_key: string
     default_sender_address_id: number | null
-    default_shipping_method_id: number | null
+    default_shipping_method_id: number | null // v2 (deprecated)
+    default_shipping_option_code: string | null // v3
+    use_test_mode: boolean | null
     is_active: boolean | null
     created_at: Date | null
     updated_at: Date | null

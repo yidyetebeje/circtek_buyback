@@ -30,7 +30,7 @@ import { rolesApi } from "./buyback_roles";
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
 		.use(cors({
-			origin: ["http://localhost:4200", "http://localhost:3000", "https://circtek-aws.vercel.app", "https://staging-db.circtek.io", "https://db.circtek.io", "https://circtek-buyback.vercel.app"],
+			origin: "*",
 			methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 			allowedHeaders: ["Content-Type", "Authorization", "Accept", "Cookie"],
 			credentials: true,

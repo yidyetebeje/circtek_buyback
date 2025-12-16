@@ -186,3 +186,152 @@ export interface SendcloudApiError {
 // Label format types
 export type LabelPrinterFormat = 'a4' | 'a6'
 export type LabelStartPosition = 0 | 1 | 2 | 3 // 0=top-left, 1=top-right, 2=bottom-left, 3=bottom-right
+
+// ============ SENDCLOUD API V3 TYPES ============
+
+/**
+ * V3 Address format - used for both sender and recipient
+ * Field names match Sendcloud API v3 documentation
+ */
+export interface SendcloudV3Address {
+    name: string
+    company_name?: string
+    email?: string
+    phone_number?: string // Changed from 'phone' to match API
+    address_line_1: string // Changed from 'address_1' to match API
+    address_line_2?: string
+    house_number?: string
+    city: string
+    postal_code: string
+    country_code: string // Changed from 'country' to match API
+    state_province_code?: string // Changed from 'state_code'
+    po_box?: string
+}
+
+/**
+ * V3 Item format for customs/parcel contents
+ */
+export interface SendcloudV3Item {
+    description: string
+    quantity: number
+    weight: string // kg as string
+    value: string // decimal as string
+    hs_code?: string
+    origin_country?: string // ISO-2 code
+    sku?: string
+}
+
+/**
+ * V3 Parcel input (within a shipment)
+ */
+export interface SendcloudV3ParcelInput {
+    weight: string // kg
+    length?: string // cm
+    width?: string // cm
+    height?: string // cm
+    items?: SendcloudV3Item[]
+}
+
+/**
+ * V3 Shipment input for creating shipments
+ */
+export interface SendcloudV3ShipmentInput {
+    from_address?: SendcloudV3Address
+    to_address: SendcloudV3Address
+    parcels: SendcloudV3ParcelInput[]
+    shipping_option_code?: string // Replaces shipping_method_id in v3
+    request_label?: boolean
+    label_notes?: string // NEW in v3 - custom notes on the label
+    order_number?: string
+    external_reference?: string
+    total_order_value?: string
+    total_order_value_currency?: string
+}
+
+/**
+ * V3 Document types available for download
+ */
+export interface SendcloudV3Document {
+    type: 'label' | 'cn23' | 'commercial_invoice' | 'return_label'
+    link: string
+}
+
+/**
+ * V3 Parcel response
+ */
+export interface SendcloudV3Parcel {
+    id: number
+    tracking_number?: string
+    tracking_url?: string
+    carrier?: {
+        code: string
+        name: string
+    }
+    status?: {
+        id: number
+        message: string
+    }
+    documents?: SendcloudV3Document[]
+    weight?: string
+}
+
+/**
+ * V3 Shipment response
+ */
+export interface SendcloudV3ShipmentResponse {
+    id: string
+    parcels: SendcloudV3Parcel[]
+    status: string
+    external_reference?: string
+    order_number?: string
+    created_at?: string
+}
+
+/**
+ * V3 Shipping option (replaces shipping method)
+ */
+export interface SendcloudV3ShippingOption {
+    code: string
+    name: string
+    carrier: string
+    min_weight?: number
+    max_weight?: number
+    countries?: Array<{
+        from_country: string
+        to_country: string
+    }>
+}
+
+/**
+ * V3 Compatibility response for mapping v2 method IDs to v3 codes
+ */
+export interface SendcloudV3CompatResponse {
+    shipping_options: Array<{
+        shipping_method_id: number
+        code: string
+        name: string
+        carrier: string
+    }>
+}
+
+/**
+ * V3 API Error response
+ */
+export interface SendcloudV3ApiError {
+    error?: {
+        code: string
+        message: string
+        details?: Record<string, unknown>
+    }
+    errors?: Array<{
+        code: string
+        message: string
+        field?: string
+    }>
+}
+
+// Document format types for v3
+export type SendcloudV3DocumentType = 'label' | 'cn23' | 'commercial_invoice' | 'return_label'
+export type SendcloudV3LabelFormat = 'pdf' | 'png' | 'zpl'
+export type SendcloudV3LabelSize = 'a4' | 'a5' | 'a6'
+

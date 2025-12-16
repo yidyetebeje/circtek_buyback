@@ -1,6 +1,6 @@
 import { shippingRepository, ShippingRepository } from './repository'
 import { createSendcloudClient, SendcloudClient } from './sendcloud/client'
-import type { SendcloudParcelInput, SendcloudParcelItem } from './sendcloud/types'
+import type { SendcloudV3ShipmentInput, SendcloudV3Item, SendcloudV3Document } from './sendcloud/types'
 import type {
     ShipmentCreateInput,
     ShipmentUpdateInput,
@@ -8,6 +8,7 @@ import type {
     GenerateLabelInput,
     SendcloudConfigInput,
     ShipmentWithDetails,
+    SendcloudConfigRecord,
 } from './types'
 
 interface ControllerResponse<T = unknown> {
@@ -27,7 +28,11 @@ export class ShippingController {
         if (!config) {
             throw new Error('Sendcloud not configured for this tenant. Please configure API keys first.')
         }
-        return createSendcloudClient(config.public_key, config.secret_key)
+        return createSendcloudClient(
+            config.public_key,
+            config.secret_key,
+            config.use_test_mode ?? false
+        )
     }
 
     // ============ SHIPMENT MANAGEMENT ============
@@ -215,7 +220,7 @@ export class ShippingController {
     // ============ LABEL GENERATION ============
 
     /**
-     * Generate a shipping label via Sendcloud
+     * Generate a shipping label via Sendcloud V3 API
      */
     async generateLabel(
         input: GenerateLabelInput,
@@ -243,18 +248,33 @@ export class ShippingController {
             const client = await this.getSendcloudClient(tenant_id)
             const config = await this.repository.getSendcloudConfig(tenant_id)
 
-            // Build Sendcloud parcel data
-            const parcelData = await this.buildSendcloudParcel(shipment, config!.default_sender_address_id, config!.default_shipping_method_id)
+            if (!config) {
+                return {
+                    data: null,
+                    message: 'Sendcloud not configured for this tenant',
+                    status: 400,
+                }
+            }
 
-            // Create parcel with label
-            const parcel = await client.createParcelWithLabel(parcelData)
+            // Build shipment data and create
+            const shipmentData = this.buildShipment(shipment, config)
+            const v3Response = await client.createShipment(shipmentData)
+
+            // Get the first parcel from the response
+            const parcel = v3Response.parcels?.[0]
+            if (!parcel) {
+                throw new Error('No parcel returned from Sendcloud')
+            }
+
+            // Find label document URL
+            const labelDoc = parcel.documents?.find(d => d.type === 'label')
 
             // Update local shipment with Sendcloud data
             await this.repository.updateSendcloudData(shipment.id, {
                 sendcloud_parcel_id: parcel.id,
                 sendcloud_tracking_number: parcel.tracking_number,
                 sendcloud_tracking_url: parcel.tracking_url,
-                label_url: parcel.label?.normal_printer?.[0] || parcel.label?.label_printer,
+                label_url: labelDoc?.link,
                 carrier_name: parcel.carrier?.code || 'UPS',
                 status: 'label_generated',
             }, tenant_id)
@@ -324,42 +344,44 @@ export class ShippingController {
     }
 
     /**
-     * Build Sendcloud parcel input from shipment
+     * Build Sendcloud shipment input from shipment
      */
-    private async buildSendcloudParcel(
+    private buildShipment(
         shipment: ShipmentWithDetails,
-        sender_address_id?: number | null,
-        shipping_method_id?: number | null
-    ): Promise<SendcloudParcelInput> {
-        // Convert items to Sendcloud format
-        const parcel_items: SendcloudParcelItem[] = shipment.items.map(item => ({
+        config: SendcloudConfigRecord
+    ): SendcloudV3ShipmentInput {
+        // Convert items to Sendcloud V3 format
+        const items: SendcloudV3Item[] = shipment.items.map(item => ({
             description: item.description || item.model_name || 'Mobile Phone',
-            hs_code: item.hs_code || '851712',
             quantity: item.quantity || 1,
-            sku: item.sku || undefined,
-            value: item.unit_value || '100.00',
             weight: item.weight_kg || '0.200',
+            value: item.unit_value || '100.00',
+            hs_code: item.hs_code || '851712',
+            sku: item.sku || undefined,
         }))
 
         return {
-            name: shipment.recipient_name || 'Warehouse',
-            company_name: shipment.recipient_company || undefined,
-            email: shipment.recipient_email || undefined,
-            telephone: shipment.recipient_phone || undefined,
-            address: shipment.recipient_address || '',
-            house_number: shipment.recipient_house_number || '',
-            city: shipment.recipient_city || '',
-            country: shipment.recipient_country || 'NL',
-            postal_code: shipment.recipient_postal_code || '',
-            parcel_items,
-            weight: shipment.total_weight_kg || '0.5',
-            total_order_value: shipment.total_value || '100.00',
-            total_order_value_currency: 'EUR',
-            shipment: shipping_method_id ? { id: shipping_method_id } : undefined,
-            sender_address: sender_address_id || undefined,
+            to_address: {
+                name: shipment.recipient_name || 'Warehouse',
+                company_name: shipment.recipient_company || undefined,
+                email: shipment.recipient_email || undefined,
+                phone_number: shipment.recipient_phone || undefined,
+                address_line_1: shipment.recipient_address || '',
+                house_number: shipment.recipient_house_number || undefined,
+                city: shipment.recipient_city || '',
+                postal_code: shipment.recipient_postal_code || '',
+                country_code: shipment.recipient_country || 'NL',
+            },
+            parcels: [{
+                weight: shipment.total_weight_kg || '0.5',
+                items,
+            }],
+            shipping_option_code: config.default_shipping_option_code || undefined,
             request_label: true,
             order_number: shipment.shipment_number,
             external_reference: String(shipment.id),
+            total_order_value: shipment.total_value || '100.00',
+            total_order_value_currency: 'EUR',
         }
     }
 
