@@ -84,7 +84,7 @@ export const useCreateStoreTransfer = () => {
     return useMutation<
         { success: boolean; data: CreateTransferResult; message: string },
         Error,
-        { orderIds: string[]; toWarehouseId: number }
+        { orderIds: string[]; toWarehouseId: number; originAddressId?: number; deliveryAddressId?: number }
     >({
         mutationFn: async (data) => {
             return apiClient.post<{ success: boolean; data: CreateTransferResult; message: string }>(
@@ -130,9 +130,52 @@ export const useStoreTransfers = (params: ListTransfersParams = {}) => {
 };
 
 /**
- * Get label download URL
+ * Get label download URL (for display purposes only - use downloadTransferLabel for actual downloads)
  */
 export const getTransferLabelUrl = (transferId: number, format: "a4" | "a6" = "a4") => {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
     return `${API_BASE}/buyback/store-transfers/${transferId}/label?format=${format}`;
 };
+
+/**
+ * Download transfer label with authentication
+ * Fetches the PDF with auth headers and triggers a browser download
+ */
+export const downloadTransferLabel = async (
+    transferId: number,
+    format: "a4" | "a6" = "a4"
+): Promise<void> => {
+    const { getSession } = await import("next-auth/react");
+    const session = await getSession();
+
+    if (!session?.accessToken) {
+        throw new Error("Not authenticated");
+    }
+
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+    const url = `${API_BASE}/buyback/store-transfers/${transferId}/label?format=${format}`;
+
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${session.accessToken}`,
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to download label: ${response.status}`);
+    }
+
+    // Get the blob and trigger download
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = `transfer-${transferId}-label.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+};
+

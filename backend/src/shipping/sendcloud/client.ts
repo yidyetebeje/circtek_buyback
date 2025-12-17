@@ -1,5 +1,7 @@
 import type {
     SendcloudShippingMethodsResponse,
+    SendcloudSenderAddress,
+    SendcloudSenderAddressesResponse,
     // V3 Types
     SendcloudV3ShipmentInput,
     SendcloudV3ShipmentResponse,
@@ -250,6 +252,42 @@ export class SendcloudClient {
         return methods.filter(method =>
             method.carrier.toLowerCase().includes('ups')
         )
+    }
+
+    /**
+     * Get all sender addresses configured in Sendcloud account
+     * These serve as both "ship from" locations and return addresses
+     * Uses V2 API: GET /user/addresses/sender
+     */
+    async getSenderAddresses(): Promise<SendcloudSenderAddress[]> {
+        const url = `${SENDCLOUD_V2_URL}/user/addresses/sender`
+        console.log(`[Sendcloud] Fetching sender addresses: ${url}`)
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': this.authHeader,
+                'Content-Type': 'application/json',
+            },
+        })
+
+        if (!response.ok) {
+            const errorText = await response.text()
+            console.error('[Sendcloud] Error fetching sender addresses:', response.status, errorText)
+            throw new Error(`Failed to get sender addresses: ${response.status} - ${errorText}`)
+        }
+
+        const data = await response.json() as SendcloudSenderAddressesResponse
+        console.log(`[Sendcloud] Found ${data.sender_addresses?.length || 0} sender addresses`)
+        return data.sender_addresses || []
+    }
+
+    /**
+     * Get a specific sender address by ID
+     * @param id - The sender address ID from Sendcloud
+     */
+    async getSenderAddressById(id: number): Promise<SendcloudSenderAddress | null> {
+        const addresses = await this.getSenderAddresses()
+        return addresses.find(addr => addr.id === id) || null
     }
 
     // ============ UTILITY METHODS ============

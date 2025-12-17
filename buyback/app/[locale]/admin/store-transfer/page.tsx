@@ -19,13 +19,14 @@ import {
     useTransferCandidates,
     useCreateStoreTransfer,
     useStoreTransfers,
-    getTransferLabelUrl,
+    downloadTransferLabel,
     TransferCandidate,
     StoreTransfer,
 } from "@/hooks/useStoreTransfer";
+import { useSenderAddresses } from "@/hooks/useShipping";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Truck, Download, Loader2, ExternalLink } from "lucide-react";
+import { Package, Truck, Download, Loader2, ExternalLink, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -157,7 +158,13 @@ const transferColumns: ColumnDef<StoreTransfer>[] = [
             <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => window.open(getTransferLabelUrl(row.original.id), "_blank")}
+                onClick={async () => {
+                    try {
+                        await downloadTransferLabel(row.original.id);
+                    } catch (error) {
+                        toast.error(error instanceof Error ? error.message : "Failed to download label");
+                    }
+                }}
             >
                 <Download className="h-4 w-4 mr-1" />
                 Label
@@ -170,6 +177,11 @@ export default function StoreTransferPage() {
     const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
     const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
     const [daysFilter, setDaysFilter] = useState<number>(7);
+    const [originAddressId, setOriginAddressId] = useState<string>("");
+    const [deliveryAddressId, setDeliveryAddressId] = useState<string>("");
+
+    // Get shop ID from environment variable (works for all users)
+    const shopId = Number(process.env.NEXT_PUBLIC_SHOP_ID) || 0;
 
     // Fetch data
     const { data: candidatesResponse, isLoading: loadingCandidates } =
@@ -177,6 +189,11 @@ export default function StoreTransferPage() {
     const { data: warehousesResponse } = useWarehouses();
     const { data: transfersResponse, isLoading: loadingTransfers } =
         useStoreTransfers({ page: 1, limit: 20 });
+
+    // Fetch sender addresses from Sendcloud
+    const { data: senderAddresses = [], isLoading: loadingSenderAddresses } =
+        useSenderAddresses(shopId, { enabled: shopId > 0 });
+
 
     const createTransfer = useCreateStoreTransfer();
 
@@ -205,18 +222,27 @@ export default function StoreTransferPage() {
             const result = await createTransfer.mutateAsync({
                 orderIds: selectedOrderIds,
                 toWarehouseId: Number(selectedWarehouseId),
+                originAddressId: originAddressId ? Number(originAddressId) : undefined,
+                deliveryAddressId: deliveryAddressId ? Number(deliveryAddressId) : undefined,
             });
 
             // Clear selection after successful transfer
             setSelectedRows({});
             setSelectedWarehouseId("");
+            setOriginAddressId("");
+            setDeliveryAddressId("");
 
-            // Open label in new tab
+            // Download label with authentication
             if (result.data.labelUrl) {
+                // If external URL (e.g., from Sendcloud), open directly
                 window.open(result.data.labelUrl, "_blank");
             } else {
-                // Download label from API
-                window.open(getTransferLabelUrl(result.data.transferId), "_blank");
+                // Download from our API with auth
+                try {
+                    await downloadTransferLabel(result.data.transferId);
+                } catch (error) {
+                    toast.error("Transfer created but failed to download label. You can download it from the history tab.");
+                }
             }
         } catch (err) {
             // Error handled by mutation
@@ -292,6 +318,61 @@ export default function StoreTransferPage() {
                                         </SelectContent>
                                     </Select>
                                 </div>
+
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-sm font-medium flex items-center gap-1">
+                                        <MapPin className="h-3 w-3" />
+                                        Origin Address
+                                    </label>
+                                    <Select
+                                        value={originAddressId}
+                                        onValueChange={setOriginAddressId}
+                                        disabled={loadingSenderAddresses || senderAddresses.length === 0}
+                                    >
+                                        <SelectTrigger className="w-[280px]">
+                                            <SelectValue placeholder={
+                                                loadingSenderAddresses ? "Loading..." :
+                                                    senderAddresses.length === 0 ? "No addresses available" :
+                                                        "Select origin address (optional)"
+                                            } />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {senderAddresses.map((addr) => (
+                                                <SelectItem key={addr.id} value={String(addr.id)}>
+                                                    {addr.company_name || addr.contact_name} - {addr.city}, {addr.country}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-sm font-medium flex items-center gap-1">
+                                        <MapPin className="h-3 w-3" />
+                                        Delivery Address
+                                    </label>
+                                    <Select
+                                        value={deliveryAddressId}
+                                        onValueChange={setDeliveryAddressId}
+                                        disabled={loadingSenderAddresses || senderAddresses.length === 0}
+                                    >
+                                        <SelectTrigger className="w-[280px]">
+                                            <SelectValue placeholder={
+                                                loadingSenderAddresses ? "Loading..." :
+                                                    senderAddresses.length === 0 ? "No addresses available" :
+                                                        "Select delivery address (optional)"
+                                            } />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {senderAddresses.map((addr) => (
+                                                <SelectItem key={addr.id} value={String(addr.id)}>
+                                                    {addr.company_name || addr.contact_name} - {addr.city}, {addr.country}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
 
                                 <Button
                                     onClick={handleCreateTransfer}

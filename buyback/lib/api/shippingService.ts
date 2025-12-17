@@ -59,6 +59,22 @@ export interface ShippingMethod {
     max_weight?: string;
 }
 
+/**
+ * Sender address from Sendcloud (used for return addresses)
+ */
+export interface SenderAddress {
+    id: number;
+    company_name: string;
+    contact_name: string;
+    email: string;
+    telephone: string;
+    street: string;
+    house_number: string;
+    postal_code: string;
+    city: string;
+    country: string;
+}
+
 export class ShippingService {
     private apiClient: ApiClient;
     private baseEndpoint = '/shipping';
@@ -108,6 +124,16 @@ export class ShippingService {
     async getShippingMethods(shopId: number): Promise<ApiResponse<ShippingMethod[]>> {
         return this.apiClient.get<ApiResponse<ShippingMethod[]>>(
             `${this.baseEndpoint}/shops/${shopId}/methods`,
+            { isProtected: true }
+        );
+    }
+
+    /**
+     * Get sender/return addresses from Sendcloud
+     */
+    async getSenderAddresses(shopId: number): Promise<ApiResponse<SenderAddress[]>> {
+        return this.apiClient.get<ApiResponse<SenderAddress[]>>(
+            `${this.baseEndpoint}/shops/${shopId}/sender-addresses`,
             { isProtected: true }
         );
     }

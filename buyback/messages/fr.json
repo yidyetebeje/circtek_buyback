@@ -32,7 +32,9 @@
         "userManagement": "Gestion des Utilisateurs",
         "buyDevice": "Acheter un appareil",
         "stock": "Stock",
-        "locations": "Emplacements"
+        "locations": "Emplacements",
+        "shippingSettings": "Paramètres d'expédition",
+        "storeTransfers": "Transferts de magasin"
     },
     "CategoryVariants": {
         "getQuote": "Obtenir un Devis",

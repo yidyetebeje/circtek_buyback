@@ -1,10 +1,13 @@
 import { Elysia, t } from "elysia";
 import { storeTransferController } from "../controller/storeTransferController";
 import { requireRole } from "../../auth";
+import { BadRequestError, ForbiddenError, NotFoundError } from "../utils/errors";
 
 const createTransferSchema = t.Object({
     orderIds: t.Array(t.String({ minLength: 1 }), { minItems: 1, error: "At least one order ID is required" }),
     toWarehouseId: t.Number({ minimum: 1, error: "Destination warehouse is required" }),
+    originAddressId: t.Optional(t.Number({ minimum: 1 })),
+    deliveryAddressId: t.Optional(t.Number({ minimum: 1 })),
 });
 
 const getCandidatesQuerySchema = t.Object({
@@ -14,6 +17,55 @@ const getCandidatesQuerySchema = t.Object({
 
 export const storeTransferRoutes = new Elysia({ prefix: "/store-transfers" })
     .use(requireRole(["admin", "super_admin", "shop_manager"]))
+    .onError(({ error, code, set }) => {
+        // Handle validation errors
+        if (code === "VALIDATION") {
+            set.status = 400;
+            const errorMessage = error instanceof Error ? error.message : "Validation failed";
+            return {
+                success: false,
+                error: errorMessage,
+                type: "ValidationError",
+            };
+        }
+
+        // Handle custom application errors with proper status codes
+        if (error instanceof ForbiddenError) {
+            set.status = 403;
+            return {
+                success: false,
+                error: error.message,
+                type: "ForbiddenError",
+            };
+        }
+
+        if (error instanceof BadRequestError) {
+            set.status = 400;
+            return {
+                success: false,
+                error: error.message,
+                type: "BadRequestError",
+            };
+        }
+
+        if (error instanceof NotFoundError) {
+            set.status = 404;
+            return {
+                success: false,
+                error: error.message,
+                type: "NotFoundError",
+            };
+        }
+
+        // Log unexpected errors and return generic message
+        console.error("[StoreTransferRoutes] Unhandled error:", error);
+        set.status = 500;
+        return {
+            success: false,
+            error: "An unexpected error occurred",
+            type: "InternalServerError",
+        };
+    })
     // Get transfer candidates (orders from last N days that can be transferred)
     .get("/candidates", storeTransferController.getCandidates, {
         query: getCandidatesQuerySchema,

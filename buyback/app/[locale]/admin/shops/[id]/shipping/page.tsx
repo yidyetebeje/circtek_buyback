@@ -13,6 +13,7 @@ import {
     useSendcloudConfig,
     useSaveSendcloudConfig,
     useShippingOptions,
+    useSenderAddresses,
     useTestSendcloudConnection,
 } from '@/hooks/useShipping';
 import { useShop } from '@/hooks/catalog/useShops';
@@ -60,6 +61,13 @@ export default function ShopShippingConfigPage() {
         refetch: refetchShippingOptions
     } = useShippingOptions(shopId as number);
 
+    // Fetch sender/return addresses from Sendcloud
+    const {
+        data: senderAddresses,
+        isLoading: isLoadingSenderAddresses,
+        refetch: refetchSenderAddresses
+    } = useSenderAddresses(shopId as number);
+
     // Mutations
     const { mutateAsync: saveConfig, isPending: isSaving } = useSaveSendcloudConfig(shopId as number);
     const { mutateAsync: testConnection, isPending: isTestingConnection } = useTestSendcloudConnection(shopId as number);
@@ -70,8 +78,9 @@ export default function ShopShippingConfigPage() {
 
         try {
             await saveConfig(values);
-            // Explicitly refetch shipping options after successful save
+            // Explicitly refetch shipping options and sender addresses after successful save
             await refetchShippingOptions();
+            await refetchSenderAddresses();
             // Clear connection test result after successful save
             setConnectionTestResult(null);
         } catch (error: unknown) {
@@ -153,7 +162,9 @@ export default function ShopShippingConfigPage() {
             <SendcloudConfigForm
                 initialData={sendcloudConfig || undefined}
                 shippingOptions={shippingOptions || []}
+                senderAddresses={senderAddresses || []}
                 isLoadingOptions={isLoadingOptions}
+                isLoadingSenderAddresses={isLoadingSenderAddresses}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
                 onTestConnection={handleTestConnection}

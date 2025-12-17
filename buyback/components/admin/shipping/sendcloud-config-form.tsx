@@ -26,7 +26,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-import type { SendcloudConfig, ShippingOption } from '@/hooks/useShipping';
+import type { SendcloudConfig, ShippingOption, SenderAddress } from '@/hooks/useShipping';
 
 // Define base sendcloud config form schema
 const createSendcloudConfigSchema = (isConfigured: boolean) => z.object({
@@ -37,6 +37,7 @@ const createSendcloudConfigSchema = (isConfigured: boolean) => z.object({
         ? z.string().max(255, { message: "Secret key must be 255 characters or less" }).optional().or(z.literal(''))
         : z.string().min(1, { message: "Secret key is required" }).max(255),
     default_shipping_option_code: z.string().optional().nullable(),
+    default_sender_address_id: z.number().optional().nullable(),
 });
 
 // Export the type derived from the schema
@@ -44,12 +45,15 @@ export type SendcloudConfigFormValues = {
     public_key: string;
     secret_key?: string;
     default_shipping_option_code?: string | null;
+    default_sender_address_id?: number | null;
 };
 
 export interface SendcloudConfigFormProps {
     initialData?: Partial<SendcloudConfig>;
     shippingOptions?: ShippingOption[];
+    senderAddresses?: SenderAddress[];
     isLoadingOptions?: boolean;
+    isLoadingSenderAddresses?: boolean;
     onSubmit: (values: SendcloudConfigFormValues) => void;
     onCancel: () => void;
     onTestConnection?: () => void;
@@ -61,7 +65,9 @@ export interface SendcloudConfigFormProps {
 export function SendcloudConfigForm({
     initialData,
     shippingOptions = [],
+    senderAddresses = [],
     isLoadingOptions = false,
+    isLoadingSenderAddresses = false,
     onSubmit,
     onCancel,
     onTestConnection,
@@ -82,6 +88,7 @@ export function SendcloudConfigForm({
             public_key: initialData?.public_key || '',
             secret_key: '',
             default_shipping_option_code: initialData?.default_shipping_option_code || '',
+            default_sender_address_id: initialData?.default_sender_address_id || null,
         },
     });
 
@@ -223,6 +230,47 @@ export function SendcloudConfigForm({
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                {/* Default Sender/Return Address */}
+                <FormField
+                    control={form.control}
+                    name="default_sender_address_id"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Default Return Address</FormLabel>
+                            <Select
+                                onValueChange={(val) => field.onChange(val ? Number(val) : null)}
+                                value={field.value?.toString() || ''}
+                                disabled={!isConfigured || isLoadingSenderAddresses || senderAddresses.length === 0}
+                            >
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={
+                                            !isConfigured
+                                                ? "Save config first"
+                                                : isLoadingSenderAddresses
+                                                    ? "Loading addresses..."
+                                                    : senderAddresses.length === 0
+                                                        ? "No addresses configured in Sendcloud"
+                                                        : "Select return address"
+                                        } />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {senderAddresses.map((address) => (
+                                        <SelectItem key={address.id} value={address.id.toString()}>
+                                            {address.company_name || address.contact_name} - {address.city}, {address.country}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                This address will be used as the destination for buyback returns.
+                            </p>
                             <FormMessage />
                         </FormItem>
                     )}

@@ -32,7 +32,9 @@
         "userManagement": "Benutzerverwaltung",
         "buyDevice": "Gerät kaufen",
         "stock": "Lager",
-        "locations": "Standorte"
+        "locations": "Standorte",
+        "shippingSettings": "Versandeinstellungen",
+        "storeTransfers": "Shop-Übertragungen"
     },
     "CategoryVariants": {
         "getQuote": "Angebot Erhalten",

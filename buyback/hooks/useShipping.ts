@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { shippingService, SendcloudConfig, SendcloudConfigInput, ShippingOption, ShippingMethod } from '@/lib/api/shippingService';
+import { shippingService, SendcloudConfig, SendcloudConfigInput, ShippingOption, ShippingMethod, SenderAddress } from '@/lib/api/shippingService';
 
 /**
  * Hook for fetching Sendcloud configuration for a shop
@@ -100,6 +100,30 @@ export const useShippingMethods = (
 };
 
 /**
+ * Hook for fetching sender/return addresses from Sendcloud
+ */
+export const useSenderAddresses = (
+    shopId: number,
+    options?: Partial<UseQueryOptions<SenderAddress[], Error>>
+) => {
+    return useQuery<SenderAddress[], Error>({
+        queryKey: ['senderAddresses', shopId],
+        queryFn: async () => {
+            try {
+                const response = await shippingService.getSenderAddresses(shopId);
+                return response.data || [];
+            } catch (error: unknown) {
+                const message = error instanceof Error ? error.message : 'Unknown error';
+                console.error(`Error fetching sender addresses: ${message}`);
+                throw error;
+            }
+        },
+        enabled: !!shopId && shopId > 0,
+        ...options,
+    });
+};
+
+/**
  * Hook for testing Sendcloud connection
  */
 export const useTestSendcloudConnection = (shopId: number) => {
@@ -119,4 +143,4 @@ export const useTestSendcloudConnection = (shopId: number) => {
 };
 
 // Re-export types for convenience
-export type { SendcloudConfig, SendcloudConfigInput, ShippingOption, ShippingMethod };
+export type { SendcloudConfig, SendcloudConfigInput, ShippingOption, ShippingMethod, SenderAddress };

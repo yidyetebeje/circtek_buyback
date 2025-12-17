@@ -32,7 +32,9 @@
         "userManagement": "Gestão de Usuários",
         "buyDevice": "Comprar Dispositivo",
         "stock": "Estoque",
-        "locations": "Localizações"
+        "locations": "Localizações",
+        "shippingSettings": "Configurações de Envio",
+        "storeTransfers": "Transferências de Loja"
     },
     "CategoryVariants": {
         "getQuote": "Obter Cotação",

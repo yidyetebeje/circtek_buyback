@@ -149,6 +149,9 @@ export class ShippingService {
         },
       };
 
+      // Get warehouse/return address from configured Sendcloud sender address
+      const warehouseAddress = await this.getWarehouseAddressFromSendcloud(client, config?.default_sender_address_id || undefined);
+
       // Build V3 shipment data
       // For buyback: Customer (seller) sends the device TO the warehouse
       // from_address = customer (seller), to_address = warehouse
@@ -168,15 +171,8 @@ export class ShippingService {
           // Only set if it's a valid state code (2-3 chars)
           state_province_code: sellerAddress.stateProvince?.length <= 3 ? sellerAddress.stateProvince : undefined,
         },
-        // TO: Warehouse address (where device is being sent)
-        // TODO: Get actual warehouse address from config or warehouse table
-        to_address: {
-          name: "Remarketed Warehouse",
-          address_line_1: "Warehouse Street 1",
-          city: "Amsterdam",
-          postal_code: "1000AA",
-          country_code: "NL",
-        },
+        // TO: Warehouse address from Sendcloud sender/return address configuration
+        to_address: warehouseAddress,
         parcels: [{
           weight: { value: 0.5, unit: "kg" }, // V3 requires weight as object!
           items,
@@ -249,6 +245,51 @@ export class ShippingService {
     // If no number found at end, try beginning
     const beginMatch = street.match(/^(\d+[a-zA-Z]?)/);
     return beginMatch ? beginMatch[1] : "";
+  }
+
+  /**
+   * Get warehouse/return address from Sendcloud sender address configuration
+   * @param client - Sendcloud client instance
+   * @param senderAddressId - Optional specific sender address ID to use
+   * @returns SendcloudV3Address for the warehouse destination
+   */
+  private async getWarehouseAddressFromSendcloud(
+    client: SendcloudClient,
+    senderAddressId?: number
+  ): Promise<{ name: string; company_name?: string; email?: string; phone_number?: string; address_line_1: string; house_number?: string; city: string; postal_code: string; country_code: string }> {
+    let senderAddress;
+
+    if (senderAddressId) {
+      // Get specific sender address by ID
+      senderAddress = await client.getSenderAddressById(senderAddressId);
+      console.log(`[ShippingService] Fetched sender address ID ${senderAddressId}:`, senderAddress ? 'found' : 'not found');
+    }
+
+    if (!senderAddress) {
+      // Fall back to first available sender address
+      const addresses = await client.getSenderAddresses();
+      senderAddress = addresses[0];
+      console.log(`[ShippingService] Using first available sender address:`, senderAddress ? senderAddress.id : 'none');
+    }
+
+    if (!senderAddress) {
+      throw new Error(
+        "No sender/return address configured in Sendcloud. Please configure a sender address in your Sendcloud account (Settings > Addresses)."
+      );
+    }
+
+    console.log(`[ShippingService] Using Sendcloud sender address: ${senderAddress.company_name} - ${senderAddress.city}, ${senderAddress.country}`);
+    return {
+      name: senderAddress.contact_name || senderAddress.company_name,
+      company_name: senderAddress.company_name,
+      email: senderAddress.email,
+      phone_number: senderAddress.telephone,
+      address_line_1: senderAddress.street,
+      house_number: senderAddress.house_number,
+      city: senderAddress.city,
+      postal_code: senderAddress.postal_code,
+      country_code: senderAddress.country, // Already ISO-2
+    };
   }
 
   /**

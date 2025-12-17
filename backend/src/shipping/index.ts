@@ -162,6 +162,19 @@ export const shipping_routes = new Elysia({ prefix: '/shipping' })
         },
     })
 
+    // Get sender/return addresses from Sendcloud
+    .get('/shops/:shop_id/sender-addresses', async (ctx) => {
+        const { currentTenantId } = ctx as any
+        const shop_id = Number(ctx.params.shop_id)
+        return shippingController.getSenderAddresses(shop_id, currentTenantId)
+    }, {
+        detail: {
+            tags: ['Shipping', 'Sendcloud'],
+            summary: 'Get sender addresses',
+            description: 'Get all sender/return addresses configured in Sendcloud account for a specific shop.',
+        },
+    })
+
     // Configure Sendcloud for a shop
     .post('/shops/:shop_id/config', async (ctx) => {
         const { currentTenantId } = ctx as any

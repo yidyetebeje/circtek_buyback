@@ -32,7 +32,9 @@
         "userManagement": "User Management",
         "buyDevice": "Buy Device",
         "stock": "Stock",
-        "locations": "Locations"
+        "locations": "Locations",
+        "shippingSettings": "Shipping Settings",
+        "storeTransfers": "Store Transfers"
     },
     "AdminCatalog": {
         "questionSetDetails": "Question Set Details",

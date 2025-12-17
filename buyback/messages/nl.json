@@ -32,7 +32,9 @@
         "userManagement": "Gebruikersbeheer",
         "buyDevice": "Apparaat Kopen",
         "stock": "Voorraad",
-        "locations": "Locaties"
+        "locations": "Locaties",
+        "shippingSettings": "Verzendinstellingen",
+        "storeTransfers": "Winkel Overdrachten"
     },
     "AdminCatalog": {
         "questionSetDetails": "Vragenset Details",

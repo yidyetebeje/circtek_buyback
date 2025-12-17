@@ -458,6 +458,29 @@ export class ShippingController {
         }
     }
 
+    /**
+     * Get sender/return addresses from Sendcloud account
+     * These can be used as the return address for buyback orders
+     */
+    async getSenderAddresses(shop_id: number, tenant_id: number): Promise<ControllerResponse> {
+        try {
+            const client = await this.getSendcloudClient(shop_id, tenant_id)
+            const addresses = await client.getSenderAddresses()
+            return {
+                data: addresses,
+                message: 'Sender addresses retrieved successfully',
+                status: 200,
+            }
+        } catch (error) {
+            return {
+                data: null,
+                message: 'Failed to retrieve sender addresses',
+                status: 500,
+                error: (error as Error).message,
+            }
+        }
+    }
+
     // ============ CONFIGURATION ============
 
     /**

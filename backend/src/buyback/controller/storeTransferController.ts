@@ -61,9 +61,11 @@ class StoreTransferController {
                 throw new ForbiddenError("Authentication required");
             }
 
-            const { orderIds, toWarehouseId } = body as {
+            const { orderIds, toWarehouseId, originAddressId, deliveryAddressId } = body as {
                 orderIds: string[];
                 toWarehouseId: number;
+                originAddressId?: number;
+                deliveryAddressId?: number;
             };
 
             if (!orderIds || orderIds.length === 0) {
@@ -77,6 +79,8 @@ class StoreTransferController {
                 createdByUserId: currentUserId,
                 tenantId: currentTenantId,
                 shopManagerShopId: currentRole === "shop_manager" ? managedShopId : undefined,
+                originAddressId,
+                deliveryAddressId,
             });
 
             return {
