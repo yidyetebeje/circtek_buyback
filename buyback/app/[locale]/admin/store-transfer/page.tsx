@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { DataTable } from "@/components/admin/catalog/data-table";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
     useTransferCandidates,
     useCreateStoreTransfer,
     useStoreTransfers,
+    useUpdateTransferStatus,
     downloadTransferLabel,
     TransferCandidate,
     StoreTransfer,
@@ -26,9 +28,10 @@ import {
 import { useSenderAddresses } from "@/hooks/useShipping";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Truck, Download, Loader2, ExternalLink, MapPin } from "lucide-react";
+import { Package, Truck, Download, Loader2, ExternalLink, MapPin, Eye, CheckCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+
 
 // Columns for candidate orders
 const candidateColumns: ColumnDef<TransferCandidate>[] = [
@@ -94,86 +97,11 @@ const candidateColumns: ColumnDef<TransferCandidate>[] = [
     },
 ];
 
-// Columns for existing transfers
-const transferColumns: ColumnDef<StoreTransfer>[] = [
-    {
-        accessorKey: "id",
-        header: "Transfer ID",
-        cell: ({ row }) => `TRF-${row.original.id}`,
-    },
-    {
-        accessorKey: "fromWarehouseName",
-        header: "From",
-    },
-    {
-        accessorKey: "toWarehouseName",
-        header: "To",
-    },
-    {
-        accessorKey: "itemCount",
-        header: "Items",
-        cell: ({ row }) => (
-            <Badge variant="outline">{row.original.itemCount} devices</Badge>
-        ),
-    },
-    {
-        accessorKey: "trackingNumber",
-        header: "Tracking",
-        cell: ({ row }) =>
-            row.original.trackingUrl ? (
-                <a
-                    href={row.original.trackingUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline flex items-center gap-1"
-                >
-                    {row.original.trackingNumber}
-                    <ExternalLink className="h-3 w-3" />
-                </a>
-            ) : (
-                row.original.trackingNumber || "-"
-            ),
-    },
-    {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => (
-            <Badge variant={row.original.isCompleted ? "default" : "secondary"}>
-                {row.original.isCompleted ? "Completed" : "Pending"}
-            </Badge>
-        ),
-    },
-    {
-        accessorKey: "createdAt",
-        header: "Created",
-        cell: ({ row }) =>
-            row.original.createdAt
-                ? format(new Date(row.original.createdAt), "dd/MM/yyyy HH:mm")
-                : "-",
-    },
-    {
-        id: "actions",
-        header: "Actions",
-        cell: ({ row }) => (
-            <Button
-                variant="ghost"
-                size="sm"
-                onClick={async () => {
-                    try {
-                        await downloadTransferLabel(row.original.id);
-                    } catch (error) {
-                        toast.error(error instanceof Error ? error.message : "Failed to download label");
-                    }
-                }}
-            >
-                <Download className="h-4 w-4 mr-1" />
-                Label
-            </Button>
-        ),
-    },
-];
+// Columns for existing transfers - will be generated dynamically in component
+// to have access to router and mutation hooks
 
 export default function StoreTransferPage() {
+    const router = useRouter();
     const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
     const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
     const [daysFilter, setDaysFilter] = useState<number>(7);
@@ -194,12 +122,140 @@ export default function StoreTransferPage() {
     const { data: senderAddresses = [], isLoading: loadingSenderAddresses } =
         useSenderAddresses(shopId, { enabled: shopId > 0 });
 
-
     const createTransfer = useCreateStoreTransfer();
+    const updateStatus = useUpdateTransferStatus();
 
     const candidates = candidatesResponse?.data ?? [];
     const warehouses = warehousesResponse?.data ?? [];
     const transfers = transfersResponse?.data?.transfers ?? [];
+
+    // Dynamic columns for transfers - needs access to router and mutation hook
+    const transferColumns: ColumnDef<StoreTransfer>[] = useMemo(() => [
+        {
+            accessorKey: "id",
+            header: "Transfer ID",
+            cell: ({ row }) => `TRF-${row.original.id}`,
+        },
+        {
+            accessorKey: "fromWarehouseName",
+            header: "From",
+        },
+        {
+            accessorKey: "toWarehouseName",
+            header: "To",
+        },
+        {
+            accessorKey: "itemCount",
+            header: "Items",
+            cell: ({ row }) => (
+                <Badge variant="outline">{row.original.itemCount} devices</Badge>
+            ),
+        },
+        {
+            accessorKey: "trackingNumber",
+            header: "Tracking",
+            cell: ({ row }) =>
+                row.original.trackingUrl ? (
+                    <a
+                        href={row.original.trackingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                        {row.original.trackingNumber}
+                        <ExternalLink className="h-3 w-3" />
+                    </a>
+                ) : (
+                    row.original.trackingNumber || "-"
+                ),
+        },
+        {
+            accessorKey: "status",
+            header: "Status",
+            cell: ({ row }) => (
+                <Select
+                    value={row.original.isCompleted ? "completed" : "pending"}
+                    onValueChange={(value) => {
+                        updateStatus.mutate({
+                            transferId: row.original.id,
+                            status: value as "pending" | "completed",
+                        });
+                    }}
+                    disabled={updateStatus.isPending}
+                >
+                    <SelectTrigger className="w-[130px]">
+                        <SelectValue>
+                            <div className="flex items-center gap-2">
+                                {row.original.isCompleted ? (
+                                    <>
+                                        <CheckCircle className="h-3 w-3 text-green-600" />
+                                        <span>Completed</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Clock className="h-3 w-3 text-yellow-600" />
+                                        <span>Pending</span>
+                                    </>
+                                )}
+                            </div>
+                        </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="pending">
+                            <div className="flex items-center gap-2">
+                                <Clock className="h-3 w-3 text-yellow-600" />
+                                Pending
+                            </div>
+                        </SelectItem>
+                        <SelectItem value="completed">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle className="h-3 w-3 text-green-600" />
+                                Completed
+                            </div>
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            ),
+        },
+        {
+            accessorKey: "createdAt",
+            header: "Created",
+            cell: ({ row }) =>
+                row.original.createdAt
+                    ? format(new Date(row.original.createdAt), "dd/MM/yyyy HH:mm")
+                    : "-",
+        },
+        {
+            id: "actions",
+            header: "Actions",
+            cell: ({ row }) => (
+                <div className="flex items-center gap-1">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push(`/admin/store-transfer/${row.original.id}`)}
+                    >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                            try {
+                                await downloadTransferLabel(row.original.id);
+                            } catch (error) {
+                                toast.error(error instanceof Error ? error.message : "Failed to download label");
+                            }
+                        }}
+                    >
+                        <Download className="h-4 w-4 mr-1" />
+                        Label
+                    </Button>
+                </div>
+            ),
+        },
+    ], [router, updateStatus]);
 
     // Selected order IDs
     const selectedOrderIds = useMemo(() => {
@@ -215,6 +271,14 @@ export default function StoreTransferPage() {
         }
         if (!selectedWarehouseId) {
             toast.error("Please select a destination warehouse");
+            return;
+        }
+        if (!originAddressId) {
+            toast.error("Please select an origin address");
+            return;
+        }
+        if (!deliveryAddressId) {
+            toast.error("Please select a delivery address");
             return;
         }
 
@@ -333,7 +397,7 @@ export default function StoreTransferPage() {
                                             <SelectValue placeholder={
                                                 loadingSenderAddresses ? "Loading..." :
                                                     senderAddresses.length === 0 ? "No addresses available" :
-                                                        "Select origin address (optional)"
+                                                        "Select origin address"
                                             } />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -360,7 +424,7 @@ export default function StoreTransferPage() {
                                             <SelectValue placeholder={
                                                 loadingSenderAddresses ? "Loading..." :
                                                     senderAddresses.length === 0 ? "No addresses available" :
-                                                        "Select delivery address (optional)"
+                                                        "Select delivery address"
                                             } />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -379,6 +443,8 @@ export default function StoreTransferPage() {
                                     disabled={
                                         selectedOrderIds.length === 0 ||
                                         !selectedWarehouseId ||
+                                        !originAddressId ||
+                                        !deliveryAddressId ||
                                         createTransfer.isPending
                                     }
                                 >

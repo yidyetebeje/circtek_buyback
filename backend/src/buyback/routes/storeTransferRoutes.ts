@@ -106,4 +106,26 @@ export const storeTransferRoutes = new Elysia({ prefix: "/store-transfers" })
             description: "Downloads the shipping label PDF for a store transfer.",
             tags: ["Store Transfers", "Buyback", "Shipping"],
         },
+    })
+    // Update transfer status
+    .patch("/:transferId/status", storeTransferController.updateStatus, {
+        params: t.Object({ transferId: t.Numeric({ minimum: 1 }) }),
+        body: t.Object({
+            status: t.Union([t.Literal("pending"), t.Literal("completed")]),
+        }),
+        detail: {
+            summary: "Update transfer status",
+            description: "Updates the status of a store transfer to pending or completed.",
+            tags: ["Store Transfers", "Buyback"],
+        },
+    })
+    // Get transfer details
+    .get("/:transferId", storeTransferController.getTransferDetails, {
+        params: t.Object({ transferId: t.Numeric({ minimum: 1 }) }),
+        detail: {
+            summary: "Get transfer details",
+            description: "Returns detailed information about a store transfer including items and shipment info.",
+            tags: ["Store Transfers", "Buyback"],
+        },
     });
+

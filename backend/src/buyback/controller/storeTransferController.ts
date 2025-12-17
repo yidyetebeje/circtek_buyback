@@ -170,6 +170,81 @@ class StoreTransferController {
             throw new Error(`Failed to download label: ${error.message}`);
         }
     };
+
+    /**
+     * Update transfer status (pending <-> completed)
+     */
+    updateStatus = async (context: any) => {
+        try {
+            const { params, body, currentUserId, currentTenantId } = context;
+
+            if (!currentUserId) {
+                throw new ForbiddenError("Authentication required");
+            }
+
+            const transferId = Number(params.transferId);
+            const { status } = body as { status: "pending" | "completed" };
+
+            if (!status || !["pending", "completed"].includes(status)) {
+                throw new BadRequestError("Status must be 'pending' or 'completed'");
+            }
+
+            const result = await storeTransferService.updateTransferStatus({
+                transferId,
+                status,
+                completedByUserId: currentUserId,
+                tenantId: currentTenantId,
+            });
+
+            return {
+                success: true,
+                data: result,
+                message: `Transfer status updated to ${status}`,
+            };
+        } catch (error: any) {
+            console.error("[StoreTransferController] updateStatus error:", error);
+            if (
+                error instanceof ForbiddenError ||
+                error instanceof BadRequestError ||
+                error instanceof NotFoundError
+            ) {
+                throw error;
+            }
+            throw new Error(`Failed to update transfer status: ${error.message}`);
+        }
+    };
+
+    /**
+     * Get detailed transfer information
+     */
+    getTransferDetails = async (context: any) => {
+        try {
+            const { params, currentUserId, currentTenantId } = context;
+
+            if (!currentUserId) {
+                throw new ForbiddenError("Authentication required");
+            }
+
+            const transferId = Number(params.transferId);
+
+            const details = await storeTransferService.getTransferDetails({
+                transferId,
+                tenantId: currentTenantId,
+            });
+
+            return {
+                success: true,
+                data: details,
+            };
+        } catch (error: any) {
+            console.error("[StoreTransferController] getTransferDetails error:", error);
+            if (error instanceof NotFoundError || error instanceof ForbiddenError) {
+                throw error;
+            }
+            throw new Error(`Failed to get transfer details: ${error.message}`);
+        }
+    };
 }
 
 export const storeTransferController = new StoreTransferController();
+

@@ -1,6 +1,6 @@
-import { and, eq, gte, inArray, desc, sql, count, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, desc, sql, count, lte, isNull } from "drizzle-orm";
 import { db } from "../../db";
-import { orders, ORDER_STATUS, shipping_details } from "../../db/order.schema";
+import { orders, ORDER_STATUS, shipping_details, order_transfers } from "../../db/order.schema";
 import { shops } from "../../db/shops.schema";
 import { transfers, transfer_items, warehouses, shipments, shipment_items } from "../../db/circtek.schema";
 import { shippingRepository } from "../../shipping/repository";
@@ -58,6 +58,7 @@ export const storeTransferService = {
             eq(orders.status, ORDER_STATUS.PAID),
             eq(orders.tenant_id, tenantId),
             gte(orders.created_at, dateFrom),
+            isNull(order_transfers.id), // Only orders without a transfer
         ];
 
         if (shopId) {
@@ -68,7 +69,7 @@ export const storeTransferService = {
             conditions.push(inArray(orders.shop_id, allowedShopIds));
         }
 
-        // Join with shops to get shop details
+        // Join with shops to get shop details, and left join with order_transfers to filter out transferred orders
         const candidateOrders = await db
             .select({
                 id: orders.id,
@@ -85,6 +86,7 @@ export const storeTransferService = {
             })
             .from(orders)
             .leftJoin(shops, eq(orders.shop_id, shops.id))
+            .leftJoin(order_transfers, eq(orders.id, order_transfers.order_id))
             .where(and(...conditions))
             .orderBy(desc(orders.created_at));
 
@@ -196,6 +198,14 @@ export const storeTransferService = {
             }));
 
             await tx.insert(transfer_items).values(transferItemsData);
+
+            // 2b. Record order-transfer links to prevent duplicate transfers
+            await tx.insert(order_transfers).values(
+                ordersToTransfer.map((order) => ({
+                    order_id: order.id,
+                    transfer_id: transferId,
+                }))
+            );
 
             // 3. Generate Sendcloud V3 label
             let sendcloudParcel: any = null;
@@ -529,5 +539,178 @@ export const storeTransferService = {
 
         const client = createSendcloudClient(sendcloudCfg.public_key, sendcloudCfg.secret_key);
         return await client.getLabelPdf(shipment.sendcloud_parcel_id, format);
+    },
+
+    /**
+     * Update transfer status (pending <-> completed)
+     */
+    updateTransferStatus: async (params: {
+        transferId: number;
+        status: "pending" | "completed";
+        completedByUserId: number;
+        tenantId: number;
+    }) => {
+        const { transferId, status, completedByUserId, tenantId } = params;
+
+        // Verify transfer exists and belongs to tenant
+        const [transfer] = await db
+            .select()
+            .from(transfers)
+            .where(and(eq(transfers.id, transferId), eq(transfers.tenant_id, tenantId)))
+            .limit(1);
+
+        if (!transfer) {
+            throw new NotFoundError("Transfer not found");
+        }
+
+        const isCompleted = status === "completed";
+
+        // Update the transfer status
+        await db
+            .update(transfers)
+            .set({
+                status: isCompleted,
+                completed_at: isCompleted ? new Date() : null,
+                completed_by: isCompleted ? completedByUserId : null,
+                updated_at: new Date(),
+            })
+            .where(eq(transfers.id, transferId));
+
+        // Return updated transfer
+        const [updatedTransfer] = await db
+            .select()
+            .from(transfers)
+            .where(eq(transfers.id, transferId))
+            .limit(1);
+
+        return {
+            id: updatedTransfer.id,
+            status: updatedTransfer.status,
+            isCompleted: updatedTransfer.status === true,
+            completedAt: updatedTransfer.completed_at,
+            completedBy: updatedTransfer.completed_by,
+        };
+    },
+
+    /**
+     * Get detailed transfer information including items
+     */
+    getTransferDetails: async (params: {
+        transferId: number;
+        tenantId: number;
+    }) => {
+        const { transferId, tenantId } = params;
+
+        // Get the transfer
+        const [transfer] = await db
+            .select()
+            .from(transfers)
+            .where(and(eq(transfers.id, transferId), eq(transfers.tenant_id, tenantId)))
+            .limit(1);
+
+        if (!transfer) {
+            throw new NotFoundError("Transfer not found");
+        }
+
+        // Get warehouse details
+        const warehouseIds = [transfer.from_warehouse_id, transfer.to_warehouse_id];
+        const warehouseList = await db
+            .select({ id: warehouses.id, name: warehouses.name, description: warehouses.description })
+            .from(warehouses)
+            .where(inArray(warehouses.id, warehouseIds));
+
+        const warehouseMap = new Map(warehouseList.map((w) => [w.id, w]));
+
+        // Get transfer items
+        const items = await db
+            .select()
+            .from(transfer_items)
+            .where(eq(transfer_items.transfer_id, transferId));
+
+        // Get shipment info (if exists)
+        const [shipment] = await db
+            .select()
+            .from(shipments)
+            .where(
+                and(
+                    eq(shipments.tenant_id, tenantId),
+                    sql`${shipments.shipment_number} LIKE ${"SHP-" + transferId + "-%"}`
+                )
+            )
+            .limit(1);
+
+        // Get shipment items with IMEI data if shipment exists
+        let shipmentItemsList: any[] = [];
+        if (shipment) {
+            shipmentItemsList = await db
+                .select({
+                    id: shipment_items.id,
+                    sku: shipment_items.sku,
+                    imei: shipment_items.imei,
+                    serialNumber: shipment_items.serial_number,
+                    modelName: shipment_items.model_name,
+                    quantity: shipment_items.quantity,
+                    description: shipment_items.description,
+                })
+                .from(shipment_items)
+                .where(eq(shipment_items.shipment_id, shipment.id));
+        }
+
+        const fromWarehouse = warehouseMap.get(transfer.from_warehouse_id);
+        const toWarehouse = warehouseMap.get(transfer.to_warehouse_id);
+
+        // Merge transfer_items with shipment_items to get IMEI data
+        // Shipment items have more detailed info including IMEI
+        const enrichedItems = items.map((item, index) => {
+            const shipmentItem = shipmentItemsList[index] || {};
+            return {
+                id: item.id,
+                sku: item.sku,
+                imei: shipmentItem.imei || null,
+                serialNumber: shipmentItem.serialNumber || null,
+                modelName: shipmentItem.modelName || null,
+                deviceId: item.device_id,
+                isPart: item.is_part,
+                quantity: item.quantity,
+                status: item.status,
+            };
+        });
+
+        return {
+            id: transfer.id,
+            trackingNumber: transfer.tracking_number,
+            trackingUrl: transfer.tracking_url,
+            status: transfer.status,
+            isCompleted: transfer.status === true,
+            createdAt: transfer.created_at,
+            completedAt: transfer.completed_at,
+            createdBy: transfer.created_by,
+            completedBy: transfer.completed_by,
+            fromWarehouse: {
+                id: transfer.from_warehouse_id,
+                name: fromWarehouse?.name || "Unknown",
+                description: fromWarehouse?.description || null,
+            },
+            toWarehouse: {
+                id: transfer.to_warehouse_id,
+                name: toWarehouse?.name || "Unknown",
+                description: toWarehouse?.description || null,
+            },
+            items: enrichedItems,
+            itemCount: items.length,
+            shipment: shipment
+                ? {
+                    id: shipment.id,
+                    shipmentNumber: shipment.shipment_number,
+                    carrierName: shipment.carrier_name,
+                    trackingNumber: shipment.sendcloud_tracking_number,
+                    trackingUrl: shipment.sendcloud_tracking_url,
+                    labelUrl: shipment.label_url,
+                    status: shipment.status,
+                    totalWeight: shipment.total_weight_kg,
+                    totalItems: shipment.total_items,
+                }
+                : null,
+        };
     },
 };

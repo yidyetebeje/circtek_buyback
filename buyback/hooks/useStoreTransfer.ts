@@ -179,3 +179,97 @@ export const downloadTransferLabel = async (
     window.URL.revokeObjectURL(blobUrl);
 };
 
+// ============ Transfer Details ============
+
+export interface TransferItem {
+    id: number;
+    sku: string;
+    imei: string | null;
+    serialNumber: string | null;
+    modelName: string | null;
+    deviceId: number | null;
+    isPart: boolean;
+    quantity: number;
+    status: boolean;
+}
+
+export interface TransferWarehouse {
+    id: number;
+    name: string;
+    description: string | null;
+}
+
+export interface TransferShipment {
+    id: number;
+    shipmentNumber: string;
+    carrierName: string | null;
+    trackingNumber: string | null;
+    trackingUrl: string | null;
+    labelUrl: string | null;
+    status: string;
+    totalWeight: string | null;
+    totalItems: number | null;
+}
+
+export interface StoreTransferDetails {
+    id: number;
+    trackingNumber: string | null;
+    trackingUrl: string | null;
+    status: boolean;
+    isCompleted: boolean;
+    createdAt: string;
+    completedAt: string | null;
+    createdBy: number;
+    completedBy: number | null;
+    fromWarehouse: TransferWarehouse;
+    toWarehouse: TransferWarehouse;
+    items: TransferItem[];
+    itemCount: number;
+    shipment: TransferShipment | null;
+}
+
+/**
+ * Hook to fetch single transfer details
+ */
+export const useStoreTransferDetails = (transferId: number | null) => {
+    return useQuery<{ data: StoreTransferDetails }, Error>({
+        queryKey: ["store-transfer-details", transferId],
+        queryFn: async () => {
+            if (!transferId) throw new Error("Transfer ID required");
+            return apiClient.get<{ data: StoreTransferDetails }>(
+                `/buyback/store-transfers/${transferId}`,
+                { isProtected: true }
+            );
+        },
+        enabled: !!transferId,
+    });
+};
+
+/**
+ * Hook to update transfer status
+ */
+export const useUpdateTransferStatus = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation<
+        { success: boolean; data: { id: number; status: boolean; isCompleted: boolean }; message: string },
+        Error,
+        { transferId: number; status: "pending" | "completed" }
+    >({
+        mutationFn: async ({ transferId, status }) => {
+            return apiClient.patch<{ success: boolean; data: any; message: string }>(
+                `/buyback/store-transfers/${transferId}/status`,
+                { status },
+                { isProtected: true }
+            );
+        },
+        onSuccess: (data, variables) => {
+            toast.success(data.message || "Transfer status updated");
+            queryClient.invalidateQueries({ queryKey: ["store-transfers"] });
+            queryClient.invalidateQueries({ queryKey: ["store-transfer-details", variables.transferId] });
+        },
+        onError: (error) => {
+            toast.error(error.message || "Failed to update transfer status");
+        },
+    });
+};
