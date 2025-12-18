@@ -5,6 +5,7 @@
     "migrate": "bunx drizzle-kit push",
     "migrate:test": "NODE_ENV=test bunx drizzle-kit push",
     "test": "NODE_ENV=test bun run migrate:test && bun test --preload=./tests/setup.ts",
+    "test:ratelimit": "bun test tests/lib/bm-traffic-control/",
     "studio:dev": "bunx drizzle-kit studio",
     "studio:test": "NODE_ENV=test bunx drizzle-kit studio",
     "dev": "bun run --watch src/index.ts",

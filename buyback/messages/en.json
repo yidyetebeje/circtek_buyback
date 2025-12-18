@@ -381,5 +381,12 @@
         "sellYourDevice": "Sell your device today",
         "chooseFromDevices": "Choose from our wide range of supported models",
         "unnamedModel": "Unnamed Model"
+    },
+    "BackMarket": {
+        "title": "Back Market Integration",
+        "listingsManager": "Listings Manager",
+        "pricingConfiguration": "Pricing Configuration",
+        "schedulerStatus": "Scheduler Status",
+        "orders": "Orders"
     }
 }

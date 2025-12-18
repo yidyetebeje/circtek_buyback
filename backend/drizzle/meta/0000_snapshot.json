@@ -1,9 +1,257 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "70d3f391-f0b8-45b1-a8b4-821f2f6f1ab7",
+  "id": "31973103-5aed-41f1-871b-c4dc11a8e8fe",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
+    "backmarket_listings": {
+      "name": "backmarket_listings",
+      "columns": {
+        "listing_id": {
+          "name": "listing_id",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "sku": {
+          "name": "sku",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "price": {
+          "name": "price",
+          "type": "decimal(10,2)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "varchar(3)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "state": {
+          "name": "state",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "grade": {
+          "name": "grade",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "publication_state": {
+          "name": "publication_state",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "synced_at": {
+          "name": "synced_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "idx_bm_listings_sku": {
+          "name": "idx_bm_listings_sku",
+          "columns": [
+            "sku"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "backmarket_listings_pk": {
+          "name": "backmarket_listings_pk",
+          "columns": [
+            "listing_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "backmarket_orders": {
+      "name": "backmarket_orders",
+      "columns": {
+        "order_id": {
+          "name": "order_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "creation_date": {
+          "name": "creation_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "modification_date": {
+          "name": "modification_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "varchar(3)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "shipping_first_name": {
+          "name": "shipping_first_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "shipping_last_name": {
+          "name": "shipping_last_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "shipping_address1": {
+          "name": "shipping_address1",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "shipping_address2": {
+          "name": "shipping_address2",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "shipping_zipcode": {
+          "name": "shipping_zipcode",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "shipping_city": {
+          "name": "shipping_city",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "shipping_country": {
+          "name": "shipping_country",
+          "type": "varchar(2)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "tracking_number": {
+          "name": "tracking_number",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "tracking_url": {
+          "name": "tracking_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "lines": {
+          "name": "lines",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "synced_at": {
+          "name": "synced_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "idx_bm_orders_status": {
+          "name": "idx_bm_orders_status",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "idx_bm_orders_creation_date": {
+          "name": "idx_bm_orders_creation_date",
+          "columns": [
+            "creation_date"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "backmarket_orders_pk": {
+          "name": "backmarket_orders_pk",
+          "columns": [
+            "order_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
     "brands": {
       "name": "brands",
       "columns": {
@@ -5170,665 +5418,6 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "sendcloud_config": {
-      "name": "sendcloud_config",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "tenant_id": {
-          "name": "tenant_id",
-          "type": "bigint unsigned",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "shop_id": {
-          "name": "shop_id",
-          "type": "bigint unsigned",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "public_key": {
-          "name": "public_key",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "secret_key_encrypted": {
-          "name": "secret_key_encrypted",
-          "type": "varchar(512)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "default_sender_address_id": {
-          "name": "default_sender_address_id",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "default_shipping_method_id": {
-          "name": "default_shipping_method_id",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "default_shipping_option_code": {
-          "name": "default_shipping_option_code",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "use_test_mode": {
-          "name": "use_test_mode",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": false
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {
-        "idx_sendcloud_config_tenant": {
-          "name": "idx_sendcloud_config_tenant",
-          "columns": [
-            "tenant_id"
-          ],
-          "isUnique": false
-        },
-        "idx_sendcloud_config_shop": {
-          "name": "idx_sendcloud_config_shop",
-          "columns": [
-            "shop_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "sendcloud_config_tenant_id_tenants_id_fk": {
-          "name": "sendcloud_config_tenant_id_tenants_id_fk",
-          "tableFrom": "sendcloud_config",
-          "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "sendcloud_config_shop_id_shops_id_fk": {
-          "name": "sendcloud_config_shop_id_shops_id_fk",
-          "tableFrom": "sendcloud_config",
-          "tableTo": "shops",
-          "columnsFrom": [
-            "shop_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "sendcloud_config_id": {
-          "name": "sendcloud_config_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {
-        "uq_sendcloud_config_shop_tenant": {
-          "name": "uq_sendcloud_config_shop_tenant",
-          "columns": [
-            "shop_id",
-            "tenant_id"
-          ]
-        }
-      },
-      "checkConstraint": {}
-    },
-    "shipment_items": {
-      "name": "shipment_items",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "shipment_id": {
-          "name": "shipment_id",
-          "type": "bigint unsigned",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "device_id": {
-          "name": "device_id",
-          "type": "bigint unsigned",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "sku": {
-          "name": "sku",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "imei": {
-          "name": "imei",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "serial_number": {
-          "name": "serial_number",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "model_name": {
-          "name": "model_name",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "quantity": {
-          "name": "quantity",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 1
-        },
-        "weight_kg": {
-          "name": "weight_kg",
-          "type": "decimal(10,3)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'0.200'"
-        },
-        "unit_value": {
-          "name": "unit_value",
-          "type": "decimal(10,2)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "hs_code": {
-          "name": "hs_code",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'851712'"
-        },
-        "description": {
-          "name": "description",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "tenant_id": {
-          "name": "tenant_id",
-          "type": "bigint unsigned",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {
-        "idx_shipment_items_shipment": {
-          "name": "idx_shipment_items_shipment",
-          "columns": [
-            "shipment_id"
-          ],
-          "isUnique": false
-        },
-        "idx_shipment_items_device": {
-          "name": "idx_shipment_items_device",
-          "columns": [
-            "device_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "shipment_items_shipment_id_shipments_id_fk": {
-          "name": "shipment_items_shipment_id_shipments_id_fk",
-          "tableFrom": "shipment_items",
-          "tableTo": "shipments",
-          "columnsFrom": [
-            "shipment_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "shipment_items_device_id_devices_id_fk": {
-          "name": "shipment_items_device_id_devices_id_fk",
-          "tableFrom": "shipment_items",
-          "tableTo": "devices",
-          "columnsFrom": [
-            "device_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "shipment_items_tenant_id_tenants_id_fk": {
-          "name": "shipment_items_tenant_id_tenants_id_fk",
-          "tableFrom": "shipment_items",
-          "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "shipment_items_id": {
-          "name": "shipment_items_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraint": {}
-    },
-    "shipments": {
-      "name": "shipments",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "shipment_number": {
-          "name": "shipment_number",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "sendcloud_parcel_id": {
-          "name": "sendcloud_parcel_id",
-          "type": "bigint unsigned",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "sendcloud_tracking_number": {
-          "name": "sendcloud_tracking_number",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "sendcloud_tracking_url": {
-          "name": "sendcloud_tracking_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "carrier_name": {
-          "name": "carrier_name",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'UPS'"
-        },
-        "shipping_method_id": {
-          "name": "shipping_method_id",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "from_warehouse_id": {
-          "name": "from_warehouse_id",
-          "type": "bigint unsigned",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "to_warehouse_id": {
-          "name": "to_warehouse_id",
-          "type": "bigint unsigned",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recipient_name": {
-          "name": "recipient_name",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recipient_company": {
-          "name": "recipient_company",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recipient_address": {
-          "name": "recipient_address",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recipient_house_number": {
-          "name": "recipient_house_number",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recipient_city": {
-          "name": "recipient_city",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recipient_postal_code": {
-          "name": "recipient_postal_code",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recipient_country": {
-          "name": "recipient_country",
-          "type": "varchar(2)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recipient_phone": {
-          "name": "recipient_phone",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "recipient_email": {
-          "name": "recipient_email",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "parcel_type": {
-          "name": "parcel_type",
-          "type": "enum('individual','group')",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'individual'"
-        },
-        "total_weight_kg": {
-          "name": "total_weight_kg",
-          "type": "decimal(10,3)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "total_items": {
-          "name": "total_items",
-          "type": "int",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": 1
-        },
-        "total_value": {
-          "name": "total_value",
-          "type": "decimal(10,2)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "label_url": {
-          "name": "label_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "label_generated_at": {
-          "name": "label_generated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "shipment_status": {
-          "name": "shipment_status",
-          "type": "enum('draft','pending','label_generated','shipped','in_transit','delivered','cancelled','returned')",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "'draft'"
-        },
-        "shipped_at": {
-          "name": "shipped_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "delivered_at": {
-          "name": "delivered_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "notes": {
-          "name": "notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "bigint unsigned",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tenant_id": {
-          "name": "tenant_id",
-          "type": "bigint unsigned",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {
-        "idx_shipments_tenant": {
-          "name": "idx_shipments_tenant",
-          "columns": [
-            "tenant_id"
-          ],
-          "isUnique": false
-        },
-        "idx_shipments_status": {
-          "name": "idx_shipments_status",
-          "columns": [
-            "shipment_status"
-          ],
-          "isUnique": false
-        },
-        "idx_shipments_sendcloud": {
-          "name": "idx_shipments_sendcloud",
-          "columns": [
-            "sendcloud_parcel_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "shipments_from_warehouse_id_warehouses_id_fk": {
-          "name": "shipments_from_warehouse_id_warehouses_id_fk",
-          "tableFrom": "shipments",
-          "tableTo": "warehouses",
-          "columnsFrom": [
-            "from_warehouse_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "shipments_to_warehouse_id_warehouses_id_fk": {
-          "name": "shipments_to_warehouse_id_warehouses_id_fk",
-          "tableFrom": "shipments",
-          "tableTo": "warehouses",
-          "columnsFrom": [
-            "to_warehouse_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "shipments_created_by_users_id_fk": {
-          "name": "shipments_created_by_users_id_fk",
-          "tableFrom": "shipments",
-          "tableTo": "users",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "shipments_tenant_id_tenants_id_fk": {
-          "name": "shipments_tenant_id_tenants_id_fk",
-          "tableFrom": "shipments",
-          "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "shipments_id": {
-          "name": "shipments_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {
-        "uq_shipment_number_tenant": {
-          "name": "uq_shipment_number_tenant",
-          "columns": [
-            "shipment_number",
-            "tenant_id"
-          ]
-        }
-      },
-      "checkConstraint": {}
-    },
     "sku_mappings": {
       "name": "sku_mappings",
       "columns": {
@@ -7827,6 +7416,95 @@
       "compositePrimaryKeys": {
         "workflows_id": {
           "name": "workflows_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "rate_limit_logs": {
+      "name": "rate_limit_logs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "endpoint": {
+          "name": "endpoint",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "priority": {
+          "name": "priority",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "response_status": {
+          "name": "response_status",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "duration": {
+          "name": "duration",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "idx_rate_limit_logs_timestamp": {
+          "name": "idx_rate_limit_logs_timestamp",
+          "columns": [
+            "timestamp"
+          ],
+          "isUnique": false
+        },
+        "idx_rate_limit_logs_priority": {
+          "name": "idx_rate_limit_logs_priority",
+          "columns": [
+            "priority"
+          ],
+          "isUnique": false
+        },
+        "idx_rate_limit_logs_status": {
+          "name": "idx_rate_limit_logs_status",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "rate_limit_logs_id": {
+          "name": "rate_limit_logs_id",
           "columns": [
             "id"
           ]

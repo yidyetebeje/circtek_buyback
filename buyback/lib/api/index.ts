@@ -31,3 +31,4 @@ export * from './orderService';
 export * from './userService'; 
 export * from './warehouseService';
 export * from './stockService';
+export * from './backMarketService';

@@ -68,6 +68,13 @@ export class ResendEmailProvider implements EmailProvider {
   }
 }
 
+class NoopEmailProvider implements EmailProvider {
+  async sendEmail(): Promise<{ success: boolean; id?: string | undefined; error?: string | undefined; }> {
+    console.warn('[EmailService] Email attempt skipped because no provider is configured.');
+    return { success: false, error: 'Email provider not configured' };
+  }
+}
+
 /**
  * Main email service that can use any email provider
  */
@@ -135,11 +142,12 @@ export const getEmailService = (): EmailService => {
     const defaultFromName = process.env.DEFAULT_FROM_NAME || 'Buyback System';
     
     if (!resendApiKey) {
-      console.warn('[EmailService] RESEND_API_KEY not found in environment variables. Email sending will fail.');
+      console.warn('[EmailService] RESEND_API_KEY not found in environment variables. Email sending disabled.');
+      emailService = new EmailService(new NoopEmailProvider(), defaultFromEmail, defaultFromName);
+    } else {
+      const resendProvider = new ResendEmailProvider(resendApiKey, defaultFromEmail);
+      emailService = new EmailService(resendProvider, defaultFromEmail, defaultFromName);
     }
-    
-    const resendProvider = new ResendEmailProvider(resendApiKey, defaultFromEmail);
-    emailService = new EmailService(resendProvider, defaultFromEmail, defaultFromName);
   }
   
   return emailService;

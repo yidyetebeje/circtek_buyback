@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Open_Sans } from "next/font/google";
 import "../globals.css";
-import {NextIntlClientProvider, hasLocale} from 'next-intl';
-import {getMessages} from 'next-intl/server';
-import {notFound} from 'next/navigation';
-import {routing} from '@/i18n/routing';
+import { NextIntlClientProvider, hasLocale } from 'next-intl';
+import { getMessages } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import { routing } from '@/i18n/routing';
 import { Toaster } from "@/components/ui/sonner";
 import { ReactQueryProvider } from "@/providers/react-query-provider";
 import { shopService } from "@/lib/api/catalog/shopService";
@@ -22,16 +22,25 @@ const openSansFont = Open_Sans({
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
-  const shopId = process.env.NEXT_PUBLIC_SHOP_ID ? 
-    parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) : 
+  const shopId = process.env.NEXT_PUBLIC_SHOP_ID ?
+    parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) :
     0;
-  const shopInfo = await shopService.getShopById(shopId);
-  // Get shop configuration, but we don't actually need to use it for metadata
-  await getShopConfig("default");
-  const logoUrl = shopInfo.data.logo || "";
-  const shopName = shopInfo.data.name || "Buyback Service";
+  let shopName = "Buyback Service";
+  let logoUrl = "";
+  try {
+    const shopInfo = await shopService.getShopById(shopId);
+    // Get shop configuration, but we don't actually need to use it for metadata
+    await getShopConfig("default");
+    logoUrl = shopInfo?.data?.logo || "";
+    shopName = shopInfo?.data?.name || shopName;
+  } catch (err) {
+    // If shop fetch fails (404 or other), fall back to default config
+    // Avoid throwing from metadata generation
+    console.warn('[layout] Failed to load shop info for metadata, using defaults', err);
+    await getShopConfig("default");
+  }
   const domain = process.env.NEXT_PUBLIC_DOMAIN || "buyback.example.com";
-  
+
   return {
     title: {
       default: `${shopName} - Sell Your Device for the Best Price`,
@@ -64,7 +73,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       siteName: shopName,
       images: [
         {
-          url: logoUrl || "/logo.png", 
+          url: logoUrl || "/logo.png",
           width: 1200,
           height: 630,
           alt: shopName,
@@ -85,29 +94,37 @@ export default async function RootLayout({
   params,
 }: Readonly<{
   children: React.ReactNode;
-  params: Promise<{locale: string}>;
+  params: Promise<{ locale: string }>;
 }>) {
   const { locale } = await params;
-  const shopId = process.env.NEXT_PUBLIC_SHOP_ID ? 
-    parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) : 
+  const shopId = process.env.NEXT_PUBLIC_SHOP_ID ?
+    parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) :
     0;
-  const shopInfo = await shopService.getShopById(shopId);
-  const shopConfig = shopInfo.data.config as unknown as ShopConfig || await getShopConfig("default");
-  shopConfig.shopName = shopInfo.data.name;
-  shopConfig.logoUrl = shopInfo.data.logo || "";
-  
-  // Set favicon URL with priority: environment variable, shop config, or default
-  shopConfig.faviconUrl = process.env.NEXT_PUBLIC_FAVICON_URL || 
-                          shopConfig.faviconUrl || 
-                          shopInfo.data.logo || 
-                          "/favicon.ico";
-  
+  let shopConfig: ShopConfig;
+  try {
+    const shopInfo = await shopService.getShopById(shopId);
+    shopConfig = (shopInfo?.data?.config as unknown as ShopConfig) || await getShopConfig("default");
+    shopConfig.shopName = shopInfo?.data?.name || shopConfig.shopName || "Buyback Service";
+    shopConfig.logoUrl = shopInfo?.data?.logo || shopConfig.logoUrl || "";
+  } catch (err) {
+    console.warn('[layout] Failed to load shop info, falling back to default shop config', err);
+    shopConfig = await getShopConfig("default");
+    shopConfig.shopName = shopConfig.shopName || "Buyback Service";
+    shopConfig.logoUrl = shopConfig.logoUrl || "";
+  }
+
+  // Set favicon URL with priority: environment variable, shop config, shop logo, or default
+  shopConfig.faviconUrl = process.env.NEXT_PUBLIC_FAVICON_URL ||
+    shopConfig.faviconUrl ||
+    shopConfig.logoUrl ||
+    "/favicon.ico";
+
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
 
   const messages = await getMessages();
-  
+
   return (
     <html lang={locale}>
       <head>
@@ -117,18 +134,18 @@ export default async function RootLayout({
         className={`${openSansFont.className} antialiased`}
       >
         <TopLoader />
-        <Toaster/>
+        <Toaster />
         <NextIntlClientProvider messages={messages}>
-        <AuthProvider>
-          <ReactQueryProvider>
-            <LanguageProvider>
-              <ShopConfigProvider config={shopConfig}>
-                <DynamicFavicon />
-                {children}
-              </ShopConfigProvider>
-            </LanguageProvider>
-          </ReactQueryProvider>
-        </AuthProvider>
+          <AuthProvider>
+            <ReactQueryProvider>
+              <LanguageProvider>
+                <ShopConfigProvider config={shopConfig}>
+                  <DynamicFavicon />
+                  {children}
+                </ShopConfigProvider>
+              </LanguageProvider>
+            </ReactQueryProvider>
+          </AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>

@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { swagger } from "@elysiajs/swagger";
 import { orderRoutes } from "./routes/orderRoutes";
 import { storeTransferRoutes } from "./routes/storeTransferRoutes";
+import { backMarketController } from "./controllers/backMarketController";
 
 export const buybackApi = new Elysia({ prefix: "/buyback" })
   .use(swagger({
@@ -19,6 +20,7 @@ export const buybackApi = new Elysia({ prefix: "/buyback" })
     }
   }))
   .use(orderRoutes)
-  .use(storeTransferRoutes);
+  .use(storeTransferRoutes)
+  .use(backMarketController);
 
 export default buybackApi; 

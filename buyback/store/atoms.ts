@@ -145,6 +145,9 @@ export const currentLanguageAtom = atom<string, [string], void>(
 // Language loading state
 export const languageLoadingAtom = atom<boolean>(false);
 
+// Track if languages have been fetched to prevent infinite loops
+export const languagesFetchedAtom = atom<boolean>(false);
+
 // Computed atom to get the current language object
 export const currentLanguageObjectAtom = atom((get) => {
   const currentLangCode = get(currentLanguageAtom);

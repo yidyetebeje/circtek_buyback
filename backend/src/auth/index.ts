@@ -49,7 +49,7 @@ export const requireRole = (roles: string[]) =>
 				const token = (ctx as any).bearer as string | undefined
 				if (!token) return { authError: { status: 401, message: 'Access Denied' }, currentUserId: null, currentTenantId: null, currentRole: null, warehouseId: null, managedShopId: null }
 				const payload = await (ctx as any).jwt.verify(token)
-				if (!payload) return { authError: { status: 403, message: 'Invalid Token' }, currentUserId: null, currentTenantId: null, currentRole: null, warehouseId: null, managedShopId: null }
+				if (!payload) return { authError: { status: 401, message: 'Invalid Token' }, currentUserId: null, currentTenantId: null, currentRole: null, warehouseId: null, managedShopId: null }
 				const role = (payload as any).role as string | undefined
 				console.log(role, "role")
 				console.log(roles, "roles")

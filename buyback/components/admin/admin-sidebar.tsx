@@ -42,6 +42,8 @@ import {
   ArrowRightLeft,
   Truck,
   Gift,
+  RefreshCw,
+  Coins,
 } from "lucide-react";
 
 interface TopBarItemProps {
@@ -188,6 +190,7 @@ export function AdminTopBar() {
     { href: "/admin/orders", icon: Package, label: t('orders') },
     { href: "/admin/stock", icon: Layers, label: t('stock') || 'Stock' },
     { href: "/admin/store-transfer", icon: ArrowRightLeft, label: t('storeTransfers') || 'Store Transfers' },
+    { href: "/admin/backmarket", icon: RefreshCw, label: "Back Market" },
   ];
 
   const catalogItems = [

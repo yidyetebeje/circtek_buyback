@@ -20,17 +20,23 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
     fetchLanguages, 
     detectUserLanguage,
     changeLanguage,
-    isLoading 
+    isLoading,
+    hasFetched
   } = useLanguage();
 
   // Initialize language system on mount
   useEffect(() => {
     const initializeLanguages = async () => {
-      if (availableLanguages.length === 0 && !isLoading) { 
-        const languages = await fetchLanguages();
-        // After fetching, if no language is set (e.g., first visit, no localStorage, no URL locale)
-        // then detect and set. The useLanguage hook itself handles syncing from URL or localStorage.
-        if (languages && languages.length > 0 && !currentLanguage) {
+      let languages = availableLanguages;
+
+      if (availableLanguages.length === 0 && !isLoading && !hasFetched) { 
+        const result = await fetchLanguages();
+        if (result) languages = result;
+      }
+      
+      // After fetching, if no language is set (e.g., first visit, no localStorage, no URL locale)
+      // then detect and set. The useLanguage hook itself handles syncing from URL or localStorage.
+      if (languages && languages.length > 0 && !currentLanguage) {
              // If urlLocale is valid and supported, useLanguage hook's sync effect should handle it.
              // If not, then detect.
             const isUrlLocaleValid = urlLocale && languages.some((lang: Language) => lang.code === urlLocale && lang.isActive);
@@ -42,10 +48,9 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
                 }
             }
         }
-      }
     };
     initializeLanguages();
-  }, [fetchLanguages, availableLanguages.length, isLoading, currentLanguage, urlLocale, detectUserLanguage, changeLanguage]);
+  }, [fetchLanguages, availableLanguages, isLoading, hasFetched, currentLanguage, urlLocale, detectUserLanguage, changeLanguage]);
 
   // Optional: Add location-based language detection - run only once when component mounts
   // Commenting this out as per the plan to streamline initialization and avoid conflicts.

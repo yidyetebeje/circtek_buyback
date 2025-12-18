@@ -11,6 +11,7 @@ import {
   currentLanguageStateAtom,
   currentLanguageObjectAtom,
   languageLoadingAtom,
+  languagesFetchedAtom,
   setLanguageAction
 } from '@/store/atoms';
 
@@ -37,6 +38,11 @@ export function useLanguage() {
    * Memoized for performance
    */
   const detectUserLanguage = useMemo((): string => {
+    // Check if running on client side
+    if (typeof navigator === 'undefined') {
+      return 'en';
+    }
+
     // Get browser language preferences
     const browserLanguages = navigator.languages || [navigator.language];
     const primaryBrowserLang = browserLanguages[0]?.split('-')[0] || 'en';
@@ -58,12 +64,18 @@ export function useLanguage() {
   // Server-safe implementation that doesn't use React Query during SSR
   const [languages, setLanguages] = useState<Language[] | null>(null);
   const [isQueryLoading, setIsQueryLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useAtom(languagesFetchedAtom);
   
   /**
    * Fetch available languages directly with fetch API
    * This can be used in both client and server environments
    */
   const fetchLanguages = useCallback(async () => {
+    // Prevent duplicate fetches if already fetched
+    if (hasFetched) {
+      return availableLanguages;
+    }
+
     try {
       setIsLoading(true);
       setIsQueryLoading(true);
@@ -115,10 +127,11 @@ export function useLanguage() {
       
       return fallbackLanguages;
     } finally {
+      setHasFetched(true);
       setIsLoading(false);
       setIsQueryLoading(false);
     }
-  }, [setAvailableLanguages, setIsLoading]);
+  }, [setAvailableLanguages, setIsLoading, hasFetched, availableLanguages, setHasFetched]);
 
   /**
    * Change the current language and update URL
@@ -181,13 +194,6 @@ export function useLanguage() {
       setLanguage(urlLocale);
     }
   }, [urlLocale, currentLanguage, availableLanguages, setLanguage]);
-
-  // Initialize languages on mount
-  useEffect(() => {
-    if (availableLanguages.length === 0 && !isLoading) {
-      fetchLanguages();
-    }
-  }, [availableLanguages.length, fetchLanguages, isLoading]);
   
   return {
     // State
@@ -197,6 +203,7 @@ export function useLanguage() {
     languageState,
     urlLocale,
     isLoading: isLoading || isQueryLoading,
+    hasFetched,
     
     // Actions
     fetchLanguages,

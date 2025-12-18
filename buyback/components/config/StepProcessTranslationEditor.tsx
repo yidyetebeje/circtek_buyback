@@ -137,7 +137,6 @@ export function StepProcessTranslationEditor({
           if (!updatedConfig[field as keyof StepProcessConfig] || typeof updatedConfig[field as keyof StepProcessConfig] !== 'object') {
             (updatedConfig as Record<string, TranslatableText>)[field] = {};
           }
-          (updatedConfig[field as keyof StepProcessConfig] as TranslatableText)[targetLocale] = translation;
         });
 
         setLocalConfig(updatedConfig);
