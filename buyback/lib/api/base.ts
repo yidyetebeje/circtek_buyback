@@ -344,6 +344,29 @@ export class ApiClient {
   }
 
   /**
+   * Make a PATCH request
+   */
+  async patch<T>(endpoint: string, data?: unknown, options: FetchOptions = {}): Promise<T> {
+    const { params, isProtected, ...fetchOptions } = options;
+    const url = this.buildUrl(endpoint, params);
+    const isFormData = data instanceof FormData;
+    const baseHeaders = await this.prepareHeaders(fetchOptions.headers, isProtected);
+    const headers: HeadersInit = {
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...baseHeaders,
+    };
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+      ...fetchOptions,
+    });
+    
+    return this.processResponse<T>(response);
+  }
+
+  /**
    * Make a DELETE request
    */
   async delete<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
