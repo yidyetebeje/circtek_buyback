@@ -29,7 +29,7 @@ export interface SendcloudConfig {
  */
 export interface SendcloudConfigInput {
     public_key: string;
-    secret_key: string;
+    secret_key?: string;
     default_sender_address_id?: number | null;
     default_shipping_method_id?: number | null;
     default_shipping_option_code?: string | null;
