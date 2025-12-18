@@ -44,6 +44,8 @@ import { QuestionFlow } from '@/components/admin/buy-device/QuestionFlow';
 import { Separator } from '@/components/ui/separator';
 
 import { useGetOrderDetailsAdmin, useUpdateOrderStatusAdmin } from '@/hooks/useOrders';
+import { RewardConfirmationModal } from '@/components/admin/orders/RewardConfirmationModal';
+import { useSendReward, useTremendousConfig, useRewardStatus } from '@/hooks/useTremendous';
 
 const ORDER_STATUSES = [
   'PENDING',
@@ -218,6 +220,22 @@ export default function OrderDetailPage() {
   const [dialogStep, setDialogStep] = useState<'search' | 'questions' | 'confirm'>('search');
   const [matchedProduct, setMatchedProduct] = useState<Model | null>(null);
 
+  // State for Tremendous reward modal
+  const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
+  const [rewardOrderDetails, setRewardOrderDetails] = useState<{
+    orderId: string;
+    orderNumber?: string;
+    sellerName: string;
+    sellerEmail: string;
+    finalPrice: number;
+  } | null>(null);
+
+  // Tremendous hooks
+  const shopId = order?.shop_id ? parseInt(String(order.shop_id), 10) : 0;
+  const { data: tremendousConfig } = useTremendousConfig(shopId, { enabled: !!shopId });
+  const { data: rewardStatus } = useRewardStatus(orderId, { enabled: !!orderId });
+  const { mutateAsync: sendReward, isPending: isSendingReward } = useSendReward();
+
   // Locale taken from route param ( [locale]/admin/orders/[id] )
   const locale = Array.isArray(params.locale) ? params.locale[0] : (params as { locale?: string }).locale ?? 'en';
 
@@ -372,9 +390,54 @@ export default function OrderDetailPage() {
           toast.success('Order status updated successfully');
           setIsDialogOpen(false);
           setPendingStatus(null);
+
+          // If status is PAID and Tremendous is configured, show reward modal
+          if (pendingStatus === 'PAID' && tremendousConfig?.configured && tremendousConfig?.is_active) {
+            const recipientName = order.shipping?.sellerName || 'Customer';
+            const recipientEmail = order.shipping?.sellerEmail || '';
+
+            setRewardOrderDetails({
+              orderId: order.id.toString(),
+              orderNumber: order.order_number,
+              sellerName: recipientName,
+              sellerEmail: recipientEmail,
+              finalPrice: finalPrice ? parseFloat(finalPrice) : 0,
+            });
+            setIsRewardModalOpen(true);
+          }
         },
       }
     );
+  };
+
+  // Handle sending Tremendous reward
+  const handleSendReward = async (data: {
+    recipient_name: string;
+    recipient_email: string;
+    amount: number;
+    currency_code: string;
+    message?: string;
+  }) => {
+    if (!rewardOrderDetails || !order) return;
+
+    try {
+      const result = await sendReward({
+        order_id: rewardOrderDetails.orderId,
+        shop_id: shopId,
+        recipient_email: data.recipient_email,
+        recipient_name: data.recipient_name,
+        amount: data.amount,
+        currency_code: data.currency_code,
+        message: data.message,
+      });
+
+      if (result.success) {
+        setIsRewardModalOpen(false);
+        setRewardOrderDetails(null);
+      }
+    } catch (error) {
+      // Error already handled by the hook
+    }
   };
 
   if (isLoading) {
@@ -464,6 +527,58 @@ export default function OrderDetailPage() {
                   <p className="text-sm font-medium text-purple-900">Final Price</p>
                   <p className="text-lg font-semibold text-purple-800">{formatCurrency(order.final_price)}</p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Tremendous Reward Status - Only show for PAID orders when Tremendous is configured */}
+        {(currentStatus?.toUpperCase() === 'PAID' || order.status?.toUpperCase() === 'PAID') && tremendousConfig?.configured && tremendousConfig?.is_active && (
+          <Card className={`border ${['SENT', 'DELIVERED'].includes(rewardStatus?.status?.toUpperCase() || '') ? 'border-green-200 bg-green-50/50' : rewardStatus?.status?.toUpperCase() === 'FAILED' ? 'border-red-200 bg-red-50/50' : 'border-amber-200 bg-amber-50/50'}`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${['SENT', 'DELIVERED'].includes(rewardStatus?.status?.toUpperCase() || '') ? 'bg-green-100' : rewardStatus?.status?.toUpperCase() === 'FAILED' ? 'bg-red-100' : 'bg-amber-100'}`}>
+                    <CreditCard className={`h-5 w-5 ${['SENT', 'DELIVERED'].includes(rewardStatus?.status?.toUpperCase() || '') ? 'text-green-600' : rewardStatus?.status?.toUpperCase() === 'FAILED' ? 'text-red-600' : 'text-amber-600'}`} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-medium ${['SENT', 'DELIVERED'].includes(rewardStatus?.status?.toUpperCase() || '') ? 'text-green-900' : rewardStatus?.status?.toUpperCase() === 'FAILED' ? 'text-red-900' : 'text-amber-900'}`}>
+                      Tremendous Reward
+                    </p>
+                    <p className={`text-sm ${['SENT', 'DELIVERED'].includes(rewardStatus?.status?.toUpperCase() || '') ? 'text-green-700' : rewardStatus?.status?.toUpperCase() === 'FAILED' ? 'text-red-700' : 'text-amber-700'}`}>
+                      {['SENT', 'DELIVERED'].includes(rewardStatus?.status?.toUpperCase() || '')
+                        ? `Sent: ${formatCurrency(rewardStatus?.amount || 0)}`
+                        : rewardStatus?.status?.toUpperCase() === 'FAILED'
+                          ? 'Failed to send'
+                          : rewardStatus?.status?.toUpperCase() === 'PENDING'
+                            ? 'Pending delivery'
+                            : 'Not sent yet'}
+                    </p>
+                  </div>
+                </div>
+                {/* Show Send Reward button if no reward sent or if failed */}
+                {(!rewardStatus || !rewardStatus.hasSentReward || rewardStatus.status?.toUpperCase() === 'FAILED') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const recipientName = order.shipping?.sellerName || 'Customer';
+                      const recipientEmail = order.shipping?.sellerEmail || '';
+                      setRewardOrderDetails({
+                        orderId: order.id.toString(),
+                        orderNumber: order.order_number,
+                        sellerName: recipientName,
+                        sellerEmail: recipientEmail,
+                        finalPrice: order.final_price || 0,
+                      });
+                      setIsRewardModalOpen(true);
+                    }}
+                    className="gap-2"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    {rewardStatus?.status?.toUpperCase() === 'FAILED' ? 'Retry Reward' : 'Send Reward'}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -972,6 +1087,21 @@ export default function OrderDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Tremendous Reward Modal */}
+      {rewardOrderDetails && (
+        <RewardConfirmationModal
+          isOpen={isRewardModalOpen}
+          onClose={() => {
+            setIsRewardModalOpen(false);
+            setRewardOrderDetails(null);
+          }}
+          onConfirm={handleSendReward}
+          orderDetails={rewardOrderDetails}
+          isLoading={isSendingReward}
+          testMode={tremendousConfig?.use_test_mode ?? true}
+        />
+      )}
     </AdminEditCard>
   );
 }

@@ -762,3 +762,59 @@ export const sendcloud_config = mysqlTable('sendcloud_config', {
   index('idx_sendcloud_config_shop').on(table.shop_id),
   unique('uq_sendcloud_config_shop_tenant').on(table.shop_id, table.tenant_id),
 ]);
+
+// ========== TREMENDOUS MODULE (REWARD PAYMENTS) ==========
+
+// Tremendous configuration per shop (shop-scoped, encrypted API key)
+export const tremendous_config = mysqlTable('tremendous_config', {
+  id: serial('id').primaryKey(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true })
+    .references(() => tenants.id).notNull(),
+  shop_id: bigint('shop_id', { mode: 'number', unsigned: true })
+    .references(() => shops.id).notNull(),
+  api_key_encrypted: varchar('api_key_encrypted', { length: 512 }).notNull(), // AES-256-GCM encrypted
+  funding_source_id: varchar('funding_source_id', { length: 255 }), // Tremendous funding source ID
+  campaign_id: varchar('campaign_id', { length: 255 }), // Optional campaign for branding
+  use_test_mode: boolean('use_test_mode').default(true), // Use sandbox by default for safety
+  is_active: boolean('is_active').default(true),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_tremendous_config_tenant').on(table.tenant_id),
+  index('idx_tremendous_config_shop').on(table.shop_id),
+  unique('uq_tremendous_config_shop_tenant').on(table.shop_id, table.tenant_id),
+]);
+
+// Tremendous reward status enum
+export const tremendous_reward_status = mysqlEnum('tremendous_reward_status', [
+  'pending', 'sent', 'delivered', 'failed', 'cancelled'
+]);
+
+// Tremendous reward ledger for tracking sent rewards (audit trail)
+export const tremendous_rewards = mysqlTable('tremendous_rewards', {
+  id: serial('id').primaryKey(),
+  tenant_id: bigint('tenant_id', { mode: 'number', unsigned: true })
+    .references(() => tenants.id).notNull(),
+  shop_id: bigint('shop_id', { mode: 'number', unsigned: true })
+    .references(() => shops.id).notNull(),
+  order_id: varchar('order_id', { length: 255 }).notNull(), // buyback_orders UUID
+  tremendous_order_id: varchar('tremendous_order_id', { length: 255 }), // Tremendous order ID
+  tremendous_reward_id: varchar('tremendous_reward_id', { length: 255 }), // Tremendous reward ID
+  external_id: varchar('external_id', { length: 255 }).notNull(), // Idempotency key (unique)
+  recipient_email: varchar('recipient_email', { length: 255 }).notNull(),
+  recipient_name: varchar('recipient_name', { length: 255 }).notNull(),
+  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  currency_code: varchar('currency_code', { length: 10 }).default('EUR'),
+  status: tremendous_reward_status.default('pending'),
+  error_message: text('error_message'),
+  sent_by: bigint('sent_by', { mode: 'number', unsigned: true })
+    .references(() => users.id).notNull(),
+  sent_at: timestamp('sent_at'),
+  delivered_at: timestamp('delivered_at'),
+  created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index('idx_tremendous_rewards_tenant').on(table.tenant_id),
+  index('idx_tremendous_rewards_order').on(table.order_id),
+  unique('uq_tremendous_rewards_external').on(table.external_id),
+]);

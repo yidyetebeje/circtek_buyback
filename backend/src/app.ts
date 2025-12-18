@@ -27,6 +27,8 @@ import { devices_routes } from "./devices";
 import { licensing_routes } from "./licensing";
 import { shipping_routes } from "./shipping";
 import { rolesApi } from "./buyback_roles";
+import { tremendousRoutes } from "./tremendous";
+
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
 		.use(cors({
@@ -73,6 +75,7 @@ export const buildApp = () =>
 					{ name: 'Shipping', description: 'Parcel shipping and Sendcloud integration' },
 					{ name: 'Labels', description: 'Shipping label generation' },
 					{ name: 'Sendcloud', description: 'Sendcloud API configuration' },
+					{ name: 'Tremendous', description: 'Tremendous reward payments integration' },
 				],
 			},
 		}))
@@ -113,5 +116,4 @@ export const buildApp = () =>
 		.use(shipping_routes)
 		.use(rolesApi)
 		.use(catalogApi)
-
-
+		.use(tremendousRoutes)

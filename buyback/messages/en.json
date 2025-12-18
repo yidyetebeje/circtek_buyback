@@ -34,7 +34,8 @@
         "stock": "Stock",
         "locations": "Locations",
         "shippingSettings": "Shipping Settings",
-        "storeTransfers": "Store Transfers"
+        "storeTransfers": "Store Transfers",
+        "tremendousRewards": "Tremendous Rewards"
     },
     "AdminCatalog": {
         "questionSetDetails": "Question Set Details",

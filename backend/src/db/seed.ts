@@ -171,8 +171,8 @@ async function seed_test_results() {
             tester_id: 1,
             passed_components: 'screen, camera',
             failed_components: 'battery, accelerometer',
-            serial_number: "K1RUJBELN3KE",
-            imei: "362109476572756",
+            serial_number: "IPXC2WHGUQAR",
+            imei: "198916505399802",
             device_type: 'iPhone',
 
         });
@@ -624,4 +624,4 @@ async function seed() {
 
 // Seed email template dynamic fields
 
-seed_sendcloud_config();
+seed_test_results();

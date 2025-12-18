@@ -39,7 +39,8 @@
     "ibantools": "^4.5.1",
     "jest": "^30.1.3",
     "mysql2": "^3.15.0",
-    "resend": "^6.1.0"
+    "resend": "^6.1.0",
+    "tremendous": "^4.0.0"
   },
   "devDependencies": {
     "@faker-js/faker": "^10.0.0",
