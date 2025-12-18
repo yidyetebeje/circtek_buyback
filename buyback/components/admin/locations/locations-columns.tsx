@@ -66,10 +66,10 @@ export function useColumns(): ColumnDef<Warehouse>[] {
       cell: ({ row }: { row: Row<Warehouse> }) => <div>{row.getValue("name")}</div>,
     },
     {
-      accessorKey: "active",
+      accessorKey: "status",
       header: "Active",
       cell: ({ row }) => (
-        <div>{row.original.active ? "Yes" : "No"}</div>
+        <div>{row.original.status ? "Yes" : "No"}</div>
       ),
     },
     {

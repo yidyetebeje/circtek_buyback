@@ -25,16 +25,20 @@ import emailModule from "./email/email-module";
 import { external_api_routes } from "./external-api";
 import { devices_routes } from "./devices";
 import { licensing_routes } from "./licensing";
+import { shipping_routes } from "./shipping";
+import { rolesApi } from "./buyback_roles";
+import { tremendousRoutes } from "./tremendous";
+
 export const buildApp = () =>
 	new Elysia({ prefix: '/api/v1' })
-        .use(cors({
-            origin: ["http://localhost:4200", "http://localhost:3000","https://circtek-aws.vercel.app", "https://staging-db.circtek.io", "https://db.circtek.io"],
-            methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-            allowedHeaders: ["Content-Type", "Authorization", "Accept", "Cookie"],
-            credentials: true,
-            exposeHeaders: ["Content-Disposition", "Content-Type"],
-            preflight: true
-        }))
+		.use(cors({
+			origin: "*",
+			methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+			allowedHeaders: ["Content-Type", "Authorization", "Accept", "Cookie"],
+			credentials: true,
+			exposeHeaders: ["Content-Disposition", "Content-Type"],
+			preflight: true
+		}))
 		.get('/', () => 'Hello Elysia')
 		.use(swagger({
 			path: '/swagger',
@@ -69,6 +73,10 @@ export const buildApp = () =>
 					{ name: 'Email', description: 'Email' },
 					{ name: 'Devices', description: 'Device LPN lookup and management' },
 					{ name: 'Licensing', description: 'License management and authorization' },
+					{ name: 'Shipping', description: 'Parcel shipping and Sendcloud integration' },
+					{ name: 'Labels', description: 'Shipping label generation' },
+					{ name: 'Sendcloud', description: 'Sendcloud API configuration' },
+					{ name: 'Tremendous', description: 'Tremendous reward payments integration' },
 				],
 			},
 		}))
@@ -106,6 +114,7 @@ export const buildApp = () =>
 		.use(external_api_routes)
 		.use(devices_routes)
 		.use(licensing_routes)
+		.use(shipping_routes)
+		.use(rolesApi)
 		.use(catalogApi)
-
-
+		.use(tremendousRoutes)

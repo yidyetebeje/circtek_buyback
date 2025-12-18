@@ -17,7 +17,7 @@ export const useStock = (
     queryFn: async () => {
       try {
         const response = await stockService.getStocks(mergedParams);
-        return response.data;
+        return response;
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         toast.error(`Error fetching stock: ${message}`);

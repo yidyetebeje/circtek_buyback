@@ -28,8 +28,57 @@ interface ApiResponse<T> {
   };
 }
 
-export type UserResponse = ApiResponse<User>;
-export type PaginatedUsersApiResponse = ApiResponse<User[]> & { meta: NonNullable<ApiResponse<User[]>['meta']> };
+// Backend response format for user
+interface BackendUser {
+  id: number;
+  name?: string | null;
+  user_name?: string | null;
+  status?: boolean | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  role_id?: number | null;
+  roleName?: string | null;
+  roleSlug?: string | null;
+  tenant_id?: number | null;
+  warehouse_id?: number | null;
+  managed_shop_id?: number | null;
+  role?: {
+    id: number;
+    name: string;
+    description?: string;
+  } | null;
+}
+
+// Transform backend user to frontend User interface
+function transformUser(backendUser: BackendUser): User {
+  // Split name into fName and lName
+  const nameParts = (backendUser.name || '').split(' ');
+  const fName = nameParts[0] || '';
+  const lName = nameParts.slice(1).join(' ') || '';
+
+  return {
+    id: backendUser.id,
+    fName,
+    lName,
+    userName: backendUser.user_name,
+    status: backendUser.status ?? true,
+    createdAt: backendUser.created_at,
+    updatedAt: backendUser.updated_at,
+    roleId: backendUser.role_id,
+    tenantId: backendUser.tenant_id,
+    tenant_id: backendUser.tenant_id,
+    warehouseId: backendUser.warehouse_id,
+    managed_shop_id: backendUser.managed_shop_id,
+    role: backendUser.role ? {
+      id: backendUser.role.id,
+      title: backendUser.role.name, // Map 'name' to 'title' for frontend
+      slug: backendUser.role.name,
+    } : null,
+  };
+}
+
+export type UserResponse = ApiResponse<BackendUser>;
+export type PaginatedUsersApiResponse = ApiResponse<BackendUser[]> & { meta: NonNullable<ApiResponse<BackendUser[]>['meta']> };
 
 const USERS_ENDPOINT = '/roles-management/users'; // Updated endpoint
 
@@ -47,29 +96,29 @@ export const userService = {
       isProtected: true,
     });
     return {
-      data: response.data,
+      data: response.data.map(transformUser),
       meta: response.meta,
     };
   },
 
   getUser: async (id: string): Promise<User> => {
     const response = await apiClient.get<UserResponse>(`${USERS_ENDPOINT}/${id}`, { isProtected: true });
-    return response.data;
+    return transformUser(response.data);
   },
 
   createUser: async (userData: UserFormValues): Promise<User> => {
     const response = await apiClient.post<UserResponse>(`${USERS_ENDPOINT}/create`, userData, { isProtected: true });
-    return response.data;
+    return transformUser(response.data);
   },
 
   updateUser: async (id: string, userData: Partial<UserFormValues>): Promise<User> => {
     const response = await apiClient.put<UserResponse>(`${USERS_ENDPOINT}/${id}`, userData, { isProtected: true });
-    return response.data;
+    return transformUser(response.data);
   },
-  
+
   updateUserRole: async (id: string, roleSlug: string): Promise<User> => {
     const response = await apiClient.put<UserResponse>(`${USERS_ENDPOINT}/${id}/role`, { roleSlug }, { isProtected: true });
-    return response.data;
+    return transformUser(response.data);
   },
 
   deleteUser: async (id: string | number): Promise<{ success: boolean; message: string }> => {

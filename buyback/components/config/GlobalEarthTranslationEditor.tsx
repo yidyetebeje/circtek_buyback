@@ -285,8 +285,8 @@ export function GlobalEarthTranslationEditor({
             <div
               key={locale}
               className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm cursor-pointer transition-colors ${locale === activeLocale
-                  ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               onClick={() => setActiveLocale(locale)}
             >

@@ -55,7 +55,7 @@ const diagnosticSelection = {
 }
 
 export class DiagnosticsRepository {
-	constructor(private readonly database: typeof db) {}
+	constructor(private readonly database: typeof db) { }
 
 	async list(filters: DiagnosticFilters): Promise<DiagnosticListResult> {
 		const conditions: any[] = []
@@ -123,22 +123,28 @@ export class DiagnosticsRepository {
 		const rows = await (whereCond
 			? baseFrom.where(whereCond).orderBy(orderExpr).limit(limit).offset(offset)
 			: baseFrom.orderBy(orderExpr).limit(limit).offset(offset))
-		
+
 		// Fetch answers for each test result
 		const rowsWithAnswers = await Promise.all(
 			rows.map(async (row) => {
-				const answers = await this.database
-					.select({
-						id: diagnostic_question_answers.id,
-						question_text: diagnostic_question_answers.question_text,
-						answer_text: diagnostic_question_answers.answer_text,
-						created_at: diagnostic_question_answers.created_at,
-						test_result_id: diagnostic_question_answers.test_result_id
-					})
-					.from(diagnostic_question_answers)
-					.where(eq(diagnostic_question_answers.test_result_id, row.id))
-					.orderBy(diagnostic_question_answers.created_at)
-				
+				let answers: any[] = [];
+				try {
+					answers = await this.database
+						.select({
+							id: diagnostic_question_answers.id,
+							question_text: diagnostic_question_answers.question_text,
+							answer_text: diagnostic_question_answers.answer_text,
+							created_at: diagnostic_question_answers.created_at,
+							test_result_id: diagnostic_question_answers.test_result_id
+						})
+						.from(diagnostic_question_answers)
+						.where(eq(diagnostic_question_answers.test_result_id, row.id))
+						.orderBy(diagnostic_question_answers.created_at)
+				} catch (error) {
+					console.error(`Failed to fetch answers for test_result_id: ${row.id}`, error);
+					// Continue with empty answers if query fails
+				}
+
 				return {
 					...row,
 					device_color: row.device_edited_color || row.device_color,
@@ -146,7 +152,7 @@ export class DiagnosticsRepository {
 				}
 			})
 		)
-		
+
 		console.log(rowsWithAnswers, "rows from the underground with answers");
 		return { rows: rowsWithAnswers as unknown as DiagnosticPublic[], total: totalRow?.total ?? 0, page, limit }
 	}
@@ -218,7 +224,7 @@ export class DiagnosticsRepository {
 			color: input.device.color,
 			grade: input.test.grade,
 		}
-		
+
 		const conditionsForDevice: any[] = [eq(devices.tenant_id, tenantId)]
 		const identifierConds: any[] = []
 		if (deviceToInsert.serial) identifierConds.push(eq(devices.serial, deviceToInsert.serial))
@@ -235,16 +241,16 @@ export class DiagnosticsRepository {
 
 		if (!existingDevice) {
 			await this.database.insert(devices).values(deviceToInsert)
-			;[existingDevice] = await this.database
-				.select({ id: devices.id })
-				.from(devices)
-				.where(deviceWhere)
+				;[existingDevice] = await this.database
+					.select({ id: devices.id })
+					.from(devices)
+					.where(deviceWhere)
 		} else {
 			await this.database.update(devices).set(deviceToInsert).where(eq(devices.id, existingDevice.id))
-			;[existingDevice] = await this.database
-				.select({ id: devices.id })
-				.from(devices)
-				.where(deviceWhere)
+				;[existingDevice] = await this.database
+					.select({ id: devices.id })
+					.from(devices)
+					.where(deviceWhere)
 		}
 
 		const toInsertTest = {
@@ -280,7 +286,7 @@ export class DiagnosticsRepository {
 
 		const id = await this.database.insert(test_results).values(toInsertTest as any).$returningId();
 		const insertedId = Number(id[0].id)
-		
+
 		const [inserted] = await this.database.select(diagnosticSelection).from(test_results).leftJoin(devices, eq(test_results.device_id, devices.id)).leftJoin(warehousesTable, eq(test_results.warehouse_id, warehousesTable.id)).leftJoin(usersTable, eq(test_results.tester_id, usersTable.id)).where(eq(test_results.id, insertedId))
 
 		return inserted as unknown as DiagnosticPublic | undefined

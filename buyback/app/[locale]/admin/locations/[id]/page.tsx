@@ -13,10 +13,9 @@ export default function EditLocationPage() {
   const router = useRouter();
   const rawId = params.id;
   const locationId = parseInt(Array.isArray(rawId) ? rawId[0] : rawId as string, 10);
-  
+
   const { data: location, isLoading: isLoadingLocation, isError, error } = useWarehouse(locationId);
   const { mutate: updateLocation, isPending: isUpdating } = useUpdateWarehouse();
-  const envShopId = process.env.NEXT_PUBLIC_SHOP_ID ? parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) : undefined;
 
   if (isNaN(locationId)) {
     return (
@@ -47,9 +46,9 @@ export default function EditLocationPage() {
 
   const handleSubmit = (values: LocationFormValues) => {
     const payload = {
-      warehouseName: values.warehouseName,
+      name: values.warehouseName,
+      description: values.description,
       status: values.status,
-      shopId: envShopId,
     };
 
     updateLocation(
@@ -69,7 +68,8 @@ export default function EditLocationPage() {
   // Map warehouse data to form values
   const initialData: Partial<LocationFormValues> = {
     warehouseName: location.name,
-    status: location.active,
+    description: location.description || "",
+    status: location.status ?? true,
   };
 
   return (

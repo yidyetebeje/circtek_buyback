@@ -32,7 +32,9 @@
         "userManagement": "Gestión de Usuarios",
         "buyDevice": "Comprar Dispositivo",
         "stock": "Inventario",
-        "locations": "Ubicaciones"
+        "locations": "Ubicaciones",
+        "shippingSettings": "Configuración de Envío",
+        "storeTransfers": "Transferencias de Tienda"
     },
     "CategoryVariants": {
         "getQuote": "Obtener Cotización",
@@ -85,7 +87,7 @@
         "variants": {
             "classicSideBySide": "Clásico Lado a Lado",
             "classicSideBySideDescription": "Diseño de pago tradicional con formulario a la izquierda y resumen de pedido a la derecha.",
-            "multiStepFlow": "Flujo Multi-Paso", 
+            "multiStepFlow": "Flujo Multi-Paso",
             "multiStepFlowDescription": "Flujo de pago progresivo con carrito, envío y pasos de revisión.",
             "minimalistDesign": "Diseño Minimalista",
             "minimalistDesignDescription": "Pago limpio y optimizado con campos simplificados y jerarquía visual.",
@@ -109,7 +111,7 @@
             "accountNumberPlaceholder": "ej. ES9121000418450200051332",
             "firstName": "Nombre",
             "firstNamePlaceholder": "Nombre",
-            "lastName": "Apellido", 
+            "lastName": "Apellido",
             "lastNamePlaceholder": "Apellido",
             "streetName": "Nombre de Calle",
             "streetNamePlaceholder": "Nombre de calle",
@@ -162,7 +164,7 @@
         },
         "steps": {
             "cart": "Carrito",
-            "shipping": "Envío", 
+            "shipping": "Envío",
             "review": "Revisión",
             "reviewAndComplete": "Revisar y Completar Pedido"
         },
@@ -172,6 +174,7 @@
             "configurationError": "El envío del pedido falló debido a un error de configuración. Por favor contacta soporte.",
             "invalidConfigError": "El envío del pedido falló debido a una configuración inválida. Por favor contacta soporte.",
             "orderError": "No se pudo enviar el pedido. Por favor intenta de nuevo.",
+            "pleaseWait": "Por favor espera mientras procesamos tu pedido...",
             "termsAndConditions": "Al completar tu pedido, aceptas nuestros Términos y Condiciones. Enviaremos un correo de confirmación junto con una etiqueta de envío a tu dirección de correo.",
             "termsAndConditionsSimple": "Al realizar este pedido, aceptas nuestros Términos de Servicio y Política de Privacidad. Se enviará una etiqueta de envío a tu dirección de correo después de la confirmación del pedido.",
             "termsAndConditionsShort": "Al realizar el pedido, aceptas nuestros términos y condiciones."
@@ -179,7 +182,7 @@
         "validation": {
             "emailRequired": "El correo electrónico es requerido",
             "emailInvalid": "Dirección de correo electrónico inválida",
-            "phoneRequired": "El número de teléfono es requerido", 
+            "phoneRequired": "El número de teléfono es requerido",
             "phoneInvalid": "Número de teléfono inválido",
             "ibanInvalid": "Formato IBAN inválido",
             "firstNameRequired": "El nombre es requerido",

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 
 // Validation schema for a warehouse (location)
 const formSchema = z.object({
@@ -27,6 +28,10 @@ const formSchema = z.object({
     .refine((name) => /[a-zA-Z]/.test(name), {
       message: "Location name must contain at least one letter.",
     }),
+  description: z
+    .string()
+    .trim()
+    .max(500, { message: "Description must be 500 characters or less." }),
   status: z.boolean().optional(),
 });
 
@@ -44,6 +49,7 @@ export function LocationForm({ initialData, onSubmit, onCancel, isLoading }: Loc
     resolver: zodResolver(formSchema),
     defaultValues: {
       warehouseName: initialData?.warehouseName || "",
+      description: initialData?.description || "",
       status: initialData?.status ?? true,
     },
   });
@@ -63,6 +69,25 @@ export function LocationForm({ initialData, onSubmit, onCancel, isLoading }: Loc
                   {...field}
                   disabled={isLoading}
                   className="border-gray-300 focus:border-primary focus:ring-primary/20"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="font-medium">Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Optional description for this location..."
+                  {...field}
+                  disabled={isLoading}
+                  className="border-gray-300 focus:border-primary focus:ring-primary/20 min-h-[80px]"
                 />
               </FormControl>
               <FormMessage />

@@ -8,14 +8,16 @@ const templateTypeValues = Object.values(EMAIL_TEMPLATE_TYPE) as [string, ...str
 
 export const emailTemplateRoutes = new Elysia({ prefix: "/email-templates" })
   .use(requireRole([])) // Add centralized authentication middleware
+
   // Get all templates
   .get("/", emailTemplateController.getTemplates, {
     query: t.Object({
       page: t.Optional(t.String()),
       limit: t.Optional(t.String()),
       search: t.Optional(t.String()),
-      templateType: t.Optional(t.Union(templateTypeValues.map(val => t.Literal(val)))),
-      isActive: t.Optional(t.String())
+      templateType: t.Optional(t.String()),
+      isActive: t.Optional(t.String()),
+      shopId: t.String({ description: "Shop ID" })
     }),
     detail: {
       summary: "Get email templates",
@@ -24,10 +26,52 @@ export const emailTemplateRoutes = new Elysia({ prefix: "/email-templates" })
     }
   })
 
+  // Static routes MUST come before dynamic /:id routes
+  // Get dynamic fields
+  .get("/dynamic-fields", emailTemplateController.getDynamicFields, {
+    detail: {
+      summary: "Get dynamic fields",
+      description: "Get available dynamic fields for email templates",
+      tags: ["Email Templates"]
+    }
+  })
+
+  // Populate template (preview)
+  .post("/populate", emailTemplateController.populateTemplate, {
+    body: t.Object({
+      templateId: t.String({ description: "Template ID" }),
+      orderId: t.String({ description: "Order ID" }),
+      subject: t.Optional(t.String({ description: "Template subject for preview" })),
+      content: t.Optional(t.String({ description: "Template content for preview" })),
+      shopId: t.Number({ description: "Shop ID" })
+    }),
+    detail: {
+      summary: "Populate template",
+      description: "Populate template with order data for preview",
+      tags: ["Email Templates"]
+    }
+  })
+
+  // Create sample templates
+  .post("/samples", emailTemplateController.createSampleTemplates, {
+    body: t.Object({
+      shopId: t.Number({ description: "Shop ID" })
+    }),
+    detail: {
+      summary: "Create sample templates",
+      description: "Create sample email templates for testing and demonstration",
+      tags: ["Email Templates"]
+    }
+  })
+
+  // Dynamic routes with :id parameter come after static routes
   // Get specific template
   .get("/:id", emailTemplateController.getTemplate, {
     params: t.Object({
       id: t.String({ description: "Template ID" })
+    }),
+    query: t.Object({
+      shopId: t.String({ description: "Shop ID" })
     }),
     detail: {
       summary: "Get email template",
@@ -43,7 +87,8 @@ export const emailTemplateRoutes = new Elysia({ prefix: "/email-templates" })
       subject: t.String({ minLength: 1, maxLength: 500 }),
       content: t.String({ minLength: 1 }),
       templateType: t.Union(templateTypeValues.map(val => t.Literal(val))),
-      isActive: t.Optional(t.Boolean())
+      isActive: t.Optional(t.Boolean()),
+      shopId: t.Number({ description: "Shop ID" })
     }),
     detail: {
       summary: "Create email template",
@@ -62,7 +107,8 @@ export const emailTemplateRoutes = new Elysia({ prefix: "/email-templates" })
       subject: t.Optional(t.String({ minLength: 1, maxLength: 500 })),
       content: t.Optional(t.String({ minLength: 1 })),
       templateType: t.Optional(t.Union(templateTypeValues.map(val => t.Literal(val)))),
-      isActive: t.Optional(t.Boolean())
+      isActive: t.Optional(t.Boolean()),
+      shopId: t.Number({ description: "Shop ID" })
     }),
     detail: {
       summary: "Update email template",
@@ -76,42 +122,12 @@ export const emailTemplateRoutes = new Elysia({ prefix: "/email-templates" })
     params: t.Object({
       id: t.String({ description: "Template ID" })
     }),
+    query: t.Object({
+      shopId: t.String({ description: "Shop ID" })
+    }),
     detail: {
       summary: "Delete email template",
       description: "Delete an email template",
-      tags: ["Email Templates"]
-    }
-  })
-
-  // Get dynamic fields
-  .get("/dynamic-fields", emailTemplateController.getDynamicFields, {
-    detail: {
-      summary: "Get dynamic fields",
-      description: "Get available dynamic fields for email templates",
-      tags: ["Email Templates"]
-    }
-  })
-
-  // Populate template (preview)
-  .post("/populate", emailTemplateController.populateTemplate, {
-    body: t.Object({
-      templateId: t.String({ description: "Template ID" }),
-      orderId: t.String({ description: "Order ID" }),
-      subject: t.Optional(t.String({ description: "Template subject for preview" })),
-      content: t.Optional(t.String({ description: "Template content for preview" }))
-    }),
-    detail: {
-      summary: "Populate template",
-      description: "Populate template with order data for preview",
-      tags: ["Email Templates"]
-    }
-  })
-
-  // Create sample templates
-  .post("/samples", emailTemplateController.createSampleTemplates, {
-    detail: {
-      summary: "Create sample templates",
-      description: "Create sample email templates for testing and demonstration",
       tags: ["Email Templates"]
     }
   }); 

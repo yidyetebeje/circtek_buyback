@@ -1,14 +1,14 @@
-import { mysqlTable, int, varchar, text, decimal, timestamp, json, primaryKey, index, unique, foreignKey, tinyint, mysqlEnum, bigint } from "drizzle-orm/mysql-core";
+import { mysqlTable, int, varchar, text, decimal, timestamp, json, primaryKey, index, unique, foreignKey, tinyint, mysqlEnum, bigint, serial } from "drizzle-orm/mysql-core";
 import { sql } from "drizzle-orm";
 import { shops } from "./shops.schema";
-import { devices, tenants, users } from "./circtek.schema";
+import { devices, tenants, users, transfers } from "./circtek.schema";
 import { models } from "./buyback_catalogue.schema";
 import { relations } from "drizzle-orm";
 
 // Define the order status enum - simplified to 4 states
 export const ORDER_STATUS = {
   PENDING: "PENDING",
-  ARRIVED: "ARRIVED", 
+  ARRIVED: "ARRIVED",
   PAID: "PAID",
   REJECTED: "REJECTED"
 } as const;
@@ -49,14 +49,14 @@ export const orders = mysqlTable("orders", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 }, (table) => ([
-    primaryKey({ columns: [table.id], name: "orders_id" }),
-    unique("order_number_unique").on(table.order_number),
-    index("orders_device_id_idx").on(table.device_id),
-    index("orders_status_idx").on(table.status),
-    foreignKey({ columns: [table.tenant_id], foreignColumns: [tenants.id], name: "orders_tenant_id_fk" }),
-    index("orders_tenant_id_idx").on(table.tenant_id),
-    
-    foreignKey({ columns: [table.tenant_id, table.imei], foreignColumns: [devices.tenant_id, devices.imei], name: "orders_tenant_imei_devices_fk" })
+  primaryKey({ columns: [table.id], name: "orders_id" }),
+  unique("order_number_unique").on(table.order_number),
+  index("orders_device_id_idx").on(table.device_id),
+  index("orders_status_idx").on(table.status),
+  foreignKey({ columns: [table.tenant_id], foreignColumns: [tenants.id], name: "orders_tenant_id_fk" }),
+  index("orders_tenant_id_idx").on(table.tenant_id),
+
+  foreignKey({ columns: [table.tenant_id, table.imei], foreignColumns: [devices.tenant_id, devices.imei], name: "orders_tenant_imei_devices_fk" })
 ]));
 
 // Order device condition answers table
@@ -69,14 +69,14 @@ export const order_device_condition_answers = mysqlTable("order_device_condition
   answer_text_snapshot: text("answer_text_snapshot"),
   created_at: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ([
-    primaryKey({ columns: [table.id], name: "order_device_condition_answers_id" }),
-    index("order_device_condition_answers_order_id_idx").on(table.order_id),
-    index("order_device_condition_answers_question_key_idx").on(table.question_key),
-    foreignKey({
-      columns: [table.order_id],
-      foreignColumns: [orders.id],
-      name: "order_device_condition_answers_order_id_fk"
-    })
+  primaryKey({ columns: [table.id], name: "order_device_condition_answers_id" }),
+  index("order_device_condition_answers_order_id_idx").on(table.order_id),
+  index("order_device_condition_answers_question_key_idx").on(table.question_key),
+  foreignKey({
+    columns: [table.order_id],
+    foreignColumns: [orders.id],
+    name: "order_device_condition_answers_order_id_fk"
+  })
 ]));
 
 // Shipping details table
@@ -99,13 +99,13 @@ export const shipping_details = mysqlTable("shipping_details", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 }, (table) => ([
-    primaryKey({ columns: [table.id], name: "shipping_details_id" }),
-    unique("shipping_details_order_id_unique").on(table.orderId),
-    foreignKey({
-      columns: [table.orderId],
-      foreignColumns: [orders.id],
-      name: "shipping_details_order_id_fk"
-    })
+  primaryKey({ columns: [table.id], name: "shipping_details_id" }),
+  unique("shipping_details_order_id_unique").on(table.orderId),
+  foreignKey({
+    columns: [table.orderId],
+    foreignColumns: [orders.id],
+    name: "shipping_details_order_id_fk"
+  })
 ]));
 
 // Order status history table
@@ -117,19 +117,19 @@ export const order_status_history = mysqlTable("order_status_history", {
   changed_by_user_id: bigint("changed_by_user_id", { mode: 'number', unsigned: true }),
   notes: text("notes"),
 }, (table) => ([
-    primaryKey({ columns: [table.id], name: "order_status_history_id" }),
-    index("order_status_history_order_id_idx").on(table.order_id),
-    index("order_status_history_changed_by_user_id_idx").on(table.changed_by_user_id),
-    foreignKey({
-      columns: [table.order_id],
-      foreignColumns: [orders.id],
-      name: "order_status_history_order_id_fk"
-    }),
-    foreignKey({
-      columns: [table.changed_by_user_id],
-      foreignColumns: [users.id],
-      name: "order_status_history_changed_by_user_id_fk"
-    })
+  primaryKey({ columns: [table.id], name: "order_status_history_id" }),
+  index("order_status_history_order_id_idx").on(table.order_id),
+  index("order_status_history_changed_by_user_id_idx").on(table.changed_by_user_id),
+  foreignKey({
+    columns: [table.order_id],
+    foreignColumns: [orders.id],
+    name: "order_status_history_order_id_fk"
+  }),
+  foreignKey({
+    columns: [table.changed_by_user_id],
+    foreignColumns: [users.id],
+    name: "order_status_history_changed_by_user_id_fk"
+  })
 ]));
 
 export const order_relations = relations(orders, ({ one, many }) => ({
@@ -151,4 +151,22 @@ export const order_relations = relations(orders, ({ one, many }) => ({
     references: [shipping_details.orderId],
   }),
   status_history: many(order_status_history),
-})); 
+}));
+
+// Junction table to track which orders have been included in transfers
+// Ensures each order can only be transferred once via unique constraint on order_id
+export const order_transfers = mysqlTable("order_transfers", {
+  id: serial('id').primaryKey(),
+  order_id: varchar("order_id", { length: 36 }).notNull(),
+  transfer_id: bigint('transfer_id', { mode: 'number', unsigned: true }).references(() => transfers.id).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ([
+  index("order_transfers_order_id_idx").on(table.order_id),
+  index("order_transfers_transfer_id_idx").on(table.transfer_id),
+  unique("order_transfers_order_id_unique").on(table.order_id),
+  foreignKey({
+    columns: [table.order_id],
+    foreignColumns: [orders.id],
+    name: "order_transfers_order_id_fk"
+  })
+])); 

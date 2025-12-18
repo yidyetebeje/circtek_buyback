@@ -23,8 +23,7 @@ export class ApiClient {
   private baseUrl: string;
   private tenantId?: number;
 
-  constructor(baseUrl = API_BASE_URL)
-   {
+  constructor(baseUrl = API_BASE_URL) {
     this.baseUrl = baseUrl;
   }
 
@@ -48,12 +47,12 @@ export class ApiClient {
    */
   private buildUrl(endpoint: string, params?: Record<string, string | number | boolean | number[] | undefined>): string {
     const url = new URL(`${this.baseUrl}${endpoint}`);
-    
+
     // Add client ID to all requests if available
     if (this.tenantId) {
       url.searchParams.append('tenantId', this.tenantId.toString());
     }
-    
+
     // Add other query parameters
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -68,7 +67,7 @@ export class ApiClient {
         }
       });
     }
-    
+
     return url.toString();
   }
 
@@ -92,7 +91,7 @@ export class ApiClient {
         console.error('Error getting client-side session:', error);
         return undefined;
       }
-    } 
+    }
     // Server-side: use auth() from NextAuth
     else {
       try {
@@ -132,7 +131,7 @@ export class ApiClient {
 
     try {
       const token = await this.getAuthToken();
-      
+
       // Check if token exists
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -144,7 +143,7 @@ export class ApiClient {
     } catch (error) {
       console.error('Error retrieving authentication token:', error);
     }
-  
+
     return headers;
   }
 
@@ -167,24 +166,24 @@ export class ApiClient {
         console.warn(`[ApiClient] Could not parse JSON body for ${response.status} error, or body was empty.`);
       }
       if (this.isClient()) {
-        await signOut({ callbackUrl: '/admin/login' }); 
+        await signOut({ callbackUrl: '/admin/login' });
         throw {
           status: response.status, // Use the actual response status
           message: 'Your session has expired. Please log in again.'
         };
       } else {
-       
+
       }
     }
 
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       const data = await response.json();
-      
+
       if (!response.ok) {
         // Extract specific error message from different possible response formats
         let errorMessage = 'An error occurred';
-        
+
         if (data.error) {
           // Backend returns { error: "specific message" }
           errorMessage = data.error;
@@ -207,10 +206,10 @@ export class ApiClient {
         };
         throw error;
       }
-      
+
       return data as T;
     }
-    
+
     // For other response types
     if (!response.ok) {
       // Try to get error text for non-JSON responses
@@ -220,9 +219,9 @@ export class ApiClient {
         if (errorText && errorText.trim().length > 0) {
           errorMessage = errorText;
         }
-             } catch {
-         console.warn('Could not parse error response as text');
-       }
+      } catch {
+        console.warn('Could not parse error response as text');
+      }
 
       const error: ApiError = {
         status: response.status,
@@ -230,7 +229,7 @@ export class ApiClient {
       };
       throw error;
     }
-    
+
     return {} as T;
   }
 
@@ -248,7 +247,7 @@ export class ApiClient {
       ...fetchOptions,
     });
     console.log(response, "response for get request")
-    
+
     return this.processResponse<T>(response);
   }
 
@@ -264,14 +263,14 @@ export class ApiClient {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...baseHeaders,
     };
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers,
       body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
       ...fetchOptions,
     });
-    
+
     return this.processResponse<T>(response);
   }
 
@@ -287,9 +286,55 @@ export class ApiClient {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...baseHeaders,
     };
-    
+
     const response = await fetch(url, {
       method: 'PUT',
+      headers,
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+      ...fetchOptions,
+    });
+
+    return this.processResponse<T>(response);
+  }
+
+  /**
+   * Make a PATCH request
+   */
+  async patch<T>(endpoint: string, data?: unknown, options: FetchOptions = {}): Promise<T> {
+    const { params, isProtected, ...fetchOptions } = options;
+    const url = this.buildUrl(endpoint, params);
+    const isFormData = data instanceof FormData;
+    const baseHeaders = await this.prepareHeaders(fetchOptions.headers, isProtected);
+    const headers: HeadersInit = {
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...baseHeaders,
+    };
+
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers,
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+      ...fetchOptions,
+    });
+
+    return this.processResponse<T>(response);
+  }
+
+  /**
+   * Make a PATCH request
+   */
+  async patch<T>(endpoint: string, data?: unknown, options: FetchOptions = {}): Promise<T> {
+    const { params, isProtected, ...fetchOptions } = options;
+    const url = this.buildUrl(endpoint, params);
+    const isFormData = data instanceof FormData;
+    const baseHeaders = await this.prepareHeaders(fetchOptions.headers, isProtected);
+    const headers: HeadersInit = {
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...baseHeaders,
+    };
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
       headers,
       body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
       ...fetchOptions,
@@ -328,13 +373,13 @@ export class ApiClient {
     const { params, isProtected, ...fetchOptions } = options;
     const url = this.buildUrl(endpoint, params);
     const headers = await this.prepareHeaders(fetchOptions.headers, isProtected);
-    
+
     const response = await fetch(url, {
       method: 'DELETE',
       headers,
       ...fetchOptions,
     });
-    
+
     return this.processResponse<T>(response);
   }
 }

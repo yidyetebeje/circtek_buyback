@@ -67,10 +67,9 @@ const UsersPage = () => {
   // Define columns for the data table
   const columns = useMemo<ColumnDef<User, unknown>[]>(() => [
     { accessorKey: "id", header: "ID" },
-    { accessorKey: "fName", header: "First Name", cell: ({row}) => row.original.fName || '-' },
-    { accessorKey: "lName", header: "Last Name", cell: ({row}) => row.original.lName || '-' },
-    { accessorKey: "userName", header: "Username", cell: ({row}) => row.original.userName || '-' },
-    { accessorKey: "email", header: "Email", cell: ({row}) => row.original.email || '-' },
+    { accessorKey: "fName", header: "First Name", cell: ({ row }) => row.original.fName || '-' },
+    { accessorKey: "lName", header: "Last Name", cell: ({ row }) => row.original.lName || '-' },
+    { accessorKey: "userName", header: "Username", cell: ({ row }) => row.original.userName || '-' },
     { id: "roleTitle", header: "Role", accessorFn: (row) => row.role?.title || 'N/A' },
     { accessorKey: "status", header: "Status", cell: ({ row }) => (row.original.status ? "Active" : "Inactive") },
     {
@@ -114,7 +113,7 @@ const UsersPage = () => {
         <DataTable<User, unknown>
           columns={columns}
           data={data}
-          searchKey="email"
+          searchKey="userName"
           manualPagination
           rowCount={rowCount}
           pagination={pagination}

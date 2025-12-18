@@ -26,7 +26,7 @@ const UserEditPage = () => {
         onSuccess: () => {
           toast.success('User updated successfully!');
           router.push('/admin/users');
-          router.refresh(); 
+          router.refresh();
         },
         onError: (error: any) => {
           toast.error(`Failed to update user: ${error.message}`);
@@ -50,7 +50,7 @@ const UserEditPage = () => {
   if (isError) {
     return <div>Error loading user data: {error.message}</div>;
   }
-  
+
   if (!user) {
     return <div>User not found.</div>;
   }
@@ -59,9 +59,7 @@ const UserEditPage = () => {
     fName: user.fName || '',
     lName: user.lName || '',
     userName: user.userName || '',
-    email: user.email || '',
     status: user.status ?? true,
-    organizationName: user.organizationName || '',
     warehouseId: user.warehouseId ? String(user.warehouseId) : undefined,
   };
 
@@ -75,10 +73,10 @@ const UserEditPage = () => {
         { label: `Edit ${user.userName || user.fName}`, isCurrentPage: true }
       ]}
     >
-      <UserForm 
-        initialData={{...initialFormData, id: user.id}}
-        onSubmit={handleSubmit} 
-        onCancel={handleCancel} 
+      <UserForm
+        initialData={{ ...initialFormData, id: user.id }}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
         isLoading={updateUserMutation.isPending}
         showRoleSelection={false}
       />

@@ -81,6 +81,7 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
   searchQueryInput = input<string>(''); // External control of search query
   facets = input<Facet[] | null>(null);
   facetModel = signal<Record<string, string>>({});
+  facetValuesInput = input<Record<string, string>>({}); // External control of facet values
   filtersChange = output<{ search: string; facets: Record<string, string> }>();
 
   // Table
@@ -210,6 +211,25 @@ export class GenericPageComponent<TData extends object> implements AfterViewInit
       queueMicrotask(() => {
         this._syncingSearchFromExternal = false;
       });
+    }
+  });
+
+  // Sync external facet values into internal state without emitting filtersChange
+  private _syncFacetValuesInput = effect(() => {
+    const ext = this.facetValuesInput();
+    const current = this.facetModel();
+    // Only sync if there are external values and they differ from current
+    if (ext && Object.keys(ext).length > 0) {
+      const hasChanges = Object.keys(ext).some(key => ext[key] !== current[key]);
+      if (hasChanges) {
+        // Set flag to prevent filters effect from emitting
+        this._syncingSearchFromExternal = true;
+        this.facetModel.set({ ...current, ...ext });
+        // Reset flag after a microtask to allow the effect to complete
+        queueMicrotask(() => {
+          this._syncingSearchFromExternal = false;
+        });
+      }
     }
   });
 

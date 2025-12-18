@@ -1,8 +1,8 @@
 import { EmailTemplateRepository } from "../repository/email-template-repository";
-import { 
+import {
   EmailTemplate,
-  EmailTemplateCreateRequest, 
-  EmailTemplateUpdateRequest, 
+  EmailTemplateCreateRequest,
+  EmailTemplateUpdateRequest,
   EmailTemplateListQuery,
   EmailTemplatePopulateRequest,
   EmailTemplatePopulatedResponse,
@@ -25,16 +25,35 @@ export class EmailTemplateService {
   }
 
   /**
+   * Validate that a shop belongs to a tenant
+   */
+  async validateShopTenant(shopId: number, tenantId: number): Promise<boolean> {
+    const shop = await db.query.shops.findFirst({
+      where: and(eq(shops.id, shopId), eq(shops.tenant_id, tenantId))
+    });
+    return !!shop;
+  }
+
+  /**
    * Get paginated list of email templates
    */
-  async getTemplates(shopId: number, query: EmailTemplateListQuery = {}) {
+  async getTemplates(shopId: number, tenantId: number, query: EmailTemplateListQuery = {}) {
+    const isValid = await this.validateShopTenant(shopId, tenantId);
+    if (!isValid) {
+      throw new Error("Invalid shop access");
+    }
     return this.repository.findMany({ ...query, shopId });
   }
 
   /**
    * Get a specific email template by ID
    */
-  async getTemplateById(id: string, shopId: number) {
+  async getTemplateById(id: string, shopId: number, tenantId: number) {
+    const isValid = await this.validateShopTenant(shopId, tenantId);
+    if (!isValid) {
+      return null;
+    }
+
     const template = await this.repository.findById(id);
     if (!template || template.shopId !== shopId) {
       return null;
@@ -45,7 +64,12 @@ export class EmailTemplateService {
   /**
    * Create a new email template
    */
-  async createTemplate(shopId: number, data: EmailTemplateCreateRequest) {
+  async createTemplate(shopId: number, tenantId: number, data: EmailTemplateCreateRequest) {
+    const isValid = await this.validateShopTenant(shopId, tenantId);
+    if (!isValid) {
+      throw new Error("Invalid shop access");
+    }
+
     return this.repository.create({
       ...data,
       shopId,
@@ -56,7 +80,12 @@ export class EmailTemplateService {
   /**
    * Update an existing email template
    */
-  async updateTemplate(id: string, shopId: number, data: EmailTemplateUpdateRequest) {
+  async updateTemplate(id: string, shopId: number, tenantId: number, data: EmailTemplateUpdateRequest) {
+    const isValid = await this.validateShopTenant(shopId, tenantId);
+    if (!isValid) {
+      return null;
+    }
+
     const existing = await this.repository.findById(id);
     if (!existing || existing.shopId !== shopId) {
       return null;
@@ -74,7 +103,12 @@ export class EmailTemplateService {
   /**
    * Delete an email template
    */
-  async deleteTemplate(id: string, shopId: number): Promise<boolean> {
+  async deleteTemplate(id: string, shopId: number, tenantId: number): Promise<boolean> {
+    const isValid = await this.validateShopTenant(shopId, tenantId);
+    if (!isValid) {
+      return false;
+    }
+
     const existing = await this.repository.findById(id);
     if (!existing || existing.shopId !== shopId) {
       return false;
@@ -94,7 +128,12 @@ export class EmailTemplateService {
   /**
    * Populate a template with actual order data
    */
-  async populateTemplate(request: EmailTemplatePopulateRequest, shopId: number): Promise<EmailTemplatePopulatedResponse | null> {
+  async populateTemplate(request: EmailTemplatePopulateRequest, shopId: number, tenantId: number): Promise<EmailTemplatePopulatedResponse | null> {
+    const isValid = await this.validateShopTenant(shopId, tenantId);
+    if (!isValid) {
+      throw new Error("Invalid shop access");
+    }
+
     console.log("Service populateTemplate called with:", {
       templateId: request.templateId,
       orderId: request.orderId,
@@ -102,13 +141,13 @@ export class EmailTemplateService {
       hasContent: !!request.content,
       shopId
     });
-    
+
     // Check if this is a preview request (orderId starts with 'preview-' or 'mock-')
     const isPreview = request.orderId.startsWith('preview-') || request.orderId.startsWith('mock-');
     console.log("Is preview request:", isPreview);
-    
+
     let template;
-    
+
     // Handle preview templates that might not exist in database yet
     if (request.templateId === 'preview-template' && (request.subject || request.content)) {
       console.log("Using preview template with provided subject and/or content");
@@ -121,8 +160,8 @@ export class EmailTemplateService {
         shopId
       };
     } else if (request.templateId === 'preview-template') {
-      console.log("Preview template requested but missing both subject and content:", { 
-        hasSubject: !!request.subject, 
+      console.log("Preview template requested but missing both subject and content:", {
+        hasSubject: !!request.subject,
         hasContent: !!request.content,
         subjectValue: request.subject,
         contentValue: request.content
@@ -137,7 +176,7 @@ export class EmailTemplateService {
         return null;
       }
     }
-    
+
     let orderData;
     if (isPreview) {
       // Generate mock order data for preview
@@ -167,7 +206,7 @@ export class EmailTemplateService {
   private generateMockOrderData(shopId: number, templateType?: string) {
     const now = new Date();
     const orderNumber = `ORD-${Date.now()}`;
-    
+
     // Generate different mock data based on template type
     const mockData = {
       orderId: `mock-${Date.now()}`,
@@ -187,16 +226,24 @@ export class EmailTemplateService {
         color: "Deep Purple",
         condition: "Good"
       },
-      
+
       // Shop fields
       shopId,
       shopName: "TechBuyback Amsterdam",
       shopPhone: "+31 20 123 4567",
-      
+      shopOrganization: "TechBuyback B.V.",
+      shopConfig: {
+        contact: {
+          supportEmail: "support@techbuyback.nl",
+          address: "Keizersgracht 123, 1015 CJ Amsterdam",
+          website: "https://techbuyback.nl"
+        }
+      },
+
       // Model fields
       modelId: 1,
       modelTitle: "iPhone 14 Pro",
-      
+
       // Shipping fields
       shippingId: `ship-${Date.now()}`,
       sellerName: "John van der Berg",
@@ -204,6 +251,13 @@ export class EmailTemplateService {
       sellerPhoneNumber: "+31 6 12345678",
       trackingNumber: "1Z999AA1234567890",
       shippingProvider: "DHL",
+      shippingLabelUrl: "https://example.com/labels/ship-123.pdf",
+      estimatedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+
+      // Payment fields (mock)
+      paymentMethod: "Bank Transfer",
+      paymentIban: "NL91ABNA0417164300",
+      paymentReference: `PAY-${orderNumber}`,
     };
 
     return mockData;
@@ -250,16 +304,18 @@ export class EmailTemplateService {
         createdAt: orders.created_at,
         updatedAt: orders.updated_at,
         deviceSnapshot: orders.device_snapshot,
-        
+
         // Shop fields
         shopId: shops.id,
         shopName: shops.name,
         shopPhone: shops.phone,
-        
+        shopOrganization: shops.organization,
+        shopConfig: shops.config,
+
         // Model fields
         modelId: models.id,
         modelTitle: models.title,
-        
+
         // Shipping fields
         shippingId: shipping_details.id,
         sellerName: shipping_details.sellerName,
@@ -267,6 +323,7 @@ export class EmailTemplateService {
         sellerPhoneNumber: shipping_details.seller_phone_number,
         trackingNumber: shipping_details.tracking_number,
         shippingProvider: shipping_details.shipping_provider,
+        shippingLabelUrl: shipping_details.shipping_label_url,
       })
       .from(orders)
       .leftJoin(shops, eq(orders.shop_id, shops.id))
@@ -283,7 +340,9 @@ export class EmailTemplateService {
    */
   private extractFieldData(orderData: any): Record<string, any> {
     const deviceSnapshot = orderData.deviceSnapshot || {};
-    
+    const shopConfig = orderData.shopConfig || {};
+    const contactConfig = shopConfig.contact || {};
+
     return {
       // Order fields
       'order.orderNumber': orderData.orderNumber || '',
@@ -291,23 +350,37 @@ export class EmailTemplateService {
       'order.estimatedPrice': this.formatCurrency(orderData.estimatedPrice),
       'order.finalPrice': this.formatCurrency(orderData.finalPrice),
       'order.createdAt': this.formatDate(orderData.createdAt),
-      
+
       // Device fields from snapshot
       'device.modelName': deviceSnapshot.modelName || orderData.modelTitle || '',
       'device.brandName': deviceSnapshot.brandName || '',
       'device.categoryName': deviceSnapshot.categoryName || '',
-      
+      'device.storage': deviceSnapshot.storage || '',
+      'device.color': deviceSnapshot.color || '',
+      'device.condition': deviceSnapshot.condition || '',
+
       // Customer fields
       'customer.name': orderData.sellerName || '',
       'customer.email': orderData.sellerEmail || '',
-      
+      'customer.phone': orderData.sellerPhoneNumber || '',
+
       // Shop fields
       'shop.name': orderData.shopName || '',
+      'shop.email': contactConfig.supportEmail || contactConfig.salesEmail || '',
       'shop.phone': orderData.shopPhone || '',
-      
+      'shop.address': contactConfig.address || '',
+      'shop.website': contactConfig.website || '',
+
       // Shipping fields
       'shipping.trackingNumber': orderData.trackingNumber || '',
       'shipping.provider': orderData.shippingProvider || '',
+      'shipping.labelUrl': orderData.shippingLabelUrl || '',
+      'shipping.estimatedDelivery': this.formatDate(orderData.estimatedDelivery),
+
+      // Payment fields
+      'payment.method': orderData.paymentMethod || '',
+      'payment.iban': orderData.paymentIban || '',
+      'payment.reference': orderData.paymentReference || '',
     };
   }
 
@@ -316,16 +389,16 @@ export class EmailTemplateService {
    */
   private replacePlaceholders(content: string, fields: Record<string, any>): string {
     let result = content;
-    
+
     for (const [fieldKey, value] of Object.entries(fields)) {
       // Support both {{fieldKey}} and {fieldKey} formats
       const regex1 = new RegExp(`{{${fieldKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}}}`, 'g');
       const regex2 = new RegExp(`{${fieldKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}}`, 'g');
-      
+
       result = result.replace(regex1, String(value || ''));
       result = result.replace(regex2, String(value || ''));
     }
-    
+
     return result;
   }
 
@@ -336,9 +409,9 @@ export class EmailTemplateService {
     if (amount === null || amount === undefined) return '€0.00';
     const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     if (isNaN(numericAmount)) return '€0.00';
-    return new Intl.NumberFormat('nl-NL', { 
-      style: 'currency', 
-      currency: 'EUR' 
+    return new Intl.NumberFormat('nl-NL', {
+      style: 'currency',
+      currency: 'EUR'
     }).format(numericAmount);
   }
 
@@ -362,7 +435,12 @@ export class EmailTemplateService {
   /**
    * Create sample email templates for testing and demonstration
    */
-  async createSampleTemplates(shopId: number): Promise<EmailTemplate[]> {
+  async createSampleTemplates(shopId: number, tenantId: number): Promise<EmailTemplate[]> {
+    const isValid = await this.validateShopTenant(shopId, tenantId);
+    if (!isValid) {
+      throw new Error("Invalid shop access");
+    }
+
     const sampleTemplates = [
       {
         name: "Order Confirmation",
@@ -498,10 +576,10 @@ export class EmailTemplateService {
     ];
 
     const createdTemplates: EmailTemplate[] = [];
-    
+
     for (const templateData of sampleTemplates) {
       try {
-        const created = await this.createTemplate(shopId, templateData);
+        const created = await this.createTemplate(shopId, tenantId, templateData);
         if (created) {
           createdTemplates.push(created);
         }
@@ -509,9 +587,9 @@ export class EmailTemplateService {
         console.error(`Failed to create sample template: ${templateData.name}`, error);
       }
     }
-    
+
     return createdTemplates;
   }
 }
 
-export const emailTemplateService = new EmailTemplateService(); 
+export const emailTemplateService = new EmailTemplateService();

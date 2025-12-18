@@ -183,6 +183,29 @@ export class ManagementComponent {
     return list;
   });
 
+  // Computed facet values to pass to generic-page for initial display
+  facetValues = computed<Record<string, string>>(() => {
+    const values: Record<string, string> = {};
+    const tab = this.activeTab();
+
+    if (tab === 'users') {
+      const roleId = this.selectedRoleId();
+      if (roleId != null) values['role_id'] = String(roleId);
+      if (this.selectedUserActive() !== 'any') values['is_active'] = this.selectedUserActive();
+    }
+
+    if (this.isSuperAdmin()) {
+      const tenantId = this.selectedTenantId();
+      if (tenantId != null) values['tenant_id'] = String(tenantId);
+    }
+
+    if (tab === 'api-keys') {
+      if (this.selectedApiKeyActive()) values['is_active'] = this.selectedApiKeyActive();
+    }
+
+    return values;
+  });
+
   // Delete confirmation modal state
   isDeleteModalOpen = signal(false);
   deleteContext = signal<{ tab: 'tenants' | 'tenant-profile' | 'users' | 'warehouses' | 'wifi' | 'labels' | 'workflows' | 'grades' | 'ota-updates' | 'api-keys' | 'questions'; row: MgmtRow } | null>(null);

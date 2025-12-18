@@ -4,7 +4,15 @@ import { repair_items, repairs, devices, repair_reasons, warehouses, users, repa
 import { purchase_items } from "../../db/circtek.schema"
 import { RepairConsumeItemsInput, RepairListResult, RepairRecord, RepairWithItems, RepairCreateInput, RepairItemRecord, RepairQueryInput } from "./types"
 
+// Helper function to get end of day for inclusive date_to filtering
+function getEndOfDay(dateString: string): Date {
+  const date = new Date(dateString)
+  date.setHours(23, 59, 59, 999)
+  return date
+}
+
 export class RepairsRepository {
+
   constructor(private readonly database: typeof db) { }
 
   private normalizeRepair<T extends { status: boolean | null }>(row: T | undefined) {
@@ -55,7 +63,7 @@ export class RepairsRepository {
     if (typeof filters.device_id === 'number') conditions.push(eq(repairs.device_id, filters.device_id))
     if (typeof filters.status === 'boolean') conditions.push(eq(repairs.status, filters.status))
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
-    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, getEndOfDay(filters.date_to)))
     if (filters.search) {
       const pattern = `%${filters.search}%`
       // Search on remarks, device_sku, device_imei, device_serial, repairer_name, consumed_parts, repair_reasons
@@ -349,7 +357,7 @@ export class RepairsRepository {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
 
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
-    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, getEndOfDay(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
     if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
     if (filters.reason_id) conditions.push(eq(repair_items.reason_id, filters.reason_id))
@@ -389,7 +397,7 @@ export class RepairsRepository {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
 
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
-    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, getEndOfDay(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
     if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
     if (filters.reason_id) conditions.push(eq(repair_items.reason_id, filters.reason_id))
@@ -419,7 +427,7 @@ export class RepairsRepository {
         ]
 
         if (filters.date_from) partsConditions.push(gte(repairs.created_at, new Date(filters.date_from)))
-        if (filters.date_to) partsConditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+        if (filters.date_to) partsConditions.push(lte(repairs.created_at, getEndOfDay(filters.date_to)))
         if (filters.reason_id) partsConditions.push(eq(repair_items.reason_id, filters.reason_id))
 
         // Get regular parts (non-fixed_price)
@@ -508,7 +516,7 @@ export class RepairsRepository {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
 
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
-    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, getEndOfDay(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
     if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
     if (filters.reason_id) conditions.push(eq(repair_items.reason_id, filters.reason_id))
@@ -546,7 +554,7 @@ export class RepairsRepository {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
 
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
-    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, getEndOfDay(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
     if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
     if (filters.reason_id) conditions.push(eq(repair_items.reason_id, filters.reason_id))
@@ -586,7 +594,7 @@ export class RepairsRepository {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
 
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
-    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, getEndOfDay(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
     if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
     if (filters.reason_id) conditions.push(eq(repair_items.reason_id, filters.reason_id))
@@ -643,7 +651,7 @@ export class RepairsRepository {
         ]
 
         if (filters.date_from) partsConditions.push(gte(repairs.created_at, new Date(filters.date_from)))
-        if (filters.date_to) partsConditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+        if (filters.date_to) partsConditions.push(lte(repairs.created_at, getEndOfDay(filters.date_to)))
         if (filters.reason_id) partsConditions.push(eq(repair_items.reason_id, filters.reason_id))
 
         // Get regular parts
@@ -721,7 +729,7 @@ export class RepairsRepository {
     const conditions: any[] = [eq(repairs.tenant_id, filters.tenant_id)]
 
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
-    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, getEndOfDay(filters.date_to)))
     if (filters.warehouse_id) conditions.push(eq(repairs.warehouse_id, filters.warehouse_id))
     if (filters.model_name) conditions.push(eq(devices.model_name, filters.model_name))
     if (filters.reason_id) conditions.push(eq(repair_items.reason_id, filters.reason_id))
@@ -773,7 +781,7 @@ export class RepairsRepository {
     if (typeof filters.device_id === 'number') conditions.push(eq(repairs.device_id, filters.device_id))
     if (typeof filters.status === 'boolean') conditions.push(eq(repairs.status, filters.status))
     if (filters.date_from) conditions.push(gte(repairs.created_at, new Date(filters.date_from)))
-    if (filters.date_to) conditions.push(lte(repairs.created_at, new Date(filters.date_to)))
+    if (filters.date_to) conditions.push(lte(repairs.created_at, getEndOfDay(filters.date_to)))
     if (filters.search) {
       const pattern = `%${filters.search}%`
       conditions.push(or(

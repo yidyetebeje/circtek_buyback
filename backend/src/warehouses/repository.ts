@@ -9,6 +9,7 @@ const warehousePublicSelection = {
 	description: warehouses.description,
 	status: warehouses.status,
 	tenant_id: warehouses.tenant_id,
+	shop_id: warehouses.shop_id,
 	tenant_name: tenants.name,
 	created_at: warehouses.created_at,
 }
@@ -24,7 +25,7 @@ const sortableFields = {
 } as const
 
 export class WarehousesRepository {
-	constructor(private readonly database: typeof db) {}
+	constructor(private readonly database: typeof db) { }
 
 	async createWarehouse(payload: WarehouseCreateInput): Promise<WarehousePublic | undefined> {
 		await this.database.insert(warehouses).values(payload)
@@ -48,6 +49,7 @@ export class WarehousesRepository {
 	async findAll(filters: WarehouseFilters): Promise<WarehouseListResult> {
 		const conditions: SQL<unknown>[] = []
 		if (typeof filters.tenant_id === 'number') conditions.push(eq(warehouses.tenant_id, filters.tenant_id))
+		if (typeof filters.shop_id === 'number') conditions.push(eq(warehouses.shop_id, filters.shop_id))
 		if (filters.search) conditions.push(like(warehouses.name, `%${filters.search}%`))
 		conditions.push(eq(warehouses.status, true))
 
@@ -56,11 +58,11 @@ export class WarehousesRepository {
 		const offset = (page - 1) * limit
 
 		// Handle sorting
-		const sortField = filters.sort && sortableFields[filters.sort as keyof typeof sortableFields] 
+		const sortField = filters.sort && sortableFields[filters.sort as keyof typeof sortableFields]
 			? sortableFields[filters.sort as keyof typeof sortableFields]
 			: warehouses.id // default sort by id
 		const sortOrder = filters.order === 'desc' ? desc : asc
-	
+
 		const whereCond = conditions.length ? and(...conditions) : undefined
 		const [totalRow] = await (whereCond
 			? this.database.select({ total: count() }).from(warehouses).where(whereCond)

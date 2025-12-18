@@ -20,7 +20,7 @@ function createBrowserStorage<T>() {
       removeItem: (): void => { /* No-op for SSR */ }
     };
   });
-}
+} 
 
 // Main shop configuration atom with localStorage persistence - this tracks the local changes
 export const shopConfigAtom = atomWithStorage<ShopConfig>('shop-config', defaultShopConfig, createBrowserStorage<ShopConfig>());

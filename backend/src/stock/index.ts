@@ -12,24 +12,25 @@ import { device_events_routes } from "./device-events/index";
 import { analytics_routes } from "./analytics";
 import { stock_in_routes } from "./stock-in";
 import { sku_mappings_routes } from "./sku-mappings";
+import { device_stock_routes } from "./device-stock";
 
 // Main stock management routes that combines all submodules
 export const stock_management_routes = new Elysia({ prefix: '/stock' })
   // Current stock levels and management
   .use(stock_routes)
-  
+
   // Stock movements ledger and audit trail
   .use(movements_routes)
-  
+
   // Purchase orders and receiving
   .use(purchases_routes)
-  
+
   // Inter-warehouse transfers
   .use(transfers_routes)
-  
+
   // Stock adjustments and write-offs
   .use(adjustments_routes)
-  
+
   // Parts consumption for repairs
   .use(consumption_routes)
 
@@ -54,17 +55,20 @@ export const stock_management_routes = new Elysia({ prefix: '/stock' })
   // SKU mapping rules management
   .use(sku_mappings_routes)
 
+  // Device-level stock listing (for buyback frontend)
+  .use(device_stock_routes)
+
   // Global stock dashboard endpoint
   .get('/dashboard', async (ctx: any) => {
     const { currentRole, currentTenantId } = ctx as any
     const tenantScoped = currentRole === 'super_admin' ? undefined : currentTenantId
-    
+
     try {
       // Import controllers
       const { stockController } = await import('./stock')
       const { movementsController } = await import('./movements')
       const { transfersController } = await import('./transfers')
-      
+
       // Get summary data from each module
       const [
         stockSummary,
@@ -111,7 +115,7 @@ export const stock_management_routes = new Elysia({ prefix: '/stock' })
         status: 'healthy',
         modules: [
           'stock',
-          'movements', 
+          'movements',
           'purchases',
           'transfers',
           'adjustments',

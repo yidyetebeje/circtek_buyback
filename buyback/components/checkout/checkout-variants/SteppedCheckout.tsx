@@ -27,10 +27,13 @@ export function SteppedCheckout({
   const [estimationCart, setEstimationCart] = useAtom(estimationCartAtom);
   const router = useRouter();
   const t = useTranslations('Checkout');
-  
+
   // Step management
   const [openSection, setOpenSection] = useState<'cart' | 'shipping' | 'review'>('cart');
   const [completedSections, setCompletedSections] = useState<Set<string>>(new Set());
+
+  // Track when order has been submitted to prevent showing empty cart during redirect
+  const [isOrderSubmitted, setIsOrderSubmitted] = useState(false);
 
   // Updated Zod Schema for Checkout Form Validation with enhanced address validation
   const checkoutFormSchema = useMemo(() => z.object({
@@ -126,6 +129,10 @@ export function SteppedCheckout({
       alert(t('messages.emptyCartAlert'));
       return;
     }
+
+    // Mark order as submitted to prevent empty cart UI during redirect
+    setIsOrderSubmitted(true);
+
     console.log('Order Submitted (Validated):', {
       formData: data,
       items: relevantCartItems.map(item => ({
@@ -171,13 +178,27 @@ export function SteppedCheckout({
     setOpenSection(section);
   };
 
+  // Show loading state if order was submitted (redirecting to thank-you page)
+  // This prevents the empty cart message from flashing during navigation
+  if (isOrderSubmitted) {
+    return (
+      <div className="flex flex-col min-h-screen items-center justify-center p-4" style={{ backgroundColor }}>
+        <div className="bg-white p-10 rounded-lg shadow-md text-center max-w-md">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: primaryColor }}></div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">{t('buttons.processing')}</h2>
+          <p className="text-gray-600">{t('messages.pleaseWait') || 'Please wait...'}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (relevantCartItems.length === 0) {
     return (
       <div className="flex flex-col min-h-screen items-center justify-center p-4" style={{ backgroundColor }}>
         <div className="bg-white p-10 rounded-lg shadow-md text-center max-w-md">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">{t('emptyCart.title')}</h2>
           <p className="text-gray-600 mb-8">{t('emptyCart.description')}</p>
-          <a 
+          <a
             href={`/${currentLocale}`}
             className="px-6 py-3 text-white font-medium rounded-md hover:bg-opacity-90 transition-colors duration-150 inline-block"
             style={{ backgroundColor: primaryColor }}
@@ -193,16 +214,16 @@ export function SteppedCheckout({
     <div style={{ backgroundColor }} className="min-h-screen py-10">
       <div className="container mx-auto px-4 max-w-4xl">
         <h1 className="text-2xl font-bold text-center mb-8">{t('title')}</h1>
-        
+
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Cart Section */}
           <div className="border-b border-gray-200">
-            <button 
+            <button
               className="w-full px-6 py-4 flex items-center justify-between focus:outline-none"
               onClick={() => handleSectionClick('cart')}
             >
               <div className="flex items-center">
-                <div 
+                <div
                   className="w-8 h-8 rounded-full flex items-center justify-center mr-3 text-white"
                   style={{ backgroundColor: completedSections.has('cart') ? primaryColor : 'gray' }}
                 >
@@ -212,7 +233,7 @@ export function SteppedCheckout({
               </div>
               {openSection === 'cart' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
-            
+
             {openSection === 'cart' && (
               <div className="px-6 pb-6">
                 <div className="space-y-4">
@@ -222,10 +243,10 @@ export function SteppedCheckout({
                     const deviceImageUrl = deviceModel.model_image || '/placeholder-image.png';
                     const specifications = deviceModel.specifications;
                     const storage = specifications && typeof specifications.storage === 'string' ? specifications.storage : 'N/A';
-                    
+
                     return (
                       <div key={item.deviceId} className="flex items-start p-3 border rounded-md border-gray-200">
-                        <img src={deviceImageUrl} alt={deviceName} className="w-16 h-16 object-contain mr-3"/>
+                        <img src={deviceImageUrl} alt={deviceName} className="w-16 h-16 object-contain mr-3" />
                         <div className="flex-grow">
                           <div className="flex justify-between items-start">
                             <div>
@@ -237,14 +258,14 @@ export function SteppedCheckout({
                             <span className="font-medium">€ {item.estimatedPrice?.toFixed(2) ?? '0.00'}</span>
                           </div>
                           <div className="flex mt-2 space-x-2">
-                            <button 
-                              onClick={() => handleEditItem(item.deviceId)} 
+                            <button
+                              onClick={() => handleEditItem(item.deviceId)}
                               className="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center"
                             >
                               <Pencil size={12} className="mr-1" /> Edit
                             </button>
-                            <button 
-                              onClick={() => handleRemoveItem(item.deviceId)} 
+                            <button
+                              onClick={() => handleRemoveItem(item.deviceId)}
                               className="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-red-600 flex items-center"
                             >
                               <Trash2 size={12} className="mr-1" /> Remove
@@ -255,25 +276,25 @@ export function SteppedCheckout({
                     );
                   })}
                 </div>
-                
+
                 <div className="flex justify-between mt-6 pb-2 border-b border-gray-200">
                   <span className="font-medium">Subtotal</span>
                   <span>€ {totalEstimatedPrice.toFixed(2)}</span>
                 </div>
-                
+
                 <div className="flex justify-between mt-2 text-lg font-semibold">
                   <span>Total</span>
                   <span style={{ color: primaryColor }}>€ {totalEstimatedPrice.toFixed(2)}</span>
                 </div>
-                
+
                 <div className="mt-6 flex justify-between">
-                  <button 
+                  <button
                     onClick={() => router.push(`/${currentLocale}`)}
                     className="text-gray-600 hover:text-gray-800 text-sm font-medium"
                   >
                     Add More Devices
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleSectionClick('shipping')}
                     className="py-2.5 px-5 text-white font-medium rounded-md"
                     style={{ backgroundColor: primaryColor }}
@@ -285,16 +306,16 @@ export function SteppedCheckout({
               </div>
             )}
           </div>
-          
+
           {/* Shipping Information Section */}
           <div className="border-b border-gray-200">
-            <button 
+            <button
               className={`w-full px-6 py-4 flex items-center justify-between focus:outline-none ${!completedSections.has('cart') ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => handleSectionClick('shipping')}
               disabled={!completedSections.has('cart')}
             >
               <div className="flex items-center">
-                <div 
+                <div
                   className="w-8 h-8 rounded-full flex items-center justify-center mr-3 text-white"
                   style={{ backgroundColor: completedSections.has('shipping') ? primaryColor : 'gray' }}
                 >
@@ -304,15 +325,15 @@ export function SteppedCheckout({
               </div>
               {openSection === 'shipping' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
-            
+
             {openSection === 'shipping' && (
               <div className="px-6 pb-6">
                 <div className="space-y-4 mt-2">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("firstName")}
                         className={`w-full p-2.5 border ${errors.firstName ? 'border-red-500' : 'border-gray-300'} rounded-md`}
                       />
@@ -320,25 +341,25 @@ export function SteppedCheckout({
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("lastName")}
                         className={`w-full p-2.5 border ${errors.lastName ? 'border-red-500' : 'border-gray-300'} rounded-md`}
                       />
                       {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName.message}</p>}
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       {...register("email")}
                       className={`w-full p-2.5 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-md`}
                     />
                     {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                     <Controller
@@ -355,23 +376,23 @@ export function SteppedCheckout({
                     />
                     {errors.phoneNumber && <p className="text-xs text-red-500 mt-1">{errors.phoneNumber.message}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Account Number (Optional)</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       {...register("accountNumber")}
                       className={`w-full p-2.5 border ${errors.accountNumber ? 'border-red-500' : 'border-gray-300'} rounded-md`}
                       placeholder={t('form.ibanPlaceholder')}
                     />
                     {errors.accountNumber && <p className="text-xs text-red-500 mt-1">{errors.accountNumber.message}</p>}
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-4">
                     <div className="col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Street Name</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("streetName")}
                         className={`w-full p-2.5 border ${errors.streetName ? 'border-red-500' : 'border-gray-300'} rounded-md`}
                       />
@@ -379,20 +400,20 @@ export function SteppedCheckout({
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">House Number</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("houseNumber")}
                         className={`w-full p-2.5 border ${errors.houseNumber ? 'border-red-500' : 'border-gray-300'} rounded-md`}
                       />
                       {errors.houseNumber && <p className="text-xs text-red-500 mt-1">{errors.houseNumber.message}</p>}
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("postalCode")}
                         className={`w-full p-2.5 border ${errors.postalCode ? 'border-red-500' : 'border-gray-300'} rounded-md`}
                       />
@@ -400,15 +421,15 @@ export function SteppedCheckout({
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         {...register("city")}
                         className={`w-full p-2.5 border ${errors.city ? 'border-red-500' : 'border-gray-300'} rounded-md`}
                       />
                       {errors.city && <p className="text-xs text-red-500 mt-1">{errors.city.message}</p>}
                     </div>
                   </div>
-                  
+
                   <div className="col-span-6">
                     <div className="flex flex-col">
                       <label
@@ -433,15 +454,15 @@ export function SteppedCheckout({
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-6 flex justify-between">
-                  <button 
+                  <button
                     onClick={() => setOpenSection('cart')}
                     className="text-gray-600 hover:text-gray-800 py-2 px-4 border border-gray-300 rounded-md"
                   >
                     Back
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleSectionClick('review')}
                     className="py-2.5 px-5 text-white font-medium rounded-md"
                     style={{ backgroundColor: primaryColor }}
@@ -453,16 +474,16 @@ export function SteppedCheckout({
               </div>
             )}
           </div>
-          
+
           {/* Review & Submit Section */}
           <div>
-            <button 
+            <button
               className={`w-full px-6 py-4 flex items-center justify-between focus:outline-none ${!completedSections.has('shipping') ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => handleSectionClick('review')}
               disabled={!completedSections.has('shipping')}
             >
               <div className="flex items-center">
-                <div 
+                <div
                   className="w-8 h-8 rounded-full flex items-center justify-center mr-3 text-white bg-gray-500"
                 >
                   3
@@ -471,7 +492,7 @@ export function SteppedCheckout({
               </div>
               {openSection === 'review' ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
-            
+
             {openSection === 'review' && (
               <div className="px-6 pb-6">
                 <div className="space-y-6 mt-4">
@@ -486,7 +507,7 @@ export function SteppedCheckout({
                       <p>{formValues.phoneNumber}</p>
                     </div>
                   </div>
-                  
+
                   <div>
                     <h3 className="font-medium mb-2">Order Summary</h3>
                     <div className="space-y-2">
@@ -499,29 +520,29 @@ export function SteppedCheckout({
                           </div>
                         );
                       })}
-                      
+
                       <div className="flex justify-between pt-2 font-bold">
                         <span>Total</span>
                         <span style={{ color: primaryColor }}>€ {totalEstimatedPrice.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="p-4 bg-gray-50 rounded-md text-sm text-gray-600">
                     <p>
                       By placing this order, you agree to our Terms of Service and Privacy Policy.
                       A shipping label will be sent to your email address after order confirmation.
                     </p>
                   </div>
-                  
+
                   <div className="flex justify-between">
-                    <button 
+                    <button
                       onClick={() => setOpenSection('shipping')}
                       className="text-gray-600 hover:text-gray-800 py-2 px-4 border border-gray-300 rounded-md"
                     >
                       Back
                     </button>
-                    <button 
+                    <button
                       onClick={handleSubmit(onSubmit)}
                       className="py-3 px-6 text-white font-medium rounded-md"
                       style={{ backgroundColor: primaryColor }}

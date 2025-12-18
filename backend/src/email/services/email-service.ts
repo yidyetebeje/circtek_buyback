@@ -138,7 +138,7 @@ let emailService: EmailService;
 export const getEmailService = (): EmailService => {
   if (!emailService) {
     const resendApiKey = process.env.RESEND_API_KEY || '';
-    const defaultFromEmail = process.env.DEFAULT_FROM_EMAIL || 'noreply@example.com';
+    const defaultFromEmail = process.env.DEFAULT_FROM_EMAIL || 'onboarding@resend.dev';
     const defaultFromName = process.env.DEFAULT_FROM_NAME || 'Buyback System';
     
     if (!resendApiKey) {

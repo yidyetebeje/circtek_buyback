@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useAtom } from 'jotai';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,6 +32,9 @@ export function DefaultCheckout({
   const router = useRouter();
   const createOrderMutation = useCreateOrder();
   const t = useTranslations('Checkout');
+
+  // Track when order has been submitted to prevent showing empty cart during redirect
+  const [isOrderSubmitted, setIsOrderSubmitted] = useState(false);
 
   // Updated Zod Schema for Checkout Form Validation including enhanced address validation
   const checkoutFormSchema = z.object({
@@ -144,12 +147,12 @@ export function DefaultCheckout({
     // For now, we still process only the first item as the current backend API only supports
     // creating orders for one device at a time
     const cartItem = relevantCartItems[0] as InProgressEstimation;
-    
+
     if (!cartItem || !cartItem.deviceModel || typeof cartItem.deviceModel.id !== 'number') {
-        console.error("Device model ID is missing or invalid in the cart item.", cartItem);
-        createOrderMutation.reset(); 
-        alert(t('messages.deviceConfigError'));
-        return;
+      console.error("Device model ID is missing or invalid in the cart item.", cartItem);
+      createOrderMutation.reset();
+      alert(t('messages.deviceConfigError'));
+      return;
     }
 
     const tenantIdString = process.env.NEXT_PUBLIC_TENANT_ID;
@@ -165,11 +168,11 @@ export function DefaultCheckout({
     const shopId = parseInt(shopIdString, 10);
 
     if (isNaN(tenantId) || isNaN(shopId)) {
-        console.error("Client ID or Shop ID from env is not a valid number.");
-        alert(t('messages.invalidConfigError'));
-        return;
+      console.error("Client ID or Shop ID from env is not a valid number.");
+      alert(t('messages.invalidConfigError'));
+      return;
     }
-    
+
     const orderPayload: CreateOrderPayload = {
       deviceId: cartItem.deviceModel.id,
       deviceSnapshot: {
@@ -187,13 +190,13 @@ export function DefaultCheckout({
             const question = assignment.questionSet.questions.find(q => q.key === questionKey || String(q.id) === questionKey);
             if (question) {
               questionTextSnapshot = getLocalizedText(question.title, currentLocale, defaultLocale);
-              const option = question.options?.find((opt: any) => 
+              const option = question.options?.find((opt: any) =>
                 opt.key === answerRawValue || String(opt.id) === answerRawValue
               );
               if (option) {
                 answerTextSnapshot = getLocalizedText(option.title, currentLocale, defaultLocale);
               }
-              break; 
+              break;
             }
           }
         }
@@ -218,6 +221,9 @@ export function DefaultCheckout({
       shopId: shopId,
     };
 
+    // Mark order as submitted to prevent empty cart UI during redirect
+    setIsOrderSubmitted(true);
+
     createOrderMutation.mutate(orderPayload, {
       onSuccess: (response: CreateOrderResponseData) => {
         try {
@@ -231,6 +237,8 @@ export function DefaultCheckout({
       },
       onError: (err) => {
         console.error("Order submission caught an error:", err);
+        // Reset the submitted flag on error so user can try again
+        setIsOrderSubmitted(false);
       }
     });
   };
@@ -252,17 +260,17 @@ export function DefaultCheckout({
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const getEnhancedLocalizedText = (
-    textObj: any, 
-    locale: string, 
+    textObj: any,
+    locale: string,
     defaultLocale: string,
     debugContext?: string
   ): string => {
     if (!textObj) return '';
     if (typeof textObj === 'string') return textObj;
-    
+
     const availableLocales = typeof textObj === 'object' ? Object.keys(textObj) : [];
     let result = '';
-    
+
     // Try current locale first
     if (locale && textObj[locale]) {
       result = textObj[locale];
@@ -278,11 +286,11 @@ export function DefaultCheckout({
       result = textObj[availableLocales[0]];
       console.log(`[Language] Fallback to first available locale (${availableLocales[0]}): ${result.substring(0, 30)}${result.length > 30 ? '...' : ''}`);
     }
-    
+
     if (!result && debugContext) {
       console.log(`[Language] No localized text found for ${debugContext}. Available locales:`, availableLocales);
     }
-    
+
     return result;
   };
 
@@ -296,17 +304,17 @@ export function DefaultCheckout({
       currentLocale,
       defaultLocale
     });
-    
+
     if (!item?.answers) return [];
-    
+
     // We'll map question indices (1, 2, 3) to actual question texts
     // This approach works even when the keys are numeric indexes rather than actual question keys
     const answeredQuestions: QuestionAnswer[] = [];
-    
+
     // Loop through the questions in order, find the corresponding answer by index
     // This ensures the questions display in the correct order regardless of how they're stored
     const questions: any[] = [];
-    
+
     if (item.deviceModel?.questionSetAssignments) {
       for (const assignment of item.deviceModel.questionSetAssignments) {
         if (assignment.questionSet?.questions) {
@@ -314,17 +322,17 @@ export function DefaultCheckout({
         }
       }
     }
-    
+
     console.log(`Found ${questions.length} questions in the device model`);
-    
+
     // Now match the answers to the questions
     Object.entries(item.answers).forEach(([questionKey, answerValue]) => {
       // Find the matching question by comparing key OR numeric id string
       const question = questions.find(q => q.key === questionKey || String(q.id) === questionKey);
-      
+
       let questionText = questionKey; // Default fallback
       let answerText = String(answerValue); // Default fallback
-      
+
       if (question) {
         console.log(`[Language] Processing question:`, {
           id: question.id,
@@ -333,20 +341,20 @@ export function DefaultCheckout({
           isTitleObject: question.title && typeof question.title === 'object',
           availableLanguages: question.title && typeof question.title === 'object' ? Object.keys(question.title) : 'N/A',
         });
-        
+
         // Get the question text with enhanced localization
         questionText = getEnhancedLocalizedText(
-          question.title, 
-          currentLocale, 
+          question.title,
+          currentLocale,
           defaultLocale,
           `question (ID: ${question.id}, Key: ${question.key})`
         );
-        
+
         // Try to find the matching option
-        const option = question.options?.find((opt: any) => 
+        const option = question.options?.find((opt: any) =>
           opt.key === answerValue || String(opt.id) === answerValue
         );
-        
+
         if (option) {
           console.log(`[Language] Processing option:`, {
             id: option.id,
@@ -355,32 +363,46 @@ export function DefaultCheckout({
             isTitleObject: option.title && typeof option.title === 'object',
             availableLanguages: option.title && typeof option.title === 'object' ? Object.keys(option.title) : 'N/A',
           });
-          
+
           // Get the answer text with enhanced localization
           answerText = getEnhancedLocalizedText(
-            option.title, 
-            currentLocale, 
+            option.title,
+            currentLocale,
             defaultLocale,
             `option (ID: ${option.id}, Key: ${option.key})`
           );
         }
       }
-      
+
       // Only use default formatting if we couldn't find real text
       if (questionText === questionKey) {
         questionText = questionKey.replace(/_/g, ' ').replace(/^(\d+)$/, 'Question $1');
       }
-      
+
       // Store with original key for debugging
-      answeredQuestions.push({ 
-        question: questionText, 
+      answeredQuestions.push({
+        question: questionText,
         answer: answerText,
-        originalKey: questionKey 
+        originalKey: questionKey
       });
     });
-    
+
     return answeredQuestions;
   };
+
+  // Show loading state if order was submitted (redirecting to thank-you page)
+  // This prevents the empty cart message from flashing during navigation
+  if (isOrderSubmitted || createOrderMutation.isPending) {
+    return (
+      <div className="flex flex-col min-h-screen items-center justify-center p-4" style={{ backgroundColor: backgroundColor }}>
+        <div className="bg-white p-10 rounded-xl shadow-lg text-center max-w-md">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: primaryColor }}></div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">{t('buttons.processing')}</h2>
+          <p className="text-gray-600">{t('messages.pleaseWait') || 'Please wait...'}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (relevantCartItems.length === 0) {
     return (
@@ -388,7 +410,7 @@ export function DefaultCheckout({
         <div className="bg-white p-10 rounded-xl shadow-lg text-center max-w-md">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">{t('emptyCart.title')}</h2>
           <p className="text-gray-600 mb-8">{t('emptyCart.description')}</p>
-          <a 
+          <a
             href={`/${currentLocale}`}
             className="px-6 py-3 text-white font-semibold rounded-md hover:bg-opacity-90 transition-colors duration-150 text-sm"
             style={{ backgroundColor: primaryColor }}
@@ -399,7 +421,7 @@ export function DefaultCheckout({
       </div>
     );
   }
-  
+
   const contentBackgroundColor = backgroundColor;
 
   return (
@@ -491,15 +513,15 @@ export function DefaultCheckout({
                   {errors.city && <p className="mt-1 text-xs text-red-500">{errors.city.message}</p>}
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
                 <div>
                   <label htmlFor="stateProvince" className="block text-xs font-medium text-gray-600 mb-1">{t('form.stateProvince')}</label>
-                  <input 
-                    type="text" 
-                    id="stateProvince" 
-                    {...register("stateProvince")} 
-                    className={`block w-full p-2.5 border ${errors.stateProvince ? 'border-red-500' : 'border-gray-200'} bg-gray-50 rounded-md focus:ring-green-500 focus:border-green-500 sm:text-sm`} 
+                  <input
+                    type="text"
+                    id="stateProvince"
+                    {...register("stateProvince")}
+                    className={`block w-full p-2.5 border ${errors.stateProvince ? 'border-red-500' : 'border-gray-200'} bg-gray-50 rounded-md focus:ring-green-500 focus:border-green-500 sm:text-sm`}
                     placeholder={t('form.stateProvincePlaceholder')}
                   />
                   {errors.stateProvince && <p className="mt-1 text-xs text-red-500">{errors.stateProvince.message}</p>}
@@ -538,7 +560,7 @@ export function DefaultCheckout({
           <div className="lg:col-span-2">
             <div className="p-1">
               <h2 className="text-lg font-semibold mb-4 text-gray-700 border-b border-gray-300 pb-3">{t('sections.orderSummary').toUpperCase()}</h2>
-              
+
               {relevantCartItems.map((item) => {
                 const deviceModel = item.deviceModel;
                 const deviceName = getLocalizedText(deviceModel.title, currentLocale, defaultLocale);
@@ -549,74 +571,74 @@ export function DefaultCheckout({
 
                 return (
                   <div key={item.deviceId} className="mb-4 border border-gray-200 rounded-md p-4">
-                      <div className="flex items-start">
-                          <img src={deviceImageUrl} alt={deviceName} className="w-16 h-auto object-contain rounded-md mr-3 mt-1"/>
-                          <div className="flex-grow">
-                              <h3 className="text-base font-medium text-gray-900 mb-0.5">{deviceName}</h3>
-                              <p className="text-xs text-gray-500">
-                                  {deviceModel.brand ? getLocalizedText(deviceModel.brand.title, currentLocale, defaultLocale) : ''}
-                                  {storage !== 'N/A' ? ` | ${storage}` : ''}
-                              </p>
-                              <p className="text-sm font-semibold mt-1" style={{ color: primaryColor }}>
-                                € {item.estimatedPrice?.toFixed(2) ?? '0.00'}
-                              </p>
-                          </div>
-                          <div className="flex flex-col space-y-1 items-end ml-2">
-                              <button 
-                                  onClick={() => handleEditItem(item.deviceId)} 
-                                  className="p-1 text-gray-400 hover:text-blue-600"
-                                  title={t('buttons.editItem')}
-                              >
-                                  <Pencil size={16} />
-                              </button>
-                              <button 
-                                  onClick={() => handleRemoveItem(item.deviceId)} 
-                                  className="p-1 text-gray-400 hover:text-red-600"
-                                  title={t('buttons.removeItem')}
-                              >
-                                  <Trash2 size={16} />
-                              </button>
-                          </div>
+                    <div className="flex items-start">
+                      <img src={deviceImageUrl} alt={deviceName} className="w-16 h-auto object-contain rounded-md mr-3 mt-1" />
+                      <div className="flex-grow">
+                        <h3 className="text-base font-medium text-gray-900 mb-0.5">{deviceName}</h3>
+                        <p className="text-xs text-gray-500">
+                          {deviceModel.brand ? getLocalizedText(deviceModel.brand.title, currentLocale, defaultLocale) : ''}
+                          {storage !== 'N/A' ? ` | ${storage}` : ''}
+                        </p>
+                        <p className="text-sm font-semibold mt-1" style={{ color: primaryColor }}>
+                          € {item.estimatedPrice?.toFixed(2) ?? '0.00'}
+                        </p>
                       </div>
+                      <div className="flex flex-col space-y-1 items-end ml-2">
+                        <button
+                          onClick={() => handleEditItem(item.deviceId)}
+                          className="p-1 text-gray-400 hover:text-blue-600"
+                          title={t('buttons.editItem')}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleRemoveItem(item.deviceId)}
+                          className="p-1 text-gray-400 hover:text-red-600"
+                          title={t('buttons.removeItem')}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
 
-                      {answeredQuestions.length > 0 && (
-                          <div className="mt-3 pt-3 border-t border-gray-100" data-component-name="DefaultCheckout">
-                              <h4 className="text-xs font-medium text-gray-600 mb-1.5" data-component-name="DefaultCheckout">{t('summary.condition')}:</h4>
-                              <ul className="space-y-0.5" data-component-name="DefaultCheckout">
-                                  {answeredQuestions.map((qa, index) => {
-                                      // Skip entries where both question and answer are just numbers
-                                      const isJustNumbers = !isNaN(Number(qa.question)) && !isNaN(Number(qa.answer));
-                                      // Skip numeric-only entries, but keep entries that start with 'Question'
-                                      const isFormattedQuestion = qa.question.startsWith('Question ');
-                                      // Don't skip if either contains non-numeric content or is a formatted question
-                                      const shouldShow = isFormattedQuestion || !isJustNumbers || 
-                                          qa.question.trim() !== String(Number(qa.question)) || 
-                                          qa.answer.trim() !== String(Number(qa.answer));
-                                      
-                                      if (!shouldShow) {
-                                          console.log(`Skipping numeric-only condition item: ${qa.question}: ${qa.answer}`);
-                                          return null;
-                                      }
-                                      
-                                      console.log(`Rendering condition item ${index}:`, qa);
-                                      return (
-                                          <li key={index} className="text-xs text-gray-500" data-component-name="DefaultCheckout">
-                                              <span className="font-medium text-gray-700">{qa.question}:</span> {qa.answer}
-                                          </li>
-                                      );
-                                  }).filter(Boolean)}
-                                  {answeredQuestions.length === 0 && (
-                                      <li className="text-xs text-gray-500" data-component-name="DefaultCheckout">
-                                          {t('summary.noConditionInfo') || 'No condition information available.'}
-                                      </li>
-                                  )}
-                              </ul>
-                          </div>
-                      )}
+                    {answeredQuestions.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-100" data-component-name="DefaultCheckout">
+                        <h4 className="text-xs font-medium text-gray-600 mb-1.5" data-component-name="DefaultCheckout">{t('summary.condition')}:</h4>
+                        <ul className="space-y-0.5" data-component-name="DefaultCheckout">
+                          {answeredQuestions.map((qa, index) => {
+                            // Skip entries where both question and answer are just numbers
+                            const isJustNumbers = !isNaN(Number(qa.question)) && !isNaN(Number(qa.answer));
+                            // Skip numeric-only entries, but keep entries that start with 'Question'
+                            const isFormattedQuestion = qa.question.startsWith('Question ');
+                            // Don't skip if either contains non-numeric content or is a formatted question
+                            const shouldShow = isFormattedQuestion || !isJustNumbers ||
+                              qa.question.trim() !== String(Number(qa.question)) ||
+                              qa.answer.trim() !== String(Number(qa.answer));
+
+                            if (!shouldShow) {
+                              console.log(`Skipping numeric-only condition item: ${qa.question}: ${qa.answer}`);
+                              return null;
+                            }
+
+                            console.log(`Rendering condition item ${index}:`, qa);
+                            return (
+                              <li key={index} className="text-xs text-gray-500" data-component-name="DefaultCheckout">
+                                <span className="font-medium text-gray-700">{qa.question}:</span> {qa.answer}
+                              </li>
+                            );
+                          }).filter(Boolean)}
+                          {answeredQuestions.length === 0 && (
+                            <li className="text-xs text-gray-500" data-component-name="DefaultCheckout">
+                              {t('summary.noConditionInfo') || 'No condition information available.'}
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
                   </div>
-              );
+                );
               })}
-              
+
               <div className="mt-6 pt-4 border-t border-gray-300">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-600">{t('summary.subtotal')}</span>
@@ -628,7 +650,7 @@ export function DefaultCheckout({
                 </div>
                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
                   <span className="text-base font-semibold text-gray-800">{t('summary.total')}</span>
-                  <span className="text-lg font-bold" style={{color: primaryColor}}>€ {totalEstimatedPrice.toFixed(2)}</span>
+                  <span className="text-lg font-bold" style={{ color: primaryColor }}>€ {totalEstimatedPrice.toFixed(2)}</span>
                 </div>
               </div>
             </div>

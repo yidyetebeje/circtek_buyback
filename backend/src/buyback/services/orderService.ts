@@ -30,23 +30,19 @@ export class OrderService {
     try {
       // Create the order record and associated data
       const newOrder = await orderRepository.createOrder(params);
-      
+
       // Extract device name from snapshot for notifications
       const deviceName = (newOrder.device_snapshot as any)?.modelName || "Device";
 
-      // Async operations (fire and forget for now, consider a job queue for production)
-      this.generateShippingLabel(newOrder.id, params.sellerAddress).catch(err => console.error("Shipping label generation failed:", err));
-      this.sendConfirmationEmails(
-        newOrder.id,
-        params.sellerAddress.email,
-        {
-          orderNumber: newOrder.order_number,
-          deviceName,
-          customerName: params.sellerAddress.name,
-          estimatedPrice: Number(newOrder.estimated_price)
-        }
-      ).catch(err => console.error("Confirmation email sending failed:", err));
-      
+      // TODO: Replace fire-and-forget with proper job queue (e.g., BullMQ, AWS SQS) for production reliability
+      // These operations should be idempotent and have retry logic
+      this.generateShippingLabel(newOrder.id, params.sellerAddress, params.shopId).catch(err =>
+        console.error("[OrderService] Shipping label generation failed (will need manual retry):", err)
+      );
+
+      // Note: Email sending is handled in the controller via orderNotificationService
+      // to avoid duplicate emails
+
       return {
         ...newOrder,
       };
@@ -76,22 +72,24 @@ export class OrderService {
 
       // Create the order record and associated data
       const newOrder = await orderRepository.createAdminOrder({ ...params, status }, adminUserId);
-      
+
       // If status is PAID, create device in inventory
+      // This is a critical operation - if it fails, we should report the error clearly
       if (newOrder.status === ORDER_STATUS.PAID) {
         try {
           await deviceService.addDevice({
             imei: params.imei,
             sku: params.sku,
             serial: params.serialNumber,
-            warehouse_id: params.warehouseId, 
+            warehouse_id: params.warehouseId,
             tenant_id: newOrder.tenant_id,
             order_id: Number(newOrder.id)
           });
           console.log(`[OrderService] Device with IMEI ${params.imei} added to inventory from admin order ${newOrder.id}`);
         } catch (deviceError) {
-          // Log the error but don't fail the whole transaction for now
-          console.error(`[OrderService] Error adding device to inventory for admin order:`, deviceError);
+          // Log and throw - device creation is critical for PAID orders
+          console.error(`[OrderService] CRITICAL: Failed to add device to inventory for admin order ${newOrder.id}:`, deviceError);
+          throw new Error(`Order created but device inventory failed: ${deviceError instanceof Error ? deviceError.message : "Unknown error"}. Please manually add device or contact support.`);
         }
       }
 
@@ -153,7 +151,7 @@ export class OrderService {
     try {
       // Get the shops the user has access to (following warehouse pattern)
       const allowedShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.managed_shop_id);
-      
+
       // Get the current order to compare status changes
       const currentOrder = await orderRepository.getOrderById(params.orderId, allowedShopIds);
       if (!currentOrder) {
@@ -170,7 +168,7 @@ export class OrderService {
 
       // Update the order status
       const updatedOrder = await orderRepository.updateOrderStatus(params);
-      
+
       // If status changed to PAID, create device in inventory
       if (
         params.newStatus === ORDER_STATUS.PAID &&
@@ -186,14 +184,15 @@ export class OrderService {
             tenant_id: currentOrder.tenant_id,
             order_id: Number(params.orderId)
           });
-          
+
           console.log(`[OrderService] Device with IMEI ${params.imei} added to inventory from order ${params.orderId}`);
         } catch (deviceError) {
-          // Log the error but don't fail the whole transaction
-          console.error(`[OrderService] Error adding device to inventory:`, deviceError);
+          // Log and throw - device creation is critical for PAID status changes
+          console.error(`[OrderService] CRITICAL: Failed to add device to inventory for order ${params.orderId}:`, deviceError);
+          throw new Error(`Order status updated but device inventory failed: ${deviceError instanceof Error ? deviceError.message : "Unknown error"}. Please manually add device or contact support.`);
         }
       }
-      
+
       // If status has changed, send notifications
       if (currentOrder.status !== params.newStatus) {
         this.sendStatusUpdateNotification(
@@ -207,7 +206,7 @@ export class OrderService {
           }
         ).catch(err => console.error("Status update email sending failed:", err));
       }
-      
+
       return updatedOrder;
     } catch (error) {
       console.error(`[OrderService] Error updating order status:`, error);
@@ -229,14 +228,14 @@ export class OrderService {
       if (!order) {
         return false;
       }
-      
+
       // Check if the user has access to the order's shop using getAllowedShopIds
       const allowedShopIds = await getAllowedShopIds(user.id, user.roleSlug, user.managed_shop_id);
       if (!allowedShopIds) {
         // undefined means no restrictions (admin/client roles)
         return true;
       }
-      
+
       return allowedShopIds.includes(order.shop_id);
     } catch (error) {
       console.error(`[OrderService] Error checking order access:`, error);
@@ -248,18 +247,20 @@ export class OrderService {
    * Generate a shipping label for an order
    * @param orderId The order ID
    * @param sellerAddress The seller's address
+   * @param shopId The shop ID (required for shop-scoped Sendcloud config)
    * @returns Results of the shipping label generation
    */
   private async generateShippingLabel(
     orderId: string,
-    sellerAddress: CreateOrderParams["sellerAddress"]
+    sellerAddress: CreateOrderParams["sellerAddress"],
+    shopId: number
   ): Promise<void> {
     try {
-      // Generate the label
-      const labelInfo = await shippingService.generateAndSaveShippingLabel(orderId, sellerAddress);
-      
+      // Generate the label using shop-specific Sendcloud config
+      const labelInfo = await shippingService.generateAndSaveShippingLabel(orderId, sellerAddress, shopId);
+
       console.log(`[OrderService] Shipping label generated for order ${orderId}:`, labelInfo.trackingNumber);
-      
+
       // If needed, we could update the order or send an additional notification here
     } catch (error) {
       console.error(`[OrderService] Error generating shipping label for order ${orderId}:`, error);
@@ -286,7 +287,7 @@ export class OrderService {
     try {
       // Get the shipping details to include the label URL
       const shippingDetails = await orderRepository.getShippingDetails(orderId);
-      
+
       // Send email to customer if we have their email
       if (customerEmail) {
         await notificationService.sendOrderConfirmationEmail(
@@ -300,7 +301,7 @@ export class OrderService {
           shippingDetails?.shipping_label_url ?? undefined
         );
       }
-      
+
       // Send notification to administrators
       await notificationService.sendNewOrderAdminNotification(
         orderId,
@@ -338,7 +339,7 @@ export class OrderService {
           orderDetails
         );
       }
-      
+
       // For certain status changes, we might want to send admin notifications too
       if (newStatus === ORDER_STATUS.ARRIVED) {
         // Example: notify receiving department when a package arrives
@@ -349,30 +350,35 @@ export class OrderService {
     }
   }
 
-  async checkDeviceEligibility(params: { imei?: string; serialNumber?: string, tenant_id?: number }): Promise<{ purchasable: boolean; reason?: string }> {
+  async checkDeviceEligibility(params: { imei?: string; serialNumber?: string; tenant_id?: number }): Promise<{ purchasable: boolean; reason?: string }> {
     const { imei, serialNumber, tenant_id } = params;
 
     if (!imei && !serialNumber) {
       throw new Error("IMEI or serialNumber must be provided");
     }
 
-    // Check inventory for existing device
+    // Validate tenant_id to ensure proper tenant isolation
+    if (tenant_id === undefined || tenant_id === null) {
+      throw new Error("tenant_id is required for device eligibility check");
+    }
+
+    // Check if device is in stock via stock_device_ids table
     if (imei) {
-      const existingDevice = await deviceService.getDeviceByImei(imei, tenant_id!);
-      if (existingDevice) {
+      const isInStock = await deviceService.isDeviceInStockByImei(imei, tenant_id);
+      if (isInStock) {
         return { purchasable: false, reason: "IN_STOCK" };
       }
     }
 
     if (serialNumber) {
-      const existingDeviceBySerial = await deviceService.getDeviceBySerial(serialNumber, tenant_id!);
-      if (existingDeviceBySerial) {
+      const isInStock = await deviceService.isDeviceInStockBySerial(serialNumber, tenant_id);
+      if (isInStock) {
         return { purchasable: false, reason: "IN_STOCK" };
       }
     }
 
-    // Check for already paid orders
-    const paidOrder = await orderRepository.findPaidOrderByIdentifier({ imei, serialNumber });
+    // Check for already paid orders (with tenant isolation)
+    const paidOrder = await orderRepository.findPaidOrderByIdentifier({ imei, serialNumber, tenantId: tenant_id });
     if (paidOrder) {
       return { purchasable: false, reason: "ALREADY_PAID" };
     }

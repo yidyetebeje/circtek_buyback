@@ -13,13 +13,20 @@ import {
 } from '@/types/emailTemplates';
 import { ApiResponse, PaginatedResponse, QueryParams } from '@/lib/api/types';
 
+// Get shopId from environment variable
+const getShopId = () => {
+  const shopId = process.env.NEXT_PUBLIC_SHOP_ID;
+  return shopId ? parseInt(shopId) : 2; // Default to 2 if not found (fallback)
+};
+
 /**
  * Hook for retrieving a paginated list of email templates
  */
 export const useEmailTemplates = (params?: QueryParams & EmailTemplateListQuery) => {
+  const shopId = getShopId();
   return useQuery<PaginatedResponse<EmailTemplate>, Error>({
-    queryKey: ['emailTemplates', params],
-    queryFn: () => emailTemplateService.getEmailTemplates(params),
+    queryKey: ['emailTemplates', shopId, params],
+    queryFn: () => emailTemplateService.getEmailTemplates(shopId, params),
     placeholderData: keepPreviousData,
   });
 };
@@ -28,9 +35,10 @@ export const useEmailTemplates = (params?: QueryParams & EmailTemplateListQuery)
  * Hook for retrieving a single email template by ID
  */
 export const useEmailTemplate = (id: string) => {
+  const shopId = getShopId();
   return useQuery({
-    queryKey: ['emailTemplate', id],
-    queryFn: () => emailTemplateService.getEmailTemplateById(id),
+    queryKey: ['emailTemplate', shopId, id],
+    queryFn: () => emailTemplateService.getEmailTemplateById(id, shopId),
     enabled: !!id,
   });
 };
@@ -39,9 +47,10 @@ export const useEmailTemplate = (id: string) => {
  * Hook for retrieving email templates by type
  */
 export const useEmailTemplatesByType = (templateType: EmailTemplateType, params?: QueryParams) => {
+  const shopId = getShopId();
   return useQuery({
-    queryKey: ['emailTemplates', 'type', templateType, params],
-    queryFn: () => emailTemplateService.getEmailTemplatesByType(templateType, params),
+    queryKey: ['emailTemplates', 'type', shopId, templateType, params],
+    queryFn: () => emailTemplateService.getEmailTemplatesByType(shopId, templateType, params),
     enabled: !!templateType,
     placeholderData: keepPreviousData,
   });
@@ -51,9 +60,10 @@ export const useEmailTemplatesByType = (templateType: EmailTemplateType, params?
  * Hook for retrieving active email templates
  */
 export const useActiveEmailTemplates = (params?: QueryParams) => {
+  const shopId = getShopId();
   return useQuery({
-    queryKey: ['emailTemplates', 'active', params],
-    queryFn: () => emailTemplateService.getActiveEmailTemplates(params),
+    queryKey: ['emailTemplates', 'active', shopId, params],
+    queryFn: () => emailTemplateService.getActiveEmailTemplates(shopId, params),
     placeholderData: keepPreviousData,
   });
 };
@@ -82,9 +92,10 @@ export const useDynamicFieldsGrouped = () => {
  * Hook for searching email templates
  */
 export const useSearchEmailTemplates = (searchTerm: string, params?: QueryParams) => {
+  const shopId = getShopId();
   return useQuery({
-    queryKey: ['emailTemplates', 'search', searchTerm, params],
-    queryFn: () => emailTemplateService.searchEmailTemplates(searchTerm, params),
+    queryKey: ['emailTemplates', 'search', shopId, searchTerm, params],
+    queryFn: () => emailTemplateService.searchEmailTemplates(shopId, searchTerm, params),
     enabled: !!searchTerm,
     placeholderData: keepPreviousData,
   });
@@ -95,16 +106,17 @@ export const useSearchEmailTemplates = (searchTerm: string, params?: QueryParams
  */
 export const useCreateEmailTemplate = () => {
   const queryClient = useQueryClient();
-  
+  const shopId = getShopId();
+
   return useMutation({
-    mutationFn: (template: EmailTemplateCreateRequest) => emailTemplateService.createEmailTemplate(template),
+    mutationFn: (template: EmailTemplateCreateRequest) => emailTemplateService.createEmailTemplate({ ...template, shopId }),
     onSuccess: (_, variables) => {
       // Invalidate the email templates list query to refetch it
       queryClient.invalidateQueries({ queryKey: ['emailTemplates'] });
-      
+
       // Invalidate related queries
       if (variables.templateType) {
-        queryClient.invalidateQueries({ queryKey: ['emailTemplates', 'type', variables.templateType] });
+        queryClient.invalidateQueries({ queryKey: ['emailTemplates', 'type'] });
       }
       if (variables.isActive) {
         queryClient.invalidateQueries({ queryKey: ['emailTemplates', 'active'] });
@@ -118,17 +130,18 @@ export const useCreateEmailTemplate = () => {
  */
 export const useUpdateEmailTemplate = (id: string) => {
   const queryClient = useQueryClient();
-  
+  const shopId = getShopId();
+
   return useMutation({
-    mutationFn: (template: Partial<EmailTemplateUpdateRequest>) => emailTemplateService.updateEmailTemplate(id, template),
+    mutationFn: (template: Partial<EmailTemplateUpdateRequest>) => emailTemplateService.updateEmailTemplate(id, { ...template, shopId }),
     onSuccess: (_, variables) => {
       // Invalidate both the email templates list and the individual template query
       queryClient.invalidateQueries({ queryKey: ['emailTemplates'] });
-      queryClient.invalidateQueries({ queryKey: ['emailTemplate', id] });
-      
+      queryClient.invalidateQueries({ queryKey: ['emailTemplate', shopId, id] });
+
       // Invalidate related queries
       if (variables.templateType) {
-        queryClient.invalidateQueries({ queryKey: ['emailTemplates', 'type', variables.templateType] });
+        queryClient.invalidateQueries({ queryKey: ['emailTemplates', 'type'] });
       }
       queryClient.invalidateQueries({ queryKey: ['emailTemplates', 'active'] });
     },
@@ -140,9 +153,10 @@ export const useUpdateEmailTemplate = (id: string) => {
  */
 export const useDeleteEmailTemplate = () => {
   const queryClient = useQueryClient();
-  
+  const shopId = getShopId();
+
   return useMutation({
-    mutationFn: (id: string) => emailTemplateService.deleteEmailTemplate(id),
+    mutationFn: (id: string) => emailTemplateService.deleteEmailTemplate(id, shopId),
     onSuccess: () => {
       // Invalidate the email templates list query to refetch it
       queryClient.invalidateQueries({ queryKey: ['emailTemplates'] });
@@ -155,13 +169,14 @@ export const useDeleteEmailTemplate = () => {
  * Hook for populating/previewing an email template
  */
 export const usePopulateEmailTemplate = () => {
+  const shopId = getShopId();
   return useMutation<
     ApiResponse<EmailTemplatePopulatedResponse>,
     Error,
     EmailTemplatePopulateRequest
   >({
-    mutationFn: (request: EmailTemplatePopulateRequest) => 
-      emailTemplateService.populateEmailTemplate(request),
+    mutationFn: (request: EmailTemplatePopulateRequest) =>
+      emailTemplateService.populateEmailTemplate({ ...request, shopId }),
     onError: (error) => {
       console.error("Error populating email template:", error);
     }
@@ -173,14 +188,15 @@ export const usePopulateEmailTemplate = () => {
  */
 export const useToggleEmailTemplateStatus = () => {
   const queryClient = useQueryClient();
-  
+  const shopId = getShopId();
+
   return useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => 
-      emailTemplateService.toggleEmailTemplateStatus(id, isActive),
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      emailTemplateService.toggleEmailTemplateStatus(id, shopId, isActive),
     onSuccess: (_, variables) => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['emailTemplates'] });
-      queryClient.invalidateQueries({ queryKey: ['emailTemplate', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['emailTemplate', shopId, variables.id] });
       queryClient.invalidateQueries({ queryKey: ['emailTemplates', 'active'] });
     },
   });
@@ -191,10 +207,11 @@ export const useToggleEmailTemplateStatus = () => {
  */
 export const useDuplicateEmailTemplate = () => {
   const queryClient = useQueryClient();
-  
+  const shopId = getShopId();
+
   return useMutation({
-    mutationFn: ({ id, newName }: { id: string; newName: string }) => 
-      emailTemplateService.duplicateEmailTemplate(id, newName),
+    mutationFn: ({ id, newName }: { id: string; newName: string }) =>
+      emailTemplateService.duplicateEmailTemplate(id, shopId, newName),
     onSuccess: () => {
       // Invalidate the email templates list query to refetch it
       queryClient.invalidateQueries({ queryKey: ['emailTemplates'] });
@@ -210,9 +227,10 @@ export const useDuplicateEmailTemplate = () => {
  */
 export const useCreateSampleTemplates = () => {
   const queryClient = useQueryClient();
-  
+  const shopId = getShopId();
+
   return useMutation({
-    mutationFn: () => emailTemplateService.createSampleTemplates(),
+    mutationFn: () => emailTemplateService.createSampleTemplates(shopId),
     onSuccess: () => {
       // Invalidate all email template queries to refetch them
       queryClient.invalidateQueries({ queryKey: ['emailTemplates'] });
@@ -222,4 +240,4 @@ export const useCreateSampleTemplates = () => {
       console.error("Error creating sample templates:", error);
     }
   });
-}; 
+};

@@ -32,7 +32,9 @@
         "userManagement": "Gestion des Utilisateurs",
         "buyDevice": "Acheter un appareil",
         "stock": "Stock",
-        "locations": "Emplacements"
+        "locations": "Emplacements",
+        "shippingSettings": "Paramètres d'expédition",
+        "storeTransfers": "Transferts de magasin"
     },
     "CategoryVariants": {
         "getQuote": "Obtenir un Devis",
@@ -85,7 +87,7 @@
         "variants": {
             "classicSideBySide": "Classique Côte à Côte",
             "classicSideBySideDescription": "Mise en page de commande traditionnelle avec formulaire à gauche et résumé de commande à droite.",
-            "multiStepFlow": "Flux Multi-Étapes", 
+            "multiStepFlow": "Flux Multi-Étapes",
             "multiStepFlowDescription": "Flux de commande progressif avec panier, expédition et étapes de révision.",
             "minimalistDesign": "Design Minimaliste",
             "minimalistDesignDescription": "Commande propre et rationalisée avec des champs simplifiés et une hiérarchie visuelle.",
@@ -109,7 +111,7 @@
             "accountNumberPlaceholder": "ex. FR7630006000011234567890189",
             "firstName": "Prénom",
             "firstNamePlaceholder": "Prénom",
-            "lastName": "Nom de Famille", 
+            "lastName": "Nom de Famille",
             "lastNamePlaceholder": "Nom de famille",
             "streetName": "Nom de Rue",
             "streetNamePlaceholder": "Nom de rue",
@@ -162,7 +164,7 @@
         },
         "steps": {
             "cart": "Panier",
-            "shipping": "Livraison", 
+            "shipping": "Livraison",
             "review": "Révision",
             "reviewAndComplete": "Réviser & Finaliser la Commande"
         },
@@ -172,6 +174,7 @@
             "configurationError": "La soumission de commande a échoué en raison d'une erreur de configuration. Veuillez contacter le support.",
             "invalidConfigError": "La soumission de commande a échoué en raison d'une configuration invalide. Veuillez contacter le support.",
             "orderError": "Impossible de soumettre la commande. Veuillez réessayer.",
+            "pleaseWait": "Veuillez patienter pendant que nous traitons votre commande...",
             "termsAndConditions": "En finalisant votre commande, vous acceptez nos Conditions Générales. Nous enverrons un e-mail de confirmation avec une étiquette d'expédition à votre adresse e-mail.",
             "termsAndConditionsSimple": "En passant cette commande, vous acceptez nos Conditions de Service et notre Politique de Confidentialité. Une étiquette d'expédition sera envoyée à votre adresse e-mail après confirmation de commande.",
             "termsAndConditionsShort": "En passant la commande, vous acceptez nos conditions générales."
@@ -179,7 +182,7 @@
         "validation": {
             "emailRequired": "L'e-mail est requis",
             "emailInvalid": "Adresse e-mail invalide",
-            "phoneRequired": "Le numéro de téléphone est requis", 
+            "phoneRequired": "Le numéro de téléphone est requis",
             "phoneInvalid": "Numéro de téléphone invalide",
             "ibanInvalid": "Format IBAN invalide",
             "firstNameRequired": "Le prénom est requis",

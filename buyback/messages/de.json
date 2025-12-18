@@ -32,7 +32,9 @@
         "userManagement": "Benutzerverwaltung",
         "buyDevice": "Gerät kaufen",
         "stock": "Lager",
-        "locations": "Standorte"
+        "locations": "Standorte",
+        "shippingSettings": "Versandeinstellungen",
+        "storeTransfers": "Shop-Übertragungen"
     },
     "CategoryVariants": {
         "getQuote": "Angebot Erhalten",
@@ -85,7 +87,7 @@
         "variants": {
             "classicSideBySide": "Klassisch Nebeneinander",
             "classicSideBySideDescription": "Traditionelles Checkout-Layout mit Formular links und Bestellübersicht rechts.",
-            "multiStepFlow": "Mehrstufiger Ablauf", 
+            "multiStepFlow": "Mehrstufiger Ablauf",
             "multiStepFlowDescription": "Progressiver Checkout-Ablauf mit Warenkorb, Versand und Überprüfungsschritten.",
             "minimalistDesign": "Minimalistisches Design",
             "minimalistDesignDescription": "Sauberes, stromlinienförmiges Checkout mit vereinfachten Feldern und visueller Hierarchie.",
@@ -109,7 +111,7 @@
             "accountNumberPlaceholder": "z.B. DE89370400440532013000",
             "firstName": "Vorname",
             "firstNamePlaceholder": "Vorname",
-            "lastName": "Nachname", 
+            "lastName": "Nachname",
             "lastNamePlaceholder": "Nachname",
             "streetName": "Straßenname",
             "streetNamePlaceholder": "Straßenname",
@@ -162,7 +164,7 @@
         },
         "steps": {
             "cart": "Warenkorb",
-            "shipping": "Versand", 
+            "shipping": "Versand",
             "review": "Überprüfung",
             "reviewAndComplete": "Überprüfen & Bestellung Abschließen"
         },
@@ -172,6 +174,7 @@
             "configurationError": "Bestellungsübermittlung fehlgeschlagen aufgrund eines Konfigurationsfehlers. Bitte kontaktieren Sie den Support.",
             "invalidConfigError": "Bestellungsübermittlung fehlgeschlagen aufgrund einer ungültigen Konfiguration. Bitte kontaktieren Sie den Support.",
             "orderError": "Bestellung konnte nicht übermittelt werden. Bitte versuchen Sie es erneut.",
+            "pleaseWait": "Bitte warten Sie, während wir Ihre Bestellung verarbeiten...",
             "termsAndConditions": "Durch den Abschluss Ihrer Bestellung stimmen Sie unseren Allgemeinen Geschäftsbedingungen zu. Wir senden eine Bestätigungs-E-Mail zusammen mit einem Versandetikett an Ihre E-Mail-Adresse.",
             "termsAndConditionsSimple": "Durch die Aufgabe dieser Bestellung stimmen Sie unseren Nutzungsbedingungen und Datenschutzrichtlinien zu. Ein Versandetikett wird nach der Bestellbestätigung an Ihre E-Mail-Adresse gesendet.",
             "termsAndConditionsShort": "Durch die Aufgabe der Bestellung stimmen Sie unseren Allgemeinen Geschäftsbedingungen zu."
@@ -179,7 +182,7 @@
         "validation": {
             "emailRequired": "E-Mail ist erforderlich",
             "emailInvalid": "Ungültige E-Mail-Adresse",
-            "phoneRequired": "Telefonnummer ist erforderlich", 
+            "phoneRequired": "Telefonnummer ist erforderlich",
             "phoneInvalid": "Ungültige Telefonnummer",
             "ibanInvalid": "Ungültiges IBAN-Format",
             "firstNameRequired": "Vorname ist erforderlich",
