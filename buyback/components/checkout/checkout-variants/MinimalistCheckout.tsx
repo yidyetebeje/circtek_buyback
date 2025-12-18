@@ -137,11 +137,11 @@ export function MinimalistCheckout({
     }
 
 
-    const tenantIdString = process.env.NEXT_PUBLIC_TENANT_ID;
     const shopIdString = process.env.NEXT_PUBLIC_SHOP_ID;
+    const tenantIdString = process.env.NEXT_PUBLIC_TENANT_ID;
 
-    if (!tenantIdString || !shopIdString) {
-      console.error("Client ID or Shop ID is not configured in environment variables.");
+    if (!shopIdString || !tenantIdString) {
+      console.error("Tenant ID or Shop ID is not configured in environment variables.");
       alert(t('messages.configurationError'));
       return;
     }
@@ -149,8 +149,8 @@ export function MinimalistCheckout({
     const tenantId = parseInt(tenantIdString, 10);
     const shopId = parseInt(shopIdString, 10);
 
-    if (isNaN(tenantId) || isNaN(shopId)) {
-      console.error("Client ID or Shop ID from env is not a valid number.");
+    if (isNaN(shopId) || isNaN(tenantId)) {
+      console.error("Tenant ID or Shop ID from env is not a valid number.");
       alert(t('messages.invalidConfigError'));
       return;
     }
@@ -198,6 +198,7 @@ export function MinimalistCheckout({
         phoneNumber: data.phoneNumber,
         email: data.email,
       },
+
       tenantId: tenantId,
       shopId: shopId,
     };
