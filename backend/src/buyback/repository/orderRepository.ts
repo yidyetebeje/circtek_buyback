@@ -507,18 +507,33 @@ export const orderRepository = {
     const { orderId, newStatus, changedByUserId, notes, finalPrice, imei, sku, warehouseId, serialNumber } = params;
 
     return await db.transaction(async (tx) => {
+      // Build update object conditionally - only include fields with actual values
+      // This prevents Drizzle from including undefined fields in the SQL query
+      const updateData: Record<string, any> = {
+        status: newStatus,
+        updated_at: new Date()
+      };
+
+      if (finalPrice !== undefined) {
+        updateData.final_price = String(finalPrice);
+      }
+      if (imei) {
+        updateData.imei = imei;
+      }
+      if (sku) {
+        updateData.sku = sku;
+      }
+      if (serialNumber) {
+        updateData.serial_number = serialNumber;
+      }
+      if (notes) {
+        updateData.admin_notes = notes;
+      }
+
       // Update the order status
       await tx
         .update(orders)
-        .set({
-          status: newStatus,
-          final_price: finalPrice !== undefined ? String(finalPrice) : undefined,
-          imei: imei || undefined,
-          sku: sku || undefined,
-          serial_number: serialNumber || undefined,
-          admin_notes: notes || undefined,
-          updated_at: new Date()
-        })
+        .set(updateData)
         .where(eq(orders.id, orderId));
 
       // Get the updated order
