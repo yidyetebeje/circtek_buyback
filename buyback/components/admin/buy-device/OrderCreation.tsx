@@ -17,9 +17,18 @@ interface OrderCreationProps {
   answers: Record<string, string>;
   finalPrice: number;
   shopId: number;
-  onOrderCreated: () => void;
+  onOrderCreated: (orderData: CreatedOrderData) => void;
   onBack: () => void;
   locale: string;
+}
+
+// Order data returned after creation for reward modal
+export interface CreatedOrderData {
+  orderId: string;
+  orderNumber?: string;
+  sellerName: string;
+  sellerEmail: string;
+  finalPrice: number;
 }
 
 interface OrderFormData {
@@ -28,13 +37,13 @@ interface OrderFormData {
   lastName: string;
   email: string;
   phone: string;
-  
+
   // Address Information
   street: string;
   city: string;
   postalCode: string;
   country: string;
-  
+
   // Order Notes
   notes: string;
 
@@ -42,14 +51,14 @@ interface OrderFormData {
   sku: string;
 }
 
-export function OrderCreation({ 
-  testedDevice, 
-  product, 
-  answers, 
-  finalPrice, 
+export function OrderCreation({
+  testedDevice,
+  product,
+  answers,
+  finalPrice,
   shopId,
-  onOrderCreated, 
-  onBack 
+  onOrderCreated,
+  onBack
 }: OrderCreationProps) {
   const [formData, setFormData] = useState<OrderFormData>({
     firstName: '',
@@ -69,8 +78,15 @@ export function OrderCreation({
       const response = await orderService.createAdminOrder(orderData);
       return response.data;
     },
-    onSuccess: () => {
-      onOrderCreated();
+    onSuccess: (data) => {
+      // Pass order data to parent for reward modal
+      onOrderCreated({
+        orderId: data?.orderId || '',
+        orderNumber: data?.orderNumber,
+        sellerName: `${formData.firstName} ${formData.lastName}`,
+        sellerEmail: formData.email,
+        finalPrice: finalPrice,
+      });
     },
     onError: (error) => {
       console.error('Error creating order:', error);
@@ -87,11 +103,11 @@ export function OrderCreation({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields
     const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'street', 'city', 'postalCode', 'sku'];
     const missingFields = requiredFields.filter(field => !formData[field as keyof OrderFormData]);
-    
+
     if (missingFields.length > 0) {
       toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
       return;
@@ -119,11 +135,11 @@ export function OrderCreation({
         model_image: product.model_image as unknown,
         base_price: product.base_price as unknown
       },
-      
+
       // Pricing
       estimatedPrice: finalPrice,
       finalPrice: finalPrice,
-      
+
       // Condition Assessment
       conditionAnswers: Object.entries(answers).map(([questionKey, answerValue]) => ({
         questionKey,
@@ -131,7 +147,7 @@ export function OrderCreation({
         answerValue,
         answerTextSnapshot: answerValue
       })),
-      
+
       // Customer Information
       sellerAddress: {
         name: `${formData.firstName} ${formData.lastName}`,
@@ -143,12 +159,12 @@ export function OrderCreation({
         phoneNumber: formData.phone,
         email: formData.email
       },
-      
+
       // Additional Information
       sellerNotes: formData.notes,
-      
+
       // Shop/Client Information
-  
+
       shopId: shopId,
       status: 'PAID' as const,
       warehouseId: testedDevice.warehouseId,
@@ -156,7 +172,7 @@ export function OrderCreation({
       imei: testedDevice.imei,
       serialNumber: testedDevice.serial,
       sku: formData.sku,
-      
+
       // Testing Information
       testingInfo: {
         deviceTransactionId: String(testedDevice.deviceTransactionId),
@@ -182,7 +198,7 @@ export function OrderCreation({
       {/* Order Summary */}
       <div className="bg-gray-50 rounded-lg p-6">
         <h3 className="font-semibold text-gray-900 mb-4">Order Summary</h3>
-        
+
         <div className="grid md:grid-cols-2 gap-6">
           {/* Device Info */}
           <div>
@@ -221,7 +237,7 @@ export function OrderCreation({
             <User className="w-5 h-5" />
             Customer Information
           </h3>
-          
+
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -234,7 +250,7 @@ export function OrderCreation({
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Last Name *
@@ -246,7 +262,7 @@ export function OrderCreation({
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email *
@@ -258,7 +274,7 @@ export function OrderCreation({
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Phone *
@@ -278,7 +294,7 @@ export function OrderCreation({
             <MapPin className="w-5 h-5" />
             Address Information
           </h3>
-          
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -291,7 +307,7 @@ export function OrderCreation({
                 required
               />
             </div>
-            
+
             <div className="grid md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -304,7 +320,7 @@ export function OrderCreation({
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Postal Code *
@@ -316,7 +332,7 @@ export function OrderCreation({
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Country
@@ -363,9 +379,9 @@ export function OrderCreation({
             <ArrowLeft className="w-4 h-4" />
             Back to Price Confirmation
           </Button>
-          
-          <Button 
-            type="submit" 
+
+          <Button
+            type="submit"
             disabled={createOrderMutation.isPending}
             className="px-8 flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
           >
