@@ -166,16 +166,15 @@ export class OrderService {
         throw new Error(`IMEI, SKU, warehouse ID, and final price are required when marking an order as PAID`);
       }
 
-      // Update the order status
-      const updatedOrder = await orderRepository.updateOrderStatus(params);
-
-      // If status changed to PAID, create device in inventory
+      // IMPORTANT: Create device BEFORE updating order status
+      // The orders table has a foreign key constraint on (tenant_id, imei) that references devices table
+      // So the device must exist before we can set the IMEI on the order
       if (
         params.newStatus === ORDER_STATUS.PAID &&
         params.imei && params.sku && params.warehouseId
       ) {
         try {
-          // Add the device to inventory
+          // Add the device to inventory FIRST
           await deviceService.addDevice({
             imei: params.imei,
             sku: params.sku,
@@ -189,9 +188,12 @@ export class OrderService {
         } catch (deviceError) {
           // Log and throw - device creation is critical for PAID status changes
           console.error(`[OrderService] CRITICAL: Failed to add device to inventory for order ${params.orderId}:`, deviceError);
-          throw new Error(`Order status updated but device inventory failed: ${deviceError instanceof Error ? deviceError.message : "Unknown error"}. Please manually add device or contact support.`);
+          throw new Error(`Failed to add device to inventory: ${deviceError instanceof Error ? deviceError.message : "Unknown error"}. Order status was not changed.`);
         }
       }
+
+      // Update the order status AFTER device is created (to satisfy FK constraint)
+      const updatedOrder = await orderRepository.updateOrderStatus(params);
 
       // If status has changed, send notifications
       if (currentOrder.status !== params.newStatus) {
