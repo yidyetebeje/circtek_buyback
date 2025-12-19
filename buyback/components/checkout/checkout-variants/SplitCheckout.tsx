@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'react-phone-number-input';
-import { isValidIBAN } from 'ibantools';
+
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Pencil, Trash2, ChevronRight, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -44,11 +44,6 @@ export function SplitCheckout({
     phoneNumber: z.string().trim()
       .min(1, { message: t('validation.phoneRequired') })
       .refine(isValidPhoneNumber, { message: t('validation.phoneInvalid') }),
-    accountNumber: z.string().trim()
-      .min(1, { message: t('validation.accountNumberRequired') })
-      .refine((value) => isValidIBAN(value), {
-        message: t('validation.ibanInvalid')
-      }),
     firstName: z.string().trim()
       .min(1, { message: t('validation.firstNameRequired') })
       .max(50, { message: t('validation.firstNameTooLong') })
@@ -73,10 +68,6 @@ export function SplitCheckout({
       .min(1, { message: t('validation.cityRequired') })
       .max(100, { message: t('validation.cityTooLong') })
       .regex(/^[a-zA-ZÀ-ÿ\s\-']+$/, { message: t('validation.cityInvalidChars') }),
-    stateProvince: z.string().trim()
-      .min(1, { message: t('validation.stateProvinceRequired') })
-      .max(100, { message: t('validation.stateProvinceTooLong') })
-      .regex(/^[a-zA-ZÀ-ÿ\s\-']+$/, { message: t('validation.stateProvinceInvalidChars') }),
     country: z.string().trim().min(1, { message: t('validation.countryRequired') }),
   }), [t]);
 
@@ -94,14 +85,12 @@ export function SplitCheckout({
     defaultValues: {
       email: '',
       phoneNumber: '',
-      accountNumber: '',
       firstName: '',
       lastName: '',
       streetName: '',
       houseNumber: '',
       postalCode: '',
       city: '',
-      stateProvince: '',
       country: '',
     },
     mode: 'onChange'
@@ -206,7 +195,7 @@ export function SplitCheckout({
         name: `${data.firstName} ${data.lastName}`,
         street1: `${data.streetName} ${data.houseNumber}`,
         city: data.city,
-        stateProvince: data.stateProvince || '',
+        // stateProvince removed
         postalCode: data.postalCode,
         countryCode: data.country,
         phoneNumber: data.phoneNumber,
@@ -438,16 +427,7 @@ export function SplitCheckout({
           {errors.phoneNumber && <p className="text-xs text-red-500 mt-1">{errors.phoneNumber.message}</p>}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.accountNumberOptional')}</label>
-          <input
-            type="text"
-            {...register("accountNumber")}
-            className={`w-full p-2 border ${errors.accountNumber ? 'border-red-500' : 'border-gray-300'} rounded-md`}
-            placeholder={t('form.ibanPlaceholder')}
-          />
-          {errors.accountNumber && <p className="text-xs text-red-500 mt-1">{errors.accountNumber.message}</p>}
-        </div>
+
 
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-2">
@@ -496,18 +476,7 @@ export function SplitCheckout({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <label htmlFor="stateProvince" className="block text-sm font-medium text-gray-700 mb-1">
-              State / Province
-            </label>
-            <input
-              type="text"
-              id="stateProvince"
-              {...register("stateProvince")}
-              className={`w-full p-2 border ${errors.stateProvince ? 'border-red-500' : 'border-gray-300'} rounded-md`}
-            />
-            {errors.stateProvince && <p className="text-xs text-red-500 mt-1">{errors.stateProvince.message}</p>}
-          </div>
+
 
           <div>
             <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
@@ -584,10 +553,10 @@ export function SplitCheckout({
         <p>{watchedFormValues.firstName} {watchedFormValues.lastName}</p>
         <p>{watchedFormValues.streetName} {watchedFormValues.houseNumber}</p>
         <p>{watchedFormValues.postalCode}, {watchedFormValues.city}</p>
-        <p>{watchedFormValues.stateProvince || ''}, {watchedFormValues.country}</p>
+        <p>{watchedFormValues.country}</p>
         <p>Email: {watchedFormValues.email}</p>
         <p>Phone: {watchedFormValues.phoneNumber}</p>
-        {watchedFormValues.accountNumber && <p>Account: {watchedFormValues.accountNumber}</p>}
+
         <button onClick={() => setCurrentStep('info')} className="text-sm text-blue-600 hover:underline mt-2">{t('buttons.edit')} Information</button>
       </div>
 

@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'react-phone-number-input';
-import { isValidIBAN } from 'ibantools';
+
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Pencil, Trash2, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -40,11 +40,6 @@ export function MinimalistCheckout({
     phoneNumber: z.string().trim()
       .min(1, { message: t('validation.phoneRequired') })
       .refine(isValidPhoneNumber, { message: t('validation.phoneInvalid') }),
-    accountNumber: z.string().trim()
-      .min(1, { message: t('validation.accountNumberRequired') })
-      .refine((value) => isValidIBAN(value), {
-        message: t('validation.ibanInvalid')
-      }),
     firstName: z.string().trim()
       .min(1, { message: t('validation.firstNameRequired') })
       .max(50, { message: t('validation.firstNameTooLong') })
@@ -69,10 +64,6 @@ export function MinimalistCheckout({
       .min(1, { message: t('validation.cityRequired') })
       .max(100, { message: t('validation.cityTooLong') })
       .regex(/^[a-zA-ZÀ-ÿ\s\-']+$/, { message: t('validation.cityInvalidChars') }),
-    stateProvince: z.string().trim()
-      .min(1, { message: t('validation.stateProvinceRequired') })
-      .max(100, { message: t('validation.stateProvinceTooLong') })
-      .regex(/^[a-zA-ZÀ-ÿ\s\-']+$/, { message: t('validation.stateProvinceInvalidChars') }),
     country: z.string().trim().min(1, { message: t('validation.countryRequired') }),
   }), [t]);
 
@@ -89,14 +80,12 @@ export function MinimalistCheckout({
     defaultValues: {
       email: '',
       phoneNumber: '',
-      accountNumber: '',
       firstName: '',
       lastName: '',
       streetName: '',
       houseNumber: '',
       postalCode: '',
       city: '',
-      stateProvince: '',
       country: '',
     },
     mode: 'onChange'
@@ -192,7 +181,7 @@ export function MinimalistCheckout({
         name: `${data.firstName} ${data.lastName}`,
         street1: data.streetName + ' ' + data.houseNumber,
         city: data.city,
-        stateProvince: data.stateProvince || '',
+        // stateProvince removed
         postalCode: data.postalCode,
         countryCode: data.country,
         phoneNumber: data.phoneNumber,
@@ -440,16 +429,7 @@ export function MinimalistCheckout({
                 {errors.phoneNumber && <p className="text-xs text-red-500 mt-1">{errors.phoneNumber.message}</p>}
               </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.accountNumberOptional')}</label>
-                <input
-                  type="text"
-                  {...register("accountNumber")}
-                  className={`w-full p-2.5 border ${errors.accountNumber ? 'border-red-500' : 'border-gray-300'} rounded-md bg-gray-50`}
-                  placeholder={t('form.ibanPlaceholder')}
-                />
-                {errors.accountNumber && <p className="text-xs text-red-500 mt-1">{errors.accountNumber.message}</p>}
-              </div>
+
 
               <div className="md:col-span-2 grid grid-cols-3 gap-x-4">
                 <div className="col-span-2">
@@ -499,16 +479,7 @@ export function MinimalistCheckout({
               </div>
 
               <div className="md:col-span-2 grid grid-cols-2 gap-x-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.stateProvince')}</label>
-                  <input
-                    type="text"
-                    {...register("stateProvince")}
-                    className={`w-full p-2.5 border ${errors.stateProvince ? 'border-red-500' : 'border-gray-300'} rounded-md bg-gray-50`}
-                    placeholder={t('form.stateProvincePlaceholder')}
-                  />
-                  {errors.stateProvince && <p className="text-xs text-red-500 mt-1">{errors.stateProvince.message}</p>}
-                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('form.country')}</label>
                   <select

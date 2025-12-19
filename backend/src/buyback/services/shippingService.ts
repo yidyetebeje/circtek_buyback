@@ -14,7 +14,7 @@ interface ShippingAddress {
   street1: string;
   street2?: string;
   city: string;
-  stateProvince: string;
+  stateProvince?: string;
   postalCode: string;
   countryCode: string;
   phoneNumber?: string;
@@ -169,7 +169,7 @@ export class ShippingService {
           country_code: sellerAddress.countryCode,
           // Note: state_province_code must be ISO state code, not city name!
           // Only set if it's a valid state code (2-3 chars)
-          state_province_code: sellerAddress.stateProvince?.length <= 3 ? sellerAddress.stateProvince : undefined,
+          state_province_code: (sellerAddress.stateProvince?.length ?? 0) <= 3 ? sellerAddress.stateProvince : undefined,
         },
         // TO: Warehouse address from Sendcloud sender/return address configuration
         to_address: warehouseAddress,

@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { ImageUpload } from '@/components/admin/image-upload';
 import { Loader2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Define shop form schema
 const shopFormSchema = z.object({
@@ -39,7 +40,7 @@ const shopFormSchema = z.object({
       return phoneRegex.test(val);
     }, { message: "Please enter a valid phone number (at least 10 digits)" }),
   logo: z.string().max(255, { message: "Logo URL must be 255 characters or less." }),
-  active: z.boolean().optional(),
+
 });
 
 // Export the type derived from the schema
@@ -62,9 +63,7 @@ export function ShopForm({
   onLogoUpload,
   onLogoRemove,
 }: ShopFormProps) {
-  if(initialData){
-    initialData.active = initialData.active ? true : false;
-  }
+
   console.log(initialData);
   const form = useForm<ShopFormValues>({
     resolver: zodResolver(shopFormSchema),
@@ -73,7 +72,7 @@ export function ShopForm({
       organization: initialData?.organization || '',
       phone: initialData?.phone || '',
       logo: initialData?.logo || '',
-      active: initialData?.active ?? true,
+
     }
   });
 
@@ -124,125 +123,101 @@ export function ShopForm({
   return (
     <Form {...form}>
       <form onSubmit={onFormSubmit} className="space-y-6">
-        <div className="grid gap-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-medium text-muted-foreground">Shop Name *</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="e.g., My Shop" 
-                      {...field} 
-                      disabled={isLoading} 
-                      className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+        <div className="grid gap-8">
+          <div className="grid gap-8 grid-cols-1 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-8">
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>General Information</CardTitle>
+                  <CardDescription>
+                    Basic details about the shop.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Shop Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Downtown Electronics" {...field} disabled={isLoading} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="organization"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-medium text-muted-foreground">Organization *</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="e.g., Company Inc." 
-                      {...field} 
-                      disabled={isLoading} 
-                      className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    <FormField
+                      control={form.control}
+                      name="organization"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Organization</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., CircTek BV" {...field} disabled={isLoading} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Client ID and Owner ID fields removed as they are auto-set on creation */}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="font-medium text-muted-foreground">Phone Number *</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="e.g., +1 (123) 456-7890" 
-                      {...field} 
-                      disabled={isLoading} 
-                      className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="active"
-              render={({ field }) => (
-                <FormItem className="flex flex-col xs:flex-row xs:items-start justify-between rounded-lg border p-4 shadow-sm gap-3 xs:gap-4">
-                  <div className="space-y-1">
-                    <FormLabel className="font-medium text-muted-foreground">Active Status</FormLabel>
-                    <FormDescription className="text-xs text-gray-500">
-                      Whether this shop is active and visible to users
-                    </FormDescription>
                   </div>
-                  <FormControl>
-                    <div className="flex items-center space-x-2 xs:mt-1">
-                      <input
-                        type="checkbox"
-                        checked={field.value}
-                        onChange={field.onChange}
-                        disabled={isLoading}
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                      />
-                    </div>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            <FormField
-              control={form.control}
-              name="logo"
-              render={() => (
-                <FormItem className="space-y-3">
-                  <FormLabel className="font-medium">Shop Logo {!initialData?.id && <span className="text-red-500">*</span>}</FormLabel>
-                  <FormControl>
-                    <ImageUpload 
-                      initialImage={logoUrl}
-                      onImageUpload={handleLogoUpload}
-                      onImageRemove={handleLogoRemove} 
-                      disabled={isLoading}
-                      aspectRatio="square"
-                    />
-                  </FormControl>
-                  <FormDescription className="text-xs text-gray-500 mt-2">
-                    Upload a logo for the shop (recommended size: 512x512px)
-                    {!initialData?.id && <span className="text-red-500"> - Required for new shops</span>}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem className="max-w-[50%]">
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="+31 6 12345678" {...field} disabled={isLoading} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            </div>
 
-            {/* Shop Icon field removed */}
+            <div className="space-y-8">
+              <Card className="h-full">
+                <CardHeader>
+                  <CardTitle>Branding</CardTitle>
+                  <CardDescription>
+                    Upload the shop's logo.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FormField
+                    control={form.control}
+                    name="logo"
+                    render={() => (
+                      <FormItem>
+                        <FormControl>
+                          <ImageUpload
+                            initialImage={logoUrl}
+                            onImageUpload={handleLogoUpload}
+                            onImageRemove={handleLogoRemove}
+                            disabled={isLoading}
+                            aspectRatio="wide"
+                            className="w-full"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <FormDescription>
+                          Recommended size: 512x512px.
+                          {!initialData?.id && <span className="text-red-500 block">Required for new shops.</span>}
+                        </FormDescription>
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row sm:justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading} className="w-full sm:w-auto">
             Cancel

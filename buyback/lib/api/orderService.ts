@@ -29,7 +29,7 @@ interface SellerAddress {
   street1: string;
   street2?: string;
   city: string;
-  stateProvince: string;
+  stateProvince?: string;
   postalCode: string;
   countryCode: string; // ISO 3166-1 alpha-2 code
   phoneNumber?: string;
@@ -80,13 +80,13 @@ export interface OrderListItem {
   id: string;
   order_number: string;
   device_id: number;
-device_snapshot: DeviceSnapshot; // Re-using existing DeviceSnapshot
+  device_snapshot: DeviceSnapshot; // Re-using existing DeviceSnapshot
   estimated_price: string; // As per doc, repository returns string
   final_price?: string;
   status: string; // OrderStatus enum
   created_at: string; // date-time
   updated_at: string; // date-time
-  seller_name?: string; 
+  seller_name?: string;
   shop?: ShopInfo;
 }
 
@@ -123,23 +123,23 @@ export interface ShippingInfo {
 }
 
 export interface AdminOrderDetail {
-    id: string;
-    order_number: string;
-    device_id: number;
-    device_snapshot: DeviceSnapshot;
-    estimated_price: number; // Assuming conversion to number here, or keep as string
-    final_price?: number;
-    status: string;
-    created_at: string;
-    updated_at: string;
-    condition_answers: ConditionAnswer[];
-    shipping: ShippingInfo;
-    seller_notes?: string;
-    tenant_id: number;
-    shop_id: number;
-    shop?: ShopInfo;
-    status_history?: { status: string; changed_at: string; notes?: string; changed_by_user_name?: string }[];
-    admin_notes?: string;
+  id: string;
+  order_number: string;
+  device_id: number;
+  device_snapshot: DeviceSnapshot;
+  estimated_price: number; // Assuming conversion to number here, or keep as string
+  final_price?: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  condition_answers: ConditionAnswer[];
+  shipping: ShippingInfo;
+  seller_notes?: string;
+  tenant_id: number;
+  shop_id: number;
+  shop?: ShopInfo;
+  status_history?: { status: string; changed_at: string; notes?: string; changed_by_user_name?: string }[];
+  admin_notes?: string;
 }
 export type AdminGetOrderDetailsResponse = ApiResponse<AdminOrderDetail>;
 
@@ -154,7 +154,7 @@ export interface UpdateOrderStatusPayload {
 }
 
 // Response for update is the full updated order object
-export type AdminUpdateOrderStatusResponse = ApiResponse<AdminOrderDetail>; 
+export type AdminUpdateOrderStatusResponse = ApiResponse<AdminOrderDetail>;
 
 
 export interface AdminListOrdersParams {
@@ -197,9 +197,9 @@ export class OrderService {
    * List all orders (accessible by admin and other authenticated users based on roles)
    */
   async listOrders(params?: AdminListOrdersParams): Promise<AdminListOrdersResponse> {
-    return this.apiClient.get<AdminListOrdersResponse>(`${this.baseEndpoint}/`, { 
+    return this.apiClient.get<AdminListOrdersResponse>(`${this.baseEndpoint}/`, {
       params: params as Record<string, string | number | boolean | undefined>,
-      isProtected: true 
+      isProtected: true
     });
   }
 

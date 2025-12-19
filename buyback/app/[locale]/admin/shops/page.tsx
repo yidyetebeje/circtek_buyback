@@ -12,10 +12,10 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Row, ColumnDef, ColumnFiltersState } from "@tanstack/react-table";
 import { useSession } from "next-auth/react";
-import { useShops, useUpdateShop } from "@/hooks/catalog/useShops";
+import { useShops } from "@/hooks/catalog/useShops";
 import { QueryParams } from "@/lib/api/types";
 import React from "react";
-import { Switch } from "@/components/ui/switch";
+
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function ShopsPage() {
@@ -40,10 +40,7 @@ export default function ShopsPage() {
 
       const firstValue = Array.isArray(value) ? value[0] : value;
 
-      if (id === 'active' && firstValue !== undefined) {
-        // Convert string/boolean to boolean for active filter
-        params.active = firstValue === 'true' || firstValue === true;
-      }
+
 
       if (id === 'name' && typeof firstValue === 'string' && firstValue.trim()) {
         params.search = firstValue.trim();
@@ -52,15 +49,15 @@ export default function ShopsPage() {
 
     return params;
   }, [page, limit, columnFilters]);
-  
+
   // Get shops from API with remote filtering
   const { data: shopsResponse, isLoading, error } = useShops(queryParams);
-  const { mutate: updateShop } = useUpdateShop();
-  
+
+
   // Extract shops array and pagination info from response
   const shops = shopsResponse?.data || [];
   const totalCount = shopsResponse?.meta?.total || 0;
-  
+
   // Redirect shop_manager to their managed shop page
   useEffect(() => {
     if (session?.user?.roleSlug === 'shop_manager' && session?.user?.managed_shop_id) {
@@ -72,24 +69,11 @@ export default function ShopsPage() {
     router.push('/admin/shops/new');
   };
 
-  const handleToggleActive = (shop: Shop, isActive: boolean) => {
-    updateShop(
-      { id: shop.id, active: isActive },
-      {
-        onSuccess: () => {
-          toast.success(`Shop "${shop.name}" has been ${isActive ? 'activated' : 'deactivated'}.`);
-          queryClient.invalidateQueries({ queryKey: ['shops', queryParams] });
-        },
-        onError: (error: Error) => {
-          toast.error(`Failed to update shop: ${error.message || 'An error occurred'}`);
-        },
-      }
-    );
-  };
+
 
   // Handle pagination changes and trigger remote data fetch
   const handlePaginationChange = (updater: ((old: { pageIndex: number; pageSize: number }) => { pageIndex: number; pageSize: number }) | { pageIndex: number; pageSize: number }) => {
-    const newPagination = typeof updater === 'function' 
+    const newPagination = typeof updater === 'function'
       ? updater({ pageIndex: page - 1, pageSize: limit })
       : updater;
     setPage(newPagination.pageIndex + 1);
@@ -97,7 +81,7 @@ export default function ShopsPage() {
 
   // Handle filter changes and trigger remote data fetch
   const handleColumnFiltersChange = (updater: ((old: ColumnFiltersState) => ColumnFiltersState) | ColumnFiltersState) => {
-    const newFilters = typeof updater === 'function' 
+    const newFilters = typeof updater === 'function'
       ? updater(columnFilters)
       : updater;
     setColumnFilters(newFilters);
@@ -113,7 +97,7 @@ export default function ShopsPage() {
       enableHiding: false,
       cell: ({ row }: { row: Row<Shop> }) => {
         const shop = row.original;
-        const isActive = (shop.active as unknown as number) == 1;
+
 
         return (
           <div className="flex items-center gap-2">
@@ -135,23 +119,19 @@ export default function ShopsPage() {
               <span className="sr-only">Manage Locations</span>
               <MapPin className="h-4 w-4" />
             </Button>
-            <Switch
-              checked={isActive}
-              onCheckedChange={(newActiveState) => handleToggleActive(shop, newActiveState)}
-              aria-label="Toggle shop status"
-            />
+
           </div>
         );
       },
     },
   ];
-  
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex w-full flex-wrap items-center justify-between gap-4">
         <AdminHeader title="Shops" breadcrumbs={[{ label: 'Admin', isCurrentPage: true }, { label: 'Shops' }]} />
-        <Button 
-          onClick={handleCreateNew} 
+        <Button
+          onClick={handleCreateNew}
           className="flex items-center gap-2 whitespace-nowrap self-start sm:self-auto hover:bg-primary/80 transform hover:scale-105 transition-transform cursor-pointer"
         >
           <Plus size={18} />
@@ -160,29 +140,20 @@ export default function ShopsPage() {
           <span className="sm:hidden">New</span>
         </Button>
       </div>
-      
+
       <Separator className="mb-8" />
-      
+
       {error ? (
         <div className="bg-red-50 p-4 rounded-md mb-8">
           <h3 className="text-red-800 font-medium">Error loading shops</h3>
           <p className="text-red-700">{error.message}</p>
         </div>
       ) : (
-        <DataTable 
-          columns={columnsWithDeleteAction} 
+        <DataTable
+          columns={columnsWithDeleteAction}
           data={shops.filter(shop => shop.id !== undefined) as Array<Shop & { id: number }>}
           searchKey="name"
-          filterOptions={[
-            {
-              key: "active",
-              label: "Status",
-              options: [
-                { label: "Active", value: "true" },
-                { label: "Inactive", value: "false" },
-              ],
-            },
-          ]}
+
           manualPagination={true}
           manualFiltering={true}
           rowCount={totalCount}

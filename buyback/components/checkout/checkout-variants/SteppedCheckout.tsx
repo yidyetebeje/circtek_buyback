@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'react-phone-number-input';
-import { isValidIBAN } from 'ibantools';
+
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Pencil, Trash2, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -41,11 +41,6 @@ export function SteppedCheckout({
     phoneNumber: z.string().trim()
       .min(1, { message: t('validation.phoneRequired') })
       .refine(isValidPhoneNumber, { message: t('validation.phoneInvalid') }),
-    accountNumber: z.string().trim()
-      .min(1, { message: t('validation.accountNumberRequired') })
-      .refine((value) => isValidIBAN(value), {
-        message: t('validation.ibanInvalid')
-      }),
     firstName: z.string().trim()
       .min(1, { message: t('validation.firstNameRequired') })
       .max(50, { message: t('validation.firstNameTooLong') })
@@ -88,7 +83,6 @@ export function SteppedCheckout({
     defaultValues: {
       email: '',
       phoneNumber: '',
-      accountNumber: '',
       firstName: '',
       lastName: '',
       streetName: '',
@@ -377,16 +371,7 @@ export function SteppedCheckout({
                     {errors.phoneNumber && <p className="text-xs text-red-500 mt-1">{errors.phoneNumber.message}</p>}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Number (Optional)</label>
-                    <input
-                      type="text"
-                      {...register("accountNumber")}
-                      className={`w-full p-2.5 border ${errors.accountNumber ? 'border-red-500' : 'border-gray-300'} rounded-md`}
-                      placeholder={t('form.ibanPlaceholder')}
-                    />
-                    {errors.accountNumber && <p className="text-xs text-red-500 mt-1">{errors.accountNumber.message}</p>}
-                  </div>
+
 
                   <div className="grid grid-cols-3 gap-4">
                     <div className="col-span-2">
