@@ -7,15 +7,18 @@ import { DeviceSerialSearch } from './DeviceSerialSearch';
 import { DeviceInfoDisplay } from './DeviceInfoDisplay';
 import { QuestionFlow } from './QuestionFlow';
 import { PriceConfirmation } from './PriceConfirmation';
-import { OrderCreation } from './OrderCreation';
+import { OrderCreation, CreatedOrderData } from './OrderCreation';
 import { useQuery } from '@tanstack/react-query';
 import { shopService } from '@/lib/api/catalog/shopService';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { RewardConfirmationModal } from '@/components/admin/orders/RewardConfirmationModal';
+import { useSendReward, useTremendousConfig } from '@/hooks/useTremendous';
+import { toast } from 'sonner';
 
-export type BuyDeviceStep = 
+export type BuyDeviceStep =
   | 'serial-search'
-  | 'device-info' 
+  | 'device-info'
   | 'product-matching'
   | 'questions'
   | 'price-confirmation'
@@ -34,6 +37,14 @@ export function BuyDevicePageClient({ locale, shopId }: BuyDevicePageClientProps
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
   const [finalPrice, setFinalPrice] = useState<number | null>(null);
+
+  // Reward modal state
+  const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
+  const [createdOrderData, setCreatedOrderData] = useState<CreatedOrderData | null>(null);
+
+  // Tremendous hooks
+  const { data: tremendousConfig } = useTremendousConfig(shopId, { enabled: !!shopId });
+  const { mutateAsync: sendReward, isPending: isSendingReward } = useSendReward();
 
   const handleDeviceFound = (device: TestedDevice) => {
     setTestedDevice(device);
@@ -61,8 +72,51 @@ export function BuyDevicePageClient({ locale, shopId }: BuyDevicePageClientProps
     setCurrentStep('order-creation');
   };
 
-  const handleOrderCreated = () => {
+  const handleOrderCreated = (orderData: CreatedOrderData) => {
+    setCreatedOrderData(orderData);
+
+    // If Tremendous is configured and active, show reward modal
+    if (tremendousConfig?.configured && tremendousConfig?.is_active) {
+      setIsRewardModalOpen(true);
+    } else {
+      // Otherwise, go directly to completed step
+      setCurrentStep('completed');
+    }
+  };
+
+  const handleRewardModalClose = () => {
+    setIsRewardModalOpen(false);
     setCurrentStep('completed');
+  };
+
+  const handleSendReward = async (data: {
+    recipient_name: string;
+    recipient_email: string;
+    amount: number;
+    currency_code: string;
+    message?: string;
+  }) => {
+    if (!createdOrderData) return;
+
+    try {
+      const result = await sendReward({
+        order_id: createdOrderData.orderId,
+        shop_id: shopId,
+        recipient_email: data.recipient_email,
+        recipient_name: data.recipient_name,
+        amount: data.amount,
+        currency_code: data.currency_code,
+        message: data.message,
+      });
+
+      if (result.success) {
+        toast.success('Reward sent successfully!');
+        setIsRewardModalOpen(false);
+        setCurrentStep('completed');
+      }
+    } catch (error) {
+      // Error already handled by the hook
+    }
   };
 
   const handleStartOver = () => {
@@ -72,6 +126,7 @@ export function BuyDevicePageClient({ locale, shopId }: BuyDevicePageClientProps
     setAnswers({});
     setEstimatedPrice(null);
     setFinalPrice(null);
+    setCreatedOrderData(null);
   };
 
   const renderStepContent = () => {
@@ -218,6 +273,24 @@ export function BuyDevicePageClient({ locale, shopId }: BuyDevicePageClientProps
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         {renderStepContent()}
       </div>
+
+      {/* Tremendous Reward Modal */}
+      {createdOrderData && (
+        <RewardConfirmationModal
+          isOpen={isRewardModalOpen}
+          onClose={handleRewardModalClose}
+          onConfirm={handleSendReward}
+          orderDetails={{
+            orderId: createdOrderData.orderId,
+            orderNumber: createdOrderData.orderNumber,
+            sellerName: createdOrderData.sellerName,
+            sellerEmail: createdOrderData.sellerEmail,
+            finalPrice: createdOrderData.finalPrice,
+          }}
+          isLoading={isSendingReward}
+          testMode={tremendousConfig?.use_test_mode ?? true}
+        />
+      )}
     </div>
   );
 }
