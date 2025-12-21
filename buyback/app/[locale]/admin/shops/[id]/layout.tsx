@@ -77,7 +77,7 @@ export default function ShopLayout({ children }: ShopLayoutProps) {
     ];
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-12">
             <AdminHeader
                 title="Shop Management"
                 breadcrumbs={[

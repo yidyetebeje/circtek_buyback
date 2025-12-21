@@ -112,7 +112,7 @@ export function AdminSidebar() {
   const config = useAtomValue(displayConfigAtom);
 
   return (
-    <aside className="fixed left-0 top-0 z-40 w-[80px] h-screen bg-background dark:bg-sidebar border-r border-border shadow-sm flex flex-col items-center py-4">
+    <aside className="hidden md:flex fixed left-0 top-0 z-40 w-[80px] h-screen bg-background dark:bg-sidebar border-r border-border shadow-sm flex-col items-center py-4">
       <Link href="/admin" className="flex items-center justify-center w-full mb-6">
         {config.logoUrl ? (
           <div className="relative w-10 h-10">
@@ -138,6 +138,7 @@ export function AdminTopBar() {
   const t = useTranslations('AdminSidebar');
   const pathname = usePathname();
   const { data: session } = useSession();
+  const config = useAtomValue(displayConfigAtom);
   const roleSlug = session?.user?.roleSlug;
   const canManageUsersLocations = roleSlug === 'admin' || roleSlug === 'client';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -191,11 +192,30 @@ export function AdminTopBar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 lg:left-[80px] right-0 z-50 shadow-lg border-b border-white/10 transition-all duration-300 bg-[#7f8282]">
+    <header className="fixed top-0 left-0 md:left-[80px] right-0 z-50 shadow-lg border-b border-white/10 transition-all duration-300 bg-[#7f8282]">
       <div className="flex items-center justify-between px-6 py-4">
 
+        {/* Mobile Logo - visible only on small screens */}
+        <Link href="/admin" className="md:hidden flex items-center">
+          {config.logoUrl ? (
+            <div className="relative w-8 h-8">
+              <Image
+                src={config.logoUrl}
+                alt={config.shopName || "Company Logo"}
+                fill
+                style={{ objectFit: 'contain' }}
+                className="rounded-md"
+              />
+            </div>
+          ) : (
+            <div className="p-1.5 bg-white/10 rounded-md">
+              <ShoppingBag size={20} className="text-white" />
+            </div>
+          )}
+        </Link>
+
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-2 flex-1">
+        <nav className="hidden md:flex items-center gap-2 flex-1">
           {/* Dashboard - Keep as single item */}
           <TopBarItem
             icon={LayoutDashboard}
@@ -261,7 +281,7 @@ export function AdminTopBar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-white transition-all duration-200"
+            className="md:hidden p-2 rounded-lg hover:bg-white/10 text-white transition-all duration-200"
           >
             <Menu size={20} />
           </button>
@@ -269,11 +289,11 @@ export function AdminTopBar() {
           {/* Theme Toggle */}
           <ThemeToggle />
 
-          {/* User Actions (Logout) */}
+          {/* User Actions (Logout) - Hidden on mobile, shown in mobile menu instead */}
           {session && (
             <button
               onClick={handleSignOut}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-all duration-200"
+              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-all duration-200"
               aria-label="Sign Out"
             >
               <LogOut size={16} />
@@ -285,7 +305,7 @@ export function AdminTopBar() {
 
       {/* Mobile Navigation Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden border-t border-white/20 bg-[#7f8282]">
+        <div className="md:hidden border-t border-white/20 bg-[#7f8282]">
           <nav className="px-4 py-2 space-y-1 max-h-96 overflow-y-auto">
             {/* Dashboard */}
             <Link
@@ -392,6 +412,20 @@ export function AdminTopBar() {
                 <Users size={16} />
                 Admin
               </Link>
+            )}
+
+            {/* Sign Out Button - Mobile only */}
+            {session && (
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleSignOut();
+                }}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium w-full mt-2 bg-red-600 hover:bg-red-700 text-white transition-all duration-200"
+              >
+                <LogOut size={16} />
+                Sign Out
+              </button>
             )}
           </nav>
         </div>

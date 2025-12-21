@@ -121,99 +121,99 @@ export function useColumns(): ColumnDef<Category>[] {
   const isShopManager = session?.user?.roleSlug === 'shop_manager';
 
   const columns: ColumnDef<Category>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-    size: 48,
-  },
-  {
-    id: "icon",
-    header: "Icon", 
-    cell: ({ row }) => {
-      const iconUrl = row.original?.icon;
-      return (
-        <div className="relative h-24 w-24 rounded-md overflow-hidden border border-border">
-          {iconUrl ? (
-            <img 
-              src={iconUrl} 
-              alt={row.original?.title || 'Category icon'}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="h-full w-full bg-muted flex items-center justify-center text-muted-foreground text-xs">No icon</div>
-          )}
-        </div>
-      );
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      size: 48,
     },
-    size: 120,
-  },
-  {
-    accessorKey: "title",
-    header: ({ column }: { column: Column<Category, unknown> }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Title
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
+    {
+      id: "icon",
+      header: "Icon",
+      cell: ({ row }) => {
+        const iconUrl = row.original?.icon;
+        return (
+          <div className="relative h-10 w-10 rounded-md overflow-hidden border border-border">
+            {iconUrl ? (
+              <img
+                src={iconUrl}
+                alt={row.original?.title || 'Category icon'}
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              <div className="h-full w-full bg-muted flex items-center justify-center text-muted-foreground text-[10px]">No icon</div>
+            )}
+          </div>
+        );
+      },
+      size: 60,
     },
-    cell: ({ row }: { row: Row<Category> }) => (
-      <div className="max-w-[250px] truncate whitespace-nowrap">{row.getValue("title")}</div>
-    ),
-    size: 260,
-  },
-  // Only include Published In Shops column for non-shop managers
-  ...(!isShopManager ? [{
-    id: "published_shops",
-    header: "Published In Shops",
-    cell: ({ row }: { row: Row<Category> }) => {
-      const publishedShops = row.original.publishedInShops || [];
-      return (
-        <div className="flex items-center">
-          {publishedShops.length > 0 ? (
-            <div className="bg-green-50 text-green-700 rounded-full px-2 py-0.5 text-xs font-medium">
-              {publishedShops.length} shop{publishedShops.length !== 1 ? 's' : ''}
-            </div>
-          ) : (
-            <div className="text-muted-foreground text-xs">Not published</div>
-          )}
-        </div>
-      );
+    {
+      accessorKey: "title",
+      header: ({ column }: { column: Column<Category, unknown> }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Title
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+      cell: ({ row }: { row: Row<Category> }) => (
+        <div className="max-w-[250px] truncate whitespace-nowrap">{row.getValue("title")}</div>
+      ),
+      size: 260,
     },
-  }] : []),
-  {
-    accessorKey: "usage",
-    header: "Usage",
-  },
-  {
-    id: "actions",
-    header: "Actions",
-    enableHiding: false,
-    cell: ({ row }: { row: Row<Category> }) => <CategoryActionsCell row={row} />, // Use the component
-  },
+    // Only include Published In Shops column for non-shop managers
+    ...(!isShopManager ? [{
+      id: "published_shops",
+      header: "Published In Shops",
+      cell: ({ row }: { row: Row<Category> }) => {
+        const publishedShops = row.original.publishedInShops || [];
+        return (
+          <div className="flex items-center">
+            {publishedShops.length > 0 ? (
+              <div className="bg-green-50 text-green-700 rounded-full px-2 py-0.5 text-xs font-medium">
+                {publishedShops.length} shop{publishedShops.length !== 1 ? 's' : ''}
+              </div>
+            ) : (
+              <div className="text-muted-foreground text-xs">Not published</div>
+            )}
+          </div>
+        );
+      },
+    }] : []),
+    {
+      accessorKey: "usage",
+      header: "Usage",
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      enableHiding: false,
+      cell: ({ row }: { row: Row<Category> }) => <CategoryActionsCell row={row} />, // Use the component
+    },
   ];
-  
+
   return columns;
 }
 

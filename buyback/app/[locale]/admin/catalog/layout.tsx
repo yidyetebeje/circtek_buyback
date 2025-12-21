@@ -126,7 +126,7 @@ export default function CatalogLayout({ children }: CatalogLayoutProps) {
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-12">
             <AdminHeader
                 title={t("catalog")}
                 breadcrumbs={[

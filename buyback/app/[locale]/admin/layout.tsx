@@ -41,7 +41,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       <AdminSidebar />
 
       {/* Main content area with padding to account for the fixed top bar and sidebar */}
-      <main className="pt-20 pl-0 lg:pl-[80px] w-full"> {/* pt-20 for top bar, pl-[80px] for desktop sidebar */}
+      <main className="pt-20 pl-0 md:pl-[80px] w-full"> {/* pt-20 for top bar, pl-[80px] for md+ sidebar */}
         <div className="px-4 md:px-8 lg:px-12 py-6 md:py-8 w-full max-w-7xl mx-auto">
           {children}
         </div>

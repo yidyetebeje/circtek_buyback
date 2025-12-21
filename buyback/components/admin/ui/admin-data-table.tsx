@@ -29,8 +29,8 @@ export function AdminDataTable<TData extends { id?: string | number; publishedIn
   ...props
 }: AdminDataTableProps<TData, TValue>) {
   return (
-    <div className={cn("flex flex-col gap-4", wrapperClassName)}>
-      {title && <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>}
+    <div className={cn("flex flex-col gap-6", wrapperClassName)}>
+      {title && <h2 className="text-2xl font-bold tracking-tight text-foreground">{title}</h2>}
       {description && <p className="text-muted-foreground">{description}</p>}
       <DataTable {...props} />
     </div>

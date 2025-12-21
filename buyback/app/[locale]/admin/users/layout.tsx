@@ -62,7 +62,7 @@ export default function AdminUsersLayout({ children }: AdminUsersLayoutProps) {
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-12">
             <AdminHeader
                 title="Administration"
                 breadcrumbs={[

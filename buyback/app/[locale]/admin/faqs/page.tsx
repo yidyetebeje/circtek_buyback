@@ -1,10 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
-import Link from 'next/link';
 
-import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/admin/catalog/data-table';
 import { columns } from '@/components/admin/catalog/faqs-columns';
 import { useFAQs } from '@/hooks/catalog/useFAQs';
@@ -103,16 +100,6 @@ export default function FAQsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end items-center">
-
-        <Button asChild>
-          <Link href="/admin/faqs/new">
-            <Plus className="h-4 w-4 mr-2" />
-            Create New FAQ
-          </Link>
-        </Button>
-      </div>
-
       <DataTable
         columns={columns}
         data={transformedFaqs}

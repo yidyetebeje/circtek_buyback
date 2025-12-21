@@ -22,6 +22,7 @@ interface PageTabsProps {
  * PageTabs - A reusable tab navigation component for admin pages
  * Styled to match the Angular project's DaisyUI tabs design pattern
  * Uses URL-based navigation (clicking a tab navigates to the route)
+ * Responsive: tabs wrap to new lines on smaller screens
  */
 export function PageTabs({ tabs, className }: PageTabsProps) {
     const pathname = usePathname();
@@ -54,10 +55,10 @@ export function PageTabs({ tabs, className }: PageTabsProps) {
     };
 
     return (
-        <nav className={cn("mb-6 overflow-x-auto", className)}>
+        <nav className={cn("w-full", className)}>
             <div
                 role="tablist"
-                className="inline-flex items-center gap-1 p-1 bg-white dark:bg-muted rounded-xl w-fit border border-gray-100 dark:border-none"
+                className="flex flex-wrap items-center gap-1 p-1 bg-white dark:bg-muted rounded-xl w-fit border border-gray-100 dark:border-none"
             >
                 {tabs.map((tab) => {
                     const Icon = tab.icon;
