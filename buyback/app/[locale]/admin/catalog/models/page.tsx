@@ -1,13 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { PlusCircle } from 'lucide-react';
-import { AdminHeader } from '@/components/admin/AdminHeader';
 
 import { DataTable } from '@/components/admin/catalog/data-table';
 import { useColumns } from '@/components/admin/catalog/models-columns';
-import { Button } from '@/components/ui/button';
 import { useModels } from '@/hooks/catalog/useModels';
 import { useCategories } from '@/hooks/catalog/useCategories';
 import { useBrands } from '@/hooks/catalog/useBrands';
@@ -111,7 +107,7 @@ export default function ModelsPage() {
     option: FilterOption
   ) => {
     const filterGroup = key === 'category_id' ? 'category' :
-                        key === 'brand_id' ? 'brand' : 'series';
+      key === 'brand_id' ? 'brand' : 'series';
 
     setActiveFilters(prev => {
       const currentGroupFilters = prev[filterGroup] || [];
@@ -129,19 +125,19 @@ export default function ModelsPage() {
     });
 
     setFilters(prev => {
-        const currentIds = prev[key] || [];
-        const isSelected = currentIds.includes(option.value);
-        let newIds;
-        if (isSelected) {
-          newIds = currentIds.filter(id => id !== option.value);
-        } else {
-          newIds = [...currentIds, option.value];
-        }
-        return {
-          ...prev,
-          [key]: newIds.length > 0 ? newIds : undefined
-        };
-      });
+      const currentIds = prev[key] || [];
+      const isSelected = currentIds.includes(option.value);
+      let newIds;
+      if (isSelected) {
+        newIds = currentIds.filter(id => id !== option.value);
+      } else {
+        newIds = [...currentIds, option.value];
+      }
+      return {
+        ...prev,
+        [key]: newIds.length > 0 ? newIds : undefined
+      };
+    });
 
     // Don't close the popover on selection for multi-select
     // Popover will close on clicking outside
@@ -160,7 +156,7 @@ export default function ModelsPage() {
     valueToRemove: number
   ) => {
     const filterKey = key === 'category' ? 'category_id' :
-                      key === 'brand' ? 'brand_id' : 'series_id';
+      key === 'brand' ? 'brand_id' : 'series_id';
 
     setActiveFilters(prev => {
       const currentGroupFilters = prev[key] || [];
@@ -189,25 +185,10 @@ export default function ModelsPage() {
   const toolbarLoading = isFetching || isLoadingCategories || isLoadingBrands || isLoadingSeries;
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <AdminHeader 
-          title="Device Models" 
-          breadcrumbs={[
-            { href: '/admin/dashboards', label: 'Admin' },
-            { href: '/admin/catalog', label: 'Catalog' },
-            { label: 'Models', isCurrentPage: true }
-          ]}
-        />
-        <Button asChild>
-          <Link href="/admin/catalog/models/new">
-            <PlusCircle className="mr-2 h-4 w-4" /> Create New Model
-          </Link>
-        </Button>
-      </div>
+    <div className="space-y-6">
 
       {/* Custom Toolbar (always visible) */}
-      
+
 
       {/* Error state */}
       {isError ? (
@@ -222,23 +203,23 @@ export default function ModelsPage() {
           >
             {/* Disable default internal toolbar */}
             <ModelFilterToolbar
-        isLoading={toolbarLoading}
-        isSearching={isSearching}
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
-        filters={filters}
-        activeFilters={activeFilters}
-        categoryOptions={categoryOptions}
-        brandOptions={brandOptions}
-        seriesOptions={seriesOptions}
-        onFilterSelect={handleFilterSelect}
-        onClearAllFilters={clearAllFilters}
-        onRemoveFilter={removeFilter}
-        onClearSearch={() => {
-          setSearchValue('');
-          setFilters(prev => ({ ...prev, title: undefined }));
-        }}
-      />
+              isLoading={toolbarLoading}
+              isSearching={isSearching}
+              searchValue={searchValue}
+              onSearchChange={setSearchValue}
+              filters={filters}
+              activeFilters={activeFilters}
+              categoryOptions={categoryOptions}
+              brandOptions={brandOptions}
+              seriesOptions={seriesOptions}
+              onFilterSelect={handleFilterSelect}
+              onClearAllFilters={clearAllFilters}
+              onRemoveFilter={removeFilter}
+              onClearSearch={() => {
+                setSearchValue('');
+                setFilters(prev => ({ ...prev, title: undefined }));
+              }}
+            />
           </DataTable>
 
           {/* The DataTable component shows an inline empty state, so no extra handling here */}

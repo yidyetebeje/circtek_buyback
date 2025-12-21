@@ -7,7 +7,7 @@ import { AdminEditCard } from '@/components/admin/AdminEditCard';
 
 import { Button } from '@/components/ui/button';
 import { BrandForm, BrandFormValues } from '@/components/admin/catalog/brand-form';
-import {  useBrand,useUpdateBrand, useDeleteBrand, useBrandTranslations } from '@/hooks/catalog/useBrands';
+import { useBrand, useUpdateBrand, useDeleteBrand, useBrandTranslations } from '@/hooks/catalog/useBrands';
 import { Brand, Language } from '@/types/catalog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { TranslationManager, TranslationWithSpecs } from '@/components/admin/catalog/translation-manager';
@@ -26,23 +26,23 @@ export default function BrandDetailPage() {
   const [languages, setLanguages] = useState<Language[]>([]);
   const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
   const [defaultLanguage, setDefaultLanguage] = useState<Language | null>(null);
-  
+
   // Fetch brand data
-  const { 
-    data: brandResponse, 
-    isLoading: isLoadingBrand, 
-    isError 
+  const {
+    data: brandResponse,
+    isLoading: isLoadingBrand,
+    isError
   } = useBrand(brandId);
   const [brand, setBrand] = useState<Brand | null>(null);
   const [initialValues, setInitialValues] = useState<BrandFormValues | null>(null);
 
   // Fetch brand translations
-  const { 
+  const {
     data: translationsData,
     isLoading: isLoadingTranslations,
-    refetch: refetchTranslations 
+    refetch: refetchTranslations
   } = useBrandTranslations(brandId);
-  
+
   // Update and delete mutations
   const updateBrand = useUpdateBrand(brandId);
   const deleteBrand = useDeleteBrand();
@@ -73,14 +73,14 @@ export default function BrandDetailPage() {
 
     fetchLanguages();
   }, []);
-  
+
   useEffect(() => {
     console.log(brandResponse, "brandResponse")
     if (brandResponse) {
       setBrand(brandResponse.data);
-      
+
     }
-    if(brandResponse && !initialValues) {
+    if (brandResponse && !initialValues) {
       setInitialValues({
         title: brandResponse.data?.title || '',
         description: brandResponse.data?.description || '',
@@ -92,14 +92,14 @@ export default function BrandDetailPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandResponse]);
-  
+
   // Handle saving translations
   const handleSaveTranslations = async (updatedTranslations: TranslationWithSpecs[]) => {
     try {
       // Prepare translations for bulk API
       const translationsPayload = updatedTranslations.map(translation => ({
         language_id: translation.language_id,
-            title: translation.title,
+        title: translation.title,
         description: translation.description || undefined,
         meta_title: translation.meta_title || undefined,
         meta_description: translation.meta_description || undefined,
@@ -108,9 +108,9 @@ export default function BrandDetailPage() {
 
       // Use bulk upsert method - handles both create and update for all translations
       const result = await brandService.bulkUpsertBrandTranslations(
-            brandId,
+        brandId,
         translationsPayload
-          );
+      );
 
       // Refetch translations to get updated data
       await refetchTranslations();
@@ -130,7 +130,7 @@ export default function BrandDetailPage() {
       toast.error('Failed to save translations');
     }
   };
-  
+
   // Handle form submission for brand update
   const handleSubmit = async (values: BrandFormValues) => {
     const updatedBrand: Partial<Brand> = {
@@ -151,7 +151,7 @@ export default function BrandDetailPage() {
       toast.error((error as Error).message || 'Failed to update brand');
     }
   };
-  
+
   // Handle brand deletion
   const handleDelete = () => {
     setIsDeleting(true);
@@ -179,7 +179,7 @@ export default function BrandDetailPage() {
     })) as TranslationWithSpecs[];
 
     // Check if there's already a translation for the default language
-    const hasDefaultLanguageTranslation = defaultLanguage && 
+    const hasDefaultLanguageTranslation = defaultLanguage &&
       translationList.some(t => t.language_id === defaultLanguage.id);
 
     // If no default language translation exists, use the main brand data as fallback
@@ -194,30 +194,30 @@ export default function BrandDetailPage() {
         meta_keywords: brand.meta_keywords || '',
         specifications: ''
       };
-      
+
       // Add the default translation to the beginning of the list
       translationList.unshift(defaultTranslation);
     }
 
     return translationList;
   })();
-  
+
   if (isLoadingBrand || isLoadingTranslations) {
     return (
-      <div className="p-4 md:p-6 space-y-6 flex justify-center items-center py-10">
+      <div className="space-y-6 flex justify-center items-center py-10">
         <Loader2 className="h-8 w-8 animate-spin mr-2" />
         <span>Loading brand data...</span>
       </div>
     );
   }
-  
+
   if (isError || !brand) {
     return (
-      <div className="p-4 md:p-6 space-y-6">
+      <div className="space-y-6">
         <div className="p-6 bg-red-50 text-red-600 rounded-md flex flex-col">
           <p>Failed to load brand. It might have been deleted or you do not have permission to view it.</p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => router.push('/admin/catalog/brands')}
             className="mt-4 self-start"
           >
@@ -227,10 +227,10 @@ export default function BrandDetailPage() {
       </div>
     );
   }
-  
+
   // Map brand data to form values
-  
-  
+
+
   // Delete button with confirmation dialog
   const deleteButton = (
     <AlertDialog>
@@ -247,7 +247,7 @@ export default function BrandDetailPage() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
+          <AlertDialogAction
             onClick={handleDelete}
             disabled={isDeleting}
             className="bg-red-600 hover:bg-red-700"
@@ -287,10 +287,10 @@ export default function BrandDetailPage() {
             <Globe className="w-4 h-4 mr-2" /> Translations
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="edit" className="p-0">
-          <Separator/>
-          
+          <Separator />
+
           {initialValues && (
             <BrandForm
               initialData={initialValues}
@@ -301,7 +301,7 @@ export default function BrandDetailPage() {
             />
           )}
         </TabsContent>
-        
+
         <TabsContent value="translations" className="space-y-4">
           {isLoadingTranslations || isLoadingLanguages ? (
             <div className="flex justify-center items-center p-8">
@@ -321,13 +321,13 @@ export default function BrandDetailPage() {
                   <div>
                     <h4 className="text-sm font-medium text-blue-900">AI Translation Available</h4>
                     <p className="text-sm text-blue-700 mt-1">
-                      Use the &ldquo;Generate with AI&rdquo; button to automatically translate content from {defaultLanguage.name} to other languages. 
+                      Use the &ldquo;Generate with AI&rdquo; button to automatically translate content from {defaultLanguage.name} to other languages.
                       The AI will maintain technical accuracy and SEO optimization while adapting the content for each target language.
                     </p>
                   </div>
                 </div>
               </div>
-              
+
               <TranslationManager
                 entityType="brand"
                 entityId={brandId}

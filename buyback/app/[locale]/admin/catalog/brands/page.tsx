@@ -1,12 +1,8 @@
 "use client";
 
 import React from 'react';
-import { PlusCircle } from 'lucide-react';
-import Link from 'next/link';
-import { AdminHeader } from '@/components/admin/AdminHeader';
 
-import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/admin/catalog/data-table'; 
+import { DataTable } from '@/components/admin/catalog/data-table';
 import { useColumns } from '@/components/admin/catalog/brands-columns';
 import { useBrands } from '@/hooks/catalog/useBrands';
 
@@ -27,7 +23,7 @@ export default function BrandsPage() {
       </div>
     </div>;
   }
-  
+
   if (isError) {
     return <div className="w-full py-10 text-red-500 flex justify-center">
       Error loading brands: {error?.message || 'Unknown error'}
@@ -38,26 +34,10 @@ export default function BrandsPage() {
   const brands = brandsResponse?.data || [];
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <AdminHeader 
-          title="Brands" 
-          breadcrumbs={[
-            { href: '/admin/dashboards', label: 'Admin' },
-            { href: '/admin/catalog', label: 'Catalog' },
-            { label: 'Brands', isCurrentPage: true }
-          ]}
-        />
-        <Button asChild>
-          <Link href="/admin/catalog/brands/new">
-            <PlusCircle className="mr-2 h-4 w-4" /> <span className="font-semibold text-white">Create New Brand</span>
-          </Link>
-        </Button>
-      </div>
-      
-      <DataTable 
-        columns={brandColumns} 
-        data={brands} 
+    <div className="space-y-6">
+      <DataTable
+        columns={brandColumns}
+        data={brands}
         searchKey="title"
         entityType="brand"
       />

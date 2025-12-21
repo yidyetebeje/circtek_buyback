@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { PlusCircle } from 'lucide-react';
-import { AdminHeader } from '@/components/admin/AdminHeader';
+
 import { Button } from '@/components/ui/button';
 import { featuredDeviceService, shopService } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ import { DataTable } from '@/components/admin/catalog/data-table';
 import { columns, type FeaturedDevice } from '@/components/admin/catalog/featured-products-columns';
 import { useDebounce } from 'use-debounce';
 import { ColumnFiltersState } from '@tanstack/react-table';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -19,12 +19,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -37,7 +37,7 @@ export default function FeaturedProductsPage() {
   const [isPublished, setIsPublished] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  
+
   const [debouncedColumnFilters] = useDebounce(columnFilters, 500);
 
   const modelTitleFilter = debouncedColumnFilters.find(f => f.id === 'model.title')?.value as string | undefined;
@@ -45,9 +45,9 @@ export default function FeaturedProductsPage() {
 
   const queryClient = useQueryClient();
 
-  const { 
-    data: featuredDevicesResponse, 
-    isLoading: isLoadingFeaturedDevices, 
+  const {
+    data: featuredDevicesResponse,
+    isLoading: isLoadingFeaturedDevices,
     isError: isFeaturedDevicesError,
     error: featuredDevicesError
   } = useQuery({
@@ -57,22 +57,22 @@ export default function FeaturedProductsPage() {
       shopName: shopNameFilter?.join(','),
     })
   });
-  
-  const { 
-    data: shopsResponse, 
-    isLoading: isLoadingShops 
+
+  const {
+    data: shopsResponse,
+    isLoading: isLoadingShops
   } = useQuery({
     queryKey: ['shops'],
     queryFn: () => shopService.getShops()
   });
-  
-  const { 
-    data: modelsResponse, 
-    isLoading: isLoadingModels 
+
+  const {
+    data: modelsResponse,
+    isLoading: isLoadingModels
   } = useModels({ limit: 100 });
-  
+
   const createFeaturedDeviceMutation = useMutation({
-    mutationFn: (data: { modelId: number, shopId: number, isPublished: boolean }) => 
+    mutationFn: (data: { modelId: number, shopId: number, isPublished: boolean }) =>
       featuredDeviceService.createFeaturedDevice(data),
     onSuccess: () => {
       toast.success("Featured product created successfully");
@@ -86,15 +86,15 @@ export default function FeaturedProductsPage() {
       toast.error(error.message || "An unknown error occurred");
     }
   });
-  
+
   const handleSubmit = () => {
     if (!selectedModelId || !selectedShopId) {
       toast.error("Please select both a model and a shop.");
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     createFeaturedDeviceMutation.mutate({
       modelId: selectedModelId,
       shopId: selectedShopId,
@@ -105,7 +105,7 @@ export default function FeaturedProductsPage() {
       }
     });
   };
-  
+
   const featuredDevices = featuredDevicesResponse?.data ?? [] as FeaturedDevice[];
   const shops = shopsResponse?.data ?? [];
   const models = modelsResponse?.data ?? [];
@@ -119,35 +119,25 @@ export default function FeaturedProductsPage() {
   ];
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <AdminHeader 
-          title="Featured Products" 
-          breadcrumbs={[
-            { href: '/admin/dashboards', label: 'Admin' },
-            { href: '/admin/catalog', label: 'Catalog' },
-            { label: 'Featured Products', isCurrentPage: true }
-          ]}
-        />
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => setIsCreateDialogOpen(true)}
-            disabled={isLoadingModels || isLoadingShops}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Featured Product
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button
+          onClick={() => setIsCreateDialogOpen(true)}
+          disabled={isLoadingModels || isLoadingShops}
+        >
+          <PlusCircle className="mr-2 h-4 w-4" /> Add Featured Product
+        </Button>
       </div>
-      
+
       {isFeaturedDevicesError && (
         <div className="text-red-500 p-4 bg-red-50 rounded-md">
           Error loading featured products: {featuredDevicesError?.message}
         </div>
       )}
-      
-      <DataTable 
-        columns={columns} 
-        data={featuredDevices} 
+
+      <DataTable
+        columns={columns}
+        data={featuredDevices}
         isLoading={isLoadingFeaturedDevices}
         searchKey="model.title"
         searchPlaceholder="Search by model name..."
@@ -156,13 +146,13 @@ export default function FeaturedProductsPage() {
         columnFilters={columnFilters}
         onColumnFiltersChange={setColumnFilters}
       />
-      
+
       {!isLoadingFeaturedDevices && !isFeaturedDevicesError && featuredDevices.length === 0 && (
         <div className="text-center py-10 text-muted-foreground">
           No featured products found. Create one by clicking the &quot;Add Featured Product&quot; button.
         </div>
       )}
-      
+
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -176,7 +166,7 @@ export default function FeaturedProductsPage() {
               <Label htmlFor="model" className="text-right">
                 Model
               </Label>
-              <Select 
+              <Select
                 onValueChange={(value) => setSelectedModelId(Number(value))}
                 value={selectedModelId?.toString() || undefined}
               >
@@ -200,7 +190,7 @@ export default function FeaturedProductsPage() {
               <Label htmlFor="shop" className="text-right">
                 Shop
               </Label>
-              <Select 
+              <Select
                 onValueChange={(value) => setSelectedShopId(Number(value))}
                 value={selectedShopId?.toString() || undefined}
               >
@@ -237,9 +227,9 @@ export default function FeaturedProductsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              type="submit" 
-              onClick={handleSubmit} 
+            <Button
+              type="submit"
+              onClick={handleSubmit}
               disabled={isSubmitting || !selectedModelId || !selectedShopId}
             >
               {isSubmitting ? 'Adding...' : 'Add Featured Product'}

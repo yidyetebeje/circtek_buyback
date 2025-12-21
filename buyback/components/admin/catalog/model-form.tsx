@@ -84,7 +84,7 @@ const modelFormSchema = z.object({
   seo_keywords: z.string().trim().max(255).optional(),
   // Update questionSetIds to be optional without a default in the schema itself.
   // The default to an empty array is handled by react-hook-form's defaultValues.
-  questionSetIds: z.array(z.string()).optional(), 
+  questionSetIds: z.array(z.string()).optional(),
   priceDrops: z.array(z.object({
     testName: z.string(),
     priceDrop: z.string().refine((val) => {
@@ -132,18 +132,18 @@ export function ModelForm({
     seo_keywords: initialData?.seo_keywords || '',
     questionSetIds: initialData?.questionSetIds || [], // Ensure it's always string[]
     priceDrops: DIAGNOSTIC_TESTS.map(testName => {
-        const savedDrop = initialData?.priceDrops?.find(pd => pd.testName === testName);
-        return {
-            testName: testName,
-            priceDrop: savedDrop ? savedDrop.priceDrop : ''
-        };
+      const savedDrop = initialData?.priceDrops?.find(pd => pd.testName === testName);
+      return {
+        testName: testName,
+        priceDrop: savedDrop ? savedDrop.priceDrop : ''
+      };
     }),
     ...(initialData?.id && { id: initialData.id }), // Conditionally add id
   };
 
   // Log initial data and prepared defaults
-  
-  
+
+
 
   const form = useForm<ModelFormValues>({
     resolver: zodResolver(modelFormSchema),
@@ -151,16 +151,16 @@ export function ModelForm({
   });
 
   // Reset the form if initialData changes, ensuring async loaded defaults are applied
-   // form.reset should be stable, initialData is the key dependency
+  // form.reset should be stable, initialData is the key dependency
 
   // Log form's initial questionSetIds value after initialization or reset
   useEffect(() => {
-    
+
   }, [form, initialData]); // Re-log if form or initialData changes
 
   // State for image management
   const [imageUrl, setImageUrl] = useState<string | null>(initialData?.image || null);
-  
+
   // State for comboboxes
   const [openSeriesCombobox, setOpenSeriesCombobox] = React.useState(false);
   const [openBrandCombobox, setOpenBrandCombobox] = React.useState(false);
@@ -171,7 +171,7 @@ export function ModelForm({
   const { data: categoriesResponse } = useCategories();
   const { data: seriesResponse, isLoading: isLoadingSeries } = useModelSeries({});
   // Fetch available question sets
-  const { data: questionSetsResponse, isLoading: isLoadingQuestionSets } = useDeviceQuestionSets({ limit: 1000 }); 
+  const { data: questionSetsResponse, isLoading: isLoadingQuestionSets } = useDeviceQuestionSets({ limit: 1000 });
 
   // Extract data arrays
   const brands = brandsResponse?.data ?? [];
@@ -188,7 +188,7 @@ export function ModelForm({
    * "Maximum update depth exceeded".
    */
   useEffect(() => {
-    
+
     form.reset(preparedDefaultValues);
   }, [initialData]);
 
@@ -213,12 +213,12 @@ export function ModelForm({
       );
     }
   }, [availableQuestionSets, initialData, form]);
-  
+
   // Keep form value in sync with image URL state
   useEffect(() => {
     form.setValue('image', imageUrl || '');
   }, [imageUrl, form]);
-  
+
   // Handle image upload - make async and return Promise<string>
   const handleImageUpload = async (file: File | null): Promise<string> => {
     if (!file) {
@@ -229,9 +229,9 @@ export function ModelForm({
     onFileSelect(file); // Pass the file to the parent
     const tempUrl = URL.createObjectURL(file);
     setImageUrl(tempUrl); // Update preview
-    return Promise.resolve(tempUrl); 
+    return Promise.resolve(tempUrl);
   };
-  
+
   // Handle image removal
   const handleImageRemove = () => {
     setImageUrl(null);
@@ -263,10 +263,10 @@ export function ModelForm({
                           role="combobox"
                           aria-expanded={openCategoryCombobox}
                           className={cn(
-                            "w-full justify-between border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200",
+                            "w-full justify-between border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200",
                             !field.value && "text-muted-foreground"
                           )}
-                           disabled={isLoading} // Apply disabled state here
+                          disabled={isLoading} // Apply disabled state here
                         >
                           {field.value
                             ? categories.find((category) => String(category.id) === field.value)?.title
@@ -277,9 +277,9 @@ export function ModelForm({
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0">
                       <Command filter={(value, search) => {
-                          if (!search) return 1;
-                          const category = categories.find(c => String(c.id) === value || c.title.toLowerCase() === value.toLowerCase());
-                          return category?.title.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+                        if (!search) return 1;
+                        const category = categories.find(c => String(c.id) === value || c.title.toLowerCase() === value.toLowerCase());
+                        return category?.title.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
                       }}>
                         <CommandInput placeholder="Search category..." />
                         <CommandList>
@@ -332,10 +332,10 @@ export function ModelForm({
                           role="combobox"
                           aria-expanded={openBrandCombobox}
                           className={cn(
-                            "w-full justify-between border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200",
+                            "w-full justify-between border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200",
                             !field.value && "text-muted-foreground"
                           )}
-                           disabled={isLoading} // Apply disabled state here
+                          disabled={isLoading} // Apply disabled state here
                         >
                           {field.value
                             ? brands.find((brand) => String(brand.id) === field.value)?.title
@@ -346,9 +346,9 @@ export function ModelForm({
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0">
                       <Command filter={(value, search) => {
-                          if (!search) return 1;
-                          const brand = brands.find(b => String(b.id) === value || b.title.toLowerCase() === value.toLowerCase());
-                          return brand?.title.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+                        if (!search) return 1;
+                        const brand = brands.find(b => String(b.id) === value || b.title.toLowerCase() === value.toLowerCase());
+                        return brand?.title.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
                       }}>
                         <CommandInput placeholder="Search brand..." />
                         <CommandList>
@@ -403,15 +403,15 @@ export function ModelForm({
                           role="combobox"
                           aria-expanded={openSeriesCombobox}
                           className={cn(
-                            "w-full justify-between border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200",
+                            "w-full justify-between border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200",
                             !field.value && "text-muted-foreground"
                           )}
-                           disabled={isLoading || isLoadingSeries} // Apply disabled state here
+                          disabled={isLoading || isLoadingSeries} // Apply disabled state here
                         >
                           {field.value
                             ? modelSeries.find(
-                                (series) => String(series.id) === field.value
-                              )?.title
+                              (series) => String(series.id) === field.value
+                            )?.title
                             : "Select model series"}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -426,33 +426,33 @@ export function ModelForm({
                       }}>
                         <CommandInput placeholder="Search model series..." />
                         <CommandList>
-                           <CommandEmpty>
-                              {isLoadingSeries ? "Loading series..." : "No model series found."}
-                           </CommandEmpty>
-                           <CommandGroup>
-                              {modelSeries.map((series) => (
-                                <CommandItem
-                                  key={series.id}
-                                  value={series.title} // Use title for display and searching
-                                  onSelect={(currentValue) => {
-                                    // Find the series by title to get the ID
-                                    const selectedSeries = modelSeries.find(s => s.title.toLowerCase() === currentValue.toLowerCase());
-                                    const newValue = selectedSeries ? String(selectedSeries.id) : "";
-                                    // Use form.setValue to update
-                                    form.setValue("series_id", newValue === field.value ? "" : newValue);
-                                    setOpenSeriesCombobox(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      field.value === String(series.id) ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  {series.title}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
+                          <CommandEmpty>
+                            {isLoadingSeries ? "Loading series..." : "No model series found."}
+                          </CommandEmpty>
+                          <CommandGroup>
+                            {modelSeries.map((series) => (
+                              <CommandItem
+                                key={series.id}
+                                value={series.title} // Use title for display and searching
+                                onSelect={(currentValue) => {
+                                  // Find the series by title to get the ID
+                                  const selectedSeries = modelSeries.find(s => s.title.toLowerCase() === currentValue.toLowerCase());
+                                  const newValue = selectedSeries ? String(selectedSeries.id) : "";
+                                  // Use form.setValue to update
+                                  form.setValue("series_id", newValue === field.value ? "" : newValue);
+                                  setOpenSeriesCombobox(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    field.value === String(series.id) ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {series.title}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
                         </CommandList>
                       </Command>
                     </PopoverContent>
@@ -474,11 +474,11 @@ export function ModelForm({
                 <FormItem>
                   <FormLabel className="font-medium text-muted-foreground">Name *</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="e.g., iPhone 15 Pro Max" 
-                      {...field} 
-                      disabled={isLoading} 
-                      className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    <Input
+                      placeholder="e.g., iPhone 15 Pro Max"
+                      {...field}
+                      disabled={isLoading}
+                      className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                     />
                   </FormControl>
                   <FormMessage />
@@ -493,17 +493,17 @@ export function ModelForm({
                 <FormItem>
                   <FormLabel className="font-medium text-muted-foreground">Base Price *</FormLabel>
                   <FormControl>
-                    <Input 
+                    <Input
                       type="number"
                       min="0"
                       step="0.01"
-                      placeholder="e.g., 699.99" 
-                      {...field} 
-                      disabled={isLoading} 
-                      className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                      placeholder="e.g., 699.99"
+                      {...field}
+                      disabled={isLoading}
+                      className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                     />
                   </FormControl>
-                  <FormDescription className="text-xs text-gray-500">
+                  <FormDescription className="text-xs text-muted-foreground">
                     Enter the base price for this model.
                   </FormDescription>
                   <FormMessage />
@@ -518,10 +518,10 @@ export function ModelForm({
                 <FormItem>
                   <FormLabel className="font-medium">Model Image <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
-                    <ImageUpload 
+                    <ImageUpload
                       initialImage={imageUrl}
                       onImageUpload={handleImageUpload}
-                      onImageRemove={handleImageRemove} 
+                      onImageRemove={handleImageRemove}
                       disabled={isLoading} // Disable only based on general form loading
                     />
                   </FormControl>
@@ -542,18 +542,18 @@ export function ModelForm({
                 <FormItem>
                   <FormLabel className="font-medium">SEO Title</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="SEO Title" 
-                      {...field} 
-                      disabled={isLoading} 
-                      className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    <Input
+                      placeholder="SEO Title"
+                      {...field}
+                      disabled={isLoading}
+                      className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="seo_keywords"
@@ -561,11 +561,11 @@ export function ModelForm({
                 <FormItem>
                   <FormLabel className="font-medium">SEO Keywords</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Comma-separated keywords" 
-                      {...field} 
-                      disabled={isLoading} 
-                      className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    <Input
+                      placeholder="Comma-separated keywords"
+                      {...field}
+                      disabled={isLoading}
+                      className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                     />
                   </FormControl>
                   <FormMessage />
@@ -580,11 +580,11 @@ export function ModelForm({
                 <FormItem>
                   <FormLabel className="font-medium">SEO Description</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="SEO Description" 
-                      {...field} 
-                      disabled={isLoading} 
-                      className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-none"
+                    <Textarea
+                      placeholder="SEO Description"
+                      {...field}
+                      disabled={isLoading}
+                      className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-none"
                       rows={3}
                     />
                   </FormControl>
@@ -601,13 +601,13 @@ export function ModelForm({
               <FormItem>
                 <FormLabel className="font-medium">Description (Optional)</FormLabel>
                 <FormControl>
-                  <TipTapEditor 
+                  <TipTapEditor
                     content={field.value || ''}
                     onChange={field.onChange}
                     placeholder="Add a detailed description of the model..."
                     disabled={isLoading}
                     minHeight="150px"
-                    className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                   />
                 </FormControl>
                 <FormMessage />
@@ -627,7 +627,7 @@ export function ModelForm({
                     {...field}
                     disabled={isLoading}
                     rows={5}
-                    className="font-mono border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-y"
+                    className="font-mono border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-y"
                   />
                 </FormControl>
                 <FormDescription>
@@ -638,7 +638,7 @@ export function ModelForm({
             )}
           />
         </div>
-        
+
         {/* Price Drop per Failed Test Section */}
         <div className="space-y-4 pt-4 mt-6 border-t">
           <h3 className="text-lg font-medium">Price Deductions for Failed Diagnostic Tests</h3>
@@ -663,7 +663,7 @@ export function ModelForm({
                         value={field.value as string}
                         onChange={(e) => field.onChange(e.target.value)}
                         disabled={isLoading}
-                        className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                       />
                     </FormControl>
                   </FormItem>
@@ -672,7 +672,7 @@ export function ModelForm({
             ))}
           </div>
         </div>
-        
+
         {/* Question Set Assignment Section */}
         <div className="space-y-2 pt-4 mt-6 border-t">
           <h3 className="text-lg font-medium">Assign Question Sets</h3>
@@ -684,8 +684,8 @@ export function ModelForm({
             name="questionSetIds"
             render={({ field }) => {
               // Log field value for questionSetIds whenever it renders/changes
-        
-              
+
+
               return (
                 <FormItem className="flex flex-col">
                   <Popover>
@@ -695,7 +695,7 @@ export function ModelForm({
                           variant="outline"
                           role="combobox"
                           className={cn(
-                            "w-full justify-between border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200",
+                            "w-full justify-between border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200",
                             !field.value?.length && "text-muted-foreground"
                           )}
                           disabled={isLoading || isLoadingQuestionSets}
@@ -791,7 +791,7 @@ export function ModelForm({
             }}
           />
         </div>
-        
+
         <div className="flex justify-end space-x-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
             Cancel

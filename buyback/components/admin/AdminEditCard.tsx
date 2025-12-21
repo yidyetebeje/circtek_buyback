@@ -36,7 +36,7 @@ export const AdminEditCard: React.FC<AdminEditCardProps> = ({
         )}
       </div>
 
-      <div className='bg-white rounded-lg px-6 py-6'>
+      <div className='bg-card rounded-lg px-6 py-6'>
         {description && (
           <div className="mb-4">
             <h2 className="text-lg font-semibold">{displayTitle}</h2>

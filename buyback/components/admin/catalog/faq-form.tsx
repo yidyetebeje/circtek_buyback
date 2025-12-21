@@ -127,7 +127,7 @@ export function FAQForm({
   }
 
   return (
-    <div className="bg-white rounded-lg border p-6">
+    <div className="bg-card rounded-lg border border-border p-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="general">
@@ -158,10 +158,10 @@ export function FAQForm({
                             placeholder="e.g., How long does shipping take?"
                             {...field}
                             disabled={isLoading || upsertFAQTranslation.isPending}
-                            className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                            className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                           />
                         </FormControl>
-                        <FormDescription className="text-xs text-gray-500">
+                        <FormDescription className="text-xs text-muted-foreground">
                           The frequently asked question (in the default language: {defaultLanguage?.name || 'N/A'}).
                         </FormDescription>
                         <FormMessage />
@@ -180,11 +180,11 @@ export function FAQForm({
                             placeholder="Provide a detailed answer to the question..."
                             {...field}
                             disabled={isLoading || upsertFAQTranslation.isPending}
-                            className="min-h-[120px] border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-y"
+                            className="min-h-[120px] border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-y"
                             rows={5}
                           />
                         </FormControl>
-                        <FormDescription className="text-xs text-gray-500">
+                        <FormDescription className="text-xs text-muted-foreground">
                           The answer to the frequently asked question (in the default language: {defaultLanguage?.name || 'N/A'}).
                         </FormDescription>
                         <FormMessage />
@@ -208,10 +208,10 @@ export function FAQForm({
                             value={field.value || 0}
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                             disabled={isLoading || upsertFAQTranslation.isPending}
-                            className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                            className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                           />
                         </FormControl>
-                        <FormDescription className="text-xs text-gray-500">
+                        <FormDescription className="text-xs text-muted-foreground">
                           Order in which this FAQ appears (0 = first).
                         </FormDescription>
                         <FormMessage />
@@ -224,7 +224,7 @@ export function FAQForm({
                   control={form.control}
                   name="is_published"
                   render={({ field }: { field: ControllerRenderProps<FAQFormValues, "is_published"> }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border border-border p-4">
                       <div className="space-y-0.5">
                         <FormLabel className="text-base font-medium">Published</FormLabel>
                         <FormDescription>
@@ -272,7 +272,7 @@ export function FAQForm({
             ) : (
               <div className="space-y-4">
                 {/* AI Translation Info */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
                   <div className="flex items-start space-x-2">
                     <div className="flex-shrink-0">
                       <svg className="h-5 w-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -280,15 +280,15 @@ export function FAQForm({
                       </svg>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-blue-900">AI Translation Available</h4>
-                      <p className="text-sm text-blue-700 mt-1">
-                        Use the &ldquo;Generate with AI&rdquo; button to automatically translate FAQ questions and answers from {defaultLanguage.name} to other languages. 
+                      <h4 className="text-sm font-medium text-blue-600">AI Translation Available</h4>
+                      <p className="text-sm text-blue-600/90 mt-1">
+                        Use the &ldquo;Generate with AI&rdquo; button to automatically translate FAQ questions and answers from {defaultLanguage.name} to other languages.
                         The AI will maintain context and provide natural translations for customer support content.
                       </p>
                     </div>
                   </div>
                 </div>
-                
+
                 <FAQTranslationManager
                   faqId={faqId}
                   defaultLanguage={defaultLanguage}

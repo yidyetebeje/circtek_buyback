@@ -30,14 +30,14 @@ export default function ShopLocationsPage() {
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [locationToDelete, setLocationToDelete] = useState<ShopLocationRow | null>(null);
-  
+
   // Get shop details and locations from API
   const { data: shopResponse, isLoading: isLoadingShop } = useShop(shopId as number);
   const { data: locationsResponse, isLoading: isLoadingLocations, error } = useShopLocations(shopId as number);
-  
+
   const { mutate: deleteLocation, isPending: isDeleting } = useDeleteShopLocation(shopId as number);
   const { mutate: toggleActive, isPending: isToggling } = useToggleShopLocationActive(shopId as number, 0); // We'll update the locationId when needed
-  
+
   // Extract data
   const shop = shopResponse?.data;
   const locations = locationsResponse?.data || [];
@@ -57,7 +57,7 @@ export default function ShopLocationsPage() {
 
   const handleDelete = async () => {
     if (!locationToDelete) return;
-    
+
     deleteLocation(locationToDelete.id, {
       onSuccess: () => {
         toast.success(`Location "${locationToDelete.name}" deleted successfully`);
@@ -115,9 +115,9 @@ export default function ShopLocationsPage() {
             >
               <span className="sr-only">{location.isActive ? 'Deactivate' : 'Activate'}</span>
               {location.isActive ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye-off"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye-off"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
               )}
             </Button>
             <Button
@@ -134,33 +134,18 @@ export default function ShopLocationsPage() {
       },
     },
   ];
-  
+
   return (
     <div className="container mx-auto py-10">
-      <div className="flex items-center mb-5">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => router.push(`/admin/shops/${shopId}`)}
-          className="mr-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Shop
-        </Button>
-        
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">{isLoadingShop ? 'Loading...' : `${shop?.name || 'Shop'} - Locations`}</h1>
-          <p className="text-muted-foreground">Manage shop physical locations</p>
-        </div>
-        
+      <div className="flex justify-end mb-5">
         <Button onClick={handleCreateNew} className="flex items-center gap-2">
           <Plus size={18} />
           Add New Location
         </Button>
       </div>
-      
+
       <Separator className="mb-8" />
-      
+
       {error ? (
         <div className="bg-red-50 p-4 rounded-md mb-8">
           <h3 className="text-red-800 font-medium">Error loading locations</h3>
@@ -178,8 +163,8 @@ export default function ShopLocationsPage() {
           <Button onClick={handleCreateNew}>Add your first location</Button>
         </div>
       ) : (
-        <DataTable 
-          columns={columnsWithActions} 
+        <DataTable
+          columns={columnsWithActions}
           data={locations}
           searchKey="name"
           filterOptions={[
@@ -200,7 +185,7 @@ export default function ShopLocationsPage() {
           ]}
         />
       )}
-      
+
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>

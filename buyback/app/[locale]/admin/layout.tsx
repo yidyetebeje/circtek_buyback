@@ -3,7 +3,15 @@
 import React from "react";
 import { AdminTopBar, AdminSidebar } from "@/components/admin/admin-sidebar";
 import { ReactQueryProvider } from "@/providers/react-query-provider";
+import { ThemeProvider } from "@/providers/theme-provider";
 import { usePathname } from "next/navigation";
+import { Poppins } from "next/font/google";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+});
 import { Toaster } from "@/components/ui/sonner";
 
 interface AdminLayoutProps {
@@ -13,7 +21,7 @@ interface AdminLayoutProps {
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname?.includes('/admin/login');
-  
+
   // If this is the login page, don't show the top bar
   if (isLoginPage) {
     return (
@@ -22,19 +30,19 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       </main>
     );
   }
-  
+
   // Normal admin layout with top bar and sidebar for all other admin pages
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/40">
       {/* Admin top bar */}
       <AdminTopBar />
-      
+
       {/* Admin sidebar */}
       <AdminSidebar />
-      
+
       {/* Main content area with padding to account for the fixed top bar and sidebar */}
-      <main className="pt-20 pl-16 w-full"> {/* pt-20 for top bar, pl-16 for sidebar */}
-        <div className="p-4 md:p-6 lg:p-8 w-full max-w-full">
+      <main className="pt-20 pl-0 lg:pl-[80px] w-full"> {/* pt-20 for top bar, pl-[80px] for desktop sidebar */}
+        <div className="px-4 md:px-8 lg:px-12 py-6 md:py-8 w-full max-w-7xl mx-auto">
           {children}
         </div>
       </main>
@@ -45,8 +53,17 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <ReactQueryProvider>
-      <AdminLayoutContent>{children}</AdminLayoutContent>
-      <Toaster />
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <div className={poppins.className}>
+          <AdminLayoutContent>{children}</AdminLayoutContent>
+          <Toaster />
+        </div>
+      </ThemeProvider>
     </ReactQueryProvider>
   );
 }

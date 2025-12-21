@@ -28,20 +28,20 @@ export default function CategoryDetailPage() {
   const [languages, setLanguages] = useState<Language[]>([]);
   const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
   const [defaultLanguage, setDefaultLanguage] = useState<Language | null>(null);
-  
+
   // Fetch category data
-  const { 
-    data: category, 
-    isLoading: isLoadingCategory, 
-    isError 
+  const {
+    data: category,
+    isLoading: isLoadingCategory,
+    isError
   } = useCategory(categoryId);
 
-  const { 
+  const {
     data: translationsData,
     isLoading: isLoadingTranslations,
-    refetch: refetchTranslations 
+    refetch: refetchTranslations
   } = useCategoryTranslations(categoryId);
-  
+
   // Update and delete mutations
   const updateCategory = useUpdateCategory(categoryId);
   const deleteCategory = useDeleteCategory();
@@ -74,10 +74,10 @@ export default function CategoryDetailPage() {
 
     fetchLanguages();
   }, []);
-  
+
   useEffect(() => {
     const categoryData = category?.data;
-    if (categoryData ) {
+    if (categoryData) {
       setInitialValues({
         title: categoryData.title || '',
         description: categoryData.description || '',
@@ -126,7 +126,7 @@ export default function CategoryDetailPage() {
       toast.error('Failed to save translations');
     }
   };
-  
+
   // Handle form submission for category update
   const handleSubmit = async (values: CategoryFormValues) => {
     const updatedCategoryPayload: Partial<Omit<Category, 'icon'>> = {
@@ -150,7 +150,7 @@ export default function CategoryDetailPage() {
       toast.error((error as Error).message || 'Failed to update category');
     }
   };
-  
+
   // Handle category deletion
   const handleDelete = () => {
     setIsDeleting(true);
@@ -178,7 +178,7 @@ export default function CategoryDetailPage() {
     })) as TranslationWithSpecs[];
 
     // Check if there's already a translation for the default language (English)
-    const hasDefaultLanguageTranslation = defaultLanguage && 
+    const hasDefaultLanguageTranslation = defaultLanguage &&
       translationList.some(t => t.language_id === defaultLanguage.id);
 
     // If no default language translation exists, use the main category data as fallback
@@ -194,31 +194,31 @@ export default function CategoryDetailPage() {
         meta_keywords: categoryData.meta_keywords || '',
         specifications: ''
       };
-      
+
       // Add the default translation to the beginning of the list
       translationList.unshift(defaultTranslation);
     }
 
     return translationList;
   })();
- 
-  
+
+
   if (isLoadingCategory || isLoadingTranslations) {
     return (
-      <div className="p-4 md:p-6 space-y-6 flex justify-center items-center py-10">
+      <div className="space-y-6 flex justify-center items-center py-10">
         <Loader2 className="h-8 w-8 animate-spin mr-2" />
         <span>Loading category data...</span>
       </div>
     );
   }
-  
+
   if (isError || !category) {
     return (
-      <div className="p-4 md:p-6 space-y-6">
+      <div className="space-y-6">
         <div className="p-6 bg-red-50 text-red-600 rounded-md flex flex-col">
           <p>Failed to load category. It might have been deleted or you don&apos;t have permission to view it.</p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => router.push('/admin/catalog/categories')}
             className="mt-4 self-start"
           >
@@ -228,7 +228,7 @@ export default function CategoryDetailPage() {
       </div>
     );
   }
-  
+
   // Delete button with confirmation dialog
   const deleteButton = (
     <AlertDialog>
@@ -245,7 +245,7 @@ export default function CategoryDetailPage() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
+          <AlertDialogAction
             onClick={handleDelete}
             disabled={isDeleting}
             className="bg-red-600 hover:bg-red-700"
@@ -285,23 +285,23 @@ export default function CategoryDetailPage() {
             <Globe className="w-4 h-4 mr-2" /> Translations
           </TabsTrigger>
         </TabsList>
-       
-        
+
+
         <TabsContent value="edit" className="p-0">
-        <Separator/>
+          <Separator />
           {initialValues && (
-          
-            <CategoryForm 
+
+            <CategoryForm
               initialData={initialValues}
-              onSubmit={handleSubmit} 
-              onCancel={() => router.push('/admin/catalog/categories')} 
-              onFileSelect={setIconFile} 
-              isLoading={updateCategory.isPending || isUploading} 
+              onSubmit={handleSubmit}
+              onCancel={() => router.push('/admin/catalog/categories')}
+              onFileSelect={setIconFile}
+              isLoading={updateCategory.isPending || isUploading}
             />
-          
+
           )}
         </TabsContent>
-        
+
         <TabsContent value="translations" className="space-y-4">
           {isLoadingTranslations || isLoadingLanguages ? (
             <div className="flex justify-center items-center p-8">
@@ -321,13 +321,13 @@ export default function CategoryDetailPage() {
                   <div>
                     <h4 className="text-sm font-medium text-blue-900">AI Translation Available</h4>
                     <p className="text-sm text-blue-700 mt-1">
-                      Use the &ldquo;Generate with AI&rdquo; button to automatically translate content from {defaultLanguage.name} to other languages. 
+                      Use the &ldquo;Generate with AI&rdquo; button to automatically translate content from {defaultLanguage.name} to other languages.
                       The AI will maintain technical accuracy and SEO optimization while adapting the content for each target language.
                     </p>
                   </div>
                 </div>
               </div>
-              
+
               <TranslationManager
                 entityType="category"
                 entityId={categoryId}

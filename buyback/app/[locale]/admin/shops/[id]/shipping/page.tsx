@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-import { ArrowLeft, Truck } from 'lucide-react';
+import { Truck } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -137,24 +137,7 @@ export default function ShopShippingConfigPage() {
     return (
         <div className="container mx-auto py-10 max-w-4xl">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-5">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => router.push(`/admin/shops/${shopId}`)}
-                >
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                        <Truck className="h-6 w-6 text-muted-foreground" />
-                        <h1 className="text-2xl font-bold">Shipping Configuration</h1>
-                    </div>
-                    <p className="text-muted-foreground">
-                        {shop.name} • Configure Sendcloud integration for this shop
-                    </p>
-                </div>
-            </div>
+
 
             <Separator className="mb-8" />
 

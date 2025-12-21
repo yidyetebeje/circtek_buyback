@@ -105,8 +105,8 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Search for Tested Device</h2>
-        <p className="text-gray-600">
+        <h2 className="text-xl font-semibold text-foreground mb-2">Search for Tested Device</h2>
+        <p className="text-muted-foreground">
           Enter the device serial number to find tested devices available for purchase.
         </p>
       </div>
@@ -145,12 +145,12 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
           {isLoading && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-              <span className="ml-2 text-gray-600">Searching devices...</span>
+              <span className="ml-2 text-muted-foreground">Searching devices...</span>
             </div>
           )}
 
           {error && (
-            <div className="flex items-center p-4 text-red-800 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center p-4 text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg">
               <AlertCircle className="w-5 h-5 mr-2" />
               <span>Error searching devices. Please try again.</span>
             </div>
@@ -160,9 +160,9 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
             <>
               {uniqueDevices.length === 0 ? (
                 <div className="text-center py-8">
-                  <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-1">Device Not Found</h3>
-                  <p className="text-gray-600">
+                  <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-foreground mb-1">Device Not Found</h3>
+                  <p className="text-muted-foreground">
                     No tested device found with serial &quot;{searchTerm}&quot;.
                     Please verify the serial number or ensure the device has been tested.
                   </p>
@@ -177,22 +177,22 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
                     {uniqueDevices.map((device) => (
                       <div
                         key={device.deviceTransactionId}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                        className="p-4 border border-border rounded-lg hover:border-blue-500 transition-colors"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <h4 className="font-medium text-gray-900">
+                              <h4 className="font-medium text-foreground">
                                 {device.make} {device.modelName}
                               </h4>
                               {device.grade && (
-                                <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                                <span className="px-2 py-1 text-xs font-medium bg-blue-500/10 text-blue-600 rounded">
                                   Grade {device.grade}
                                 </span>
                               )}
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm text-gray-600">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm text-muted-foreground">
                               <div className="min-w-0">
                                 <span className="font-medium">Serial:</span>
                                 <span className="ml-1 break-all">{device.serial}</span>

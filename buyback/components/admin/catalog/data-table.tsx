@@ -165,7 +165,7 @@ export function DataTable<TData extends { id?: number | string; publishedInShops
   );
 
   return (
-    <div className={cn("space-y-4 bg-white p-4 rounded-md", className)}>
+    <div className={cn("space-y-4 bg-card p-4 rounded-md", className)}>
       {children ? (
         children
       ) : (

@@ -22,44 +22,44 @@ interface DateRangeFilterProps {
 export function DateRangeFilter({ onDateRangeChange }: DateRangeFilterProps) {
   const { dateRange, setDateRange } = useDateRangeFilter();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  
+
   const handlePresetClick = (days: number) => {
     // Create dates directly here instead of depending on state updates
     const now = new Date();
     now.setHours(23, 59, 59, 999);
-    
+
     const past = new Date();
     past.setDate(past.getDate() - days);
     past.setHours(0, 0, 0, 0);
-    
+
     const newDateRange = {
       dateFrom: past.toISOString(),
       dateTo: now.toISOString(),
     };
-    
+
     // Update the internal state
     setDateRange(newDateRange);
-    
+
     // Immediately call onDateRangeChange with the new values
     onDateRangeChange(newDateRange);
   };
-  
+
   // Set default 30-day range on component mount
   useEffect(() => {
     if (!dateRange.dateFrom && !dateRange.dateTo) {
       handlePresetClick(30);
     }
   }, []);
-  
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return "";
     return format(new Date(dateString), "MMM dd");
   };
 
   const hasDateRange = !!(dateRange.dateFrom && dateRange.dateTo);
-  
+
   return (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 bg-background rounded-lg border bg-white">
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-4 bg-background rounded-lg border">
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-medium text-muted-foreground">Filter by date:</h3>
         {hasDateRange && (
@@ -68,7 +68,7 @@ export function DateRangeFilter({ onDateRangeChange }: DateRangeFilterProps) {
           </span>
         )}
       </div>
-      
+
       <div className="flex flex-wrap gap-2">
         <Button
           variant="outline"
@@ -94,7 +94,7 @@ export function DateRangeFilter({ onDateRangeChange }: DateRangeFilterProps) {
         >
           90d
         </Button>
-        
+
         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -131,25 +131,25 @@ export function DateRangeFilter({ onDateRangeChange }: DateRangeFilterProps) {
                   });
                   return;
                 }
-                
+
                 const newDateRange: DateRange = {};
-                
+
                 if (range.from) {
                   // Set start date to beginning of day (00:00:00)
                   const fromDate = new Date(range.from);
                   fromDate.setHours(0, 0, 0, 0);
                   newDateRange.dateFrom = fromDate.toISOString();
                 }
-                
+
                 if (range.to) {
                   // Set end date to end of day (23:59:59.999)
                   const toDate = new Date(range.to);
                   toDate.setHours(23, 59, 59, 999);
                   newDateRange.dateTo = toDate.toISOString();
                 }
-                
+
                 setDateRange(newDateRange);
-                
+
                 if (range.from && range.to) {
                   onDateRangeChange(newDateRange);
                   setIsCalendarOpen(false);
@@ -160,7 +160,7 @@ export function DateRangeFilter({ onDateRangeChange }: DateRangeFilterProps) {
           </PopoverContent>
         </Popover>
       </div>
-      
+
       {hasDateRange && (
         <div className="text-xs text-muted-foreground md:hidden">
           {formatDate(dateRange.dateFrom)} - {formatDate(dateRange.dateTo)}

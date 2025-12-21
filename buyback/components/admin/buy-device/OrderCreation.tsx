@@ -189,24 +189,24 @@ export function OrderCreation({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Create Purchase Order</h2>
-        <p className="text-gray-600">
+        <h2 className="text-xl font-semibold text-foreground mb-2">Create Purchase Order</h2>
+        <p className="text-muted-foreground">
           Enter customer details to complete the device purchase and create the order.
         </p>
       </div>
 
       {/* Order Summary */}
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Order Summary</h3>
+      <div className="bg-muted/40 rounded-lg p-6">
+        <h3 className="font-semibold text-foreground mb-4">Order Summary</h3>
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Device Info */}
           <div>
-            <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2">
+            <h4 className="font-medium text-foreground mb-2 flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Device Information
             </h4>
-            <div className="space-y-1 text-sm text-gray-600">
+            <div className="space-y-1 text-sm text-muted-foreground">
               <div><span className="font-medium">Product:</span> {product.title}</div>
               <div><span className="font-medium">Serial:</span> {testedDevice.serial}</div>
               <div><span className="font-medium">IMEI:</span> {testedDevice.imei}</div>
@@ -216,8 +216,8 @@ export function OrderCreation({
 
           {/* Test Results */}
           <div>
-            <h4 className="font-medium text-gray-700 mb-2">Test Results</h4>
-            <div className="space-y-1 text-sm text-gray-600">
+            <h4 className="font-medium text-foreground mb-2">Test Results</h4>
+            <div className="space-y-1 text-sm text-muted-foreground">
               <div><span className="font-medium">Tested:</span> {new Date(testedDevice.testedAt).toLocaleDateString()}</div>
               <div><span className="font-medium">Warehouse:</span> {testedDevice.warehouseName || 'N/A'}</div>
               {testedDevice.testInfo?.failedResult ? (
@@ -232,15 +232,15 @@ export function OrderCreation({
 
       {/* Customer Information Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
             <User className="w-5 h-5" />
             Customer Information
           </h3>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 First Name *
               </label>
               <Input
@@ -252,7 +252,7 @@ export function OrderCreation({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Last Name *
               </label>
               <Input
@@ -264,7 +264,7 @@ export function OrderCreation({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Email *
               </label>
               <Input
@@ -276,7 +276,7 @@ export function OrderCreation({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Phone *
               </label>
               <Input
@@ -289,15 +289,15 @@ export function OrderCreation({
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
             <MapPin className="w-5 h-5" />
             Address Information
           </h3>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-muted-foreground mb-1">
                 Street Address *
               </label>
               <Input
@@ -310,7 +310,7 @@ export function OrderCreation({
 
             <div className="grid md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   City *
                 </label>
                 <Input
@@ -322,7 +322,7 @@ export function OrderCreation({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Postal Code *
                 </label>
                 <Input
@@ -334,7 +334,7 @@ export function OrderCreation({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   Country
                 </label>
                 <Input
@@ -347,10 +347,10 @@ export function OrderCreation({
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Inventory Details</h3>
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h3 className="font-semibold text-foreground mb-4">Inventory Details</h3>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-muted-foreground mb-1">
               SKU *
             </label>
             <Input
@@ -363,8 +363,8 @@ export function OrderCreation({
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Additional Notes</h3>
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h3 className="font-semibold text-foreground mb-4">Additional Notes</h3>
           <Textarea
             value={formData.notes}
             onChange={(e) => handleInputChange('notes', e.target.value)}
@@ -374,7 +374,7 @@ export function OrderCreation({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+        <div className="flex items-center justify-between pt-6 border-t border-border">
           <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Price Confirmation

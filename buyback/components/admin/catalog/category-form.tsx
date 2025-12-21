@@ -89,10 +89,10 @@ export function CategoryForm({
                         placeholder="e.g., Smartphones"
                         {...field}
                         disabled={isLoading}
-                        className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                       />
                     </FormControl>
-                    <FormDescription className="text-xs text-gray-500">
+                    <FormDescription className="text-xs text-muted-foreground">
                       The main name of the category (default language).
                     </FormDescription>
                     <FormMessage />
@@ -128,9 +128,9 @@ export function CategoryForm({
                             aspectRatio="square" // Categories usually have square icons
                           />
                         </div>
-                       
+
                       </div>
-                     
+
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -152,7 +152,7 @@ export function CategoryForm({
                         {...field}
                         value={field.value ?? ""}
                         disabled={isLoading}
-                        className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                       />
                     </FormControl>
                     <FormMessage />
@@ -172,10 +172,10 @@ export function CategoryForm({
                         {...field}
                         value={field.value ?? ""}
                         disabled={isLoading}
-                        className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                       />
                     </FormControl>
-                    <FormDescription className="text-xs text-gray-500">
+                    <FormDescription className="text-xs text-muted-foreground">
                       Comma-separated keywords.
                     </FormDescription>
                     <FormMessage />
@@ -195,7 +195,7 @@ export function CategoryForm({
                         {...field}
                         value={field.value ?? ""}
                         disabled={isLoading}
-                        className="min-h-[100px] border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-y"
+                        className="min-h-[100px] border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-y"
                         rows={3}
                       />
                     </FormControl>
@@ -219,7 +219,7 @@ export function CategoryForm({
                       placeholder="Add a description for this category..."
                       disabled={isLoading}
                       minHeight="150px"
-                      className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                      className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                     />
                   </FormControl>
                   <FormMessage />

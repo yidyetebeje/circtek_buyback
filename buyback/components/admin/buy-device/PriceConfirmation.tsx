@@ -79,36 +79,36 @@ export function PriceConfirmation({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Confirm Price</h2>
-          <p className="text-gray-600">
+          <h2 className="text-xl font-semibold text-foreground mb-2">Confirm Price</h2>
+          <p className="text-muted-foreground">
             Review the estimated price and make adjustments if needed.
           </p>
         </div>
       </div>
 
       {/* Product Info */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="font-medium text-gray-900 mb-2">Selected Product</h3>
-        <p className="text-gray-700">{product.title}</p>
+      <div className="bg-muted/40 rounded-lg p-4">
+        <h3 className="font-medium text-foreground mb-2">Selected Product</h3>
+        <p className="text-foreground/90">{product.title}</p>
         {product.base_price && (
-          <p className="text-sm text-gray-600 mt-1">Base Price: €{product.base_price}</p>
+          <p className="text-sm text-muted-foreground mt-1">Base Price: €{product.base_price}</p>
         )}
       </div>
 
       {/* Price Information */}
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2">Estimated Price</h4>
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+            <h4 className="font-medium text-blue-600 mb-2">Estimated Price</h4>
             <p className="text-2xl font-bold text-blue-600">€{estimatedPrice.toFixed(2)}</p>
             {totalDeduction > 0 && (
-              <p className="text-sm text-red-700 mt-1">-€{totalDeduction.toFixed(2)} deduction for failed tests</p>
+              <p className="text-sm text-red-600 mt-1">-€{totalDeduction.toFixed(2)} deduction for failed tests</p>
             )}
-            <p className="text-sm text-blue-700 mt-1">Based on device condition</p>
+            <p className="text-sm text-blue-600/80 mt-1">Based on device condition</p>
           </div>
 
-          <div className={`bg-gray-50 border rounded-lg p-4 ${showPriceExceededError ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}>
-            <h4 className="font-medium text-gray-900 mb-2">Final Price</h4>
+          <div className={`bg-muted/40 border rounded-lg p-4 ${showPriceExceededError ? 'border-red-500/50 bg-red-500/10' : 'border-border'}`}>
+            <h4 className="font-medium text-foreground mb-2">Final Price</h4>
             <div className="space-y-2">
               <Input
                 type="number"
@@ -119,17 +119,17 @@ export function PriceConfirmation({
                 onChange={(e) => handlePriceChange(e.target.value)}
                 className={`text-lg font-semibold ${showPriceExceededError ? 'border-red-500 focus:ring-red-500' : ''}`}
               />
-              <p className="text-sm text-gray-600">Maximum allowed: €{maxAllowedPrice.toFixed(2)}</p>
+              <p className="text-sm text-muted-foreground">Maximum allowed: €{maxAllowedPrice.toFixed(2)}</p>
             </div>
           </div>
         </div>
 
         {showWarning && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
             <div>
-              <h4 className="font-medium text-yellow-800">Price Adjustment Warning</h4>
-              <p className="text-sm text-yellow-700 mt-1">
+              <h4 className="font-medium text-yellow-600">Price Adjustment Warning</h4>
+              <p className="text-sm text-yellow-600/90 mt-1">
                 The final price differs significantly (&gt;20%) from the estimated price.
                 Please ensure this adjustment is intentional.
               </p>
@@ -138,11 +138,11 @@ export function PriceConfirmation({
         )}
 
         {showPriceExceededError && (
-          <div className="bg-red-50 border border-red-300 rounded-lg p-4 flex items-start gap-3">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-start gap-3">
             <XCircle className="w-5 h-5 text-red-600 mt-0.5" />
             <div>
-              <h4 className="font-medium text-red-800">Price Exceeds Maximum</h4>
-              <p className="text-sm text-red-700 mt-1">
+              <h4 className="font-medium text-red-600">Price Exceeds Maximum</h4>
+              <p className="text-sm text-red-600/90 mt-1">
                 The price cannot exceed €{maxAllowedPrice.toFixed(2)}.
                 Please enter a price equal to or less than the maximum allowed.
               </p>
@@ -152,9 +152,9 @@ export function PriceConfirmation({
 
         {/* Failed Tests breakdown */}
         {failedTests.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
-            <h4 className="font-medium text-red-800">Failed Tests Deduction</h4>
-            <ul className="text-sm text-red-700 list-disc pl-5">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 space-y-2">
+            <h4 className="font-medium text-red-600">Failed Tests Deduction</h4>
+            <ul className="text-sm text-red-600/90 list-disc pl-5">
               {failedTests.map(test => {
                 const deduct = priceDropMap[test.toLowerCase()] || 0;
                 return (
@@ -165,7 +165,7 @@ export function PriceConfirmation({
                 );
               })}
             </ul>
-            <div className="flex justify-between font-medium pt-2 border-t border-red-200">
+            <div className="flex justify-between font-medium pt-2 border-t border-red-500/20">
               <span>Total Deduction</span>
               <span>-€{totalDeduction.toFixed(2)}</span>
             </div>

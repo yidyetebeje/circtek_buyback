@@ -1,10 +1,7 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import { PlusCircle } from "lucide-react";
-import { AdminHeader } from "@/components/admin/AdminHeader";
-import { Button } from "@/components/ui/button";
+
 import { DataTable } from "@/components/admin/catalog/data-table";
 import { useColumns } from "@/components/admin/locations/locations-columns";
 import { useWarehouses } from "@/hooks/useWarehouses";
@@ -39,22 +36,7 @@ export default function LocationsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <AdminHeader
-          title="Locations"
-          breadcrumbs={[
-            { href: "/admin/dashboards", label: "Admin" },
-            { label: "Locations", isCurrentPage: true },
-          ]}
-        />
-        <Button asChild>
-          <Link href="/admin/locations/new">
-            <PlusCircle className="mr-2 h-4 w-4" /> Create New Location
-          </Link>
-        </Button>
-      </div>
-
+    <div className="space-y-6">
       <DataTable
         columns={columns}
         data={locations}

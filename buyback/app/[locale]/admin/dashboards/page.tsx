@@ -12,16 +12,16 @@ export const metadata: Metadata = {
 
 export default async function AdminDashboardPage() {
   const session = await auth();
-  
+
   // Double-check authentication in case middleware fails
   if (!session) {
     redirect("/en/admin/login");
   }
-  
+
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <AdminHeader 
-        title="Dashboard" 
+    <div className="space-y-6">
+      <AdminHeader
+        title="Dashboard"
         breadcrumbs={[
           { label: 'Admin', isCurrentPage: true }
         ]}

@@ -54,7 +54,7 @@ export default function TransferDetailPage() {
 
     if (isLoading) {
         return (
-            <div className="p-4 md:p-6 space-y-6">
+            <div className="space-y-6">
                 <AdminHeader
                     title="Transfer Details"
                     breadcrumbs={[
@@ -74,7 +74,7 @@ export default function TransferDetailPage() {
 
     if (error || !transfer) {
         return (
-            <div className="p-4 md:p-6 space-y-6">
+            <div className="space-y-6">
                 <AdminHeader
                     title="Transfer Not Found"
                     breadcrumbs={[
@@ -114,7 +114,7 @@ export default function TransferDetailPage() {
     };
 
     return (
-        <div className="p-4 md:p-6 space-y-6">
+        <div className="space-y-6">
             <AdminHeader
                 title={`Transfer TRF-${transfer.id}`}
                 breadcrumbs={[

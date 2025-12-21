@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-import { AdminHeader } from '@/components/admin/AdminHeader';
+
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/admin/catalog/data-table';
 import { columns } from '@/components/admin/catalog/faqs-columns';
@@ -64,7 +64,7 @@ export default function FAQsPage() {
 
   // Handle pagination changes and trigger remote data fetch
   const handlePaginationChange = (updater: React.SetStateAction<PaginationState>) => {
-    const newPagination = typeof updater === 'function' 
+    const newPagination = typeof updater === 'function'
       ? updater({ pageIndex: page - 1, pageSize: limit })
       : updater;
     setPage(newPagination.pageIndex + 1);
@@ -72,7 +72,7 @@ export default function FAQsPage() {
 
   // Handle filter changes and trigger remote data fetch
   const handleColumnFiltersChange = (updater: React.SetStateAction<ColumnFiltersState>) => {
-    const newFilters = typeof updater === 'function' 
+    const newFilters = typeof updater === 'function'
       ? updater(columnFilters)
       : updater;
     setColumnFilters(newFilters);
@@ -102,9 +102,9 @@ export default function FAQsPage() {
     }));
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <AdminHeader title={t('faqs')} />
+    <div className="space-y-6">
+      <div className="flex justify-end items-center">
+
         <Button asChild>
           <Link href="/admin/faqs/new">
             <Plus className="h-4 w-4 mr-2" />

@@ -45,8 +45,8 @@ interface ModelSeriesFormProps {
   onCancel: () => void;
   isLoading?: boolean;
   // Use ImageUpload's props
-  onImageUpload: (file: File) => Promise<string>; 
-  onImageRemove?: () => void; 
+  onImageUpload: (file: File) => Promise<string>;
+  onImageRemove?: () => void;
 }
 
 export function ModelSeriesForm({
@@ -88,11 +88,11 @@ export function ModelSeriesForm({
                 <FormItem>
                   <FormLabel className="font-medium text-muted-foreground">Name *</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="e.g., iPhone 15 Series" 
-                      {...field} 
-                      disabled={isLoading} 
-                      className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    <Input
+                      placeholder="e.g., iPhone 15 Series"
+                      {...field}
+                      disabled={isLoading}
+                      className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                     />
                   </FormControl>
                   <FormMessage />
@@ -111,10 +111,10 @@ export function ModelSeriesForm({
                       <ImageUpload
                         initialImage={typeof field.value === 'string' ? field.value : null}
                         onImageUpload={async (file) => {
-                          const imageUrl = await onImageUpload(file); 
+                          const imageUrl = await onImageUpload(file);
                           field.onChange(imageUrl);
                           return imageUrl;
-                        }} 
+                        }}
                         onImageRemove={() => {
                           if (onImageRemove) {
                             onImageRemove();
@@ -141,18 +141,18 @@ export function ModelSeriesForm({
                 <FormItem>
                   <FormLabel className="font-medium text-muted-foreground">SEO Title</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="SEO Title" 
-                      {...field} 
-                      disabled={isLoading} 
-                      className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    <Input
+                      placeholder="SEO Title"
+                      {...field}
+                      disabled={isLoading}
+                      className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="seo_keywords"
@@ -164,10 +164,10 @@ export function ModelSeriesForm({
                       placeholder="keyword1, keyword2, keyword3"
                       {...field}
                       disabled={isLoading}
-                      className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                      className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                     />
                   </FormControl>
-                  <FormDescription className="text-xs text-gray-500">
+                  <FormDescription className="text-xs text-muted-foreground">
                     Comma-separated keywords
                   </FormDescription>
                   <FormMessage />
@@ -186,7 +186,7 @@ export function ModelSeriesForm({
                       placeholder="SEO Description"
                       {...field}
                       disabled={isLoading}
-                      className="min-h-[100px] border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-none"
+                      className="min-h-[100px] border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-none"
                       rows={3}
                     />
                   </FormControl>
@@ -210,7 +210,7 @@ export function ModelSeriesForm({
                     placeholder="Add a description for this model series..."
                     disabled={isLoading}
                     minHeight="150px"
-                    className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                    className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                   />
                 </FormControl>
                 <FormMessage />
@@ -218,7 +218,7 @@ export function ModelSeriesForm({
             )}
           />
         </div>
-        
+
         {/* Action Buttons */}
         <div className="flex justify-end space-x-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>

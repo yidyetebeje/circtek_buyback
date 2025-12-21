@@ -11,6 +11,7 @@ import { useAtomValue } from 'jotai';
 import { displayConfigAtom } from '@/store/atoms';
 import { useSession, signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,12 +58,12 @@ const TopBarItem = ({ icon: Icon, label, href, isActive }: TopBarItemProps) => {
   return (
     <Link href={href}>
       <div className={cn(
-        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-base font-semibold transition-all duration-200",
         isActive
           ? "bg-white/15 text-white shadow-sm"
           : "text-white/90 hover:text-white hover:bg-white/10"
       )}>
-        <Icon size={16} />
+        <Icon size={18} />
         <span>{label}</span>
       </div>
     </Link>
@@ -81,12 +82,12 @@ const NavigationDropdown = ({ isActive, icon: Icon, label, items }: DropdownProp
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className={cn(
-          "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-semibold transition-all duration-200",
           isActive
             ? "bg-white/15 text-white shadow-sm"
             : "text-white/90 hover:text-white hover:bg-white/10"
         )}>
-          <Icon size={16} />
+          <Icon size={18} />
           <span>{label}</span>
           <ChevronDown size={14} />
         </button>
@@ -108,60 +109,27 @@ const NavigationDropdown = ({ isActive, icon: Icon, label, items }: DropdownProp
 
 
 export function AdminSidebar() {
-  const { data: session } = useSession();
-
-  const getUserInitials = (name?: string | null) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const handleSignOut = () => {
-    signOut({ callbackUrl: '/en/admin/login' });
-  };
+  const config = useAtomValue(displayConfigAtom);
 
   return (
-    <aside className="fixed left-0 top-0 z-40 w-16 h-screen bg-white border-r border-gray-200 shadow-sm">
-      <div className="flex flex-col h-full pt-20">
-        {/* Empty space to push avatar to bottom */}
-        <div className="flex-1"></div>
-
-        {/* User Avatar at bottom */}
-        {session && (
-          <div className="p-4 flex justify-start">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="w-10 h-10 rounded-lg hover:bg-gray-50 transition-all duration-200 flex items-center justify-center"
-                  title={session.user?.name || 'User Menu'}
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={session.user?.image || undefined} />
-                    <AvatarFallback className="text-xs bg-gray-100 text-gray-700">
-                      {getUserInitials(session.user?.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="start" side="right">
-                <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium">{session.user?.name}</p>
-                  <p className="text-xs text-gray-500">{session.user?.email}</p>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+    <aside className="fixed left-0 top-0 z-40 w-[80px] h-screen bg-background dark:bg-sidebar border-r border-border shadow-sm flex flex-col items-center py-4">
+      <Link href="/admin" className="flex items-center justify-center w-full mb-6">
+        {config.logoUrl ? (
+          <div className="relative w-10 h-10">
+            <Image
+              src={config.logoUrl}
+              alt={config.shopName || "Company Logo"}
+              fill
+              style={{ objectFit: 'contain' }}
+              className="rounded-md"
+            />
+          </div>
+        ) : (
+          <div className="p-2 bg-primary/10 rounded-md">
+            <ShoppingBag size={24} className="text-primary" />
           </div>
         )}
-      </div>
+      </Link>
     </aside>
   );
 }
@@ -169,11 +137,14 @@ export function AdminSidebar() {
 export function AdminTopBar() {
   const t = useTranslations('AdminSidebar');
   const pathname = usePathname();
-  const config = useAtomValue(displayConfigAtom);
   const { data: session } = useSession();
   const roleSlug = session?.user?.roleSlug;
   const canManageUsersLocations = roleSlug === 'admin' || roleSlug === 'client';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleSignOut = () => {
+    signOut({ callbackUrl: '/en/admin/login' });
+  };
 
   const isActive = (path: string) => {
     if (!pathname) return false;
@@ -220,29 +191,8 @@ export function AdminTopBar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 shadow-lg border-b border-gray-600/20" style={{ backgroundColor: '#7f8282' }}>
-      <div className="flex items-center px-6 py-4">
-        {/* Logo Section */}
-        <Link href="/admin" className="flex items-center gap-3 min-w-0 mr-8">
-          {config.logoUrl ? (
-            <div className="relative w-8 h-8 flex-shrink-0">
-              <Image
-                src={config.logoUrl}
-                alt={config.shopName || "Company Logo"}
-                fill
-                style={{ objectFit: 'contain' }}
-                className="rounded-md"
-              />
-            </div>
-          ) : (
-            <div className="p-1.5 bg-primary/10 rounded-md flex-shrink-0">
-              <ShoppingBag size={18} className="text-primary" />
-            </div>
-          )}
-          <h1 className="font-semibold tracking-tight text-lg text-white hidden sm:block">
-            {config.shopName || "Refurbished.nl"}
-          </h1>
-        </Link>
+    <header className="fixed top-0 left-0 lg:left-[80px] right-0 z-50 shadow-lg border-b border-white/10 transition-all duration-300 bg-[#7f8282]">
+      <div className="flex items-center justify-between px-6 py-4">
 
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center gap-2 flex-1">
@@ -254,28 +204,28 @@ export function AdminTopBar() {
             isActive={isActive("/admin/dashboards")}
           />
 
-          {/* Shop Management Dropdown */}
-          <NavigationDropdown
-            isActive={isGroupActive(shopManagementItems)}
+          {/* Shop Management - Flat link, tabs on page */}
+          <TopBarItem
             icon={Building}
-            label="Shop Management"
-            items={shopManagementItems}
+            label="Shop"
+            href={`/admin/shops/${process.env.NEXT_PUBLIC_SHOP_ID}`}
+            isActive={isGroupActive(shopManagementItems)}
           />
 
-          {/* Catalog Dropdown */}
-          <NavigationDropdown
-            isActive={isGroupActive(catalogItems)}
+          {/* Catalog - Flat link, tabs on page */}
+          <TopBarItem
             icon={ShoppingBag}
             label={t('catalog')}
-            items={catalogItems}
+            href="/admin/catalog"
+            isActive={isGroupActive(catalogItems)}
           />
 
-          {/* Customer Service Dropdown */}
-          <NavigationDropdown
-            isActive={isGroupActive(customerServiceItems)}
+          {/* Customer Service - Flat link, tabs on page */}
+          <TopBarItem
             icon={MessageCircleQuestion}
-            label="Customer Service"
-            items={customerServiceItems}
+            label="Support"
+            href="/admin/faqs"
+            isActive={isGroupActive(customerServiceItems)}
           />
 
           {/* Diagnostics - Separate item */}
@@ -294,19 +244,20 @@ export function AdminTopBar() {
             isActive={isActive("/admin/buy-device")}
           />
 
-          {/* Admin Dropdown (if user has permissions) */}
+          {/* Administration - Flat link, tabs on page (if user has permissions) */}
           {adminItems.length > 0 && (
-            <NavigationDropdown
-              isActive={isGroupActive(adminItems)}
+            <TopBarItem
               icon={Users}
-              label="Administration"
-              items={adminItems}
+              label="Admin"
+              href="/admin/users"
+              isActive={isGroupActive(adminItems)}
             />
           )}
         </nav>
 
-        {/* Mobile Menu */}
-        <div className="flex items-center ml-auto">
+        {/* Right Section: Mobile Menu & User Profile */}
+        <div className="flex items-center ml-auto gap-4">
+
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -314,12 +265,27 @@ export function AdminTopBar() {
           >
             <Menu size={20} />
           </button>
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
+          {/* User Actions (Logout) */}
+          {session && (
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-all duration-200"
+              aria-label="Sign Out"
+            >
+              <LogOut size={16} />
+              <span>Sign Out</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Mobile Navigation Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden border-t border-white/20" style={{ backgroundColor: '#7f8282' }}>
+        <div className="lg:hidden border-t border-white/20 bg-[#7f8282]">
           <nav className="px-4 py-2 space-y-1 max-h-96 overflow-y-auto">
             {/* Dashboard */}
             <Link
@@ -336,68 +302,50 @@ export function AdminTopBar() {
               {t('dashboards')}
             </Link>
 
-            {/* Shop Management Submenu */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-white">
-                <Building size={16} />
-                Shop Management
-              </div>
-              <div className="pl-6 space-y-1">
-                {shopManagementItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <item.icon size={16} />
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            {/* Shop - Single link, tabs on page */}
+            <Link
+              href={`/admin/shops/${process.env.NEXT_PUBLIC_SHOP_ID}`}
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                isGroupActive(shopManagementItems)
+                  ? "bg-white/15 text-white shadow-sm"
+                  : "text-white/90 hover:text-white hover:bg-white/10"
+              )}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Building size={16} />
+              Shop
+            </Link>
 
-            {/* Catalog Submenu */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-white">
-                <ShoppingBag size={16} />
-                {t('catalog')}
-              </div>
-              <div className="pl-6 space-y-1">
-                {catalogItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <item.icon size={16} />
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            {/* Catalog - Single link, tabs on page */}
+            <Link
+              href="/admin/catalog"
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                isGroupActive(catalogItems)
+                  ? "bg-white/15 text-white shadow-sm"
+                  : "text-white/90 hover:text-white hover:bg-white/10"
+              )}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <ShoppingBag size={16} />
+              {t('catalog')}
+            </Link>
 
-            {/* Customer Service Submenu */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-white">
-                <MessageCircleQuestion size={16} />
-                Customer Service
-              </div>
-              <div className="pl-6 space-y-1">
-                {customerServiceItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <item.icon size={16} />
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            {/* Support - Single link, tabs on page */}
+            <Link
+              href="/admin/faqs"
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                isGroupActive(customerServiceItems)
+                  ? "bg-white/15 text-white shadow-sm"
+                  : "text-white/90 hover:text-white hover:bg-white/10"
+              )}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <MessageCircleQuestion size={16} />
+              Support
+            </Link>
 
             {/* Diagnostics - Separate item */}
             <Link
@@ -429,27 +377,21 @@ export function AdminTopBar() {
               {t('buyDevice') || 'Buy Device'}
             </Link>
 
-            {/* Administration Submenu (if user has permissions) */}
+            {/* Admin - Single link (if user has permissions) */}
             {adminItems.length > 0 && (
-              <div className="space-y-1">
-                <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-white">
-                  <Users size={16} />
-                  Administration
-                </div>
-                <div className="pl-6 space-y-1">
-                  {adminItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="flex items-center gap-3 px-4 py-2 rounded-lg text-sm text-white/90 hover:text-white hover:bg-white/10 transition-all duration-200"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <item.icon size={16} />
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
+              <Link
+                href="/admin/users"
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                  isGroupActive(adminItems)
+                    ? "bg-white/15 text-white shadow-sm"
+                    : "text-white/90 hover:text-white hover:bg-white/10"
+                )}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Users size={16} />
+                Admin
+              </Link>
             )}
           </nav>
         </div>
