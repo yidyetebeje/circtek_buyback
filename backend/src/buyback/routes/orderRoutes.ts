@@ -20,20 +20,10 @@ const baseOrderObject = {
     street1: t.String({ minLength: 1, error: "Street address is required" }),
     street2: t.Optional(t.String()),
     city: t.String({ minLength: 1, error: "City is required" }),
-    stateProvince: t.String({ minLength: 1, error: "State/Province is required" }),
     postalCode: t.String({ minLength: 1, error: "Postal code is required" }),
     countryCode: t.String({ minLength: 2, maxLength: 2, error: "Country code must be 2 letters" }),
     phoneNumber: t.Optional(t.String()),
     email: t.Optional(t.String({ format: "email" })),
-    iban: t.Optional(t.String({
-      validate: (value: string) => {
-        if (!value || value.trim() === '') return true;
-        // Normalize IBAN: remove whitespace and convert to uppercase
-        const normalized = value.replace(/\s/g, '').toUpperCase();
-        return isValidIBAN(normalized);
-      },
-      error: "Invalid IBAN format"
-    }))
   }),
   sellerNotes: t.Optional(t.String())
 };

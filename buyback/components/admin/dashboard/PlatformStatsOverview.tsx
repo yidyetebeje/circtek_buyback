@@ -13,18 +13,18 @@ interface ShopStatsOverviewProps {
 
 export function PlatformStatsOverview({ shopId, dateRange }: ShopStatsOverviewProps) {
   const { data, isLoading, error } = useShopOverview(shopId, dateRange);
-  
+
   const completedOrders = useMemo(() => {
     if (!data?.ordersByStatus) return 0;
     return data.ordersByStatus["PAID"] || 0;
   }, [data]);
-  
+
   const pendingOrders = useMemo(() => {
     if (!data?.ordersByStatus) return 0;
     // Sum pending and arrived orders
     return (data.ordersByStatus["PENDING"] || 0) + (data.ordersByStatus["ARRIVED"] || 0);
   }, [data]);
-  
+
   const statsItems = [
     {
       title: "Total Orders",
@@ -56,7 +56,7 @@ export function PlatformStatsOverview({ shopId, dateRange }: ShopStatsOverviewPr
       isCurrency: true,
     },
   ];
-  
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -77,7 +77,7 @@ export function PlatformStatsOverview({ shopId, dateRange }: ShopStatsOverviewPr
       </div>
     );
   }
-  
+
   if (error || !data) {
     return (
       <Card className="border-2 border-destructive/20">
@@ -87,7 +87,7 @@ export function PlatformStatsOverview({ shopId, dateRange }: ShopStatsOverviewPr
       </Card>
     );
   }
-  
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {statsItems.map((item, i) => (
@@ -99,8 +99,8 @@ export function PlatformStatsOverview({ shopId, dateRange }: ShopStatsOverviewPr
                   {item.title}
                 </p>
                 <h3 className="text-3xl font-bold tracking-tight">
-                  {item.isCurrency 
-                    ? `$${item.value?.toLocaleString() || 0}`
+                  {item.isCurrency
+                    ? `€${item.value?.toLocaleString() || 0}`
                     : item.value?.toLocaleString() || 0
                   }
                 </h3>

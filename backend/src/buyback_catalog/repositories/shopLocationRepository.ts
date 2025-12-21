@@ -2,9 +2,9 @@ import { asc, desc, eq, and, sql, or, inArray } from "drizzle-orm";
 import { db } from "../../db";
 
 import { shop_locations, shop_location_phones } from "../../db/shops.schema";
-import { 
-  TShopLocationCreate, 
-  TShopLocationUpdate, 
+import {
+  TShopLocationCreate,
+  TShopLocationUpdate,
   TShopLocationWithPhones,
   TShopLocationPhoneCreate,
   TShopLocationPhoneUpdate
@@ -25,18 +25,18 @@ export class ShopLocationRepository {
     shopId: number,
     page = 1,
     limit = 20,
-    orderBy = "displayOrder", 
+    orderBy = "displayOrder",
     order: "asc" | "desc" = "asc",
     activeOnly = true
   ) {
     const offset = (page - 1) * limit;
 
     const conditions = [eq(shop_locations.shop_id, shopId)];
-    
+
     if (activeOnly) {
       conditions.push(eq(shop_locations.is_active, true));
     }
-    
+
     const whereCondition = and(...conditions);
 
     const columnMapping: { [key: string]: any } = {
@@ -72,13 +72,13 @@ export class ShopLocationRepository {
       created_at: shop_locations.created_at,
       updated_at: shop_locations.updated_at
     })
-    .from(shop_locations)
-    .where(whereCondition)
-    .limit(limit)
-    .offset(offset)
-    .orderBy(order === "asc"
-      ? asc(columnMapping[orderBy])
-      : desc(columnMapping[orderBy]));
+      .from(shop_locations)
+      .where(whereCondition)
+      .limit(limit)
+      .offset(offset)
+      .orderBy(order === "asc"
+        ? asc(columnMapping[orderBy])
+        : desc(columnMapping[orderBy]));
 
     // Get phones separately
     const locationIds = items.map(item => item.id);
@@ -95,7 +95,7 @@ export class ShopLocationRepository {
     const totalCountResult = await db.select({ count: sql<number>`count(*)` })
       .from(shop_locations)
       .where(whereCondition);
-    
+
     const total = totalCountResult[0]?.count ?? 0;
 
     return {
@@ -131,9 +131,9 @@ export class ShopLocationRepository {
       created_at: shop_locations.created_at,
       updated_at: shop_locations.updated_at
     })
-    .from(shop_locations)
-    .where(eq(shop_locations.id, id))
-    .limit(1);
+      .from(shop_locations)
+      .where(eq(shop_locations.id, id))
+      .limit(1);
 
     if (location.length === 0) return null;
 
@@ -159,7 +159,7 @@ export class ShopLocationRepository {
   ): Promise<TShopLocationWithPhones[]> {
     // Using Haversine formula for distance calculation
     const conditions = [eq(shop_locations.is_active, true)];
-    
+
     if (shopId) {
       conditions.push(eq(shop_locations.shop_id, shopId));
     }
@@ -186,9 +186,9 @@ export class ShopLocationRepository {
       created_at: shop_locations.created_at,
       updated_at: shop_locations.updated_at
     })
-    .from(shop_locations)
-    .where(whereCondition)
-    .limit(limit * 2); // Get more to account for filtering
+      .from(shop_locations)
+      .where(whereCondition)
+      .limit(limit * 2); // Get more to account for filtering
 
     // Get phones for all locations
     const locationIds = locations.map(loc => loc.id);
@@ -205,9 +205,9 @@ export class ShopLocationRepository {
     // Calculate distances and filter
     const locationsWithDistance = locationsWithPhones.map(location => {
       const distance = this.calculateDistance(
-        latitude, 
-        longitude, 
-        location.latitude, 
+        latitude,
+        longitude,
+        location.latitude,
         location.longitude
       );
       return { ...location, distance };
@@ -223,19 +223,32 @@ export class ShopLocationRepository {
    */
   async create(data: TShopLocationCreate): Promise<TShopLocationWithPhones | null> {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    
+
     // Separate phones from location data
     const { phones, ...locationData } = data;
-    
-    const dbLocationData = {
-      ...removeUndefinedKeys(locationData),
-      createdAt: now,
-      updatedAt: now
-    };
+
+    // Map camelCase input fields to snake_case database columns
+    const dbLocationData = removeUndefinedKeys({
+      shop_id: locationData.shopId,
+      name: locationData.name,
+      address: locationData.address,
+      city: locationData.city,
+      state: locationData.state,
+      postal_code: locationData.postalCode,
+      country: locationData.country,
+      latitude: locationData.latitude,
+      longitude: locationData.longitude,
+      description: locationData.description,
+      operating_hours: locationData.operatingHours,
+      is_active: locationData.isActive,
+      display_order: locationData.displayOrder,
+      created_at: now,
+      updated_at: now
+    });
 
     const result = await db.insert(shop_locations).values(dbLocationData as any);
     const insertId = result?.[0]?.insertId ?? 0;
-    
+
     if (insertId === 0) return null;
 
     const locationId = Number(insertId);
@@ -262,14 +275,27 @@ export class ShopLocationRepository {
    */
   async update(id: number, data: TShopLocationUpdate): Promise<TShopLocationWithPhones | null> {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    
+
     // Separate phones from location data
     const { phones, ...locationData } = data;
-    
-    const dbLocationData = {
-      ...removeUndefinedKeys(locationData),
-      updatedAt: now
-    };
+
+    // Map camelCase input fields to snake_case database columns
+    const dbLocationData = removeUndefinedKeys({
+      shop_id: locationData.shopId,
+      name: locationData.name,
+      address: locationData.address,
+      city: locationData.city,
+      state: locationData.state,
+      postal_code: locationData.postalCode,
+      country: locationData.country,
+      latitude: locationData.latitude,
+      longitude: locationData.longitude,
+      description: locationData.description,
+      operating_hours: locationData.operatingHours,
+      is_active: locationData.isActive,
+      display_order: locationData.displayOrder,
+      updated_at: now
+    });
 
     // Update location
     await db.update(shop_locations)
@@ -311,7 +337,7 @@ export class ShopLocationRepository {
     // Delete location
     const result = await db.delete(shop_locations)
       .where(eq(shop_locations.id, id));
-    
+
     return (result as any).affectedRows > 0;
   }
 
@@ -323,11 +349,11 @@ export class ShopLocationRepository {
     if (!location) return null;
 
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    
+
     await db.update(shop_locations)
-      .set({ 
+      .set({
         is_active: !location.is_active,
-        updated_at: now 
+        updated_at: now
       })
       .where(eq(shop_locations.id, id));
 
@@ -341,11 +367,11 @@ export class ShopLocationRepository {
     const R = 6371; // Earth's radius in kilometers
     const dLat = this.toRadians(lat2 - lat1);
     const dLon = this.toRadians(lon2 - lon1);
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
 

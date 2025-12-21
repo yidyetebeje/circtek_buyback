@@ -22,10 +22,10 @@ export type TQuestionSetBase = {
 export type TQuestionBase = {
   key?: string;
   title: string;
-  inputType: InputType;
+  inputType?: InputType | ''; // Defaults to SINGLE_SELECT_RADIO, empty string treated as undefined
   tooltip?: string;
   category?: string;
-  isRequired: boolean;
+  isRequired?: boolean; // Defaults to false
   orderNo: number;
   metadata?: Record<string, any>;
 };
@@ -35,7 +35,7 @@ export type TQuestionOptionBase = {
   title: string;
   priceModifier?: number;
   icon?: string;
-  isDefault: boolean;
+  isDefault?: boolean; // Defaults to false
   orderNo: number;
   metadata?: Record<string, any>;
 };
@@ -140,14 +140,14 @@ export const QuestionSetCreateSchema = t.Object({
   internalName: t.String({ minLength: 1, maxLength: 255 }),
   displayName: t.String({ minLength: 1, maxLength: 255 }),
   description: t.Optional(t.String()),
- 
+
 });
 
 export const QuestionSetUpdateSchema = t.Object({
   internalName: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
   displayName: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
   description: t.Optional(t.String()),
- 
+
 });
 
 // Question Schemas
@@ -155,10 +155,10 @@ export const QuestionCreateSchema = t.Object({
   questionSetId: t.Optional(t.Numeric({ minimum: 1 })),
   key: t.Optional(t.String({ maxLength: 100 })),
   title: t.String({ minLength: 1, maxLength: 255 }),
-  inputType: t.Enum(InputTypeEnum),
+  inputType: t.Optional(t.Union([t.Enum(InputTypeEnum), t.Literal('')])), // Empty string treated as SINGLE_SELECT_RADIO
   tooltip: t.Optional(t.String()),
   category: t.Optional(t.String({ maxLength: 100 })),
-  isRequired: t.Boolean(),
+  isRequired: t.Optional(t.Boolean()), // Defaults to false
   orderNo: t.Numeric({ minimum: 0 }),
   metadata: t.Optional(t.Record(t.String(), t.Any()))
 });
@@ -236,7 +236,7 @@ export const QuestionWithOptionsCreateSchema = t.Composite([
         title: t.String({ minLength: 1, maxLength: 255 }),
         priceModifier: t.Optional(t.Numeric()),
         icon: t.Optional(t.String({ maxLength: 255 })),
-        isDefault: t.Boolean(),
+        isDefault: t.Optional(t.Boolean()), // Defaults to false
         orderNo: t.Numeric({ minimum: 0 }),
         metadata: t.Optional(t.Record(t.String(), t.Any()))
       })
@@ -276,10 +276,10 @@ export const QuestionSetWithQuestionsAndTranslationsCreateSchema = t.Composite([
       t.Object({
         key: t.Optional(t.String({ maxLength: 100 })),
         title: t.String({ minLength: 1, maxLength: 255 }),
-        inputType: t.Enum(InputTypeEnum),
+        inputType: t.Optional(t.Union([t.Enum(InputTypeEnum), t.Literal('')])), // Empty string treated as SINGLE_SELECT_RADIO
         tooltip: t.Optional(t.String()),
         category: t.Optional(t.String({ maxLength: 100 })),
-        isRequired: t.Boolean(),
+        isRequired: t.Optional(t.Boolean()), // Defaults to false
         orderNo: t.Numeric({ minimum: 0 }),
         metadata: t.Optional(t.Record(t.String(), t.Any())),
         translations: t.Optional(t.Array(t.Object({
@@ -294,7 +294,7 @@ export const QuestionSetWithQuestionsAndTranslationsCreateSchema = t.Composite([
             title: t.String({ minLength: 1, maxLength: 255 }),
             priceModifier: t.Optional(t.Numeric()),
             icon: t.Optional(t.String({ maxLength: 255 })),
-            isDefault: t.Boolean(),
+            isDefault: t.Optional(t.Boolean()), // Defaults to false
             orderNo: t.Numeric({ minimum: 0 }),
             metadata: t.Optional(t.Record(t.String(), t.Any())),
             translations: t.Optional(t.Array(t.Object({

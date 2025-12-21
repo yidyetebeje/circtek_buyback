@@ -90,12 +90,16 @@ export class QuestionRepository {
     const now = new Date();
     const formattedDate = now.toISOString().replace('T', ' ').substring(0, 19);
 
+    // Apply defaults for optional fields (empty string also treated as undefined)
+    const inputType = (data.inputType && data.inputType !== '') ? data.inputType : 'SINGLE_SELECT_RADIO';
+    const isRequired = data.isRequired ?? false;
+
     // Create a new object with the correct types
     const insertData: any = {
       title: data.title,
       question_set_id: data.questionSetId,
-      input_type: data.inputType,
-      is_required: data.isRequired ? 1 : 0,
+      input_type: inputType,
+      is_required: isRequired ? 1 : 0,
       order_no: data.orderNo,
       created_at: formattedDate,
       updated_at: formattedDate
@@ -118,7 +122,7 @@ export class QuestionRepository {
 
     // Extract the properties we need to update, explicitly converting boolean values to numbers
     const updateData: any = { updated_at: formattedDate };
-    
+
     if (data.key !== undefined) updateData.key = data.key;
     if (data.title !== undefined) updateData.title = data.title;
     if (data.inputType !== undefined) updateData.input_type = data.inputType;
@@ -181,7 +185,7 @@ export class QuestionRepository {
       .from(question_translations)
       .where(eq(question_translations.id, id))
       .limit(1);
-    
+
     return translation[0] || null;
   }
 
@@ -193,7 +197,7 @@ export class QuestionRepository {
         eq(question_translations.language_id, languageId)
       ))
       .limit(1);
-    
+
     return translation[0] || null;
   }
 
@@ -231,7 +235,7 @@ export class QuestionRepository {
       .from(question_options)
       .where(eq(question_options.id, id))
       .limit(1);
-    
+
     return option[0] || null;
   }
 
@@ -243,7 +247,7 @@ export class QuestionRepository {
         eq(question_options.question_id, questionId)
       ))
       .limit(1);
-    
+
     return option[0] || null;
   }
 
@@ -251,8 +255,11 @@ export class QuestionRepository {
     const now = new Date();
     const formattedDate = now.toISOString().replace('T', ' ').substring(0, 19);
 
+    // Apply default for isDefault
+    const isDefault = data.isDefault ?? false;
+
     // If this is a default option for a single select question, ensure no other options are set as default
-    if (data.isDefault) {
+    if (isDefault) {
       const question = await this.findById(data.questionId, false, false);
       if (question && (question.input_type === 'SINGLE_SELECT_RADIO' || question.input_type === 'SINGLE_SELECT_DROPDOWN')) {
         await db.update(question_options)
@@ -266,7 +273,7 @@ export class QuestionRepository {
       title: data.title,
       order_no: data.orderNo,
       question_id: data.questionId,
-      is_default: data.isDefault ? 1 : 0,
+      is_default: isDefault ? 1 : 0,
       created_at: formattedDate,
       updated_at: formattedDate
     };
@@ -285,7 +292,7 @@ export class QuestionRepository {
 
   async updateOption(id: number, data: TQuestionOptionUpdate) {
     const formattedDate = new Date().toISOString().replace('T', ' ').substring(0, 19);
-    
+
     // If setting this option as default for a single select question, ensure no other options are set as default
     const option = await this.findOptionById(id, false);
     if (option && data.isDefault) {
@@ -296,10 +303,10 @@ export class QuestionRepository {
           .where(eq(question_options.question_id, option.question_id));
       }
     }
-    
+
     // Extract the properties we need to update, explicitly converting boolean values to numbers
     const updateData: any = { updated_at: formattedDate };
-    
+
     if (data.key !== undefined) updateData.key = data.key;
     if (data.title !== undefined) updateData.title = data.title;
     if (data.priceModifier !== undefined) updateData.price_modifier = data.priceModifier;
@@ -342,7 +349,7 @@ export class QuestionRepository {
       .from(question_option_translations)
       .where(eq(question_option_translations.id, id))
       .limit(1);
-    
+
     return translation[0] || null;
   }
 
@@ -354,7 +361,7 @@ export class QuestionRepository {
         eq(question_option_translations.language_id, languageId)
       ))
       .limit(1);
-    
+
     return translation[0] || null;
   }
 

@@ -45,6 +45,7 @@ export class OrderService {
 
       return {
         ...newOrder,
+        orderNumber: newOrder.order_number, // Map snake_case to camelCase for controller
       };
     } catch (error) {
       console.error("[OrderService] Error creating order:", error);
@@ -93,7 +94,10 @@ export class OrderService {
         }
       }
 
-      return newOrder;
+      return {
+        ...newOrder,
+        orderNumber: newOrder.order_number, // Map snake_case to camelCase for controller
+      };
     } catch (error) {
       console.error("[OrderService] Error creating admin order:", error);
       throw new Error(`Failed to create admin order: ${error instanceof Error ? error.message : "Unknown error"}`);

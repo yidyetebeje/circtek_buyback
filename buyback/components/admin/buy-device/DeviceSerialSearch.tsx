@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import diagnosticsService, { TestedDevice } from '@/lib/api/diagnosticsService';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,26 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
     }),
     enabled: !!searchTerm && searchTerm.length >= 3,
   });
+
+  // Group test results by device_id and keep the latest test for each device
+  const uniqueDevices = useMemo(() => {
+    if (!searchResults?.data) return [];
+
+    const deviceMap = new Map<number, TestedDevice>();
+
+    // Sort by tested date (newest first) and keep the latest test for each device
+    const sortedResults = [...searchResults.data].sort(
+      (a, b) => new Date(b.testedAt).getTime() - new Date(a.testedAt).getTime()
+    );
+
+    for (const device of sortedResults) {
+      if (!deviceMap.has(device.deviceId)) {
+        deviceMap.set(device.deviceId, device);
+      }
+    }
+
+    return Array.from(deviceMap.values());
+  }, [searchResults?.data]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,7 +158,7 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
 
           {searchResults && !isLoading && (
             <>
-              {searchResults.data.length === 0 ? (
+              {uniqueDevices.length === 0 ? (
                 <div className="text-center py-8">
                   <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                   <h3 className="text-lg font-medium text-gray-900 mb-1">Device Not Found</h3>
@@ -150,11 +170,11 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
               ) : (
                 <div className="space-y-3">
                   <h3 className="text-lg font-medium text-gray-900">
-                    Found {searchResults.data.length} device(s)
+                    Found {uniqueDevices.length} device(s)
                   </h3>
 
                   <div className="grid gap-3">
-                    {searchResults.data.map((device) => (
+                    {uniqueDevices.map((device) => (
                       <div
                         key={device.deviceTransactionId}
                         className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"

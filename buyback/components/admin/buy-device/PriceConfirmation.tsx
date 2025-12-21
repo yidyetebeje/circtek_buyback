@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Model } from '@/types/catalog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, XCircle } from 'lucide-react';
 import { TestedDevice } from '@/lib/api/diagnosticsService';
 
 interface PriceConfirmationProps {
@@ -17,12 +17,12 @@ interface PriceConfirmationProps {
   locale: string;
 }
 
-export function PriceConfirmation({ 
-  product, 
-  estimatedPrice, 
+export function PriceConfirmation({
+  product,
+  estimatedPrice,
   testedDevice,
-  onConfirm, 
-  onBack 
+  onConfirm,
+  onBack
 }: PriceConfirmationProps) {
   const failedTests = useMemo(() => {
     return testedDevice.testInfo?.failedResult?.split(',').map(s => s.trim()).filter(Boolean) || [];
@@ -41,20 +41,37 @@ export function PriceConfirmation({
   }, [failedTests, priceDropMap]);
 
   const initialPrice = estimatedPrice - totalDeduction;
+  const maxAllowedPrice = initialPrice; // Maximum price admin can pay
 
   const [customPrice, setCustomPrice] = useState<string>(initialPrice.toFixed(2));
   const [showWarning, setShowWarning] = useState(false);
+  const [showPriceExceededError, setShowPriceExceededError] = useState(false);
 
   const handlePriceChange = (value: string) => {
     setCustomPrice(value);
     const numericValue = parseFloat(value) || 0;
-    const difference = Math.abs(numericValue - initialPrice);
-    const percentageDiff = initialPrice === 0 ? 0 : (difference / initialPrice) * 100;
-    setShowWarning(percentageDiff > 20);
+
+    // Check if price exceeds maximum allowed
+    if (numericValue > maxAllowedPrice) {
+      setShowPriceExceededError(true);
+      setShowWarning(false);
+    } else {
+      setShowPriceExceededError(false);
+      const difference = Math.abs(numericValue - initialPrice);
+      const percentageDiff = initialPrice === 0 ? 0 : (difference / initialPrice) * 100;
+      setShowWarning(percentageDiff > 20);
+    }
   };
 
   const handleConfirm = () => {
     const finalPrice = parseFloat(customPrice) || initialPrice;
+
+    // Prevent confirmation if price exceeds maximum
+    if (finalPrice > maxAllowedPrice) {
+      setShowPriceExceededError(true);
+      return;
+    }
+
     onConfirm(finalPrice);
   };
 
@@ -90,18 +107,19 @@ export function PriceConfirmation({
             <p className="text-sm text-blue-700 mt-1">Based on device condition</p>
           </div>
 
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className={`bg-gray-50 border rounded-lg p-4 ${showPriceExceededError ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}>
             <h4 className="font-medium text-gray-900 mb-2">Final Price</h4>
             <div className="space-y-2">
               <Input
                 type="number"
                 step="0.01"
                 min="0"
+                max={maxAllowedPrice}
                 value={customPrice}
                 onChange={(e) => handlePriceChange(e.target.value)}
-                className="text-lg font-semibold"
+                className={`text-lg font-semibold ${showPriceExceededError ? 'border-red-500 focus:ring-red-500' : ''}`}
               />
-              <p className="text-sm text-gray-600">You can adjust the price if needed</p>
+              <p className="text-sm text-gray-600">Maximum allowed: €{maxAllowedPrice.toFixed(2)}</p>
             </div>
           </div>
         </div>
@@ -112,8 +130,21 @@ export function PriceConfirmation({
             <div>
               <h4 className="font-medium text-yellow-800">Price Adjustment Warning</h4>
               <p className="text-sm text-yellow-700 mt-1">
-                The final price differs significantly (&gt;20%) from the estimated price. 
+                The final price differs significantly (&gt;20%) from the estimated price.
                 Please ensure this adjustment is intentional.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {showPriceExceededError && (
+          <div className="bg-red-50 border border-red-300 rounded-lg p-4 flex items-start gap-3">
+            <XCircle className="w-5 h-5 text-red-600 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-red-800">Price Exceeds Maximum</h4>
+              <p className="text-sm text-red-700 mt-1">
+                The price cannot exceed €{maxAllowedPrice.toFixed(2)}.
+                Please enter a price equal to or less than the maximum allowed.
               </p>
             </div>
           </div>
@@ -148,10 +179,11 @@ export function PriceConfirmation({
           <ArrowLeft className="w-4 h-4" />
           Back to Questions
         </Button>
-        
-        <Button 
-          onClick={handleConfirm} 
-          className="px-6 bg-primary hover:bg-primary/90 text-primary-foreground"
+
+        <Button
+          onClick={handleConfirm}
+          disabled={showPriceExceededError}
+          className="px-6 bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Confirm Price & Continue
         </Button>
