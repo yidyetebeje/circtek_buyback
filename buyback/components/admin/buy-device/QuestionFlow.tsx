@@ -405,18 +405,18 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
         </div>
       </div>
 
-      {/* Question Container - Similar to MinimalEstimationVariant */}
+      {/* Question Container - Clean Flat Design */}
       <motion.div
-        className="bg-card rounded-lg shadow-lg border border-border p-6"
+        className="bg-card rounded-xl border border-border p-6 md:p-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         style={{ minHeight: '400px' }}
       >
         {/* Question Text */}
-        <div className="min-h-[80px] flex items-center justify-center w-full mb-6">
+        <div className="min-h-[80px] flex items-center justify-center w-full mb-8">
           <motion.h3
-            className="text-xl md:text-2xl font-medium text-center text-foreground"
+            className="text-2xl md:text-3xl font-medium text-center text-foreground leading-tight"
             variants={itemVariants}
           >
             {currentQuestionIndex + 1}. {currentQuestion.text as string}
@@ -426,7 +426,7 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
         {/* Options */}
         {currentQuestion?.type === 'multiple-choice' && currentQuestion.options && (
           <motion.div
-            className="flex flex-wrap justify-center w-full min-h-[120px] mx-auto gap-3"
+            className="flex flex-wrap justify-center w-full min-h-[120px] mx-auto gap-4"
             variants={containerVariants}
           >
             {currentQuestion.options.map((option) => {
@@ -436,12 +436,13 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
                 <motion.button
                   key={option.value}
                   onClick={() => handleAnswer(currentQuestion.id, option.value)}
-                  className={`min-w-[120px] py-3 px-6 border rounded-md font-medium text-center relative overflow-hidden transition-all duration-200 ${isSelected
-                      ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-card border-border text-foreground hover:border-blue-500 hover:text-blue-500'
+                  className={`min-w-[140px] py-4 px-8 border-2 rounded-xl font-medium text-lg text-center relative overflow-hidden transition-all duration-200 ${isSelected
+                    ? 'bg-primary border-primary text-primary-foreground shadow-none'
+                    : 'bg-card border-border text-foreground hover:border-primary/50 hover:bg-muted/30'
                     }`}
                   whileHover={{
-                    scale: 1.02
+                    scale: 1.02,
+                    borderColor: isSelected ? undefined : 'currentColor'
                   }}
                   whileTap={{ scale: 0.98 }}
                   variants={itemVariants}

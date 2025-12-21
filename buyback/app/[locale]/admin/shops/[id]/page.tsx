@@ -148,8 +148,8 @@ export default function EditShopPage() {
   }
 
   return (
-    <div className="container mx-auto py-10 max-w-5xl">
-      <div className="flex items-center justify-between mb-5">
+    <div className="">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold">Edit Shop</h1>
 
@@ -174,7 +174,7 @@ export default function EditShopPage() {
         </div>
       </div>
 
-      <Separator className="mb-8" />
+
 
       <ShopForm
         initialData={initialData}

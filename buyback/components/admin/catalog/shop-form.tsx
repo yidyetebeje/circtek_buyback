@@ -126,7 +126,7 @@ export function ShopForm({
         <div className="grid gap-8">
           <div className="grid gap-8 grid-cols-1 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-8">
-              <Card className="h-full">
+              <Card className="h-full bg-card shadow-none border-0 rounded-lg">
                 <CardHeader>
                   <CardTitle>General Information</CardTitle>
                   <CardDescription>
@@ -181,7 +181,7 @@ export function ShopForm({
             </div>
 
             <div className="space-y-8">
-              <Card className="h-full">
+              <Card className="h-full bg-card shadow-none border-0 rounded-lg">
                 <CardHeader>
                   <CardTitle>Branding</CardTitle>
                   <CardDescription>

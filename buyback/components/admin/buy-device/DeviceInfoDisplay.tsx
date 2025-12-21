@@ -21,164 +21,149 @@ export function DeviceInfoDisplay({ device, onContinue, onBack }: DeviceInfoDisp
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">Device Information</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-2xl font-semibold text-foreground mb-2">Device Information</h2>
+          <p className="text-muted-foreground text-lg">
             Review the tested device details and diagnostic results before proceeding.
           </p>
         </div>
-        <Button variant="outline" onClick={handleViewReport} className="flex items-center gap-2">
+        <Button variant="outline" onClick={handleViewReport} className="flex items-center gap-2 h-10 border-border hover:bg-muted/50">
           <FileText className="w-4 h-4" />
           View Full Report
         </Button>
       </div>
 
       {/* Device Basic Info */}
-      <div className="bg-muted/40 rounded-lg p-6">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-16 h-16 bg-card rounded-lg flex items-center justify-center border border-border">
-            <span className="text-2xl">📱</span>
+      <div className="bg-card border border-border rounded-xl p-6 md:p-8">
+        <div className="flex items-start gap-6 mb-8 pb-8 border-b border-border">
+          <div className="w-20 h-20 bg-muted/30 rounded-2xl flex items-center justify-center border border-border text-foreground">
+            <span className="text-3xl">📱</span>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">
+            <h3 className="text-2xl font-bold text-foreground">
               {device.make} {device.modelName}
             </h3>
-            {device.grade && (
-              <span className="inline-block mt-1 px-3 py-1 text-sm font-medium bg-blue-500/10 text-blue-600 rounded-full">
-                Grade {device.grade}
-              </span>
-            )}
+            <div className="flex items-center gap-2 mt-2">
+              {device.grade && (
+                <span className="px-3 py-1 text-sm font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-full border border-blue-100 dark:border-blue-800">
+                  Grade {device.grade}
+                </span>
+              )}
+              <span className="text-sm text-muted-foreground">• Tested {new Date(device.testedAt).toLocaleDateString()}</span>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-8">
           <div>
-            <label className="text-sm font-medium text-muted-foreground">Serial Number</label>
-            <p className="text-sm font-mono text-foreground">{device.serial}</p>
+            <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Serial Number</label>
+            <p className="text-base font-mono text-foreground">{device.serial}</p>
           </div>
           <div>
-            <label className="text-sm font-medium text-muted-foreground">IMEI</label>
-            <p className="text-sm font-mono text-foreground">{device.imei}</p>
+            <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">IMEI</label>
+            <p className="text-base font-mono text-foreground">{device.imei}</p>
           </div>
           {device.storage && (
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Storage</label>
-              <p className="text-sm text-foreground">{device.storage}GB</p>
+              <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Storage</label>
+              <p className="text-base text-foreground">{device.storage}GB</p>
             </div>
           )}
           {device.memory && (
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Memory</label>
-              <p className="text-sm text-foreground">{device.memory}GB</p>
+              <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Memory</label>
+              <p className="text-base text-foreground">{device.memory}GB</p>
             </div>
           )}
           {device.color && (
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Color</label>
-              <p className="text-sm text-foreground">{device.color}</p>
+              <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Color</label>
+              <p className="text-base text-foreground">{device.color}</p>
             </div>
           )}
           {device.warehouseName && (
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Warehouse</label>
-              <p className="text-sm text-foreground">{device.warehouseName}</p>
+              <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Warehouse</label>
+              <p className="text-base text-foreground">{device.warehouseName}</p>
             </div>
           )}
           <div>
-            <label className="text-sm font-medium text-muted-foreground">Tested Date</label>
-            <p className="text-sm text-foreground">{new Date(device.testedAt).toLocaleDateString()}</p>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
-            <p className="text-sm text-foreground">{new Date(device.deviceTransactionUpdatedAt).toLocaleDateString()}</p>
+            <label className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1 block">Last Updated</label>
+            <p className="text-base text-foreground">{new Date(device.deviceTransactionUpdatedAt).toLocaleDateString()}</p>
           </div>
         </div>
       </div>
 
       {/* Diagnostic Results */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground">Diagnostic Results</h3>
+        <h3 className="text-lg font-semibold text-foreground px-1">Diagnostic Results</h3>
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* Passed Tests */}
-          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <h4 className="font-medium text-green-600">Passed Tests</h4>
+          <div className="bg-card border border-border rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-4 text-green-600">
+              <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5" />
+              </div>
+              <h4 className="font-semibold text-lg text-foreground">Passed Tests</h4>
             </div>
             {passedTests.length > 0 ? (
-              <ul className="space-y-1">
+              <div className="flex flex-wrap gap-2">
                 {passedTests.map((test, index) => (
-                  <li key={index} className="text-sm text-green-600/90">
-                    • {test}
-                  </li>
+                  <span key={index} className="inline-flex items-center px-2.5 py-1 rounded-md bg-muted/40 text-sm text-foreground/80 border border-border/50">
+                    {test}
+                  </span>
                 ))}
-              </ul>
+              </div>
             ) : (
-              <p className="text-sm text-green-600">No passed tests recorded</p>
+              <p className="text-sm text-muted-foreground">No specific passed tests recorded.</p>
             )}
           </div>
 
           {/* Failed Tests */}
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-              <h4 className="font-medium text-red-600">Failed Tests</h4>
+          <div className={`bg-card border rounded-xl p-6 ${hasFailedTests ? 'border-red-200 dark:border-red-900/50 bg-red-50/10' : 'border-border'}`}>
+            <div className="flex items-center gap-3 mb-4 text-red-600">
+              <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <h4 className="font-semibold text-lg text-foreground">Failed Tests</h4>
             </div>
             {failedTests.length > 0 ? (
-              <ul className="space-y-1">
+              <div className="flex flex-wrap gap-2">
                 {failedTests.map((test, index) => (
-                  <li key={index} className="text-sm text-red-600/90">
-                    • {test}
-                  </li>
+                  <span key={index} className="inline-flex items-center px-2.5 py-1 rounded-md bg-red-50 dark:bg-red-900/20 text-sm text-red-700 dark:text-red-300 border border-red-100 dark:border-red-800">
+                    {test}
+                  </span>
                 ))}
-              </ul>
+              </div>
             ) : (
-              <p className="text-sm text-green-600">No failed tests - all tests passed! ✓</p>
+              <p className="text-sm text-green-600 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                All tests passed!
+              </p>
             )}
-          </div>
-        </div>
-
-        {/* Overall Status */}
-        <div className={`p-4 rounded-lg border ${hasFailedTests
-            ? 'bg-yellow-500/10 border-yellow-500/20'
-            : 'bg-green-500/10 border-green-500/20'
-          }`}>
-          <div className="flex items-center gap-2">
-            {hasFailedTests ? (
-              <AlertTriangle className="w-5 h-5 text-yellow-600" />
-            ) : (
-              <CheckCircle className="w-5 h-5 text-green-600" />
-            )}
-            <span className={`font-medium ${hasFailedTests ? 'text-yellow-600' : 'text-green-600'
-              }`}>
-              {hasFailedTests
-                ? 'Device has some failed tests - consider condition in pricing'
-                : 'Device passed all diagnostic tests'
-              }
-            </span>
           </div>
         </div>
       </div>
 
       {/* Additional Notes */}
       {device.notes && (
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-          <h4 className="font-medium text-blue-600 mb-2">Additional Notes</h4>
-          <p className="text-sm text-blue-600/90">{device.notes}</p>
+        <div className="bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-xl p-6">
+          <h4 className="font-medium text-blue-700 dark:text-blue-300 mb-2">Additional Notes</h4>
+          <p className="text-sm text-foreground/80 leading-relaxed">{device.notes}</p>
         </div>
       )}
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between pt-6 border-t border-border">
-        <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
+      <div className="flex items-center justify-between pt-8 border-t border-border">
+        <Button variant="outline" onClick={onBack} className="flex items-center gap-2 h-12 px-6 border-border hover:bg-muted/50">
           <ArrowLeft className="w-4 h-4" />
           Back to Search
         </Button>
 
-        <Button onClick={onContinue} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={onContinue} className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground text-base">
           Continue to Product Selection
         </Button>
       </div>

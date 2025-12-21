@@ -256,13 +256,13 @@ export function BuyDevicePageClient({ locale, shopId }: BuyDevicePageClientProps
             <span className="text-sm font-medium text-muted-foreground">
               Step {getStepNumber()} of 6
             </span>
-            <span className="text-sm font-medium text-muted-foreground">
+            <span className="text-sm font-medium text-foreground">
               {getStepTitle()}
             </span>
           </div>
-          <div className="w-full bg-secondary rounded-full h-2.5">
+          <div className="w-full bg-secondary/50 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-primary h-2.5 rounded-full"
+              className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
               style={{ width: `${(getStepNumber() / 6) * 100}%` }}
             ></div>
           </div>
@@ -270,7 +270,7 @@ export function BuyDevicePageClient({ locale, shopId }: BuyDevicePageClientProps
       )}
 
       {/* Step content */}
-      <div className="bg-card rounded-lg shadow-sm border border-border p-6">
+      <div className="bg-card rounded-xl border border-border p-6 md:p-8">
         {renderStepContent()}
       </div>
 
