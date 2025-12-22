@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { AdminHeader } from "@/components/admin/AdminHeader";
+
 import { DataTable } from "@/components/admin/catalog/data-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -315,13 +315,7 @@ export default function StoreTransferPage() {
 
     return (
         <div className="space-y-6">
-            <AdminHeader
-                title="Store to Warehouse Transfer"
-                breadcrumbs={[
-                    { href: "/admin/dashboards", label: "Admin" },
-                    { label: "Store Transfer", isCurrentPage: true },
-                ]}
-            />
+
 
             <Tabs defaultValue="create" className="space-y-4">
                 <TabsList>

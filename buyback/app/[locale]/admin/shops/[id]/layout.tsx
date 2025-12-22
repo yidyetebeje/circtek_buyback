@@ -9,10 +9,6 @@ import {
     Building,
     Truck,
     Gift,
-    Package,
-    Layers,
-    ArrowRightLeft,
-    RefreshCw,
     MapPin,
 } from "lucide-react";
 
@@ -49,30 +45,6 @@ export default function ShopLayout({ children }: ShopLayoutProps) {
             label: t("locations") || "Locations",
             href: `/admin/shops/${shopId}/locations`,
             icon: MapPin,
-        },
-        {
-            key: "orders",
-            label: t("orders"),
-            href: "/admin/orders",
-            icon: Package,
-        },
-        {
-            key: "stock",
-            label: t("stock") || "Stock",
-            href: "/admin/stock",
-            icon: Layers,
-        },
-        {
-            key: "store-transfer",
-            label: t("storeTransfers") || "Transfers",
-            href: "/admin/store-transfer",
-            icon: ArrowRightLeft,
-        },
-        {
-            key: "backmarket",
-            label: "Back Market",
-            href: "/admin/backmarket",
-            icon: RefreshCw,
         },
     ];
 

@@ -4,11 +4,11 @@ import React from "react";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { OperationsTabs } from "@/components/admin/operations-tabs";
 
-interface OrdersLayoutProps {
+interface StoreTransferLayoutProps {
     children: React.ReactNode;
 }
 
-export default function OrdersLayout({ children }: OrdersLayoutProps) {
+export default function StoreTransferLayout({ children }: StoreTransferLayoutProps) {
     return (
         <div className="space-y-12">
             <AdminHeader

@@ -62,6 +62,13 @@ export default function EmailTemplatesLayout({ children }: EmailTemplatesLayoutP
         return null;
     };
 
+    // Check if we are on a details page (new or edit/view id)
+    const isDetailsPage = pathname.includes('/new') || pathname.match(/\/\d+$/) || pathname.includes('/edit');
+
+    if (isDetailsPage) {
+        return <div className="space-y-12">{children}</div>;
+    }
+
     return (
         <div className="space-y-12">
             <AdminHeader

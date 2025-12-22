@@ -229,7 +229,7 @@ export function EmailTemplateFormWithPreview({
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col h-[calc(100vh-8rem)] bg-background border rounded-xl shadow-sm overflow-hidden">
+      <div className="flex flex-col h-[calc(100vh-8rem)] bg-card border rounded-xl shadow-sm overflow-hidden">
         {/* Header Toolbar - Fixed top */}
         <div className="shrink-0 border-b bg-background/95 backdrop-blur z-10">
           <div className="flex items-center justify-between px-4 py-2.5 gap-4">
@@ -437,7 +437,7 @@ export function EmailTemplateFormWithPreview({
                 </div>
 
                 {/* Dynamic Fields Sidebar - scrolls independently */}
-                <div className="hidden lg:flex flex-col w-72 border-l bg-background shrink-0 min-h-0">
+                <div className="hidden lg:flex flex-col w-72 border-l bg-card shrink-0 min-h-0">
                   <div className="p-4 border-b space-y-3">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-primary" />

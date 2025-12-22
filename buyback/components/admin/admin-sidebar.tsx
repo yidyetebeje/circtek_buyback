@@ -58,7 +58,7 @@ const TopBarItem = ({ icon: Icon, label, href, isActive }: TopBarItemProps) => {
   return (
     <Link href={href}>
       <div className={cn(
-        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-base font-semibold transition-all duration-200",
+        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-semibold transition-all duration-200",
         isActive
           ? "bg-white/15 text-white shadow-sm"
           : "text-white/90 hover:text-white hover:bg-white/10"
@@ -155,10 +155,13 @@ export function AdminTopBar() {
   };
 
   // Group navigation items into logical categories
-  const shopManagementItems = [
+  const shopItems = [
     { href: `/admin/shops/${process.env.NEXT_PUBLIC_SHOP_ID}`, icon: Building, label: t('myShop') || "My Shop" },
     { href: `/admin/shops/${process.env.NEXT_PUBLIC_SHOP_ID}/shipping`, icon: Truck, label: t('shippingSettings') || "Shipping Settings" },
     { href: `/admin/shops/${process.env.NEXT_PUBLIC_SHOP_ID}/tremendous`, icon: Gift, label: t('tremendousRewards') || "Tremendous Rewards" },
+  ];
+
+  const operationsItems = [
     { href: "/admin/orders", icon: Package, label: t('orders') },
     { href: "/admin/stock", icon: Layers, label: t('stock') || 'Stock' },
     { href: "/admin/store-transfer", icon: ArrowRightLeft, label: t('storeTransfers') || 'Store Transfers' },
@@ -229,7 +232,15 @@ export function AdminTopBar() {
             icon={Building}
             label="Shop"
             href={`/admin/shops/${process.env.NEXT_PUBLIC_SHOP_ID}`}
-            isActive={isGroupActive(shopManagementItems)}
+            isActive={isGroupActive(shopItems)}
+          />
+
+          {/* Operations - Flat link, split from Shop */}
+          <TopBarItem
+            icon={Package}
+            label="Operations"
+            href="/admin/orders"
+            isActive={isGroupActive(operationsItems)}
           />
 
           {/* Catalog - Flat link, tabs on page */}
@@ -327,7 +338,7 @@ export function AdminTopBar() {
               href={`/admin/shops/${process.env.NEXT_PUBLIC_SHOP_ID}`}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
-                isGroupActive(shopManagementItems)
+                isGroupActive(shopItems)
                   ? "bg-white/15 text-white shadow-sm"
                   : "text-white/90 hover:text-white hover:bg-white/10"
               )}
@@ -335,6 +346,21 @@ export function AdminTopBar() {
             >
               <Building size={16} />
               Shop
+            </Link>
+
+            {/* Operations - Single link, split from Shop */}
+            <Link
+              href="/admin/orders"
+              className={cn(
+                "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
+                isGroupActive(operationsItems)
+                  ? "bg-white/15 text-white shadow-sm"
+                  : "text-white/90 hover:text-white hover:bg-white/10"
+              )}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Package size={16} />
+              Operations
             </Link>
 
             {/* Catalog - Single link, tabs on page */}
