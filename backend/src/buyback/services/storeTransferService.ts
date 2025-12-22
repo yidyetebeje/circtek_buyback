@@ -130,6 +130,7 @@ export const storeTransferService = {
                 sku: orders.sku,
                 serialNumber: orders.serial_number,
                 shopId: orders.shop_id,
+                finalPrice: orders.final_price,
             })
             .from(orders)
             .where(and(...orderConditions));
@@ -226,14 +227,16 @@ export const storeTransferService = {
                         throw new BadRequestError("Sendcloud shipping_product_code not configured");
                     }
 
-                    // Build V3 shipment items
+                    // Build V3 shipment items with actual order values
                     const items: SendcloudV3Item[] = ordersToTransfer.map((order) => {
                         const snapshot = order.deviceSnapshot as any;
+                        // Use actual finalPrice from order, fallback to estimated value
+                        const orderValue = order.finalPrice ? String(order.finalPrice) : "50.00";
                         return {
                             description: snapshot?.modelName || "Mobile Phone",
                             quantity: 1,
                             weight: "0.200",
-                            value: "100.00",
+                            value: orderValue,
                             hs_code: "851712",
                         };
                     });
@@ -260,9 +263,26 @@ export const storeTransferService = {
                     }
 
                     // Build V3 shipment data - shipping FROM origin TO delivery
+                    // Require proper address configuration - no fallback to invalid addresses
+                    if (!originAddress) {
+                        throw new BadRequestError(
+                            "Origin address not configured. Please select an origin address from your Sendcloud sender addresses."
+                        );
+                    }
+                    if (!deliveryAddress) {
+                        throw new BadRequestError(
+                            "Delivery address not configured. Please select a delivery address from your Sendcloud sender addresses."
+                        );
+                    }
+
+                    // Calculate total order value from actual order prices
+                    const totalOrderValue = ordersToTransfer.reduce((sum, order) => {
+                        return sum + (order.finalPrice ? Number(order.finalPrice) : 50);
+                    }, 0);
+
                     const shipmentData: SendcloudV3ShipmentInput = {
-                        // FROM: Use selected origin address or fallback to warehouse
-                        from_address: originAddress ? {
+                        // FROM: Use selected origin address
+                        from_address: {
                             name: originAddress.contact_name || originAddress.company_name,
                             company_name: originAddress.company_name,
                             email: originAddress.email,
@@ -272,15 +292,9 @@ export const storeTransferService = {
                             city: originAddress.city,
                             postal_code: originAddress.postal_code,
                             country_code: originAddress.country,
-                        } : {
-                            name: sourceWarehouse.name,
-                            address_line_1: sourceWarehouse.description || "Shop Address",
-                            city: "City",
-                            postal_code: "1000AA",
-                            country_code: "NL",
                         },
-                        // TO: Use selected delivery address or fallback to warehouse
-                        to_address: deliveryAddress ? {
+                        // TO: Use selected delivery address
+                        to_address: {
                             name: deliveryAddress.contact_name || deliveryAddress.company_name,
                             company_name: deliveryAddress.company_name,
                             email: deliveryAddress.email,
@@ -290,12 +304,6 @@ export const storeTransferService = {
                             city: deliveryAddress.city,
                             postal_code: deliveryAddress.postal_code,
                             country_code: deliveryAddress.country,
-                        } : {
-                            name: destWarehouse.name,
-                            address_line_1: destWarehouse.description || "Warehouse Address",
-                            city: "City",
-                            postal_code: "1000AA",
-                            country_code: "NL",
                         },
                         parcels: [{
                             weight: { value: totalWeight, unit: "kg" }, // V3 requires weight as object!
@@ -310,7 +318,7 @@ export const storeTransferService = {
                         request_label: false,
                         order_number: `TRF-${transferId}`,
                         external_reference: `store-transfer-${transferId}`,
-                        total_order_value: String(100 * ordersToTransfer.length),
+                        total_order_value: String(totalOrderValue),
                         total_order_value_currency: "EUR",
                     };
 
@@ -325,13 +333,17 @@ export const storeTransferService = {
                     }
                 } catch (error) {
                     console.error("[StoreTransferService] Sendcloud V3 label generation failed:", error);
-                    // Continue without label - will use mock
-                    trackingNumber = `MOCK-${Date.now()}`;
-                    labelUrl = "";
+                    // Don't use mock tracking - throw error to inform caller
+                    throw new BadRequestError(
+                        `Failed to generate shipping label: ${error instanceof Error ? error.message : "Unknown error"}. ` +
+                        `Please verify Sendcloud configuration and sender addresses.`
+                    );
                 }
             } else {
-                // Mock tracking if no Sendcloud config
-                trackingNumber = `MOCK-${Date.now()}`;
+                // No Sendcloud config - throw error instead of using mock
+                throw new BadRequestError(
+                    "Sendcloud is not configured for this shop. Please configure Sendcloud in Settings > Shipping before creating transfers."
+                );
             }
 
             // 4. Update transfer with tracking info

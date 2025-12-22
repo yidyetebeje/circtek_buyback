@@ -1,6 +1,6 @@
 import { shippingRepository, ShippingRepository } from './repository'
 import { createSendcloudClient, SendcloudClient } from './sendcloud/client'
-import type { SendcloudV3ShipmentInput, SendcloudV3Item, SendcloudV3Document } from './sendcloud/types'
+import type { SendcloudV3ShipmentInput, SendcloudV3Item, SendcloudV3Document, SendcloudSenderAddress } from './sendcloud/types'
 import type {
     ShipmentCreateInput,
     ShipmentUpdateInput,
@@ -259,8 +259,25 @@ export class ShippingController {
 
             const client = await this.getSendcloudClient(shop_id, tenant_id)
 
+            // Fetch sender address from Sendcloud for the 'from' address
+            let senderAddress: SendcloudSenderAddress | null = null
+            if (config.default_sender_address_id) {
+                senderAddress = await client.getSenderAddressById(config.default_sender_address_id)
+            }
+            if (!senderAddress) {
+                const addresses = await client.getSenderAddresses()
+                senderAddress = addresses[0] || null
+            }
+            if (!senderAddress) {
+                return {
+                    data: null,
+                    message: 'No sender address configured in Sendcloud. Please configure a sender address in your Sendcloud account.',
+                    status: 400,
+                }
+            }
+
             // Build shipment data and create
-            const shipmentData = this.buildShipment(shipment, config)
+            const shipmentData = this.buildShipment(shipment, config, senderAddress)
             const v3Response = await client.createShipment(shipmentData)
 
             // Get the first parcel from the response
@@ -349,17 +366,20 @@ export class ShippingController {
 
     /**
      * Build Sendcloud shipment input from shipment
+     * Uses actual sender address from Sendcloud configuration
      */
     private buildShipment(
         shipment: ShipmentWithDetails,
-        config: SendcloudConfigRecord
+        config: SendcloudConfigRecord,
+        senderAddress: SendcloudSenderAddress
     ): SendcloudV3ShipmentInput {
         // Convert items to Sendcloud V3 format
+        // Use actual unit values, with sensible fallback only if truly missing
         const items: SendcloudV3Item[] = shipment.items.map(item => ({
             description: item.description || item.model_name || 'Mobile Phone',
             quantity: item.quantity || 1,
             weight: item.weight_kg || '0.200',
-            value: item.unit_value || '100.00',
+            value: item.unit_value || String(parseFloat(shipment.total_value || '0') / (shipment.total_items || 1)),
             hs_code: item.hs_code || '851712',
             sku: item.sku || undefined,
         }))
@@ -367,14 +387,24 @@ export class ShippingController {
         // Parse weight as number for V3
         const weightValue = parseFloat(shipment.total_weight_kg || '0.5')
 
+        // Calculate total order value from shipment data
+        const totalValue = shipment.total_value || String(items.reduce((sum, item) => {
+            const itemValue = parseFloat(item.value) * (item.quantity || 1)
+            return sum + (isNaN(itemValue) ? 0 : itemValue)
+        }, 0))
+
         return {
-            // FROM: Source warehouse (where shipment originates)
+            // FROM: Source warehouse - use actual Sendcloud sender address
             from_address: {
-                name: 'Remarketed Warehouse', // TODO: Get from warehouse table
-                address_line_1: 'Warehouse Street 1',
-                city: 'Amsterdam',
-                postal_code: '1000AA',
-                country_code: 'NL',
+                name: senderAddress.contact_name || senderAddress.company_name,
+                company_name: senderAddress.company_name,
+                email: senderAddress.email,
+                phone_number: senderAddress.telephone,
+                address_line_1: senderAddress.street,
+                house_number: senderAddress.house_number,
+                city: senderAddress.city,
+                postal_code: senderAddress.postal_code,
+                country_code: senderAddress.country,
             },
             // TO: Destination (recipient or warehouse)
             to_address: {
@@ -401,7 +431,7 @@ export class ShippingController {
             request_label: true,
             order_number: shipment.shipment_number,
             external_reference: String(shipment.id),
-            total_order_value: shipment.total_value || '100.00',
+            total_order_value: totalValue,
             total_order_value_currency: 'EUR',
         }
     }

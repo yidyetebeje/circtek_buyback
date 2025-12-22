@@ -1,6 +1,6 @@
 import { orderRepository } from "../repository/orderRepository";
 import { createSendcloudClient, SendcloudClient } from "../../shipping/sendcloud/client";
-import type { SendcloudV3ShipmentInput, SendcloudV3Item, SendcloudV3ShipWith } from "../../shipping/sendcloud/types";
+import type { SendcloudV3ShipmentInput, SendcloudV3Item, SendcloudV3ShipWith, SendcloudPickupRequest, PickupSchedulingResult } from "../../shipping/sendcloud/types";
 import { shippingRepository } from "../../shipping/repository";
 
 /**
@@ -26,6 +26,7 @@ interface ShippingLabelResult {
   trackingNumber: string;
   shippingProvider: string;
   sendcloudParcelId?: number;
+  pickup?: PickupSchedulingResult;
 }
 
 export class ShippingService {
@@ -59,6 +60,7 @@ export class ShippingService {
    * @param orderId - The ID of the order
    * @param sellerAddress - The seller's (customer's) address - this is the FROM address
    * @param shop_id - The shop ID (required for shop-scoped Sendcloud config)
+   * @param estimatedPrice - The estimated price of the device for customs declaration
    * @param tenant_id - Optional tenant ID for multi-tenant support
    * @returns Promise with label URL and tracking number
    */
@@ -66,6 +68,7 @@ export class ShippingService {
     orderId: string,
     sellerAddress: ShippingAddress,
     shop_id: number,
+    estimatedPrice?: number,
     tenant_id?: number
   ): Promise<ShippingLabelResult> {
     try {
@@ -132,12 +135,13 @@ export class ShippingService {
         throw new Error(`No shipping options available from ${fromCountry} to ${toCountry}. Please configure default_shipping_option_code in sendcloud_config.`);
       }
 
-      // Build V3 shipment items
+      // Build V3 shipment items with actual order value
+      const deviceValue = estimatedPrice ? String(estimatedPrice.toFixed(2)) : "50.00";
       const items: SendcloudV3Item[] = [{
         description: "Mobile Phone (Buyback Return)",
         quantity: 1,
         weight: "0.200", // ~200g for phone
-        value: "100.00",
+        value: deviceValue,
         hs_code: "851712", // Mobile phones
       }];
 
@@ -181,7 +185,7 @@ export class ShippingService {
         request_label: true,
         order_number: orderId,
         external_reference: `buyback-${orderId}`,
-        total_order_value: "100.00",
+        total_order_value: deviceValue,
         total_order_value_currency: "EUR",
       };
 
@@ -203,7 +207,23 @@ export class ShippingService {
 
       console.log(`[ShippingService] Sendcloud V3 parcel created: ID=${parcel.id}, Tracking=${trackingNumber}`);
 
-      // Update the order's shipping details with the label information
+      // Schedule pickup from customer's address (2 working days ahead)
+      let pickupResult: PickupSchedulingResult | undefined;
+      try {
+        pickupResult = await this.schedulePickupForOrder(
+          client,
+          orderId,
+          sellerAddress,
+          parcel.carrier?.code || "ups"
+        );
+        console.log(`[ShippingService] Pickup scheduled: ID=${pickupResult.pickupId}, date=${pickupResult.pickupDate}`);
+      } catch (pickupError) {
+        // Log pickup error but don't fail the whole operation
+        // Label was already created, pickup can be retried later
+        console.error(`[ShippingService] Failed to schedule pickup for order ${orderId}:`, pickupError);
+      }
+
+      // Update the order's shipping details with the label and pickup information
       await orderRepository.updateShippingDetails(orderId, {
         shipping_label_url: shippingLabelUrl,
         tracking_number: trackingNumber,
@@ -214,6 +234,12 @@ export class ShippingService {
           carrier: shippingProvider,
           label_url: shippingLabelUrl,
           created_at: new Date().toISOString(),
+          pickup: pickupResult ? {
+            pickup_id: pickupResult.pickupId,
+            pickup_date: pickupResult.pickupDate,
+            pickup_time_from: pickupResult.pickupTimeFrom,
+            pickup_time_until: pickupResult.pickupTimeUntil,
+          } : undefined,
         },
       });
 
@@ -222,19 +248,23 @@ export class ShippingService {
         trackingNumber,
         shippingProvider,
         sendcloudParcelId: parcel.id,
+        pickup: pickupResult,
       };
     } catch (error) {
       console.error(`[ShippingService] Error generating Sendcloud label for order ${orderId}:`, error);
-
-      // Fall back to mock generation if Sendcloud fails
-      console.log(`[ShippingService] Falling back to mock label generation`);
-      return this.generateMockLabel(orderId, sellerAddress);
+      // Re-throw the error - don't fall back to mock data
+      // The caller should handle the error appropriately
+      throw new Error(
+        `Failed to generate shipping label: ${error instanceof Error ? error.message : "Unknown error"}. ` +
+        `Please check Sendcloud configuration and try again.`
+      );
     }
   }
 
   /**
    * Extract house number from street address
    * Sendcloud requires house number as a separate field
+   * Returns "1" as fallback if extraction fails (Sendcloud requires a house number)
    */
   private extractHouseNumber(street: string): string {
     // Try to extract a number from the street address
@@ -244,7 +274,93 @@ export class ShippingService {
     }
     // If no number found at end, try beginning
     const beginMatch = street.match(/^(\d+[a-zA-Z]?)/);
-    return beginMatch ? beginMatch[1] : "";
+    if (beginMatch) {
+      return beginMatch[1];
+    }
+    // Log warning and return fallback - Sendcloud requires a house number
+    console.warn(`[ShippingService] Could not extract house number from address: "${street}". Using fallback "1".`);
+    return "1";
+  }
+
+  /**
+   * Calculate a date that is N working days from now
+   * Skips weekends (Saturday and Sunday)
+   * @param days - Number of working days to add
+   * @returns Date object for the target working day
+   */
+  private addWorkingDays(days: number): Date {
+    const result = new Date();
+    let addedDays = 0;
+
+    while (addedDays < days) {
+      result.setDate(result.getDate() + 1);
+      const dayOfWeek = result.getDay();
+      // Skip Saturday (6) and Sunday (0)
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        addedDays++;
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Schedule a carrier pickup from the customer's address
+   * Uses Sendcloud Pickups V3 API
+   * Automatically schedules 2 working days ahead
+   * @param client - Sendcloud client instance
+   * @param orderId - Order ID for reference
+   * @param sellerAddress - Customer's address for pickup
+   * @param carrier - Carrier code (e.g., 'ups', 'dhl_express')
+   */
+  private async schedulePickupForOrder(
+    client: SendcloudClient,
+    orderId: string,
+    sellerAddress: ShippingAddress,
+    carrier: string = "ups"
+  ): Promise<PickupSchedulingResult> {
+    // Calculate pickup date: 2 working days ahead (Sendcloud requirement)
+    const pickupDate = this.addWorkingDays(2);
+
+    // Set pickup window: 9:00 AM to 5:00 PM
+    const pickupFrom = new Date(pickupDate);
+    pickupFrom.setHours(9, 0, 0, 0);
+
+    const pickupUntil = new Date(pickupDate);
+    pickupUntil.setHours(17, 0, 0, 0);
+
+    const pickupRequest: SendcloudPickupRequest = {
+      carrier: carrier.toLowerCase(),
+      pickup_address: {
+        name: sellerAddress.name,
+        address_line_1: sellerAddress.street1,
+        house_number: this.extractHouseNumber(sellerAddress.street1),
+        city: sellerAddress.city,
+        postal_code: sellerAddress.postalCode,
+        country_code: sellerAddress.countryCode,
+        contact_email: sellerAddress.email || "",
+        contact_phone: sellerAddress.phoneNumber || "",
+      },
+      pickup_from: pickupFrom.toISOString(),
+      pickup_until: pickupUntil.toISOString(),
+      quantity: 1,
+      total_weight: 0.5, // ~500g for a phone package
+      reference: `buyback-${orderId}`,
+      special_instructions: "Buyback device return - handle with care",
+    };
+
+    console.log(`[ShippingService] Scheduling pickup for order ${orderId} on ${pickupDate.toDateString()}`);
+
+    const response = await client.schedulePickup(pickupRequest);
+
+    return {
+      pickupId: response.id,
+      pickupDate: response.pickup_date,
+      pickupTimeFrom: response.pickup_from,
+      pickupTimeUntil: response.pickup_until,
+      carrier: response.carrier,
+      status: response.status,
+    };
   }
 
   /**
@@ -289,33 +405,6 @@ export class ShippingService {
       city: senderAddress.city,
       postal_code: senderAddress.postal_code,
       country_code: senderAddress.country, // Already ISO-2
-    };
-  }
-
-  /**
-   * Generate a mock shipping label as fallback
-   */
-  private async generateMockLabel(orderId: string, sellerAddress: ShippingAddress): Promise<ShippingLabelResult> {
-    // Generate mock tracking number
-    const trackingNumber = `1Z${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-    const shippingLabelUrl = `https://example.com/labels/buyback-${orderId}.pdf`;
-    const shippingProvider = "UPS";
-
-    // Update the order with mock data
-    await orderRepository.updateShippingDetails(orderId, {
-      shipping_label_url: shippingLabelUrl,
-      tracking_number: trackingNumber,
-      shipping_provider: shippingProvider as any,
-      label_data: {
-        mock: true,
-        created_at: new Date().toISOString(),
-      },
-    });
-
-    return {
-      shippingLabelUrl,
-      trackingNumber,
-      shippingProvider,
     };
   }
 

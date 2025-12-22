@@ -24,6 +24,7 @@ export class NotificationService {
    * @param recipientEmail - The customer's email address
    * @param orderDetails - Order details for email content
    * @param shippingLabelUrl - URL to the shipping label
+   * @param pickupInfo - Optional pickup scheduling information
    * @returns Promise<boolean> indicating success
    */
   async sendOrderConfirmationEmail(
@@ -34,28 +35,38 @@ export class NotificationService {
       deviceName: string;
       estimatedPrice: number;
     },
-    shippingLabelUrl?: string
+    shippingLabelUrl?: string,
+    pickupInfo?: {
+      pickupDate: string;
+      pickupTimeFrom: string;
+      pickupTimeUntil: string;
+      carrier: string;
+    }
   ): Promise<boolean> {
     try {
       // In production, this would make API calls to an email service
       // For this implementation, we'll simulate a successful email send
 
       console.log(`[NotificationService] Sending order confirmation email to ${recipientEmail} for order ${orderId}`);
-      
+
       const emailContent = this.generateOrderConfirmationEmail(
         orderDetails.orderNumber,
         orderDetails.deviceName,
         orderDetails.estimatedPrice,
-        shippingLabelUrl
+        shippingLabelUrl,
+        pickupInfo
       );
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 300));
-      
+
       console.log(`[NotificationService] Email content preview:`);
       console.log(`Subject: Your Device Buyback Order #${orderDetails.orderNumber} Confirmation`);
       console.log(`Email content length: ${emailContent.length} characters`);
-      
+      if (pickupInfo) {
+        console.log(`Pickup scheduled: ${pickupInfo.pickupDate}`);
+      }
+
       // In production, we would track email delivery status
       return true;
     } catch (error) {
@@ -84,21 +95,21 @@ export class NotificationService {
   ): Promise<boolean> {
     try {
       console.log(`[NotificationService] Sending status update email (${newStatus}) to ${recipientEmail} for order ${orderId}`);
-      
+
       const emailContent = this.generateStatusUpdateEmail(
         newStatus,
         orderDetails.orderNumber,
         orderDetails.deviceName,
         orderDetails.finalPrice
       );
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 300));
-      
+
       console.log(`[NotificationService] Email content preview:`);
       console.log(`Subject: Update on Your Device Buyback Order #${orderDetails.orderNumber}`);
       console.log(`Email content length: ${emailContent.length} characters`);
-      
+
       return true;
     } catch (error) {
       console.error(`[NotificationService] Error sending status update email for order ${orderId}:`, error);
@@ -123,15 +134,15 @@ export class NotificationService {
   ): Promise<boolean> {
     try {
       console.log(`[NotificationService] Sending admin notification for new order ${orderId}`);
-      
+
       // In a real implementation, we would send to all admin emails
       for (const adminEmail of this.adminEmails) {
         console.log(`[NotificationService] Sending admin notification to ${adminEmail}`);
-        
+
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 100));
       }
-      
+
       return true;
     } catch (error) {
       console.error(`[NotificationService] Error sending admin notification for order ${orderId}:`, error);
@@ -146,30 +157,86 @@ export class NotificationService {
     orderNumber: string,
     deviceName: string,
     estimatedPrice: number,
-    shippingLabelUrl?: string
+    shippingLabelUrl?: string,
+    pickupInfo?: {
+      pickupDate: string;
+      pickupTimeFrom: string;
+      pickupTimeUntil: string;
+      carrier: string;
+    }
   ): string {
+    // Format pickup date for display
+    const formatPickupDate = (dateStr: string) => {
+      try {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      } catch {
+        return dateStr;
+      }
+    };
+
+    const formatPickupTime = (fromStr: string, untilStr: string) => {
+      try {
+        const from = new Date(fromStr);
+        const until = new Date(untilStr);
+        const fromTime = from.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        const untilTime = until.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        return `between ${fromTime} and ${untilTime}`;
+      } catch {
+        return 'during business hours';
+      }
+    };
+
     // This would be a proper HTML template in production
     return `
       <html>
-        <body>
-          <h1>Your Device Buyback Order Confirmation</h1>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h1 style="color: #2c3e50;">Your Device Buyback Order Confirmation</h1>
           <p>Thank you for your order #${orderNumber}!</p>
           <p>We're excited to buy back your ${deviceName}.</p>
-          <h2>Order Summary</h2>
-          <p>Device: ${deviceName}</p>
-          <p>Estimated Price: $${estimatedPrice.toFixed(2)}</p>
-          ${shippingLabelUrl ? `
-            <h2>Shipping Instructions</h2>
-            <p>Please follow these steps to ship your device to us:</p>
-            <ol>
-              <li>Download your shipping label: <a href="${shippingLabelUrl}">Download Shipping Label</a></li>
+          
+          <h2 style="color: #2c3e50;">Order Summary</h2>
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <p style="margin: 5px 0;"><strong>Device:</strong> ${deviceName}</p>
+            <p style="margin: 5px 0;"><strong>Estimated Price:</strong> €${estimatedPrice.toFixed(2)}</p>
+          </div>
+          
+          ${pickupInfo ? `
+            <h2 style="color: #2c3e50;">📦 Carrier Pickup Scheduled!</h2>
+            <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4caf50;">
+              <p style="margin: 5px 0;"><strong>Pickup Date:</strong> ${formatPickupDate(pickupInfo.pickupDate)}</p>
+              <p style="margin: 5px 0;"><strong>Time Window:</strong> ${formatPickupTime(pickupInfo.pickupTimeFrom, pickupInfo.pickupTimeUntil)}</p>
+              <p style="margin: 5px 0;"><strong>Carrier:</strong> ${pickupInfo.carrier.toUpperCase()}</p>
+            </div>
+            <h3 style="color: #2c3e50;">What to do:</h3>
+            <ol style="line-height: 1.8;">
+              <li>Download and print your shipping label: ${shippingLabelUrl ? `<a href="${shippingLabelUrl}" style="color: #3498db;">Download Shipping Label</a>` : 'Label will be available soon'}</li>
               <li>Package your device securely with appropriate padding</li>
               <li>Attach the label to the outside of the package</li>
-              <li>Drop off the package at your nearest USPS location</li>
+              <li><strong>Be available at your address on ${formatPickupDate(pickupInfo.pickupDate)} ${formatPickupTime(pickupInfo.pickupTimeFrom, pickupInfo.pickupTimeUntil)}</strong></li>
+              <li>Hand the package to the ${pickupInfo.carrier.toUpperCase()} driver when they arrive</li>
+            </ol>
+          ` : shippingLabelUrl ? `
+            <h2 style="color: #2c3e50;">Shipping Instructions</h2>
+            <p>Please follow these steps to ship your device to us:</p>
+            <ol style="line-height: 1.8;">
+              <li>Download your shipping label: <a href="${shippingLabelUrl}" style="color: #3498db;">Download Shipping Label</a></li>
+              <li>Package your device securely with appropriate padding</li>
+              <li>Attach the label to the outside of the package</li>
+              <li>Drop off the package at your nearest carrier location</li>
             </ol>
           ` : '<p>Your shipping label will be available soon.</p>'}
-          <p>Once we receive your device, we'll inspect it to confirm its condition and process your payment.</p>
+          
+          <p style="margin-top: 20px;">Once we receive your device, we'll inspect it to confirm its condition and process your payment.</p>
           <p>Thank you for choosing our buyback service!</p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #888; font-size: 12px;">If you have any questions, please contact our customer support team.</p>
         </body>
       </html>
     `;
@@ -186,7 +253,7 @@ export class NotificationService {
   ): string {
     let statusMessage = '';
     let subject = '';
-    
+
     switch (status) {
       case 'PENDING':
         statusMessage = 'Your order has been created and is pending shipment.';
@@ -208,7 +275,7 @@ export class NotificationService {
         statusMessage = `Your order status has been updated to ${status}`;
         subject = 'Order status update';
     }
-    
+
     // This would be a proper HTML template in production
     return `
       <html>

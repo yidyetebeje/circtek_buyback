@@ -9,6 +9,9 @@ import type {
     SendcloudV3LabelFormat,
     SendcloudV3LabelSize,
     SendcloudV3ApiError,
+    // Pickup Types
+    SendcloudPickupRequest,
+    SendcloudPickupResponse,
 } from './types'
 
 // API URLs - V3 Only
@@ -288,6 +291,48 @@ export class SendcloudClient {
     async getSenderAddressById(id: number): Promise<SendcloudSenderAddress | null> {
         const addresses = await this.getSenderAddresses()
         return addresses.find(addr => addr.id === id) || null
+    }
+
+    // ============ PICKUP METHODS ============
+
+    /**
+     * Schedule a carrier pickup from a customer's address
+     * Uses Sendcloud Pickups V3 API
+     * @param pickupData - Pickup request data
+     * @returns Pickup confirmation with ID and scheduled time
+     */
+    async schedulePickup(pickupData: SendcloudPickupRequest): Promise<SendcloudPickupResponse> {
+        console.log(`[SendcloudClient] Scheduling pickup with carrier: ${pickupData.carrier}`)
+
+        const response = await this.request<SendcloudPickupResponse>('/pickups', {
+            method: 'POST',
+            body: JSON.stringify(pickupData),
+        })
+
+        console.log(`[SendcloudClient] Pickup scheduled: ID=${response.id}, date=${response.pickup_date}`)
+        return response
+    }
+
+    /**
+     * Cancel a scheduled pickup
+     * @param pickupId - The ID of the pickup to cancel
+     */
+    async cancelPickup(pickupId: number): Promise<void> {
+        console.log(`[SendcloudClient] Cancelling pickup ID: ${pickupId}`)
+
+        await this.request(`/pickups/${pickupId}`, {
+            method: 'DELETE',
+        })
+
+        console.log(`[SendcloudClient] Pickup ${pickupId} cancelled`)
+    }
+
+    /**
+     * Get pickup by ID
+     * @param pickupId - The ID of the pickup
+     */
+    async getPickup(pickupId: number): Promise<SendcloudPickupResponse> {
+        return this.request<SendcloudPickupResponse>(`/pickups/${pickupId}`)
     }
 
     // ============ UTILITY METHODS ============

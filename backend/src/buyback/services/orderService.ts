@@ -36,7 +36,7 @@ export class OrderService {
 
       // TODO: Replace fire-and-forget with proper job queue (e.g., BullMQ, AWS SQS) for production reliability
       // These operations should be idempotent and have retry logic
-      this.generateShippingLabel(newOrder.id, params.sellerAddress, params.shopId).catch(err =>
+      this.generateShippingLabel(newOrder.id, params.sellerAddress, params.shopId, params.estimatedPrice).catch(err =>
         console.error("[OrderService] Shipping label generation failed (will need manual retry):", err)
       );
 
@@ -254,16 +254,18 @@ export class OrderService {
    * @param orderId The order ID
    * @param sellerAddress The seller's address
    * @param shopId The shop ID (required for shop-scoped Sendcloud config)
+   * @param estimatedPrice The estimated price of the device for customs
    * @returns Results of the shipping label generation
    */
   private async generateShippingLabel(
     orderId: string,
     sellerAddress: CreateOrderParams["sellerAddress"],
-    shopId: number
+    shopId: number,
+    estimatedPrice?: number
   ): Promise<void> {
     try {
       // Generate the label using shop-specific Sendcloud config
-      const labelInfo = await shippingService.generateAndSaveShippingLabel(orderId, sellerAddress, shopId);
+      const labelInfo = await shippingService.generateAndSaveShippingLabel(orderId, sellerAddress, shopId, estimatedPrice);
 
       console.log(`[OrderService] Shipping label generated for order ${orderId}:`, labelInfo.trackingNumber);
 
@@ -291,8 +293,22 @@ export class OrderService {
     }
   ): Promise<void> {
     try {
-      // Get the shipping details to include the label URL
+      // Get the shipping details to include the label URL and pickup info
       const shippingDetails = await orderRepository.getShippingDetails(orderId);
+
+      // Extract pickup info from label_data if available
+      let pickupInfo: { pickupDate: string; pickupTimeFrom: string; pickupTimeUntil: string; carrier: string; } | undefined;
+      if (shippingDetails?.label_data && typeof shippingDetails.label_data === 'object') {
+        const labelData = shippingDetails.label_data as any;
+        if (labelData.pickup) {
+          pickupInfo = {
+            pickupDate: labelData.pickup.pickup_date,
+            pickupTimeFrom: labelData.pickup.pickup_time_from,
+            pickupTimeUntil: labelData.pickup.pickup_time_until,
+            carrier: labelData.carrier || 'UPS',
+          };
+        }
+      }
 
       // Send email to customer if we have their email
       if (customerEmail) {
@@ -304,7 +320,8 @@ export class OrderService {
             deviceName: orderDetails.deviceName,
             estimatedPrice: orderDetails.estimatedPrice
           },
-          shippingDetails?.shipping_label_url ?? undefined
+          shippingDetails?.shipping_label_url ?? undefined,
+          pickupInfo
         );
       }
 
