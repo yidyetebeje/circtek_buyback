@@ -42,6 +42,7 @@ export type CreateAdminOrderParams = CreateOrderParams & {
   sku?: string;
   serialNumber?: string;
   testingInfo?: any;
+  warehouseId?: number; // Origin warehouse for admin-created orders
 };
 
 export type UpdateOrderStatusParams = {
@@ -212,7 +213,8 @@ export const orderRepository = {
       imei,
       sku,
       serialNumber,
-      testingInfo
+      testingInfo,
+      warehouseId
     } = params;
 
     return await db.transaction(async (tx) => {
@@ -238,6 +240,7 @@ export const orderRepository = {
         seller_notes: sellerNotes || null,
         tenant_id: tenant_id,
         shop_id: shopId,
+        warehouse_id: warehouseId || null, // Origin warehouse for admin orders
         serial_number: serialNumber || null,
         testing_info: testingInfo || null,
         created_at: new Date(),

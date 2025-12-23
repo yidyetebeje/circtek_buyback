@@ -195,11 +195,14 @@ export const shipping_routes = new Elysia({ prefix: '/shipping' })
             default_shipping_method_id: t.Optional(t.Number()),
             default_shipping_option_code: t.Optional(t.String()),
             use_test_mode: t.Optional(t.Boolean()),
+            // HQ warehouse configuration for store transfers
+            hq_warehouse_id: t.Optional(t.Number()), // Default destination warehouse
+            hq_delivery_address_id: t.Optional(t.Number()), // Sendcloud sender address ID for HQ
         }),
         detail: {
             tags: ['Shipping', 'Sendcloud'],
             summary: 'Configure Sendcloud for a shop',
-            description: 'Set up Sendcloud API credentials for a specific shop',
+            description: 'Set up Sendcloud API credentials and HQ warehouse configuration for a specific shop',
         },
     })
 
@@ -212,7 +215,20 @@ export const shipping_routes = new Elysia({ prefix: '/shipping' })
         detail: {
             tags: ['Shipping', 'Sendcloud'],
             summary: 'Get Sendcloud config for a shop',
-            description: 'Check if Sendcloud is configured for a specific shop',
+            description: 'Check if Sendcloud is configured for a specific shop, includes HQ warehouse settings',
+        },
+    })
+
+    // Get HQ configuration for store transfers
+    .get('/shops/:shop_id/hq-config', async (ctx) => {
+        const { currentTenantId } = ctx as any
+        const shop_id = Number(ctx.params.shop_id)
+        return shippingController.getHQConfig(shop_id, currentTenantId)
+    }, {
+        detail: {
+            tags: ['Shipping', 'Store Transfers'],
+            summary: 'Get HQ warehouse configuration',
+            description: 'Get the configured HQ warehouse and delivery address for store transfers',
         },
     })
 

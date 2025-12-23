@@ -18,20 +18,6 @@ export default function AdminUsersLayout({ children }: AdminUsersLayoutProps) {
     const pathname = usePathname();
     const router = useRouter();
 
-    const adminTabs: PageTab[] = [
-        {
-            key: "users",
-            label: t("users"),
-            href: "/admin/users",
-            icon: Users,
-        },
-        {
-            key: "locations",
-            label: t("locations") || "Locations",
-            href: "/admin/locations",
-            icon: MapPin,
-        },
-    ];
 
     // Determine which action button to show based on current route
     const getActionButton = () => {
@@ -78,7 +64,7 @@ export default function AdminUsersLayout({ children }: AdminUsersLayoutProps) {
                 ]}
                 actions={getActionButton()}
             />
-            <PageTabs tabs={adminTabs} />
+
             {children}
         </div>
     );

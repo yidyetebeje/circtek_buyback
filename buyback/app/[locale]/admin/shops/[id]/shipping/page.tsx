@@ -17,6 +17,7 @@ import {
     useTestSendcloudConnection,
 } from '@/hooks/useShipping';
 import { useShop } from '@/hooks/catalog/useShops';
+import { useWarehouses } from '@/hooks/useWarehouses';
 
 export default function ShopShippingConfigPage() {
     const router = useRouter();
@@ -67,6 +68,13 @@ export default function ShopShippingConfigPage() {
         isLoading: isLoadingSenderAddresses,
         refetch: refetchSenderAddresses
     } = useSenderAddresses(shopId as number);
+
+    // Fetch warehouses for HQ warehouse configuration
+    const {
+        data: warehousesResponse,
+        isLoading: isLoadingWarehouses,
+    } = useWarehouses({ shop_id: shopId as number });
+    const warehouses = warehousesResponse?.data ?? [];
 
     // Mutations
     const { mutateAsync: saveConfig, isPending: isSaving } = useSaveSendcloudConfig(shopId as number);
@@ -146,8 +154,10 @@ export default function ShopShippingConfigPage() {
                 initialData={sendcloudConfig || undefined}
                 shippingOptions={shippingOptions || []}
                 senderAddresses={senderAddresses || []}
+                warehouses={warehouses}
                 isLoadingOptions={isLoadingOptions}
                 isLoadingSenderAddresses={isLoadingSenderAddresses}
+                isLoadingWarehouses={isLoadingWarehouses}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
                 onTestConnection={handleTestConnection}

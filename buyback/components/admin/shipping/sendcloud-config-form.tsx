@@ -4,7 +4,7 @@ import React from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Loader2, Key, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, Key, Eye, EyeOff, CheckCircle, AlertCircle, Building2 } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -38,7 +38,17 @@ const createSendcloudConfigSchema = (isConfigured: boolean) => z.object({
         : z.string().min(1, { message: "Secret key is required" }).max(255),
     default_shipping_option_code: z.string().optional().nullable(),
     default_sender_address_id: z.number().optional().nullable(),
+    // HQ Warehouse configuration for store transfers
+    hq_warehouse_id: z.number().optional().nullable(),
+    hq_delivery_address_id: z.number().optional().nullable(),
 });
+
+// Warehouse type for the dropdown
+export interface Warehouse {
+    id: number;
+    name: string;
+    description?: string | null;
+}
 
 // Export the type derived from the schema
 export type SendcloudConfigFormValues = {
@@ -46,14 +56,18 @@ export type SendcloudConfigFormValues = {
     secret_key?: string;
     default_shipping_option_code?: string | null;
     default_sender_address_id?: number | null;
+    hq_warehouse_id?: number | null;
+    hq_delivery_address_id?: number | null;
 };
 
 export interface SendcloudConfigFormProps {
     initialData?: Partial<SendcloudConfig>;
     shippingOptions?: ShippingOption[];
     senderAddresses?: SenderAddress[];
+    warehouses?: Warehouse[];
     isLoadingOptions?: boolean;
     isLoadingSenderAddresses?: boolean;
+    isLoadingWarehouses?: boolean;
     onSubmit: (values: SendcloudConfigFormValues) => void;
     onCancel: () => void;
     onTestConnection?: () => void;
@@ -66,8 +80,10 @@ export function SendcloudConfigForm({
     initialData,
     shippingOptions = [],
     senderAddresses = [],
+    warehouses = [],
     isLoadingOptions = false,
     isLoadingSenderAddresses = false,
+    isLoadingWarehouses = false,
     onSubmit,
     onCancel,
     onTestConnection,
@@ -89,6 +105,8 @@ export function SendcloudConfigForm({
             secret_key: '',
             default_shipping_option_code: initialData?.default_shipping_option_code || '',
             default_sender_address_id: initialData?.default_sender_address_id || null,
+            hq_warehouse_id: initialData?.hq_warehouse_id || null,
+            hq_delivery_address_id: initialData?.hq_delivery_address_id || null,
         },
     });
 
@@ -275,6 +293,96 @@ export function SendcloudConfigForm({
                         </FormItem>
                     )}
                 />
+
+                {/* HQ Warehouse Configuration */}
+                <Card className="bg-card shadow-none border-0 rounded-lg">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            HQ Warehouse Configuration
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                            Configure the default destination for store transfers. When set, transfers will automatically go to the HQ warehouse without manual selection.
+                        </p>
+
+                        <FormField
+                            control={form.control}
+                            name="hq_warehouse_id"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>HQ Warehouse</FormLabel>
+                                    <Select
+                                        onValueChange={(val) => field.onChange(val ? Number(val) : null)}
+                                        value={field.value?.toString() || ''}
+                                        disabled={isLoadingWarehouses || warehouses.length === 0}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder={
+                                                    isLoadingWarehouses
+                                                        ? "Loading warehouses..."
+                                                        : warehouses.length === 0
+                                                            ? "No warehouses available"
+                                                            : "Select HQ warehouse"
+                                                } />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {warehouses.map((warehouse) => (
+                                                <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                                                    {warehouse.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="hq_delivery_address_id"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>HQ Delivery Address</FormLabel>
+                                    <Select
+                                        onValueChange={(val) => field.onChange(val ? Number(val) : null)}
+                                        value={field.value?.toString() || ''}
+                                        disabled={!isConfigured || isLoadingSenderAddresses || senderAddresses.length === 0}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder={
+                                                    !isConfigured
+                                                        ? "Save config first"
+                                                        : isLoadingSenderAddresses
+                                                            ? "Loading addresses..."
+                                                            : senderAddresses.length === 0
+                                                                ? "No addresses configured"
+                                                                : "Select delivery address for HQ"
+                                                } />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {senderAddresses.map((address) => (
+                                                <SelectItem key={address.id} value={address.id.toString()}>
+                                                    {address.company_name || address.contact_name} - {address.city}, {address.country}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        This address will appear on shipping labels as the destination for store transfers.
+                                    </p>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3">

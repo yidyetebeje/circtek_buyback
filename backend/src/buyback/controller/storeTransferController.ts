@@ -16,6 +16,7 @@ class StoreTransferController {
 
             const days = query?.days ? Number(query.days) : 7;
             const shopId = query?.shopId ? Number(query.shopId) : undefined;
+            const warehouseId = query?.warehouseId ? Number(query.warehouseId) : undefined;
 
             // For shop managers, restrict to their managed shop
             let allowedShopIds: number[] | undefined;
@@ -35,6 +36,7 @@ class StoreTransferController {
                 shopId: shopId || (currentRole === "shop_manager" ? managedShopId : undefined),
                 tenantId: currentTenantId,
                 allowedShopIds,
+                warehouseId,
             });
 
             return {
@@ -61,11 +63,9 @@ class StoreTransferController {
                 throw new ForbiddenError("Authentication required");
             }
 
-            const { orderIds, toWarehouseId, originAddressId, deliveryAddressId } = body as {
+            const { orderIds, originAddressId } = body as {
                 orderIds: string[];
-                toWarehouseId: number;
                 originAddressId?: number;
-                deliveryAddressId?: number;
             };
 
             if (!orderIds || orderIds.length === 0) {
@@ -73,14 +73,13 @@ class StoreTransferController {
             }
 
             // For shop managers, we'll validate the orders belong to their shop in the service
+            // Transfers always go to HQ - destination is enforced by the service
             const result = await storeTransferService.createStoreTransfer({
                 orderIds,
-                toWarehouseId,
                 createdByUserId: currentUserId,
                 tenantId: currentTenantId,
                 shopManagerShopId: currentRole === "shop_manager" ? managedShopId : undefined,
                 originAddressId,
-                deliveryAddressId,
             });
 
             return {

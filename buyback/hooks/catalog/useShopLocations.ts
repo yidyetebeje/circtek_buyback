@@ -28,13 +28,24 @@ export const useShopLocation = (shopId: number, locationId: number) => {
 };
 
 /**
+ * Hook for retrieving a shop location by its linked warehouse ID
+ */
+export const useShopLocationByWarehouseId = (shopId: number, warehouseId: number) => {
+  return useQuery({
+    queryKey: ['shopLocationByWarehouse', shopId, warehouseId],
+    queryFn: () => shopLocationService.getShopLocationByWarehouseId(shopId, warehouseId),
+    enabled: !!shopId && !!warehouseId,
+  });
+};
+
+/**
  * Hook for creating a new shop location
  */
 export const useCreateShopLocation = (shopId: number) => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (location: Omit<ShopLocation, 'id' | 'createdAt' | 'updatedAt'>) => 
+    mutationFn: (location: Omit<ShopLocation, 'id' | 'createdAt' | 'updatedAt'>) =>
       shopLocationService.createShopLocation(shopId, location),
     onSuccess: () => {
       // Invalidate the locations list query to refetch it
@@ -48,9 +59,9 @@ export const useCreateShopLocation = (shopId: number) => {
  */
 export const useUpdateShopLocation = (shopId: number, locationId: number) => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (location: Partial<ShopLocation>) => 
+    mutationFn: (location: Partial<ShopLocation>) =>
       shopLocationService.updateShopLocation(shopId, locationId, location),
     onSuccess: () => {
       // Invalidate both the locations list and the individual location query
@@ -65,7 +76,7 @@ export const useUpdateShopLocation = (shopId: number, locationId: number) => {
  */
 export const useDeleteShopLocation = (shopId: number) => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (locationId: number) => shopLocationService.deleteShopLocation(shopId, locationId),
     onSuccess: () => {
@@ -80,7 +91,7 @@ export const useDeleteShopLocation = (shopId: number) => {
  */
 export const useToggleShopLocationActive = (shopId: number, locationId: number) => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: () => shopLocationService.toggleShopLocationActive(shopId, locationId),
     onSuccess: () => {
@@ -95,12 +106,12 @@ export const useToggleShopLocationActive = (shopId: number, locationId: number) 
  * Hook for finding nearby shop locations
  */
 export const useNearbyShopLocations = (
-  latitude: number, 
-  longitude: number, 
-  params?: { 
-    radius?: number; 
-    shopId?: number; 
-    limit?: number; 
+  latitude: number,
+  longitude: number,
+  params?: {
+    radius?: number;
+    shopId?: number;
+    limit?: number;
   }
 ) => {
   return useQuery({

@@ -185,8 +185,7 @@ export function AdminTopBar() {
   const adminItems = [];
   if (canManageUsersLocations) {
     adminItems.push(
-      { href: "/admin/users", icon: Users, label: t('users') },
-      { href: "/admin/locations", icon: MapPin, label: t('locations') || 'Locations' }
+      { href: "/admin/users", icon: Users, label: t('users') }
     );
   }
 

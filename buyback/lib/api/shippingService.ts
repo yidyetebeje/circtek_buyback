@@ -19,6 +19,9 @@ export interface SendcloudConfig {
     default_shipping_option_code?: string | null;
     use_test_mode?: boolean;
     is_active?: boolean;
+    // HQ Warehouse configuration for store transfers
+    hq_warehouse_id?: number | null;
+    hq_delivery_address_id?: number | null;
     // Preview fields returned by API (not full credentials)
     configured?: boolean;
     public_key_preview?: string;
@@ -33,6 +36,9 @@ export interface SendcloudConfigInput {
     default_sender_address_id?: number | null;
     default_shipping_method_id?: number | null;
     default_shipping_option_code?: string | null;
+    // HQ Warehouse configuration for store transfers
+    hq_warehouse_id?: number | null;
+    hq_delivery_address_id?: number | null;
 }
 
 /**

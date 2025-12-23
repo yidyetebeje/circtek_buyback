@@ -15,22 +15,22 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useWarehouses } from "@/hooks/useWarehouses";
 import {
     useTransferCandidates,
     useCreateStoreTransfer,
     useStoreTransfers,
     useUpdateTransferStatus,
     downloadTransferLabel,
+    useHQConfig,
     TransferCandidate,
     StoreTransfer,
 } from "@/hooks/useStoreTransfer";
-import { useSenderAddresses } from "@/hooks/useShipping";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Package, Truck, Download, Loader2, ExternalLink, MapPin, Eye, CheckCircle, Clock } from "lucide-react";
+import { Package, Truck, Download, Loader2, ExternalLink, MapPin, Eye, CheckCircle, Clock, Warehouse } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useWarehouses } from "@/hooks/useWarehouses";
 
 
 // Columns for candidate orders
@@ -103,30 +103,31 @@ const candidateColumns: ColumnDef<TransferCandidate>[] = [
 export default function StoreTransferPage() {
     const router = useRouter();
     const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
-    const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
     const [daysFilter, setDaysFilter] = useState<number>(7);
-    const [originAddressId, setOriginAddressId] = useState<string>("");
-    const [deliveryAddressId, setDeliveryAddressId] = useState<string>("");
+    const [warehouseFilter, setWarehouseFilter] = useState<number | undefined>(undefined);
 
     // Get shop ID from environment variable (works for all users)
     const shopId = Number(process.env.NEXT_PUBLIC_SHOP_ID) || 0;
 
+    // Fetch HQ configuration - determines if transfers go directly to HQ
+    const { data: hqConfigResponse, isLoading: loadingHQConfig } = useHQConfig(shopId);
+    const hqConfig = hqConfigResponse?.data;
+    const isHQConfigured = hqConfig?.configured && hqConfig?.hq_warehouse_id;
+
+    // Fetch warehouses for filter dropdown
+    const { data: warehousesResponse } = useWarehouses({});
+    const warehouses = warehousesResponse?.data ?? [];
+
     // Fetch data
     const { data: candidatesResponse, isLoading: loadingCandidates } =
-        useTransferCandidates({ days: daysFilter });
-    const { data: warehousesResponse } = useWarehouses();
+        useTransferCandidates({ days: daysFilter, warehouseId: warehouseFilter });
     const { data: transfersResponse, isLoading: loadingTransfers } =
         useStoreTransfers({ page: 1, limit: 20 });
-
-    // Fetch sender addresses from Sendcloud
-    const { data: senderAddresses = [], isLoading: loadingSenderAddresses } =
-        useSenderAddresses(shopId, { enabled: shopId > 0 });
 
     const createTransfer = useCreateStoreTransfer();
     const updateStatus = useUpdateTransferStatus();
 
     const candidates = candidatesResponse?.data ?? [];
-    const warehouses = warehousesResponse?.data ?? [];
     const transfers = transfersResponse?.data?.transfers ?? [];
 
     // Dynamic columns for transfers - needs access to router and mutation hook
@@ -269,32 +270,22 @@ export default function StoreTransferPage() {
             toast.error("Please select at least one order to transfer");
             return;
         }
-        if (!selectedWarehouseId) {
-            toast.error("Please select a destination warehouse");
-            return;
-        }
-        if (!originAddressId) {
-            toast.error("Please select an origin address");
-            return;
-        }
-        if (!deliveryAddressId) {
-            toast.error("Please select a delivery address");
+
+        // When HQ is not configured, show a clear error message
+        if (!isHQConfigured) {
+            toast.error("HQ warehouse is not configured. Please contact your administrator to configure the HQ warehouse in Sendcloud settings.");
             return;
         }
 
         try {
+            // With HQ configured, we don't need to pass destination - backend will use HQ defaults
             const result = await createTransfer.mutateAsync({
                 orderIds: selectedOrderIds,
-                toWarehouseId: Number(selectedWarehouseId),
-                originAddressId: originAddressId ? Number(originAddressId) : undefined,
-                deliveryAddressId: deliveryAddressId ? Number(deliveryAddressId) : undefined,
+                // toWarehouseId and deliveryAddressId will be auto-populated from HQ config on the backend
             });
 
             // Clear selection after successful transfer
             setSelectedRows({});
-            setSelectedWarehouseId("");
-            setOriginAddressId("");
-            setDeliveryAddressId("");
 
             // Download label with authentication
             if (result.data.labelUrl) {
@@ -358,16 +349,21 @@ export default function StoreTransferPage() {
                                     </Select>
                                 </div>
 
+                                {/* Warehouse Filter */}
                                 <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-medium">Destination Warehouse</label>
+                                    <label className="text-sm font-medium">Filter by Warehouse</label>
                                     <Select
-                                        value={selectedWarehouseId}
-                                        onValueChange={setSelectedWarehouseId}
+                                        value={warehouseFilter ? String(warehouseFilter) : "all"}
+                                        onValueChange={(val) => setWarehouseFilter(val === "all" ? undefined : Number(val))}
                                     >
-                                        <SelectTrigger className="w-[250px]">
-                                            <SelectValue placeholder="Select warehouse..." />
+                                        <SelectTrigger className="w-[200px]">
+                                            <div className="flex items-center gap-2">
+                                                <Warehouse className="h-4 w-4" />
+                                                <SelectValue placeholder="All Warehouses" />
+                                            </div>
                                         </SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="all">All Warehouses</SelectItem>
                                             {warehouses.map((wh) => (
                                                 <SelectItem key={wh.id} value={String(wh.id)}>
                                                     {wh.name}
@@ -377,68 +373,40 @@ export default function StoreTransferPage() {
                                     </Select>
                                 </div>
 
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-medium flex items-center gap-1">
-                                        <MapPin className="h-3 w-3" />
-                                        Origin Address
-                                    </label>
-                                    <Select
-                                        value={originAddressId}
-                                        onValueChange={setOriginAddressId}
-                                        disabled={loadingSenderAddresses || senderAddresses.length === 0}
-                                    >
-                                        <SelectTrigger className="w-[280px]">
-                                            <SelectValue placeholder={
-                                                loadingSenderAddresses ? "Loading..." :
-                                                    senderAddresses.length === 0 ? "No addresses available" :
-                                                        "Select origin address"
-                                            } />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {senderAddresses.map((addr) => (
-                                                <SelectItem key={addr.id} value={String(addr.id)}>
-                                                    {addr.company_name || addr.contact_name} - {addr.city}, {addr.country}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-sm font-medium flex items-center gap-1">
-                                        <MapPin className="h-3 w-3" />
-                                        Delivery Address
-                                    </label>
-                                    <Select
-                                        value={deliveryAddressId}
-                                        onValueChange={setDeliveryAddressId}
-                                        disabled={loadingSenderAddresses || senderAddresses.length === 0}
-                                    >
-                                        <SelectTrigger className="w-[280px]">
-                                            <SelectValue placeholder={
-                                                loadingSenderAddresses ? "Loading..." :
-                                                    senderAddresses.length === 0 ? "No addresses available" :
-                                                        "Select delivery address"
-                                            } />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {senderAddresses.map((addr) => (
-                                                <SelectItem key={addr.id} value={String(addr.id)}>
-                                                    {addr.company_name || addr.contact_name} - {addr.city}, {addr.country}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
+                                {/* HQ Destination Info */}
+                                {loadingHQConfig ? (
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Loading HQ configuration...
+                                    </div>
+                                ) : isHQConfigured ? (
+                                    <div className="flex flex-col gap-2 px-4 py-3 bg-muted/50 rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4 text-primary" />
+                                            <span className="text-sm font-medium">Destination:</span>
+                                            <span className="text-sm">{hqConfig?.hq_warehouse_name || "HQ Warehouse"}</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Transfers will be automatically sent to the configured HQ warehouse.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-2 px-4 py-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="h-4 w-4 text-destructive" />
+                                            <span className="text-sm font-medium text-destructive">HQ Not Configured</span>
+                                        </div>
+                                        <p className="text-xs text-destructive/80">
+                                            Please contact your administrator to configure the HQ warehouse in Sendcloud settings.
+                                        </p>
+                                    </div>
+                                )}
 
                                 <Button
                                     onClick={handleCreateTransfer}
                                     disabled={
                                         selectedOrderIds.length === 0 ||
-                                        !selectedWarehouseId ||
-                                        !originAddressId ||
-                                        !deliveryAddressId ||
+                                        !isHQConfigured ||
                                         createTransfer.isPending
                                     }
                                 >
@@ -446,7 +414,7 @@ export default function StoreTransferPage() {
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     )}
                                     <Truck className="mr-2 h-4 w-4" />
-                                    Create Transfer & Generate Label
+                                    Send to HQ
                                     {selectedOrderIds.length > 0 && ` (${selectedOrderIds.length})`}
                                 </Button>
                             </div>

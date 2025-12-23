@@ -569,6 +569,9 @@ export class ShippingController {
                     default_shipping_option_code: config.default_shipping_option_code,
                     use_test_mode: config.use_test_mode,
                     is_active: config.is_active,
+                    // HQ warehouse configuration for store transfers
+                    hq_warehouse_id: config.hq_warehouse_id,
+                    hq_delivery_address_id: config.hq_delivery_address_id,
                     // Also include preview for display
                     public_key_preview: config.public_key.substring(0, 8) + '...',
                 },
@@ -579,6 +582,69 @@ export class ShippingController {
             return {
                 data: null,
                 message: 'Failed to retrieve Sendcloud configuration',
+                status: 500,
+                error: (error as Error).message,
+            }
+        }
+    }
+
+    /**
+     * Get HQ warehouse configuration for store transfers
+     * Returns the HQ warehouse and delivery address configured for this shop
+     */
+    async getHQConfig(shop_id: number, tenant_id: number): Promise<ControllerResponse> {
+        try {
+            const config = await this.repository.getSendcloudConfig(shop_id, tenant_id)
+
+            if (!config) {
+                return {
+                    data: {
+                        configured: false,
+                        shop_id,
+                        hq_warehouse_id: null,
+                        hq_delivery_address_id: null,
+                    },
+                    message: 'Sendcloud not configured for this shop',
+                    status: 200,
+                }
+            }
+
+            // If HQ is not configured, return appropriate response
+            if (!config.hq_warehouse_id && !config.hq_delivery_address_id) {
+                return {
+                    data: {
+                        configured: false,
+                        shop_id,
+                        hq_warehouse_id: null,
+                        hq_delivery_address_id: null,
+                    },
+                    message: 'HQ warehouse not configured. Stores will need to select destination manually.',
+                    status: 200,
+                }
+            }
+
+            // Get warehouse name if configured
+            let hq_warehouse_name: string | null = null
+            if (config.hq_warehouse_id) {
+                const warehouse = await this.repository.getWarehouseById(config.hq_warehouse_id, tenant_id)
+                hq_warehouse_name = warehouse?.name || null
+            }
+
+            return {
+                data: {
+                    configured: true,
+                    shop_id,
+                    hq_warehouse_id: config.hq_warehouse_id,
+                    hq_warehouse_name,
+                    hq_delivery_address_id: config.hq_delivery_address_id,
+                },
+                message: 'HQ configuration retrieved',
+                status: 200,
+            }
+        } catch (error) {
+            return {
+                data: null,
+                message: 'Failed to retrieve HQ configuration',
                 status: 500,
                 error: (error as Error).message,
             }

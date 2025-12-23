@@ -38,25 +38,25 @@ export interface HeroSection {
   buttonText: string;
   buttonLink: string;
   variant?: HeroVariantType;
-  
+
   // Variant-specific fields
   // Default hero specific fields
   tagline?: string;  // For the small tag above the headline (e.g., "Trade In. Cash Out.")
-  
+
   // Split hero specific fields
   featuredDevices?: {
     name: string;
     price: string;
     image: string;
   }[];
-  
+
   // Centered hero specific fields
   trustBadge?: string; // The text in the badge (e.g., "Trusted by 10,000+ customers")
   stats?: {
     label: string;
     value: string;
   }[];
-  
+
   // Gradient hero specific fields
   gradientStart?: string;
   gradientEnd?: string;
@@ -64,21 +64,21 @@ export interface HeroSection {
     label: string;
     icon?: string;
   }[];
-  
+
   // Minimalist hero specific fields
   taglineBefore?: string;
   priceLabels?: {
     name: string;
     price: string;
   }[];
-  
+
   // Video hero specific fields
   videoUrl?: string;
   liveBadgeText?: string;
-  
+
   // Simple hero specific fields
   backgroundColor?: string;
-  
+
   // Translation support
   translations?: {
     [locale: string]: {
@@ -296,8 +296,8 @@ export interface ShopConfig {
   footerLinks?: {
     title: string;
     titleColor?: string;
-    links: Array<{ 
-      label: string; 
+    links: Array<{
+      label: string;
       url: string;
       isExternal?: boolean;
       icon?: string;
@@ -365,7 +365,7 @@ export interface DeviceEstimationQuestion {
 }
 
 // Define variant types for the estimation page layout
-export type DeviceEstimationVariantType = 
+export type DeviceEstimationVariantType =
   | 'default'       // Standard two-column layout
   | 'compact-stepper' // Single column, info above stepper
   | 'image-prominent' // Emphasis on device image
@@ -380,13 +380,13 @@ export interface DeviceEstimationConfig {
 }
 
 // Definition for the type of component being edited in ComponentEditor
-export type ComponentType = 
-  | 'hero' 
-  | 'categories' 
-  | 'featuredProducts' 
-  | 'testimonials' 
-  | 'partners' 
-  | 'header' 
+export type ComponentType =
+  | 'hero'
+  | 'categories'
+  | 'featuredProducts'
+  | 'testimonials'
+  | 'partners'
+  | 'header'
   | 'modelList'
   | 'deviceEstimation'
   | 'checkout'
@@ -396,12 +396,13 @@ export type ComponentType =
   | 'feedback'
   | 'help'
   | 'footer'
-  | 'thePhoneLabHeader'; 
+  | 'thePhoneLabHeader';
 
 // Shop Location Types
 export interface ShopLocation {
   id: number;
   shopId: number;
+  warehouseId?: number | null;
   name: string;
   address: string;
   city: string;
@@ -454,6 +455,7 @@ export interface ShopLocationFormValues {
   operatingHours?: OperatingHours | null;
   isActive: boolean;
   displayOrder: number;
+  warehouseId?: number | null;
   phones: {
     id?: number;
     phoneNumber: string;

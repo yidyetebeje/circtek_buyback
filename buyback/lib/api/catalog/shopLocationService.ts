@@ -31,6 +31,7 @@ function transformLocation(location: Record<string, unknown>): ShopLocationWithP
   return {
     id: location.id as number,
     shopId: location.shop_id as number,
+    warehouseId: location.warehouse_id as number | null | undefined,
     name: location.name as string,
     address: location.address as string,
     city: location.city as string,
@@ -84,6 +85,20 @@ export class ShopLocationService {
   async getShopLocationById(shopId: number, locationId: number): Promise<ApiResponse<ShopLocationWithPhones>> {
     const response = await this.apiClient.get<ApiResponse<Record<string, unknown>>>(
       `${this.baseEndpoint}/${shopId}/locations/${locationId}`
+    );
+
+    return {
+      ...response,
+      data: response.data ? transformLocation(response.data) : undefined as unknown as ShopLocationWithPhones,
+    };
+  }
+
+  /**
+   * Get a location by its linked warehouse ID
+   */
+  async getShopLocationByWarehouseId(shopId: number, warehouseId: number): Promise<ApiResponse<ShopLocationWithPhones>> {
+    const response = await this.apiClient.get<ApiResponse<Record<string, unknown>>>(
+      `${this.baseEndpoint}/${shopId}/locations/by-warehouse/${warehouseId}`
     );
 
     return {

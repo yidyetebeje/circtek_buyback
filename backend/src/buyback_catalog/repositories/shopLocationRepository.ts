@@ -57,6 +57,7 @@ export class ShopLocationRepository {
     const items = await db.select({
       id: shop_locations.id,
       shop_id: shop_locations.shop_id,
+      warehouse_id: shop_locations.warehouse_id,
       name: shop_locations.name,
       address: shop_locations.address,
       city: shop_locations.city,
@@ -116,6 +117,7 @@ export class ShopLocationRepository {
     const location = await db.select({
       id: shop_locations.id,
       shop_id: shop_locations.shop_id,
+      warehouse_id: shop_locations.warehouse_id,
       name: shop_locations.name,
       address: shop_locations.address,
       city: shop_locations.city,
@@ -148,6 +150,45 @@ export class ShopLocationRepository {
   }
 
   /**
+   * Find location by warehouse ID (one-to-one relationship)
+   */
+  async findByWarehouseId(warehouseId: number): Promise<TShopLocationWithPhones | null> {
+    const location = await db.select({
+      id: shop_locations.id,
+      shop_id: shop_locations.shop_id,
+      warehouse_id: shop_locations.warehouse_id,
+      name: shop_locations.name,
+      address: shop_locations.address,
+      city: shop_locations.city,
+      state: shop_locations.state,
+      postal_code: shop_locations.postal_code,
+      country: shop_locations.country,
+      latitude: shop_locations.latitude,
+      longitude: shop_locations.longitude,
+      description: shop_locations.description,
+      operating_hours: shop_locations.operating_hours,
+      is_active: shop_locations.is_active,
+      display_order: shop_locations.display_order,
+      created_at: shop_locations.created_at,
+      updated_at: shop_locations.updated_at
+    })
+      .from(shop_locations)
+      .where(eq(shop_locations.warehouse_id, warehouseId))
+      .limit(1);
+
+    if (location.length === 0) return null;
+
+    const phones = await db.select()
+      .from(shop_location_phones)
+      .where(eq(shop_location_phones.location_id, location[0].id));
+
+    return {
+      ...location[0],
+      phones
+    } as TShopLocationWithPhones;
+  }
+
+  /**
    * Find locations within a radius (in kilometers) from a point
    */
   async findNearby(
@@ -171,6 +212,7 @@ export class ShopLocationRepository {
     const locations = await db.select({
       id: shop_locations.id,
       shop_id: shop_locations.shop_id,
+      warehouse_id: shop_locations.warehouse_id,
       name: shop_locations.name,
       address: shop_locations.address,
       city: shop_locations.city,
@@ -220,6 +262,7 @@ export class ShopLocationRepository {
 
   /**
    * Create a new shop location with phone numbers
+   * Automatically creates a linked warehouse if tenantId is provided
    */
   async create(data: TShopLocationCreate): Promise<TShopLocationWithPhones | null> {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -227,9 +270,33 @@ export class ShopLocationRepository {
     // Separate phones from location data
     const { phones, ...locationData } = data;
 
+    let warehouseId = locationData.warehouseId;
+
+    // Auto-create warehouse if tenantId is provided and no warehouseId is set
+    if (locationData.tenantId && !warehouseId) {
+      try {
+        // Import and use warehouses table directly
+        const { warehouses } = await import('../../db/circtek.schema');
+
+        const warehouseResult = await db.insert(warehouses).values({
+          name: locationData.name,
+          description: locationData.description || `Warehouse for ${locationData.name}`,
+          status: true,
+          tenant_id: locationData.tenantId,
+          shop_id: locationData.shopId,
+        });
+
+        warehouseId = Number(warehouseResult?.[0]?.insertId) || null;
+      } catch (error) {
+        console.error('Error auto-creating warehouse for location:', error);
+        // Continue without warehouse if creation fails
+      }
+    }
+
     // Map camelCase input fields to snake_case database columns
     const dbLocationData = removeUndefinedKeys({
       shop_id: locationData.shopId,
+      warehouse_id: warehouseId,
       name: locationData.name,
       address: locationData.address,
       city: locationData.city,
@@ -272,6 +339,7 @@ export class ShopLocationRepository {
 
   /**
    * Update shop location
+   * Also syncs warehouse name/description if linked
    */
   async update(id: number, data: TShopLocationUpdate): Promise<TShopLocationWithPhones | null> {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -282,6 +350,7 @@ export class ShopLocationRepository {
     // Map camelCase input fields to snake_case database columns
     const dbLocationData = removeUndefinedKeys({
       shop_id: locationData.shopId,
+      warehouse_id: locationData.warehouseId,
       name: locationData.name,
       address: locationData.address,
       city: locationData.city,
@@ -301,6 +370,27 @@ export class ShopLocationRepository {
     await db.update(shop_locations)
       .set(dbLocationData as any)
       .where(eq(shop_locations.id, id));
+
+    // Sync warehouse name/description if location has a linked warehouse
+    if (locationData.name || locationData.description) {
+      try {
+        // Get current location to check for linked warehouse
+        const currentLocation = await this.findById(id);
+        if (currentLocation?.warehouse_id) {
+          const { warehouses } = await import('../../db/circtek.schema');
+          const warehouseUpdate: { name?: string; description?: string; updated_at?: Date } = { updated_at: new Date() };
+          if (locationData.name) warehouseUpdate.name = locationData.name;
+          if (locationData.description) warehouseUpdate.description = locationData.description;
+
+          await db.update(warehouses)
+            .set(warehouseUpdate)
+            .where(eq(warehouses.id, currentLocation.warehouse_id));
+        }
+      } catch (error) {
+        console.error('Error syncing warehouse with location update:', error);
+        // Continue even if warehouse sync fails
+      }
+    }
 
     // Handle phone number updates if provided
     if (phones !== undefined) {

@@ -30,6 +30,8 @@ export type OperatingHours = {
 // Create types for shop locations
 export type TShopLocationCreate = {
   shopId: number;
+  tenantId?: number; // Required for auto-creating warehouse
+  warehouseId?: number | null;
   name: string;
   address: string;
   city: string;
@@ -79,39 +81,39 @@ export type TShopUpdate = Partial<TShopCreate>;
 // --- Elysia Validation Schemas ---
 
 export const ShopCreateSchema = t.Object({
-    name: t.String({ 
-        minLength: 1, 
-        maxLength: 255,
-        error: 'Shop name is required and must be between 1 and 255 characters'
-    }),
-    tenant_id: t.Numeric({
-        minimum: 1,
-        error: 'Tenant ID is required and must be a positive number'
-    }),
-    owner_id: t.Numeric({
-        minimum: 1,
-        error: 'Owner ID is required and must be a positive number'
-    }),
-    organization: t.String({ 
-        minLength: 1,
-        maxLength: 255,
-        error: 'Organization name is required and must be between 1 and 255 characters'
-    }),
-    phone: t.String({ 
-        minLength: 1,
-        maxLength: 255,
-        pattern: '^[+]?[\\s\\-\\(\\)]*([0-9][\\s\\-\\(\\)]*){10,}$',
-        error: 'Phone number is required and must be at least 10 digits in a valid format'
-    }),
-    logo: t.String({ 
-        maxLength: 255,
-        error: 'Logo URL must be 255 characters or less'
-    }),
-    config: t.Optional(t.Union([t.Any(), t.Null()])),
-    active: t.Optional(t.Boolean({ 
-        default: true,
-        error: 'Active status must be a boolean value'
-    }))
+  name: t.String({
+    minLength: 1,
+    maxLength: 255,
+    error: 'Shop name is required and must be between 1 and 255 characters'
+  }),
+  tenant_id: t.Numeric({
+    minimum: 1,
+    error: 'Tenant ID is required and must be a positive number'
+  }),
+  owner_id: t.Numeric({
+    minimum: 1,
+    error: 'Owner ID is required and must be a positive number'
+  }),
+  organization: t.String({
+    minLength: 1,
+    maxLength: 255,
+    error: 'Organization name is required and must be between 1 and 255 characters'
+  }),
+  phone: t.String({
+    minLength: 1,
+    maxLength: 255,
+    pattern: '^[+]?[\\s\\-\\(\\)]*([0-9][\\s\\-\\(\\)]*){10,}$',
+    error: 'Phone number is required and must be at least 10 digits in a valid format'
+  }),
+  logo: t.String({
+    maxLength: 255,
+    error: 'Logo URL must be 255 characters or less'
+  }),
+  config: t.Optional(t.Union([t.Any(), t.Null()])),
+  active: t.Optional(t.Boolean({
+    default: true,
+    error: 'Active status must be a boolean value'
+  }))
 });
 
 // For some reason, if TShopCreate is derived from ShopCreateSchema.static directly,
@@ -138,7 +140,7 @@ export const FileUploadSchema = t.Object({
 
 // New schema for updating only the config
 export const ShopConfigSchema = t.Object({
-    config: t.Any() // Assuming config can be any JSON object. Define a more specific type if known.
+  config: t.Any() // Assuming config can be any JSON object. Define a more specific type if known.
 });
 
 export type TShopConfigUpdate = typeof ShopConfigSchema.static;
@@ -146,44 +148,45 @@ export type TShopConfigUpdate = typeof ShopConfigSchema.static;
 // --- Shop Location Validation Schemas ---
 
 export const ShopLocationPhoneSchema = t.Object({
-    phoneNumber: t.String({ minLength: 1, maxLength: 20 }),
-    phoneType: t.Enum({ main: 'main', mobile: 'mobile', fax: 'fax', whatsapp: 'whatsapp' }, { default: 'main' }),
-    isPrimary: t.Boolean({ default: false })
+  phoneNumber: t.String({ minLength: 1, maxLength: 20 }),
+  phoneType: t.Enum({ main: 'main', mobile: 'mobile', fax: 'fax', whatsapp: 'whatsapp' }, { default: 'main' }),
+  isPrimary: t.Boolean({ default: false })
 });
 
 export const OperatingHoursSchema = t.Record(
-    t.String(),
-    t.Object({
-        open: t.String(),
-        close: t.String(),
-        isClosed: t.Boolean()
-    })
+  t.String(),
+  t.Object({
+    open: t.String(),
+    close: t.String(),
+    isClosed: t.Boolean()
+  })
 );
 
 export const ShopLocationCreateSchema = t.Object({
-    shopId: t.Numeric(),
-    name: t.String({ minLength: 1, maxLength: 255 }),
-    address: t.String({ minLength: 1 }),
-    city: t.String({ minLength: 1, maxLength: 100 }),
-    state: t.Optional(t.String({ maxLength: 100 })),
-    postalCode: t.Optional(t.String({ maxLength: 20 })),
-    country: t.String({ minLength: 1, maxLength: 100 }),
-    latitude: t.Numeric(),
-    longitude: t.Numeric(),
-    description: t.Optional(t.Nullable(t.String())),
-    operatingHours: t.Optional(OperatingHoursSchema),
-    isActive: t.Optional(t.Boolean({ default: true })),
-    displayOrder: t.Optional(t.Numeric({ default: 0 })),
-    phones: t.Optional(t.Array(ShopLocationPhoneSchema))
+  shopId: t.Numeric(),
+  warehouseId: t.Optional(t.Nullable(t.Numeric())),
+  name: t.String({ minLength: 1, maxLength: 255 }),
+  address: t.String({ minLength: 1 }),
+  city: t.String({ minLength: 1, maxLength: 100 }),
+  state: t.Optional(t.String({ maxLength: 100 })),
+  postalCode: t.Optional(t.String({ maxLength: 20 })),
+  country: t.String({ minLength: 1, maxLength: 100 }),
+  latitude: t.Numeric(),
+  longitude: t.Numeric(),
+  description: t.Optional(t.Nullable(t.String())),
+  operatingHours: t.Optional(OperatingHoursSchema),
+  isActive: t.Optional(t.Boolean({ default: true })),
+  displayOrder: t.Optional(t.Numeric({ default: 0 })),
+  phones: t.Optional(t.Array(ShopLocationPhoneSchema))
 });
 
 export const ShopLocationUpdateSchema = t.Partial(ShopLocationCreateSchema);
 
 export const ShopLocationPhoneCreateSchema = t.Object({
-    locationId: t.Numeric(),
-    phoneNumber: t.String({ minLength: 1, maxLength: 20 }),
-    phoneType: t.Enum({ main: 'main', mobile: 'mobile', fax: 'fax', whatsapp: 'whatsapp' }, { default: 'main' }),
-    isPrimary: t.Boolean({ default: false })
+  locationId: t.Numeric(),
+  phoneNumber: t.String({ minLength: 1, maxLength: 20 }),
+  phoneType: t.Enum({ main: 'main', mobile: 'mobile', fax: 'fax', whatsapp: 'whatsapp' }, { default: 'main' }),
+  isPrimary: t.Boolean({ default: false })
 });
 
 export const ShopLocationPhoneUpdateSchema = t.Partial(ShopLocationPhoneCreateSchema);

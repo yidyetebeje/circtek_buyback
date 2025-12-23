@@ -1,7 +1,7 @@
 import { mysqlTable, int, varchar, text, decimal, timestamp, json, primaryKey, index, unique, foreignKey, tinyint, mysqlEnum, bigint, serial } from "drizzle-orm/mysql-core";
 import { sql } from "drizzle-orm";
 import { shops } from "./shops.schema";
-import { devices, tenants, users, transfers } from "./circtek.schema";
+import { devices, tenants, users, transfers, warehouses } from "./circtek.schema";
 import { models } from "./buyback_catalogue.schema";
 import { relations } from "drizzle-orm";
 
@@ -46,6 +46,7 @@ export const orders = mysqlTable("orders", {
   admin_notes: text("admin_notes"),
   tenant_id: bigint("tenant_id", { mode: 'number', unsigned: true }).references(() => tenants.id).notNull(),
   shop_id: bigint("shop_id", { mode: 'number', unsigned: true }).references(() => shops.id).notNull(),
+  warehouse_id: bigint("warehouse_id", { mode: 'number', unsigned: true }).references(() => warehouses.id), // Origin warehouse for admin-created orders (NULL for user orders)
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 }, (table) => ([
