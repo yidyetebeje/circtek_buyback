@@ -13,7 +13,7 @@ export default function FAQDetailPage() {
   const params = useParams();
   const router = useRouter();
   const faqId = parseInt(params.id as string);
-  
+
   const { data: faqResponse, isLoading, error } = useFAQ(faqId);
   const { mutate: deleteFAQ, isPending: isDeleting } = useDeleteFAQ();
 
@@ -84,8 +84,8 @@ export default function FAQDetailPage() {
               Edit
             </Link>
           </Button>
-          <Button 
-            variant="destructive" 
+          <Button
+            variant="destructive"
             onClick={handleDelete}
             disabled={isDeleting}
           >
@@ -95,7 +95,7 @@ export default function FAQDetailPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border p-6 space-y-6">
+      <div className="bg-card rounded-lg border border-border p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Badge variant={faq.is_published ? "default" : "secondary"}>
@@ -113,18 +113,18 @@ export default function FAQDetailPage() {
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold mb-2">Question</h3>
-            <p className="text-gray-700">{faq.question}</p>
+            <p className="text-foreground">{faq.question}</p>
           </div>
 
           <div>
             <h3 className="text-lg font-semibold mb-2">Answer</h3>
-            <div className="prose max-w-none">
-              <p className="text-gray-700 whitespace-pre-wrap">{faq.answer}</p>
+            <div className="prose max-w-none dark:prose-invert">
+              <p className="text-foreground whitespace-pre-wrap">{faq.answer}</p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border">
           <div>
             <h4 className="font-medium text-sm text-muted-foreground mb-1">Shop ID</h4>
             <p className="text-sm">{faq.shop_id}</p>

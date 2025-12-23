@@ -42,22 +42,18 @@ export const shopColumns: ColumnDef<Shop, unknown>[] = [
     enableSorting: false,
     enableHiding: false,
   },
-  {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => <div className="w-[40px]">{row.getValue("id")}</div>,
-  },
+
   {
     accessorKey: "logo",
     header: "Logo",
     cell: ({ row }) => {
       const logo = row.getValue("logo") as string | null;
-      
+
       return (
         <div className="flex items-center justify-center h-10 w-10">
           {logo ? (
             <div className="relative h-10 w-10 rounded-md overflow-hidden border border-gray-200">
-              <Image 
+              <Image
                 src={logo}
                 alt={`${row.original.name} logo`}
                 fill
@@ -115,41 +111,8 @@ export const shopColumns: ColumnDef<Shop, unknown>[] = [
       <div>{row.getValue("phone") || "—"}</div>
     ),
   },
-  {
-    accessorKey: "active",
-    header: "Status",
-    cell: ({ row }) => {
-      const activeValue = row.getValue("active");
-      const isActive = activeValue === 1 || activeValue === true;
-      
-      return (
-        <div>
-          {isActive ? (
-            <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">Active</Badge>
-          ) : (
-            <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200">Inactive</Badge>
-          )}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Created",
-    cell: ({ row }) => {
-      const timestamp = row.getValue("createdAt") as string;
-      // Format date without external library
-      const formattedDate = timestamp 
-        ? new Date(timestamp).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-          })
-        : "—";
-      
-      return <div>{formattedDate}</div>;
-    },
-  },
+
+
   {
     id: "actions",
     enableHiding: false,

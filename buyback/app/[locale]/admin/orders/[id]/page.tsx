@@ -219,6 +219,7 @@ export default function OrderDetailPage() {
   // State for multi-step 'PAID' dialog
   const [dialogStep, setDialogStep] = useState<'search' | 'questions' | 'confirm'>('search');
   const [matchedProduct, setMatchedProduct] = useState<Model | null>(null);
+  const [showFinalPriceError, setShowFinalPriceError] = useState(false);
 
   // State for Tremendous reward modal
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
@@ -354,6 +355,7 @@ export default function OrderDetailPage() {
     setAnswersBreakdown([]);
     setMatchedProduct(null);
     setDialogStep('search');
+    setShowFinalPriceError(false);
 
     setIsDialogOpen(true);
   };
@@ -365,6 +367,17 @@ export default function OrderDetailPage() {
       (!imei || !sku || !warehouseId || !finalPrice)) {
       toast.error('IMEI, SKU, Warehouse, and Final Price are required for Paid status');
       return;
+    }
+
+    // Prevent confirmation if price exceeds maximum allowed
+    if (pendingStatus === 'PAID') {
+      const maxAllowed = (modelBasePrice + answerModifierTotal) - priceDeduction;
+      const numericPrice = parseFloat(finalPrice) || 0;
+      if (numericPrice > maxAllowed) {
+        toast.error(`Final price cannot exceed €${maxAllowed.toFixed(2)}`);
+        setShowFinalPriceError(true);
+        return;
+      }
     }
 
     const payload = {
@@ -892,6 +905,7 @@ export default function OrderDetailPage() {
             setAnswersBreakdown([]);
             setMatchedProduct(null);
             setDialogStep('search');
+            setShowFinalPriceError(false);
           }
         }
       }}>
@@ -1033,10 +1047,27 @@ export default function OrderDetailPage() {
                             id="final-price"
                             type="number"
                             step="0.01"
+                            min="0"
+                            max={(modelBasePrice + answerModifierTotal) - priceDeduction}
                             value={finalPrice}
-                            onChange={(e) => setFinalPrice(e.target.value)}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setFinalPrice(value);
+                              const numericValue = parseFloat(value) || 0;
+                              const maxAllowed = (modelBasePrice + answerModifierTotal) - priceDeduction;
+                              setShowFinalPriceError(numericValue > maxAllowed);
+                            }}
                             required
+                            className={showFinalPriceError ? 'border-red-500 focus:ring-red-500' : ''}
                           />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Maximum allowed: €{((modelBasePrice + answerModifierTotal) - priceDeduction).toFixed(2)}
+                          </p>
+                          {showFinalPriceError && (
+                            <p className="text-xs text-red-600 mt-1">
+                              Price cannot exceed the calculated maximum of €{((modelBasePrice + answerModifierTotal) - priceDeduction).toFixed(2)}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <Label htmlFor="admin-notes">Admin Notes (Optional)</Label>

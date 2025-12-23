@@ -2,9 +2,9 @@ import { asc, desc, eq, and, sql, or, inArray } from "drizzle-orm";
 import { db } from "../../db";
 
 import { shop_locations, shop_location_phones } from "../../db/shops.schema";
-import { 
-  TShopLocationCreate, 
-  TShopLocationUpdate, 
+import {
+  TShopLocationCreate,
+  TShopLocationUpdate,
   TShopLocationWithPhones,
   TShopLocationPhoneCreate,
   TShopLocationPhoneUpdate
@@ -25,18 +25,18 @@ export class ShopLocationRepository {
     shopId: number,
     page = 1,
     limit = 20,
-    orderBy = "displayOrder", 
+    orderBy = "displayOrder",
     order: "asc" | "desc" = "asc",
     activeOnly = true
   ) {
     const offset = (page - 1) * limit;
 
     const conditions = [eq(shop_locations.shop_id, shopId)];
-    
+
     if (activeOnly) {
       conditions.push(eq(shop_locations.is_active, true));
     }
-    
+
     const whereCondition = and(...conditions);
 
     const columnMapping: { [key: string]: any } = {
@@ -57,6 +57,7 @@ export class ShopLocationRepository {
     const items = await db.select({
       id: shop_locations.id,
       shop_id: shop_locations.shop_id,
+      warehouse_id: shop_locations.warehouse_id,
       name: shop_locations.name,
       address: shop_locations.address,
       city: shop_locations.city,
@@ -72,13 +73,13 @@ export class ShopLocationRepository {
       created_at: shop_locations.created_at,
       updated_at: shop_locations.updated_at
     })
-    .from(shop_locations)
-    .where(whereCondition)
-    .limit(limit)
-    .offset(offset)
-    .orderBy(order === "asc"
-      ? asc(columnMapping[orderBy])
-      : desc(columnMapping[orderBy]));
+      .from(shop_locations)
+      .where(whereCondition)
+      .limit(limit)
+      .offset(offset)
+      .orderBy(order === "asc"
+        ? asc(columnMapping[orderBy])
+        : desc(columnMapping[orderBy]));
 
     // Get phones separately
     const locationIds = items.map(item => item.id);
@@ -95,7 +96,7 @@ export class ShopLocationRepository {
     const totalCountResult = await db.select({ count: sql<number>`count(*)` })
       .from(shop_locations)
       .where(whereCondition);
-    
+
     const total = totalCountResult[0]?.count ?? 0;
 
     return {
@@ -116,6 +117,7 @@ export class ShopLocationRepository {
     const location = await db.select({
       id: shop_locations.id,
       shop_id: shop_locations.shop_id,
+      warehouse_id: shop_locations.warehouse_id,
       name: shop_locations.name,
       address: shop_locations.address,
       city: shop_locations.city,
@@ -131,15 +133,54 @@ export class ShopLocationRepository {
       created_at: shop_locations.created_at,
       updated_at: shop_locations.updated_at
     })
-    .from(shop_locations)
-    .where(eq(shop_locations.id, id))
-    .limit(1);
+      .from(shop_locations)
+      .where(eq(shop_locations.id, id))
+      .limit(1);
 
     if (location.length === 0) return null;
 
     const phones = await db.select()
       .from(shop_location_phones)
       .where(eq(shop_location_phones.location_id, id));
+
+    return {
+      ...location[0],
+      phones
+    } as TShopLocationWithPhones;
+  }
+
+  /**
+   * Find location by warehouse ID (one-to-one relationship)
+   */
+  async findByWarehouseId(warehouseId: number): Promise<TShopLocationWithPhones | null> {
+    const location = await db.select({
+      id: shop_locations.id,
+      shop_id: shop_locations.shop_id,
+      warehouse_id: shop_locations.warehouse_id,
+      name: shop_locations.name,
+      address: shop_locations.address,
+      city: shop_locations.city,
+      state: shop_locations.state,
+      postal_code: shop_locations.postal_code,
+      country: shop_locations.country,
+      latitude: shop_locations.latitude,
+      longitude: shop_locations.longitude,
+      description: shop_locations.description,
+      operating_hours: shop_locations.operating_hours,
+      is_active: shop_locations.is_active,
+      display_order: shop_locations.display_order,
+      created_at: shop_locations.created_at,
+      updated_at: shop_locations.updated_at
+    })
+      .from(shop_locations)
+      .where(eq(shop_locations.warehouse_id, warehouseId))
+      .limit(1);
+
+    if (location.length === 0) return null;
+
+    const phones = await db.select()
+      .from(shop_location_phones)
+      .where(eq(shop_location_phones.location_id, location[0].id));
 
     return {
       ...location[0],
@@ -159,7 +200,7 @@ export class ShopLocationRepository {
   ): Promise<TShopLocationWithPhones[]> {
     // Using Haversine formula for distance calculation
     const conditions = [eq(shop_locations.is_active, true)];
-    
+
     if (shopId) {
       conditions.push(eq(shop_locations.shop_id, shopId));
     }
@@ -171,6 +212,7 @@ export class ShopLocationRepository {
     const locations = await db.select({
       id: shop_locations.id,
       shop_id: shop_locations.shop_id,
+      warehouse_id: shop_locations.warehouse_id,
       name: shop_locations.name,
       address: shop_locations.address,
       city: shop_locations.city,
@@ -186,9 +228,9 @@ export class ShopLocationRepository {
       created_at: shop_locations.created_at,
       updated_at: shop_locations.updated_at
     })
-    .from(shop_locations)
-    .where(whereCondition)
-    .limit(limit * 2); // Get more to account for filtering
+      .from(shop_locations)
+      .where(whereCondition)
+      .limit(limit * 2); // Get more to account for filtering
 
     // Get phones for all locations
     const locationIds = locations.map(loc => loc.id);
@@ -205,9 +247,9 @@ export class ShopLocationRepository {
     // Calculate distances and filter
     const locationsWithDistance = locationsWithPhones.map(location => {
       const distance = this.calculateDistance(
-        latitude, 
-        longitude, 
-        location.latitude, 
+        latitude,
+        longitude,
+        location.latitude,
         location.longitude
       );
       return { ...location, distance };
@@ -220,22 +262,60 @@ export class ShopLocationRepository {
 
   /**
    * Create a new shop location with phone numbers
+   * Automatically creates a linked warehouse if tenantId is provided
    */
   async create(data: TShopLocationCreate): Promise<TShopLocationWithPhones | null> {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    
+
     // Separate phones from location data
     const { phones, ...locationData } = data;
-    
-    const dbLocationData = {
-      ...removeUndefinedKeys(locationData),
-      createdAt: now,
-      updatedAt: now
-    };
+
+    let warehouseId = locationData.warehouseId;
+
+    // Auto-create warehouse if tenantId is provided and no warehouseId is set
+    if (locationData.tenantId && !warehouseId) {
+      try {
+        // Import and use warehouses table directly
+        const { warehouses } = await import('../../db/circtek.schema');
+
+        const warehouseResult = await db.insert(warehouses).values({
+          name: locationData.name,
+          description: locationData.description || `Warehouse for ${locationData.name}`,
+          status: true,
+          tenant_id: locationData.tenantId,
+          shop_id: locationData.shopId,
+        });
+
+        warehouseId = Number(warehouseResult?.[0]?.insertId) || null;
+      } catch (error) {
+        console.error('Error auto-creating warehouse for location:', error);
+        // Continue without warehouse if creation fails
+      }
+    }
+
+    // Map camelCase input fields to snake_case database columns
+    const dbLocationData = removeUndefinedKeys({
+      shop_id: locationData.shopId,
+      warehouse_id: warehouseId,
+      name: locationData.name,
+      address: locationData.address,
+      city: locationData.city,
+      state: locationData.state,
+      postal_code: locationData.postalCode,
+      country: locationData.country,
+      latitude: locationData.latitude,
+      longitude: locationData.longitude,
+      description: locationData.description,
+      operating_hours: locationData.operatingHours,
+      is_active: locationData.isActive,
+      display_order: locationData.displayOrder,
+      created_at: now,
+      updated_at: now
+    });
 
     const result = await db.insert(shop_locations).values(dbLocationData as any);
     const insertId = result?.[0]?.insertId ?? 0;
-    
+
     if (insertId === 0) return null;
 
     const locationId = Number(insertId);
@@ -259,22 +339,58 @@ export class ShopLocationRepository {
 
   /**
    * Update shop location
+   * Also syncs warehouse name/description if linked
    */
   async update(id: number, data: TShopLocationUpdate): Promise<TShopLocationWithPhones | null> {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    
+
     // Separate phones from location data
     const { phones, ...locationData } = data;
-    
-    const dbLocationData = {
-      ...removeUndefinedKeys(locationData),
-      updatedAt: now
-    };
+
+    // Map camelCase input fields to snake_case database columns
+    const dbLocationData = removeUndefinedKeys({
+      shop_id: locationData.shopId,
+      warehouse_id: locationData.warehouseId,
+      name: locationData.name,
+      address: locationData.address,
+      city: locationData.city,
+      state: locationData.state,
+      postal_code: locationData.postalCode,
+      country: locationData.country,
+      latitude: locationData.latitude,
+      longitude: locationData.longitude,
+      description: locationData.description,
+      operating_hours: locationData.operatingHours,
+      is_active: locationData.isActive,
+      display_order: locationData.displayOrder,
+      updated_at: now
+    });
 
     // Update location
     await db.update(shop_locations)
       .set(dbLocationData as any)
       .where(eq(shop_locations.id, id));
+
+    // Sync warehouse name/description if location has a linked warehouse
+    if (locationData.name || locationData.description) {
+      try {
+        // Get current location to check for linked warehouse
+        const currentLocation = await this.findById(id);
+        if (currentLocation?.warehouse_id) {
+          const { warehouses } = await import('../../db/circtek.schema');
+          const warehouseUpdate: { name?: string; description?: string; updated_at?: Date } = { updated_at: new Date() };
+          if (locationData.name) warehouseUpdate.name = locationData.name;
+          if (locationData.description) warehouseUpdate.description = locationData.description;
+
+          await db.update(warehouses)
+            .set(warehouseUpdate)
+            .where(eq(warehouses.id, currentLocation.warehouse_id));
+        }
+      } catch (error) {
+        console.error('Error syncing warehouse with location update:', error);
+        // Continue even if warehouse sync fails
+      }
+    }
 
     // Handle phone number updates if provided
     if (phones !== undefined) {
@@ -311,7 +427,7 @@ export class ShopLocationRepository {
     // Delete location
     const result = await db.delete(shop_locations)
       .where(eq(shop_locations.id, id));
-    
+
     return (result as any).affectedRows > 0;
   }
 
@@ -323,11 +439,11 @@ export class ShopLocationRepository {
     if (!location) return null;
 
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    
+
     await db.update(shop_locations)
-      .set({ 
+      .set({
         is_active: !location.is_active,
-        updated_at: now 
+        updated_at: now
       })
       .where(eq(shop_locations.id, id));
 
@@ -341,11 +457,11 @@ export class ShopLocationRepository {
     const R = 6371; // Earth's radius in kilometers
     const dLat = this.toRadians(lat2 - lat1);
     const dLon = this.toRadians(lon2 - lon1);
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
 

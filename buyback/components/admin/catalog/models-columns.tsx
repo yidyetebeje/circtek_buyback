@@ -125,146 +125,146 @@ export function useColumns(): ColumnDef<ModelWithRelations>[] {
   const isShopManager = session?.user?.roleSlug === 'shop_manager';
 
   const columns: ColumnDef<ModelWithRelations>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value: boolean | "indeterminate") => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value: boolean | "indeterminate") => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-    size: 48,
-  },
-  {
-    id: "image",
-    header: "Image", 
-    cell: ({ row }) => {
-      const imageUrl = row.original?.model_image;
-      return (
-        <div className="relative h-24 w-24 rounded-md overflow-hidden border border-border">
-          {imageUrl ? (
-            <img 
-              src={imageUrl} 
-              alt={row.original?.title || 'Model'}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="h-full w-full bg-muted flex items-center justify-center text-muted-foreground text-xs">No image</div>
-          )}
-        </div>
-      );
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value: boolean | "indeterminate") => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value: boolean | "indeterminate") => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      size: 48,
     },
-    size: 120,
-  },
-  {
-    accessorKey: "title",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
+    {
+      id: "image",
+      header: "Image",
+      cell: ({ row }) => {
+        const imageUrl = row.original?.model_image;
+        return (
+          <div className="relative h-10 w-10 rounded-md overflow-hidden border border-border">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={row.original?.title || 'Model'}
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              <div className="h-full w-full bg-muted flex items-center justify-center text-muted-foreground text-[10px]">No image</div>
+            )}
+          </div>
+        );
+      },
+      size: 60,
     },
-    cell: ({ row }) => <div className="font-medium max-w-[250px] whitespace-normal break-all">{row.getValue("title")}</div>,
-  },
-  {
-    accessorKey: "base_price",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Base Price
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
+    {
+      accessorKey: "title",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Name
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+      cell: ({ row }) => <div className="font-medium max-w-[250px] whitespace-normal break-all">{row.getValue("title")}</div>,
     },
-    cell: ({ row }) => {
-      const basePrice = row.original?.base_price;
-      const formattedPrice = basePrice 
-        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(basePrice) 
-        : 'N/A';
-      return <div className="text-right font-medium">{formattedPrice}</div>;
+    {
+      accessorKey: "base_price",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Base Price
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+      cell: ({ row }) => {
+        const basePrice = row.original?.base_price;
+        const formattedPrice = basePrice
+          ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(basePrice)
+          : 'N/A';
+        return <div className="text-right font-medium">{formattedPrice}</div>;
+      },
     },
-  },
-  {
-    id: "brand_id",
-    accessorFn: (row) => row.brand?.id?.toString(),
-    header: "Brand",
-    cell: ({ row }) => {
-      const brandTitle = row.original?.brand?.title || 'N/A'; 
-      return <div className="max-w-[150px] whitespace-normal break-all">{brandTitle}</div>;
+    {
+      id: "brand_id",
+      accessorFn: (row) => row.brand?.id?.toString(),
+      header: "Brand",
+      cell: ({ row }) => {
+        const brandTitle = row.original?.brand?.title || 'N/A';
+        return <div className="max-w-[150px] whitespace-normal break-all">{brandTitle}</div>;
+      },
+      enableColumnFilter: true,
+      filterFn: "equals",
     },
-    enableColumnFilter: true,
-    filterFn: "equals",
-  },
-  {
-    id: "series_id",
-    accessorFn: (row) => row.series?.id?.toString(),
-    header: "Series",
-    cell: ({ row }) => {
-      const seriesTitle = row.original?.series?.title || 'N/A';
-      return <div className="max-w-[150px] whitespace-normal break-all">{seriesTitle}</div>;
+    {
+      id: "series_id",
+      accessorFn: (row) => row.series?.id?.toString(),
+      header: "Series",
+      cell: ({ row }) => {
+        const seriesTitle = row.original?.series?.title || 'N/A';
+        return <div className="max-w-[150px] whitespace-normal break-all">{seriesTitle}</div>;
+      },
+      enableColumnFilter: true,
+      filterFn: "equals",
     },
-    enableColumnFilter: true,
-    filterFn: "equals",
-  },
-  {
-    id: "category_id",
-    accessorFn: (row) => row.category?.id?.toString(),
-    header: "Category",
-    cell: ({ row }) => {
-      const categoryTitle = row.original?.category?.title || 'N/A';
-      return <div className="max-w-[150px] whitespace-normal break-all">{categoryTitle}</div>;
+    {
+      id: "category_id",
+      accessorFn: (row) => row.category?.id?.toString(),
+      header: "Category",
+      cell: ({ row }) => {
+        const categoryTitle = row.original?.category?.title || 'N/A';
+        return <div className="max-w-[150px] whitespace-normal break-all">{categoryTitle}</div>;
+      },
+      enableColumnFilter: true,
+      filterFn: "equals",
     },
-    enableColumnFilter: true,
-    filterFn: "equals",
-  },
-  // Only include Published In Shops column for non-shop managers
-  ...(!isShopManager ? [{
-    id: "published_shops",
-    header: "Published In Shops",
-    cell: ({ row }: { row: Row<ModelWithRelations> }) => {
-      const publishedShops = row.original.publishedInShops || [];
-      return (
-        <div className="flex items-center">
-          {publishedShops.length > 0 ? (
-            <div className="bg-green-50 text-green-700 rounded-full px-2 py-0.5 text-xs font-medium">
-              {publishedShops.length} shop{publishedShops.length !== 1 ? 's' : ''}
-            </div>
-          ) : (
-            <div className="text-muted-foreground text-xs">Not published</div>
-          )}
-        </div>
-      );
+    // Only include Published In Shops column for non-shop managers
+    ...(!isShopManager ? [{
+      id: "published_shops",
+      header: "Published In Shops",
+      cell: ({ row }: { row: Row<ModelWithRelations> }) => {
+        const publishedShops = row.original.publishedInShops || [];
+        return (
+          <div className="flex items-center">
+            {publishedShops.length > 0 ? (
+              <div className="bg-green-50 text-green-700 rounded-full px-2 py-0.5 text-xs font-medium">
+                {publishedShops.length} shop{publishedShops.length !== 1 ? 's' : ''}
+              </div>
+            ) : (
+              <div className="text-muted-foreground text-xs">Not published</div>
+            )}
+          </div>
+        );
+      },
+    }] : []),
+    {
+      id: "actions",
+      header: "Actions",
+      enableHiding: false,
+      cell: ({ row }) => <ModelActionsCell row={row} />,
     },
-  }] : []),
-  {
-    id: "actions",
-    header: "Actions",
-    enableHiding: false,
-    cell: ({ row }) => <ModelActionsCell row={row} />,
-  },
   ];
-  
+
   return columns;
 }
 

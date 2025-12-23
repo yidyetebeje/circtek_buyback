@@ -360,3 +360,71 @@ export type SendcloudV3DocumentType = 'label' | 'cn23' | 'commercial_invoice' | 
 export type SendcloudV3LabelFormat = 'pdf' | 'png' | 'zpl'
 export type SendcloudV3LabelSize = 'a4' | 'a5' | 'a6'
 
+// ========== PICKUPS V3 API TYPES ==========
+
+/**
+ * Pickup request input for Sendcloud Pickups V3 API
+ * Used to schedule a carrier pickup from a customer's address
+ */
+export interface SendcloudPickupRequest {
+    /** Carrier code (e.g., 'ups', 'dhl_express', 'fedex') */
+    carrier: string
+    /** Address where the carrier will pick up the package */
+    pickup_address: {
+        name: string
+        company_name?: string
+        address_line_1: string
+        house_number: string
+        city: string
+        postal_code: string
+        country_code: string  // ISO 2-letter code
+        contact_email: string
+        contact_phone: string
+    }
+    /** Pickup window start time (ISO 8601 datetime) */
+    pickup_from: string
+    /** Pickup window end time (ISO 8601 datetime) */
+    pickup_until: string
+    /** Number of packages to be picked up */
+    quantity: number
+    /** Total weight in kg */
+    total_weight: number
+    /** Reference number for the pickup */
+    reference?: string
+    /** Special instructions for the driver */
+    special_instructions?: string
+}
+
+/**
+ * Response from creating a pickup
+ */
+export interface SendcloudPickupResponse {
+    id: number
+    carrier: string
+    status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
+    pickup_date: string
+    pickup_from: string
+    pickup_until: string
+    pickup_address: {
+        name: string
+        address_line_1: string
+        city: string
+        postal_code: string
+        country_code: string
+    }
+    quantity: number
+    reference?: string
+    created_at: string
+}
+
+/**
+ * Result of a pickup scheduling operation
+ */
+export interface PickupSchedulingResult {
+    pickupId: number
+    pickupDate: string
+    pickupTimeFrom: string
+    pickupTimeUntil: string
+    carrier: string
+    status: string
+}

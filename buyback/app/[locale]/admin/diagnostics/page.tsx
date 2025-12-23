@@ -59,10 +59,10 @@ export default function TestedDevicesPage() {
 
   if (error) {
     return (
-      <div className="p-4 md:p-6 space-y-6">
+      <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <AdminHeader 
-            title="Tested Devices" 
+          <AdminHeader
+            title="Tested Devices"
             breadcrumbs={[
               { href: '/admin/dashboards', label: 'Admin' },
               { href: '/admin/diagnostics', label: 'Diagnostics' },
@@ -78,10 +78,10 @@ export default function TestedDevicesPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <AdminHeader 
-          title="Tested Devices" 
+        <AdminHeader
+          title="Tested Devices"
           breadcrumbs={[
             { href: '/admin/dashboards', label: 'Admin' },
             { href: '/admin/diagnostics', label: 'Diagnostics' },
@@ -89,7 +89,7 @@ export default function TestedDevicesPage() {
           ]}
         />
       </div>
-      
+
       {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
       {/* @ts-ignore Generic component mismatch */}
       <DataTable

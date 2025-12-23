@@ -6,7 +6,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'react-phone-number-input';
-import { isValidIBAN } from 'ibantools';
+
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Pencil, Trash2, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -42,9 +42,6 @@ export function DefaultCheckout({
     phoneNumber: z.string().trim()
       .min(1, { message: t('validation.phoneRequired') })
       .refine(isValidPhoneNumber, { message: t('validation.phoneInvalid') }),
-    accountNumber: z.string().trim()
-      .min(1, { message: t('validation.accountNumberRequired') })
-      .refine(isValidIBAN, { message: t('validation.ibanInvalid') }),
     firstName: z.string().trim()
       .min(1, { message: t('validation.firstNameRequired') })
       .max(50, { message: t('validation.firstNameTooLong') })
@@ -69,10 +66,6 @@ export function DefaultCheckout({
       .min(1, { message: t('validation.cityRequired') })
       .max(100, { message: t('validation.cityTooLong') })
       .regex(/^[a-zA-ZÀ-ÿ\s\-']+$/, { message: t('validation.cityInvalidChars') }),
-    stateProvince: z.string().trim()
-      .min(1, { message: t('validation.stateProvinceRequired') })
-      .max(100, { message: t('validation.stateProvinceTooLong') })
-      .regex(/^[a-zA-ZÀ-ÿ\s\-']+$/, { message: t('validation.stateProvinceInvalidChars') }),
     country: z.string().trim().min(1, { message: t('validation.countryRequired') }),
   });
 
@@ -101,14 +94,12 @@ export function DefaultCheckout({
     defaultValues: {
       email: '',
       phoneNumber: '',
-      accountNumber: '',
       firstName: '',
       lastName: '',
       streetName: '',
       houseNumber: '',
       postalCode: '',
       city: '',
-      stateProvince: '',
       country: '',
     },
     mode: 'onChange'
@@ -211,7 +202,7 @@ export function DefaultCheckout({
         name: `${data.firstName} ${data.lastName}`,
         street1: `${data.streetName} ${data.houseNumber}`,
         city: data.city,
-        stateProvince: data.stateProvince,
+        // stateProvince removed
         postalCode: data.postalCode,
         countryCode: data.country,
         phoneNumber: data.phoneNumber,
@@ -469,12 +460,6 @@ export function DefaultCheckout({
                 {errors.phoneNumber && <p className="mt-1 text-xs text-red-500">{errors.phoneNumber.message}</p>}
               </div>
 
-              <div>
-                <label htmlFor="accountNumber" className="block text-xs font-medium text-gray-600 mb-1">{t('form.accountNumber')}</label>
-                <input type="text" id="accountNumber" {...register("accountNumber")} className={`block w-full p-2.5 border ${errors.accountNumber ? 'border-red-500' : 'border-gray-200'} bg-gray-50 rounded-md focus:ring-green-500 focus:border-green-500 sm:text-sm`} placeholder={t('form.ibanPlaceholder')} />
-                {errors.accountNumber && <p className="mt-1 text-xs text-red-500">{errors.accountNumber.message}</p>}
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
                 <div>
                   <label htmlFor="firstName" className="block text-xs font-medium text-gray-600 mb-1">{t('form.firstName')}</label>
@@ -514,34 +499,21 @@ export function DefaultCheckout({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
-                <div>
-                  <label htmlFor="stateProvince" className="block text-xs font-medium text-gray-600 mb-1">{t('form.stateProvince')}</label>
-                  <input
-                    type="text"
-                    id="stateProvince"
-                    {...register("stateProvince")}
-                    className={`block w-full p-2.5 border ${errors.stateProvince ? 'border-red-500' : 'border-gray-200'} bg-gray-50 rounded-md focus:ring-green-500 focus:border-green-500 sm:text-sm`}
-                    placeholder={t('form.stateProvincePlaceholder')}
-                  />
-                  {errors.stateProvince && <p className="mt-1 text-xs text-red-500">{errors.stateProvince.message}</p>}
-                </div>
-                <div>
-                  <label htmlFor="country" className="block text-xs font-medium text-gray-600 mb-1">{t('form.country')}</label>
-                  <select
-                    id="country"
-                    {...register("country")}
-                    className={`block w-full p-2.5 border ${errors.country ? 'border-red-500' : 'border-gray-200'} bg-gray-50 rounded-md focus:ring-green-500 focus:border-green-500 sm:text-sm`}
-                  >
-                    <option value="">Select a country</option>
-                    {countries.map((country) => (
-                      <option key={country.code} value={country.code}>
-                        {country.name}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.country && <p className="mt-1 text-xs text-red-500">{errors.country.message}</p>}
-                </div>
+              <div>
+                <label htmlFor="country" className="block text-xs font-medium text-gray-600 mb-1">{t('form.country')}</label>
+                <select
+                  id="country"
+                  {...register("country")}
+                  className={`block w-full p-2.5 border ${errors.country ? 'border-red-500' : 'border-gray-200'} bg-gray-50 rounded-md focus:ring-green-500 focus:border-green-500 sm:text-sm`}
+                >
+                  <option value="">Select a country</option>
+                  {countries.map((country) => (
+                    <option key={country.code} value={country.code}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.country && <p className="mt-1 text-xs text-red-500">{errors.country.message}</p>}
               </div>
 
               <div className="pt-5">

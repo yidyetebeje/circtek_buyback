@@ -19,6 +19,7 @@ export interface TransferCandidate {
     createdAt: string;
     shopId: number;
     shopName: string | null;
+    warehouseId: number | null; // Origin warehouse for admin orders (null for user orders)
 }
 
 export interface StoreTransfer {
@@ -52,6 +53,7 @@ export interface CreateTransferResult {
 interface CandidatesParams {
     days?: number;
     shopId?: number;
+    warehouseId?: number; // Filter by origin warehouse
 }
 
 interface ListTransfersParams {
@@ -64,8 +66,11 @@ interface ListTransfersParams {
  * Hook to fetch transfer candidates (PAID buyback orders)
  */
 export const useTransferCandidates = (params: CandidatesParams = {}) => {
+    const { days, shopId, warehouseId } = params;
+
     return useQuery<{ data: TransferCandidate[] }, Error>({
-        queryKey: ["store-transfer-candidates", params],
+        // Use explicit values in query key for proper cache invalidation
+        queryKey: ["store-transfer-candidates", days, shopId, warehouseId],
         queryFn: async () => {
             return apiClient.get<{ data: TransferCandidate[] }>("/buyback/store-transfers/candidates", {
                 params: params as unknown as Record<string, string | number>,
@@ -75,8 +80,34 @@ export const useTransferCandidates = (params: CandidatesParams = {}) => {
     });
 };
 
+// ============ HQ Configuration ============
+
+export interface HQConfig {
+    configured: boolean;
+    shop_id: number;
+    hq_warehouse_id: number | null;
+    hq_warehouse_name?: string | null;
+    hq_delivery_address_id: number | null;
+}
+
+/**
+ * Hook to fetch HQ warehouse configuration for store transfers
+ */
+export const useHQConfig = (shopId: number) => {
+    return useQuery<{ data: HQConfig }, Error>({
+        queryKey: ["hq-config", shopId],
+        queryFn: async () => {
+            return apiClient.get<{ data: HQConfig }>(`/shipping/shops/${shopId}/hq-config`, {
+                isProtected: true,
+            });
+        },
+        enabled: shopId > 0,
+    });
+};
+
 /**
  * Hook to create a store-to-warehouse transfer
+ * Transfers always go to the configured HQ warehouse
  */
 export const useCreateStoreTransfer = () => {
     const queryClient = useQueryClient();
@@ -84,7 +115,7 @@ export const useCreateStoreTransfer = () => {
     return useMutation<
         { success: boolean; data: CreateTransferResult; message: string },
         Error,
-        { orderIds: string[]; toWarehouseId: number; originAddressId?: number; deliveryAddressId?: number }
+        { orderIds: string[]; originAddressId?: number }
     >({
         mutationFn: async (data) => {
             return apiClient.post<{ success: boolean; data: CreateTransferResult; message: string }>(

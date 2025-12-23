@@ -71,6 +71,9 @@ export const SendcloudConfigCreate = t.Object({
     default_shipping_method_id: t.Optional(t.Number()), // v2 (deprecated)
     default_shipping_option_code: t.Optional(t.String()), // v3
     use_test_mode: t.Optional(t.Boolean({ default: false })),
+    // HQ warehouse configuration for store transfers
+    hq_warehouse_id: t.Optional(t.Number()), // Default destination warehouse for store transfers
+    hq_delivery_address_id: t.Optional(t.Number()), // Sendcloud sender address ID for HQ delivery
 })
 
 // ============ TYPE EXPORTS ============
@@ -174,6 +177,9 @@ export interface SendcloudConfigRecord {
     default_shipping_option_code: string | null // v3
     use_test_mode: boolean | null
     is_active: boolean | null
+    // HQ warehouse configuration for store transfers
+    hq_warehouse_id: number | null // Default destination warehouse for store transfers
+    hq_delivery_address_id: number | null // Sendcloud sender address ID for HQ delivery
     created_at: Date | null
     updated_at: Date | null
 }

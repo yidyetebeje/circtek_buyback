@@ -253,16 +253,16 @@ export function BuyDevicePageClient({ locale, shopId }: BuyDevicePageClientProps
       {currentStep !== 'completed' && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">
+            <span className="text-sm font-medium text-muted-foreground">
               Step {getStepNumber()} of 6
             </span>
-            <span className="text-sm font-medium text-gray-600">
+            <span className="text-sm font-medium text-foreground">
               {getStepTitle()}
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+          <div className="w-full bg-secondary/50 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-primary h-2.5 rounded-full"
+              className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
               style={{ width: `${(getStepNumber() / 6) * 100}%` }}
             ></div>
           </div>
@@ -270,7 +270,7 @@ export function BuyDevicePageClient({ locale, shopId }: BuyDevicePageClientProps
       )}
 
       {/* Step content */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-card rounded-xl border border-border p-6 md:p-8">
         {renderStepContent()}
       </div>
 
@@ -330,7 +330,7 @@ function AutoProductMatcher({ device, shopId, onMatched, onBack }: AutoProductMa
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-        <p className="text-gray-600">Searching catalogue for {device.modelName}…</p>
+        <p className="text-muted-foreground">Searching catalogue for {device.modelName}…</p>
       </div>
     );
   }
@@ -338,9 +338,9 @@ function AutoProductMatcher({ device, shopId, onMatched, onBack }: AutoProductMa
   if (error || !data || data.data.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg text-center">
-          <p className="text-lg font-medium text-yellow-800 mb-2">This device is not in our catalogue.</p>
-          <p className="text-sm text-yellow-700">Please add it to the catalogue before continuing.</p>
+        <div className="bg-yellow-500/10 border border-yellow-500/20 p-6 rounded-lg text-center">
+          <p className="text-lg font-medium text-yellow-600 mb-2">This device is not in our catalogue.</p>
+          <p className="text-sm text-yellow-600/80">Please add it to the catalogue before continuing.</p>
         </div>
 
         <div className="flex items-center justify-center">

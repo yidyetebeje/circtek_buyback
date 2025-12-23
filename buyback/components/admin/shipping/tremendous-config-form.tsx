@@ -119,7 +119,7 @@ export function TremendousConfigForm({
                 </div>
 
                 {/* API Credentials */}
-                <Card>
+                <Card className="bg-card shadow-none border-0 rounded-lg">
                     <CardHeader className="pb-4">
                         <CardTitle className="text-base flex items-center gap-2">
                             <Key className="h-4 w-4" />
@@ -219,7 +219,7 @@ export function TremendousConfigForm({
                 </Card>
 
                 {/* Reward Settings */}
-                <Card>
+                <Card className="bg-card shadow-none border-0 rounded-lg">
                     <CardHeader className="pb-4">
                         <CardTitle className="text-base flex items-center gap-2">
                             <Gift className="h-4 w-4" />

@@ -56,7 +56,7 @@ export default function EditShopPage() {
       name: values.name,
       organization: values.organization || null,
       phone: values.phone || null,
-      active: values.active === undefined ? shop.active : values.active,
+
     };
 
     // Only include logo field if it needs to be removed
@@ -117,7 +117,7 @@ export default function EditShopPage() {
     organization: shop.organization || '',
     phone: shop.phone || '',
     logo: shop.logo || '',
-    active: shop.active === null ? true : shop.active,
+
   } : undefined;
 
   if (isLoading) {
@@ -148,11 +148,11 @@ export default function EditShopPage() {
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex items-center justify-between mb-5">
+    <div className="">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold">Edit Shop</h1>
-          <p className="text-muted-foreground">ID: {shop.id} | Created: {new Date(shop.createdAt).toLocaleDateString()}</p>
+
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -174,7 +174,7 @@ export default function EditShopPage() {
         </div>
       </div>
 
-      <Separator className="mb-8" />
+
 
       <ShopForm
         initialData={initialData}

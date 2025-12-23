@@ -62,16 +62,16 @@ export const backmarket_pricing_parameters = mysqlTable("backmarket_pricing_para
   sku: varchar("sku", { length: 255 }).notNull(), // Link to internal SKU
   grade: int("grade").notNull(), // Back Market Grade
   country_code: varchar("country_code", { length: 5 }).notNull(), // e.g. "fr-fr"
-  
+
   // Cost Components
   c_refurb: decimal("c_refurb", { precision: 10, scale: 2 }).default("0.00"),
   c_op: decimal("c_op", { precision: 10, scale: 2 }).default("0.00"),
   c_risk: decimal("c_risk", { precision: 10, scale: 2 }).default("0.00"),
-  
+
   // Market Params
   m_target: decimal("m_target", { precision: 5, scale: 4 }).default("0.1500"), // 15% = 0.15
   f_bm: decimal("f_bm", { precision: 5, scale: 4 }).default("0.1000"), // 10% = 0.10
-  
+
   // Strategy Params
   price_step: decimal("price_step", { precision: 10, scale: 2 }).default("1.00"), // Amount to beat competitor by
   min_price: decimal("min_price", { precision: 10, scale: 2 }), // Manual Lower Bound

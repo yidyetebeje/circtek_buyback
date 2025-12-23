@@ -501,7 +501,8 @@ export class OrderController {
           phoneNumber: shipping.seller_phone_number,
           email: shipping.seller_email,
         },
-        order.shop_id // Use order's shop_id for shop-scoped Sendcloud config
+        order.shop_id, // Use order's shop_id for shop-scoped Sendcloud config
+        order.estimated_price // Pass estimated price for customs declaration
       );
 
       return {

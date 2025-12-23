@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AdminEditCard } from '@/components/admin/AdminEditCard';
 import { DataTable } from '@/components/admin/catalog/data-table';
 import { useListOrders } from '@/hooks/useOrders';
 import { columns } from '@/components/admin/orders/order-columns';
@@ -44,7 +43,7 @@ export default function AdminOrdersPage() {
   const queryParams = useMemo(() => {
     const statusFilter = debouncedColumnFilters.find(f => f.id === 'status')?.value;
     const status = Array.isArray(statusFilter) ? statusFilter : statusFilter ? [statusFilter] : undefined;
-    
+
     // Extract search from orderNumber column filter
     const searchFilter = debouncedColumnFilters.find(f => f.id === 'orderNumber')?.value;
     const search = typeof searchFilter === 'string' ? searchFilter.trim() : undefined;
@@ -75,34 +74,23 @@ export default function AdminOrdersPage() {
   };
 
   return (
-    <AdminEditCard
-      title="Orders Management"
-      description="Manage and track all customer orders"
-      breadcrumbs={[
-        { href: '/admin/dashboards', label: 'Admin' },
-        { label: 'Orders', isCurrentPage: true }
+    <DataTable
+      columns={columns}
+      data={ordersList as OrderListItem[]}
+      isLoading={isLoading}
+      manualPagination
+      manualFiltering
+      rowCount={totalCount}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+      columnFilters={columnFilters}
+      onColumnFiltersChange={handleColumnFiltersChange}
+      onRowClick={handleRowClick}
+      searchKey="orderNumber"
+      searchPlaceholder="Search order number..."
+      filterOptions={[
+        { key: 'status', label: 'Status', options: statusOptions },
       ]}
-    >
-      <div className="-mx-6 -mb-6 mt-2">
-        <DataTable
-          columns={columns}
-          data={ordersList as OrderListItem[]}
-          isLoading={isLoading}
-          manualPagination
-          manualFiltering
-          rowCount={totalCount}
-          pagination={pagination}
-          onPaginationChange={setPagination}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={handleColumnFiltersChange}
-          onRowClick={handleRowClick}
-          searchKey="orderNumber"
-          searchPlaceholder="Search order number..."
-          filterOptions={[
-            { key: 'status', label: 'Status', options: statusOptions },
-          ]}
-        />
-      </div>
-    </AdminEditCard>
+    />
   );
 } 

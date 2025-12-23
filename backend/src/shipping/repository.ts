@@ -459,6 +459,9 @@ export class ShippingRepository {
                 default_shipping_method_id: data.default_shipping_method_id || null,
                 default_shipping_option_code: data.default_shipping_option_code || null,
                 use_test_mode: data.use_test_mode ?? false,
+                // HQ warehouse configuration for store transfers
+                hq_warehouse_id: data.hq_warehouse_id || null,
+                hq_delivery_address_id: data.hq_delivery_address_id || null,
                 updated_at: new Date(),
             }
 
@@ -487,9 +490,33 @@ export class ShippingRepository {
                 default_shipping_method_id: data.default_shipping_method_id || null,
                 default_shipping_option_code: data.default_shipping_option_code || null,
                 use_test_mode: data.use_test_mode ?? false,
+                // HQ warehouse configuration for store transfers
+                hq_warehouse_id: data.hq_warehouse_id || null,
+                hq_delivery_address_id: data.hq_delivery_address_id || null,
                 is_active: true,
             })
         }
+    }
+
+    // ============ WAREHOUSE HELPERS ============
+
+    /**
+     * Get warehouse by ID
+     * Used to get warehouse name for HQ config display
+     */
+    async getWarehouseById(id: number, tenant_id: number): Promise<{ id: number; name: string } | null> {
+        const [warehouse] = await this.database
+            .select({ id: warehouses.id, name: warehouses.name })
+            .from(warehouses)
+            .where(
+                and(
+                    eq(warehouses.id, id),
+                    eq(warehouses.tenant_id, tenant_id)
+                )
+            )
+            .limit(1)
+
+        return warehouse || null
     }
 }
 

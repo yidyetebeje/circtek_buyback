@@ -158,18 +158,18 @@ export const columns: ColumnDef<QuestionSetRow>[] = [
     },
     size: 250,
   },
- 
+
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-            Created At
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Created At
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
     ),
     cell: ({ row }) => {
-        const date = row.getValue("createdAt") as string | undefined;
-        return date ? new Date(date).toLocaleDateString() : "-";
+      const date = row.getValue("createdAt") as string | undefined;
+      return date ? new Date(date).toLocaleDateString() : "-";
     },
     size: 120,
   },

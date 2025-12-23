@@ -48,13 +48,13 @@ interface BrandFormProps {
   onFileSelect?: (file: File | null) => void;
 }
 
-export function BrandForm({ 
+export function BrandForm({
   initialData,
   brandId, // Destructure brandId
-  onSubmit, 
-  onCancel, 
-  isLoading, 
-  onFileSelect 
+  onSubmit,
+  onCancel,
+  isLoading,
+  onFileSelect
 }: BrandFormProps) {
   console.log(brandId, "brand id")
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(initialData?.logo || null);
@@ -104,7 +104,7 @@ export function BrandForm({
 
     if (brandId) { // EDIT MODE: Upload immediately
       onFileSelect?.(null); // Ensure parent knows file is handled
-      
+
       return new Promise((resolve, reject) => {
         uploadLogo({ brandId, file }, {
           onSuccess: (data) => {
@@ -143,7 +143,7 @@ export function BrandForm({
       return Promise.resolve(objectUrl); // Return blob URL for immediate preview in ImageUpload
     }
   };
-  
+
   // Function called by ImageUpload when the image is removed
   const handleFileRemove = () => {
     console.log('Removing image');
@@ -176,8 +176,8 @@ export function BrandForm({
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
         {/* Consolidated Information Section */}
         <div className="py-6">
-        
-          
+
+
           <div className="grid gap-6">
             {/* First Row: Title and Logo */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
@@ -188,10 +188,10 @@ export function BrandForm({
                   <FormItem>
                     <FormLabel className="font-medium">Title*</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="Enter brand title (e.g., Apple)" 
-                        {...field} 
-                        className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                      <Input
+                        placeholder="Enter brand title (e.g., Apple)"
+                        {...field}
+                        className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                         disabled={effectiveIsLoading}
                       />
                     </FormControl>
@@ -209,8 +209,8 @@ export function BrandForm({
                       disabled={effectiveIsLoading} // Disable based on combined loading state
                       onImageUpload={handleFileSelectAndPreview} // Handles selection and upload (in edit mode)
                       onImageRemove={handleFileRemove}          // Handles removal
-                      aspectRatio="square" 
-                      maxSizeMB={5}       
+                      aspectRatio="square"
+                      maxSizeMB={5}
                     />
                   </div>
                 </FormControl>
@@ -228,10 +228,10 @@ export function BrandForm({
                   <FormItem>
                     <FormLabel className="font-medium">SEO Title</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="Enter SEO title" 
-                        {...field} 
-                        className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                      <Input
+                        placeholder="Enter SEO title"
+                        {...field}
+                        className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                         disabled={effectiveIsLoading}
                       />
                     </FormControl>
@@ -247,14 +247,14 @@ export function BrandForm({
                   <FormItem>
                     <FormLabel className="font-medium">SEO Keywords</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="keyword1, keyword2, keyword3" 
-                        {...field} 
-                        className="border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                      <Input
+                        placeholder="keyword1, keyword2, keyword3"
+                        {...field}
+                        className="border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                         disabled={effectiveIsLoading}
                       />
                     </FormControl>
-                    <FormDescription className="text-xs text-gray-500">
+                    <FormDescription className="text-xs text-muted-foreground">
                       Comma-separated keywords
                     </FormDescription>
                     <FormMessage />
@@ -269,10 +269,10 @@ export function BrandForm({
                   <FormItem>
                     <FormLabel className="font-medium">SEO Description</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Enter SEO description" 
-                        {...field} 
-                        className="min-h-[100px] border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-y"
+                      <Textarea
+                        placeholder="Enter SEO description"
+                        {...field}
+                        className="min-h-[100px] border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 resize-y"
                         disabled={effectiveIsLoading}
                         rows={3}
                       />
@@ -291,9 +291,9 @@ export function BrandForm({
                 <FormItem>
                   <FormLabel className="font-medium">Description</FormLabel>
                   <FormControl>
-                    <TipTapEditor 
-                      content={field.value || ''} 
-                      onChange={field.onChange} 
+                    <TipTapEditor
+                      content={field.value || ''}
+                      onChange={field.onChange}
                       disabled={effectiveIsLoading}
                     />
                   </FormControl>

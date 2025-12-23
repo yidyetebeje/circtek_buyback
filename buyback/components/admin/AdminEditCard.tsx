@@ -36,17 +36,17 @@ export const AdminEditCard: React.FC<AdminEditCardProps> = ({
         )}
       </div>
 
-      <Card className="border border-gray-200 shadow-sm">
+      <div className='bg-card rounded-lg px-6 py-6'>
         {description && (
-          <CardHeader>
-            <CardTitle>{displayTitle}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </CardHeader>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold">{displayTitle}</h2>
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
         )}
-        <CardContent className="pt-6">
+        <div>
           {children}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

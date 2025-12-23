@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import diagnosticsService, { TestedDevice } from '@/lib/api/diagnosticsService';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,26 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
     }),
     enabled: !!searchTerm && searchTerm.length >= 3,
   });
+
+  // Group test results by device_id and keep the latest test for each device
+  const uniqueDevices = useMemo(() => {
+    if (!searchResults?.data) return [];
+
+    const deviceMap = new Map<number, TestedDevice>();
+
+    // Sort by tested date (newest first) and keep the latest test for each device
+    const sortedResults = [...searchResults.data].sort(
+      (a, b) => new Date(b.testedAt).getTime() - new Date(a.testedAt).getTime()
+    );
+
+    for (const device of sortedResults) {
+      if (!deviceMap.has(device.deviceId)) {
+        deviceMap.set(device.deviceId, device);
+      }
+    }
+
+    return Array.from(deviceMap.values());
+  }, [searchResults?.data]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,35 +104,35 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Search for Tested Device</h2>
-        <p className="text-gray-600">
+      <div className="max-w-2xl">
+        <h2 className="text-2xl font-semibold text-foreground mb-2">Search Device</h2>
+        <p className="text-muted-foreground text-lg">
           Enter the device serial number to find tested devices available for purchase.
         </p>
       </div>
 
       <form onSubmit={handleSearch} className="space-y-4">
-        <div className="flex gap-3">
+        <div className="flex gap-3 max-w-2xl">
           <div className="relative group flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 transition-colors group-focus-within:text-primary" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
             <Input
               type="text"
               placeholder="Enter device serial number..."
               value={serial}
               onChange={handleSerialChange}
-              className="w-full pl-10"
+              className="w-full pl-12 h-12 text-lg bg-background border-border focus-visible:ring-primary/20 transition-all font-mono"
               autoFocus
             />
           </div>
           <Button
             type="submit"
             disabled={serial.length < 3 || isLoading}
-            className="px-6 bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-base transition-all"
           >
             {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
             ) : (
-              <Search className="w-4 h-4" />
+              <Search className="w-5 h-5 mr-2" />
             )}
             Search
           </Button>
@@ -121,16 +141,17 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
 
       {/* Search Results */}
       {searchTerm && (
-        <div className="space-y-4">
+        <div className="space-y-6 pt-4">
           {isLoading && (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-              <span className="ml-2 text-gray-600">Searching devices...</span>
+            <div className="flex flex-col items-center justify-center py-12 text-center bg-muted/20 rounded-xl border border-dashed border-border">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+              <p className="text-lg font-medium text-foreground">Searching devices...</p>
+              <p className="text-muted-foreground">Looking for serial &quot;{searchTerm}&quot;</p>
             </div>
           )}
 
           {error && (
-            <div className="flex items-center p-4 text-red-800 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center p-4 text-red-600 bg-red-500/5 border border-red-500/20 rounded-lg">
               <AlertCircle className="w-5 h-5 mr-2" />
               <span>Error searching devices. Please try again.</span>
             </div>
@@ -138,96 +159,106 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
 
           {searchResults && !isLoading && (
             <>
-              {searchResults.data.length === 0 ? (
-                <div className="text-center py-8">
-                  <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-1">Device Not Found</h3>
-                  <p className="text-gray-600">
-                    No tested device found with serial &quot;{searchTerm}&quot;.
+              {uniqueDevices.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center bg-muted/20 rounded-xl border border-dashed border-border">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                    <Search className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-medium text-foreground mb-2">Device Not Found</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    No tested device found with serial <span className="font-mono text-foreground bg-muted px-2 py-0.5 rounded">{searchTerm}</span>.
                     Please verify the serial number or ensure the device has been tested.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    Found {searchResults.data.length} device(s)
-                  </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium text-foreground">
+                      Found {uniqueDevices.length} device{uniqueDevices.length !== 1 ? 's' : ''}
+                    </h3>
+                  </div>
 
-                  <div className="grid gap-3">
-                    {searchResults.data.map((device) => (
+                  <div className="grid gap-4">
+                    {uniqueDevices.map((device) => (
                       <div
                         key={device.deviceTransactionId}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                        className="group relative bg-card border border-border rounded-xl p-6 transition-all hover:border-primary/50"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h4 className="font-medium text-gray-900">
-                                {device.make} {device.modelName}
-                              </h4>
-                              {device.grade && (
-                                <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
-                                  Grade {device.grade}
-                                </span>
-                              )}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                          <div className="flex-1 space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <h4 className="text-lg font-semibold text-foreground">
+                                  {device.make} {device.modelName}
+                                </h4>
+                                {device.grade && (
+                                  <span className="px-2.5 py-0.5 text-xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded border border-blue-100 dark:border-blue-800">
+                                    Grade {device.grade}
+                                  </span>
+                                )}
+                              </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm text-gray-600">
-                              <div className="min-w-0">
-                                <span className="font-medium">Serial:</span>
-                                <span className="ml-1 break-all">{device.serial}</span>
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                              <div className="space-y-1">
+                                <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Serial</span>
+                                <p className="font-mono text-sm text-foreground break-all">{device.serial}</p>
                               </div>
-                              <div className="min-w-0">
-                                <span className="font-medium">IMEI:</span>
-                                <span className="ml-1 break-all">{device.imei}</span>
+                              <div className="space-y-1">
+                                <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">IMEI</span>
+                                <p className="font-mono text-sm text-foreground break-all">{device.imei}</p>
                               </div>
-                              {device.storage && (
-                                <div>
-                                  <span className="font-medium">Storage:</span> {device.storage}GB
-                                </div>
-                              )}
-                              {device.color && (
-                                <div>
-                                  <span className="font-medium">Color:</span> {device.color}
-                                </div>
-                              )}
-                              {device.warehouseName && (
-                                <div>
-                                  <span className="font-medium">Warehouse:</span> {device.warehouseName}
-                                </div>
-                              )}
-                              <div>
-                                <span className="font-medium">Tested:</span> {new Date(device.testedAt).toLocaleDateString()}
+                              <div className="space-y-1">
+                                <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Specs</span>
+                                <p className="text-sm text-foreground">
+                                  {[
+                                    device.storage ? `${device.storage}GB` : null,
+                                    device.color,
+                                    device.memory ? `${device.memory}GB RAM` : null
+                                  ].filter(Boolean).join(' • ')}
+                                </p>
+                              </div>
+                              <div className="space-y-1">
+                                <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Location</span>
+                                <p className="text-sm text-foreground">{device.warehouseName || 'Unknown'}</p>
                               </div>
                             </div>
 
                             {/* Test Status */}
                             {device.testInfo && (
-                              <div className="mt-3">
+                              <div className="flex items-center gap-2 pt-2">
                                 {device.testInfo.failedResult ? (
-                                  <div className="text-sm">
-                                    <span className="text-red-600 font-medium">Failed Tests:</span> {device.testInfo.failedResult}
+                                  <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-full border border-red-100 dark:border-red-800">
+                                    <AlertCircle className="w-4 h-4" />
+                                    <span className="font-medium">Failed Tests:</span> {device.testInfo.failedResult}
                                   </div>
                                 ) : (
-                                  <div className="text-sm text-green-600 font-medium">
-                                    All tests passed
+                                  <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full border border-green-100 dark:border-green-800">
+                                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                                    <span className="font-medium">All tests passed</span>
+                                    <span className="text-muted-foreground text-xs ml-1">• Tested {new Date(device.testedAt).toLocaleDateString()}</span>
                                   </div>
                                 )}
                               </div>
                             )}
                           </div>
 
-                          <Button
-                            onClick={() => handleSelectDevice(device)}
-                            className="ml-4 bg-primary hover:bg-primary/90 text-primary-foreground"
-                            disabled={eligibilityCheckingId === device.deviceTransactionId}
-                          >
-                            {eligibilityCheckingId === device.deviceTransactionId ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              'Select Device'
-                            )}
-                          </Button>
+                          <div className="flex items-center">
+                            <Button
+                              onClick={() => handleSelectDevice(device)}
+                              className="w-full md:w-auto px-6 h-11 bg-foreground text-background hover:bg-foreground/90 transition-all font-medium"
+                              disabled={eligibilityCheckingId === device.deviceTransactionId}
+                            >
+                              {eligibilityCheckingId === device.deviceTransactionId ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                  Checking...
+                                </>
+                              ) : (
+                                'Select Device'
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}

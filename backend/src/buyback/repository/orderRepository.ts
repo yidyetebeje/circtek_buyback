@@ -24,7 +24,7 @@ export type CreateOrderParams = {
     street1: string;
     street2?: string;
     city: string;
-    stateProvince: string;
+    stateProvince?: string;
     postalCode: string;
     countryCode: string;
     phoneNumber?: string;
@@ -42,6 +42,7 @@ export type CreateAdminOrderParams = CreateOrderParams & {
   sku?: string;
   serialNumber?: string;
   testingInfo?: any;
+  warehouseId?: number; // Origin warehouse for admin-created orders
 };
 
 export type UpdateOrderStatusParams = {
@@ -168,7 +169,7 @@ export const orderRepository = {
         seller_street1: sellerAddress.street1,
         seller_street2: sellerAddress.street2 || null,
         seller_city: sellerAddress.city,
-        seller_state_province: sellerAddress.stateProvince,
+        seller_state_province: sellerAddress.stateProvince ?? "N/A",
         seller_postal_code: sellerAddress.postalCode,
         seller_country_code: sellerAddress.countryCode,
         seller_phone_number: sellerAddress.phoneNumber || null,
@@ -212,7 +213,8 @@ export const orderRepository = {
       imei,
       sku,
       serialNumber,
-      testingInfo
+      testingInfo,
+      warehouseId
     } = params;
 
     return await db.transaction(async (tx) => {
@@ -238,6 +240,7 @@ export const orderRepository = {
         seller_notes: sellerNotes || null,
         tenant_id: tenant_id,
         shop_id: shopId,
+        warehouse_id: warehouseId || null, // Origin warehouse for admin orders
         serial_number: serialNumber || null,
         testing_info: testingInfo || null,
         created_at: new Date(),
@@ -268,7 +271,7 @@ export const orderRepository = {
         seller_street1: sellerAddress.street1,
         seller_street2: sellerAddress.street2 || null,
         seller_city: sellerAddress.city,
-        seller_state_province: sellerAddress.stateProvince,
+        seller_state_province: sellerAddress.stateProvince ?? "N/A",
         seller_postal_code: sellerAddress.postalCode,
         seller_country_code: sellerAddress.countryCode,
         seller_phone_number: sellerAddress.phoneNumber || null,

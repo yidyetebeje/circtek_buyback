@@ -13,16 +13,15 @@ interface GetCandidatesParams {
     shopId?: number;
     tenantId: number;
     allowedShopIds?: number[];
+    warehouseId?: number; // Filter by warehouse
 }
 
 interface CreateTransferParams {
     orderIds: string[];
-    toWarehouseId: number;
     createdByUserId: number;
     tenantId: number;
     shopManagerShopId?: number;
     originAddressId?: number;
-    deliveryAddressId?: number;
 }
 
 interface ListTransfersParams {
@@ -69,6 +68,11 @@ export const storeTransferService = {
             conditions.push(inArray(orders.shop_id, allowedShopIds));
         }
 
+        // Filter by warehouse if specified
+        if (params.warehouseId) {
+            conditions.push(eq(orders.warehouse_id, params.warehouseId));
+        }
+
         // Join with shops to get shop details, and left join with order_transfers to filter out transferred orders
         const candidateOrders = await db
             .select({
@@ -83,6 +87,7 @@ export const storeTransferService = {
                 createdAt: orders.created_at,
                 shopId: orders.shop_id,
                 shopName: shops.name,
+                warehouseId: orders.warehouse_id, // Include warehouse for filtering
             })
             .from(orders)
             .leftJoin(shops, eq(orders.shop_id, shops.id))
@@ -97,20 +102,9 @@ export const storeTransferService = {
      * Create a store-to-warehouse transfer with shipping label generation (V3 API)
      */
     createStoreTransfer: async (params: CreateTransferParams) => {
-        const { orderIds, toWarehouseId, createdByUserId, tenantId, shopManagerShopId, originAddressId, deliveryAddressId } = params;
+        const { orderIds, createdByUserId, tenantId, shopManagerShopId, originAddressId } = params;
 
-        // Validate destination warehouse exists
-        const [destWarehouse] = await db
-            .select()
-            .from(warehouses)
-            .where(and(eq(warehouses.id, toWarehouseId), eq(warehouses.tenant_id, tenantId)))
-            .limit(1);
-
-        if (!destWarehouse) {
-            throw new NotFoundError("Destination warehouse not found");
-        }
-
-        // Fetch the orders to transfer
+        // Fetch the orders to transfer first to get the shop ID
         const orderConditions: any[] = [
             inArray(orders.id, orderIds),
             eq(orders.tenant_id, tenantId),
@@ -130,6 +124,8 @@ export const storeTransferService = {
                 sku: orders.sku,
                 serialNumber: orders.serial_number,
                 shopId: orders.shop_id,
+                warehouseId: orders.warehouse_id, // Get warehouse for validation
+                finalPrice: orders.final_price,
             })
             .from(orders)
             .where(and(...orderConditions));
@@ -137,6 +133,14 @@ export const storeTransferService = {
         if (ordersToTransfer.length !== orderIds.length) {
             throw new BadRequestError(
                 `Some orders are not eligible for transfer. Found ${ordersToTransfer.length} of ${orderIds.length} requested.`
+            );
+        }
+
+        // Validate all orders are from the same warehouse
+        const warehouseIds = [...new Set(ordersToTransfer.map(o => o.warehouseId).filter(id => id !== null))];
+        if (warehouseIds.length > 1) {
+            throw new BadRequestError(
+                "Cannot transfer orders from different warehouses together. Please select orders from the same warehouse."
             );
         }
 
@@ -164,15 +168,42 @@ export const storeTransferService = {
             throw new NotFoundError("Source warehouse not found for this shop. Please configure a warehouse for the shop.");
         }
 
+        // Get Sendcloud config with decrypted secret key (includes HQ configuration)
+        const sendcloudCfg = await shippingRepository.getSendcloudConfigDecrypted(shopId, tenantId);
+
+        // Enforce HQ-only transfers - warehouse orders can only go to HQ
+        if (!sendcloudCfg?.hq_warehouse_id) {
+            throw new BadRequestError(
+                "HQ warehouse not configured. Please configure HQ warehouse in Sendcloud settings before creating transfers."
+            );
+        }
+        if (!sendcloudCfg?.hq_delivery_address_id) {
+            throw new BadRequestError(
+                "HQ delivery address not configured. Please configure HQ delivery address in Sendcloud settings before creating transfers."
+            );
+        }
+
+        const toWarehouseId = sendcloudCfg.hq_warehouse_id;
+        const deliveryAddressId = sendcloudCfg.hq_delivery_address_id;
+        console.log(`[StoreTransferService] Enforcing HQ-only transfer to warehouse: ${toWarehouseId}`);
+
+        // Validate destination warehouse exists
+        const [destWarehouse] = await db
+            .select()
+            .from(warehouses)
+            .where(and(eq(warehouses.id, toWarehouseId), eq(warehouses.tenant_id, tenantId)))
+            .limit(1);
+
+        if (!destWarehouse) {
+            throw new NotFoundError("Destination warehouse not found");
+        }
+
         // Get shipping address from the first order's shipping details
         const [shippingDetail] = await db
             .select()
             .from(shipping_details)
             .where(eq(shipping_details.orderId, ordersToTransfer[0].id))
             .limit(1);
-
-        // Get Sendcloud config with decrypted secret key
-        const sendcloudCfg = await shippingRepository.getSendcloudConfigDecrypted(shopId, tenantId);
 
         // Create transfer and shipment in a transaction
         return await db.transaction(async (tx) => {
@@ -226,14 +257,16 @@ export const storeTransferService = {
                         throw new BadRequestError("Sendcloud shipping_product_code not configured");
                     }
 
-                    // Build V3 shipment items
+                    // Build V3 shipment items with actual order values
                     const items: SendcloudV3Item[] = ordersToTransfer.map((order) => {
                         const snapshot = order.deviceSnapshot as any;
+                        // Use actual finalPrice from order, fallback to estimated value
+                        const orderValue = order.finalPrice ? String(order.finalPrice) : "50.00";
                         return {
                             description: snapshot?.modelName || "Mobile Phone",
                             quantity: 1,
                             weight: "0.200",
-                            value: "100.00",
+                            value: orderValue,
                             hs_code: "851712",
                         };
                     });
@@ -260,9 +293,26 @@ export const storeTransferService = {
                     }
 
                     // Build V3 shipment data - shipping FROM origin TO delivery
+                    // Require proper address configuration - no fallback to invalid addresses
+                    if (!originAddress) {
+                        throw new BadRequestError(
+                            "Origin address not configured. Please select an origin address from your Sendcloud sender addresses."
+                        );
+                    }
+                    if (!deliveryAddress) {
+                        throw new BadRequestError(
+                            "Delivery address not configured. Please select a delivery address from your Sendcloud sender addresses."
+                        );
+                    }
+
+                    // Calculate total order value from actual order prices
+                    const totalOrderValue = ordersToTransfer.reduce((sum, order) => {
+                        return sum + (order.finalPrice ? Number(order.finalPrice) : 50);
+                    }, 0);
+
                     const shipmentData: SendcloudV3ShipmentInput = {
-                        // FROM: Use selected origin address or fallback to warehouse
-                        from_address: originAddress ? {
+                        // FROM: Use selected origin address
+                        from_address: {
                             name: originAddress.contact_name || originAddress.company_name,
                             company_name: originAddress.company_name,
                             email: originAddress.email,
@@ -272,15 +322,9 @@ export const storeTransferService = {
                             city: originAddress.city,
                             postal_code: originAddress.postal_code,
                             country_code: originAddress.country,
-                        } : {
-                            name: sourceWarehouse.name,
-                            address_line_1: sourceWarehouse.description || "Shop Address",
-                            city: "City",
-                            postal_code: "1000AA",
-                            country_code: "NL",
                         },
-                        // TO: Use selected delivery address or fallback to warehouse
-                        to_address: deliveryAddress ? {
+                        // TO: Use selected delivery address
+                        to_address: {
                             name: deliveryAddress.contact_name || deliveryAddress.company_name,
                             company_name: deliveryAddress.company_name,
                             email: deliveryAddress.email,
@@ -290,12 +334,6 @@ export const storeTransferService = {
                             city: deliveryAddress.city,
                             postal_code: deliveryAddress.postal_code,
                             country_code: deliveryAddress.country,
-                        } : {
-                            name: destWarehouse.name,
-                            address_line_1: destWarehouse.description || "Warehouse Address",
-                            city: "City",
-                            postal_code: "1000AA",
-                            country_code: "NL",
                         },
                         parcels: [{
                             weight: { value: totalWeight, unit: "kg" }, // V3 requires weight as object!
@@ -310,7 +348,7 @@ export const storeTransferService = {
                         request_label: false,
                         order_number: `TRF-${transferId}`,
                         external_reference: `store-transfer-${transferId}`,
-                        total_order_value: String(100 * ordersToTransfer.length),
+                        total_order_value: String(totalOrderValue),
                         total_order_value_currency: "EUR",
                     };
 
@@ -325,13 +363,17 @@ export const storeTransferService = {
                     }
                 } catch (error) {
                     console.error("[StoreTransferService] Sendcloud V3 label generation failed:", error);
-                    // Continue without label - will use mock
-                    trackingNumber = `MOCK-${Date.now()}`;
-                    labelUrl = "";
+                    // Don't use mock tracking - throw error to inform caller
+                    throw new BadRequestError(
+                        `Failed to generate shipping label: ${error instanceof Error ? error.message : "Unknown error"}. ` +
+                        `Please verify Sendcloud configuration and sender addresses.`
+                    );
                 }
             } else {
-                // Mock tracking if no Sendcloud config
-                trackingNumber = `MOCK-${Date.now()}`;
+                // No Sendcloud config - throw error instead of using mock
+                throw new BadRequestError(
+                    "Sendcloud is not configured for this shop. Please configure Sendcloud in Settings > Shipping before creating transfers."
+                );
             }
 
             // 4. Update transfer with tracking info

@@ -123,106 +123,106 @@ export function useColumns(): ColumnDef<ModelSeriesWithRelations>[] {
   const isShopManager = session?.user?.roleSlug === 'shop_manager';
 
   const columns: ColumnDef<ModelSeriesWithRelations>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value: boolean | "indeterminate") => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value: boolean | "indeterminate") => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-    size: 48,
-  },
-  {
-    id: "image",
-    header: "Image", 
-    cell: ({ row }) => {
-      const imageUrl = row.original?.image;
-      return (
-        <div className="relative h-24 w-24 rounded-md overflow-hidden border border-border">
-          {imageUrl ? (
-            <img 
-              src={imageUrl} 
-              alt={row.original?.title || 'Series image'}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="h-full w-full bg-muted flex items-center justify-center text-muted-foreground text-xs">No image</div>
-          )}
-        </div>
-      );
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value: boolean | "indeterminate") => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value: boolean | "indeterminate") => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      size: 48,
     },
-    size: 120,
-  },
-  {
-    accessorKey: "title", // Using 'title' as the field name to match our data model
-    header: ({ column }) => {
-      return (
+    {
+      id: "image",
+      header: "Image",
+      cell: ({ row }) => {
+        const imageUrl = row.original?.image;
+        return (
+          <div className="relative h-10 w-10 rounded-md overflow-hidden border border-border">
+            {imageUrl ? (
+              <img
+                src={imageUrl}
+                alt={row.original?.title || 'Series image'}
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              <div className="h-full w-full bg-muted flex items-center justify-center text-muted-foreground text-[10px]">No image</div>
+            )}
+          </div>
+        );
+      },
+      size: 60,
+    },
+    {
+      accessorKey: "title", // Using 'title' as the field name to match our data model
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Name
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
+      cell: ({ row }) => <div className="font-medium">{row.getValue("title")}</div>,
+    },
+    {
+      id: "brand_id",
+      header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Name
+          Brand
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      );
+      ),
+      accessorFn: (row: ModelSeriesWithRelations) => row.brand?.id,
+      cell: ({ row }) => <div className="font-medium">{row.original.brand?.title ?? 'N/A'}</div>,
     },
-    cell: ({ row }) => <div className="font-medium">{row.getValue("title")}</div>,
-  },
-  {
-    id: "brand_id",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Brand
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    accessorFn: (row: ModelSeriesWithRelations) => row.brand?.id,
-    cell: ({ row }) => <div className="font-medium">{row.original.brand?.title ?? 'N/A'}</div>,
-  },
-  // Only include Published In Shops column for non-shop managers
-  ...(!isShopManager ? [{
-    id: "published_shops",
-    header: "Published In Shops",
-    cell: ({ row }: { row: Row<ModelSeriesWithRelations> }) => {
-      const publishedShops = row.original.publishedInShops || [];
-      return (
-        <div className="flex items-center">
-          {publishedShops.length > 0 ? (
-            <div className="bg-green-50 text-green-700 rounded-full px-2 py-0.5 text-xs font-medium">
-              {publishedShops.length} shop{publishedShops.length !== 1 ? 's' : ''}
-            </div>
-          ) : (
-            <div className="text-muted-foreground text-xs">Not published</div>
-          )}
-        </div>
-      );
+    // Only include Published In Shops column for non-shop managers
+    ...(!isShopManager ? [{
+      id: "published_shops",
+      header: "Published In Shops",
+      cell: ({ row }: { row: Row<ModelSeriesWithRelations> }) => {
+        const publishedShops = row.original.publishedInShops || [];
+        return (
+          <div className="flex items-center">
+            {publishedShops.length > 0 ? (
+              <div className="bg-green-50 text-green-700 rounded-full px-2 py-0.5 text-xs font-medium">
+                {publishedShops.length} shop{publishedShops.length !== 1 ? 's' : ''}
+              </div>
+            ) : (
+              <div className="text-muted-foreground text-xs">Not published</div>
+            )}
+          </div>
+        );
+      },
+    }] : []),
+    {
+      id: "actions",
+      header: "Actions",
+      enableHiding: false,
+      cell: ({ row }) => <ModelSeriesActionsCell row={row} />,
     },
-  }] : []),
-  {
-    id: "actions",
-    header: "Actions",
-    enableHiding: false,
-    cell: ({ row }) => <ModelSeriesActionsCell row={row} />,
-  },
   ];
-  
+
   return columns;
 }
 

@@ -14,10 +14,10 @@ interface TopDevicesChartProps {
 
 export function TopDevicesChart({ shopId, dateRange, limit = 5 }: TopDevicesChartProps) {
   const { data, isLoading, error } = useShopTopDevices(shopId, limit, 'count', dateRange);
-  
+
   const chartData = useMemo(() => {
     if (!data?.topDevices) return [];
-    
+
     return data.topDevices.map(device => ({
       name: device.modelName,
       brand: device.brandName,
@@ -26,9 +26,9 @@ export function TopDevicesChart({ shopId, dateRange, limit = 5 }: TopDevicesChar
       id: device.deviceId,
     })).sort((a, b) => b.count - a.count);
   }, [data]);
-  
 
-  
+
+
   if (isLoading) {
     return (
       <Card className="h-[480px] w-full">
@@ -44,7 +44,7 @@ export function TopDevicesChart({ shopId, dateRange, limit = 5 }: TopDevicesChar
       </Card>
     );
   }
-  
+
   if (error || !data) {
     return (
       <Card className="h-[480px] w-full">
@@ -60,7 +60,7 @@ export function TopDevicesChart({ shopId, dateRange, limit = 5 }: TopDevicesChar
       </Card>
     );
   }
-  
+
   if (chartData.length === 0) {
     return (
       <Card className="h-[480px] w-full">
@@ -76,10 +76,10 @@ export function TopDevicesChart({ shopId, dateRange, limit = 5 }: TopDevicesChar
       </Card>
     );
   }
-  
+
   // Custom formatter for currency values
-  const formatCurrency = (value: number) => `$${value.toLocaleString()}`;
-  
+  const formatCurrency = (value: number) => `€${value.toLocaleString()}`;
+
   return (
     <Card className="h-[480px] w-full">
       <CardHeader className="pb-4">
@@ -92,22 +92,22 @@ export function TopDevicesChart({ shopId, dateRange, limit = 5 }: TopDevicesChar
             <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 30, top: 20, bottom: 20 }}>
               <CartesianGrid horizontal={true} vertical={false} strokeDasharray="3 3" />
               <XAxis type="number" />
-              <YAxis 
-                type="category" 
-                dataKey="name" 
+              <YAxis
+                type="category"
+                dataKey="name"
                 width={100}
                 tick={{ fontSize: 12 }}
-                tickFormatter={(value) => 
+                tickFormatter={(value) =>
                   value.length > 12 ? `${value.slice(0, 12)}...` : value
                 }
               />
-              <Bar 
-                dataKey="count" 
-                fill="hsl(var(--chart-3))" 
-                radius={[0, 4, 4, 0]} 
+              <Bar
+                dataKey="count"
+                fill="hsl(var(--chart-3))"
+                radius={[0, 4, 4, 0]}
                 name="Order Count"
               />
-              <Tooltip 
+              <Tooltip
                 formatter={(value, name) => [value, name]}
                 labelFormatter={(label) => `Device: ${label}`}
               />
@@ -115,7 +115,7 @@ export function TopDevicesChart({ shopId, dateRange, limit = 5 }: TopDevicesChar
             </BarChart>
           </ResponsiveContainer>
         </div>
-        
+
         {/* Additional value information display */}
         <div className="mt-3 space-y-2 flex-shrink-0 border-t pt-3">
           <div className="text-sm font-medium text-muted-foreground mb-2">Revenue Breakdown</div>

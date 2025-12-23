@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Globe, PenSquare } from 'lucide-react';
 
-import { DeviceQuestionSetForm, QuestionSetFormValues } from '@/components/admin/catalog/device-question-set-form';
+import { DeviceQuestionSetForm, QuestionSetSubmitValues } from '@/components/admin/catalog/device-question-set-form';
 import { useDeviceQuestionSet, useUpdateDeviceQuestionSet, useDeviceQuestionSetTranslations } from '@/hooks/catalog/useDeviceQuestionSets';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -55,14 +55,14 @@ export default function EditDeviceQuestionSetPage() {
     isError,
     error
   } = useDeviceQuestionSet(questionSetId);
-  
+
   // Fetch question set translations
   const {
     data: translationsData,
     isLoading: isLoadingTranslations,
     refetch: refetchTranslations
   } = useDeviceQuestionSetTranslations(questionSetId);
-  
+
   const { mutate: updateQuestionSet, isPending: isUpdating } = useUpdateDeviceQuestionSet(questionSetId);
 
   const questionSetData = apiResponse?.data;
@@ -101,7 +101,7 @@ export default function EditDeviceQuestionSetPage() {
   // Handle saving translations
   const handleSaveTranslations = async (updatedTranslations: QuestionSetTranslation[]) => {
     if (!questionSetId) return;
-    
+
     try {
       // Update each translation via the API
       for (const translation of updatedTranslations) {
@@ -213,9 +213,9 @@ export default function EditDeviceQuestionSetPage() {
     }
   };
 
-  const handleSubmit = (values: QuestionSetFormValues) => {
+  const handleSubmit = (values: QuestionSetSubmitValues) => {
     if (!questionSetId) return;
-    
+
     const formattedQuestions: QuestionForUpdatePayload[] = values.questions.map(q => ({
       id: q.id, // Preserve ID for existing questions
       title: q.title,
@@ -232,14 +232,14 @@ export default function EditDeviceQuestionSetPage() {
     }));
 
     const payload: UpdateQuestionSetPayload = {
-      displayName: values.displayName,
+      displayName: values.name, // Use 'name' from form, map to 'displayName' for API
       description: values.description,
       questions: formattedQuestions, // Include the questions in the payload
     };
 
     updateQuestionSet(payload, {
       onSuccess: (response) => {
-        toast.success(t('deviceQuestionSetUpdated', { name: response?.data?.displayName || values.displayName }));
+        toast.success(t('deviceQuestionSetUpdated', { name: response?.data?.displayName || values.name }));
         router.push('/admin/catalog/device-questions');
       },
       onError: (error: Error) => {
@@ -255,7 +255,7 @@ export default function EditDeviceQuestionSetPage() {
   // Access the actual translations from the API response and map to compatible format
   const questionSetTranslations = (() => {
     console.log('🔍 Building questionSetTranslations from:', { translationsData, defaultLanguage, questionSetData });
-    
+
     // The API returns a comprehensive structure, but we need to map it to the component's expected format
     const translationList = (translationsData?.data || []).map((translation: ComprehensiveTranslationResponse) => ({
       language_id: translation.languageId,
@@ -268,7 +268,7 @@ export default function EditDeviceQuestionSetPage() {
     console.log('🔍 Mapped translation list:', translationList);
 
     // Check if there's already a translation for the default language
-    const hasDefaultLanguageTranslation = defaultLanguage && 
+    const hasDefaultLanguageTranslation = defaultLanguage &&
       translationList.some(t => t.language_id === defaultLanguage.id);
 
     console.log('🔍 Has default language translation:', hasDefaultLanguageTranslation);
@@ -291,7 +291,7 @@ export default function EditDeviceQuestionSetPage() {
           })),
         })),
       };
-      
+
       console.log('🔍 Adding default translation:', defaultTranslation);
       // Add the default translation to the beginning of the list
       translationList.unshift(defaultTranslation);
@@ -309,7 +309,7 @@ export default function EditDeviceQuestionSetPage() {
           <p className="ml-3 text-lg text-gray-600">{tCore('loadingDetails')}</p>
         </div>
         <Skeleton className="h-12 w-1/3 mt-8" />
-        <Skeleton className="h-96 w-full mt-4" /> 
+        <Skeleton className="h-96 w-full mt-4" />
       </div>
     );
   }
@@ -354,22 +354,21 @@ export default function EditDeviceQuestionSetPage() {
             <Globe className="w-4 h-4 mr-2" /> Translations
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="edit">
-          <DeviceQuestionSetForm 
+          <DeviceQuestionSetForm
             initialData={{
-              internalName: questionSetData.internalName,
-              displayName: questionSetData.displayName,
+              name: questionSetData.displayName, // Use displayName as the form 'name'
               description: questionSetData.description ?? undefined,
               id: questionSetData.id.toString(),
               questions: questionSetData.questions,
             }}
-            onSubmit={handleSubmit} 
-            onCancel={handleCancel} 
-            isLoading={isUpdating} 
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            isLoading={isUpdating}
           />
         </TabsContent>
-        
+
         <TabsContent value="translations" className="space-y-4">
           {isLoadingTranslations || isLoadingLanguages ? (
             <div className="flex justify-center items-center p-8">
@@ -389,13 +388,13 @@ export default function EditDeviceQuestionSetPage() {
                   <div>
                     <h4 className="text-sm font-medium text-blue-900">AI Translation Available</h4>
                     <p className="text-sm text-blue-700 mt-1">
-                      Use the &ldquo;Generate with AI&rdquo; button to automatically translate content from {defaultLanguage.name} to other languages. 
+                      Use the &ldquo;Generate with AI&rdquo; button to automatically translate content from {defaultLanguage.name} to other languages.
                       The AI will maintain technical accuracy and optimize the content for each target language.
                     </p>
                   </div>
                 </div>
               </div>
-              
+
               <QuestionSetTranslationManager
                 questionSet={questionSetData}
                 defaultLanguage={defaultLanguage}

@@ -5,14 +5,13 @@ import { BadRequestError, ForbiddenError, NotFoundError } from "../utils/errors"
 
 const createTransferSchema = t.Object({
     orderIds: t.Array(t.String({ minLength: 1 }), { minItems: 1, error: "At least one order ID is required" }),
-    toWarehouseId: t.Number({ minimum: 1, error: "Destination warehouse is required" }),
     originAddressId: t.Optional(t.Number({ minimum: 1 })),
-    deliveryAddressId: t.Optional(t.Number({ minimum: 1 })),
 });
 
 const getCandidatesQuerySchema = t.Object({
     days: t.Optional(t.Numeric({ minimum: 1, maximum: 90 })), // default 7
     shopId: t.Optional(t.Numeric({ minimum: 1 })),
+    warehouseId: t.Optional(t.Numeric({ minimum: 1 })), // Filter by origin warehouse
 });
 
 export const storeTransferRoutes = new Elysia({ prefix: "/store-transfers" })

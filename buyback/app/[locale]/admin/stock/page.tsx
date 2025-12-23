@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { AdminHeader } from '@/components/admin/AdminHeader';
+
 import { DataTable } from '@/components/admin/catalog/data-table';
 import { ColumnFiltersState, PaginationState } from '@tanstack/react-table';
 import { stockColumns } from '@/components/admin/stock/stock-columns';
@@ -115,15 +115,9 @@ export default function StockPage() {
   ];
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <AdminHeader
-          title="Stock (Location)"
-          breadcrumbs={[
-            { href: '/admin/dashboards', label: 'Admin' },
-            { label: 'Stock', isCurrentPage: true },
-          ]}
-        />
+    <div className="space-y-6">
+      <div className="flex justify-end items-center">
+
         <Button
           onClick={() => {
             if (!stockData.length) return;

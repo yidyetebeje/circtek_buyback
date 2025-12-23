@@ -1,13 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { PlusCircle, Loader2 } from 'lucide-react';
-import { AdminHeader } from '@/components/admin/AdminHeader';
+import { Loader2 } from 'lucide-react';
 
 import { DataTable } from '@/components/admin/catalog/data-table';
 import { useColumns } from '@/components/admin/catalog/model-series-columns';
-import { Button } from '@/components/ui/button';
 import { useModelSeries } from '@/hooks/catalog/useModelSeries';
 import { ColumnFiltersState, PaginationState } from '@tanstack/react-table';
 import { QueryParams } from '@/lib/api/types';
@@ -15,7 +12,7 @@ import { QueryParams } from '@/lib/api/types';
 export default function ModelSeriesPage() {
   // Get the columns for the DataTable
   const seriesColumns = useColumns();
-  
+
   // State for manual pagination and filtering
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -41,7 +38,7 @@ export default function ModelSeriesPage() {
       clearTimeout(timerId);
     };
   }, [searchTerm]);
-  
+
   // Update columnFilters when searchTerm changes. This keeps the table's internal state in sync.
   useEffect(() => {
     setColumnFilters([{ id: 'title', value: searchTerm }]);
@@ -61,15 +58,8 @@ export default function ModelSeriesPage() {
 
   if (isLoading && pagination.pageIndex === 0 && !debouncedSearchTerm) {
     return (
-      <div className="p-4 md:p-6 space-y-6">
-        <AdminHeader 
-          title="Device Model Series" 
-          breadcrumbs={[
-            { href: '/admin/dashboards', label: 'Admin' },
-            { href: '/admin/catalog', label: 'Catalog' },
-            { label: 'Model Series', isCurrentPage: true }
-          ]}
-        />
+      <div className="space-y-6">
+
         <div className="flex justify-center items-center py-10">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
@@ -87,28 +77,10 @@ export default function ModelSeriesPage() {
   const series = seriesResponse?.data ?? [];
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <AdminHeader 
-        title="Device Model Series" 
-        breadcrumbs={[
-          { href: '/admin/dashboards', label: 'Admin' },
-          { href: '/admin/catalog', label: 'Catalog' },
-          { label: 'Model Series', isCurrentPage: true }
-        ]}
-      />
-      <div className="flex justify-between items-center">
-        <div className="flex-1">
-          {/* The DataTable component's internal toolbar will handle search */}
-        </div>
-        <Button asChild>
-          <Link href="/admin/catalog/model-series/new">
-            <PlusCircle className="mr-2 h-4 w-4" /> <span className="font-semibold text-white">Create New Series</span>
-          </Link>
-        </Button>
-      </div>
-      <DataTable 
-        columns={seriesColumns} 
-        data={series.filter(item => item.id !== undefined)} 
+    <div className="space-y-6">
+      <DataTable
+        columns={seriesColumns}
+        data={series.filter(item => item.id !== undefined)}
         searchKey="title"
         searchPlaceholder="Search by series title..."
         entityType="model-series"

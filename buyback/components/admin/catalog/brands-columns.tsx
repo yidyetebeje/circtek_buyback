@@ -124,7 +124,7 @@ export function useColumns(): ColumnDef<Brand>[] {
   // Get current user session to check role
   const { data: session } = useSession();
   const isShopManager = session?.user?.roleSlug === 'shop_manager';
-  
+
   // Define the base columns that are always included
   const baseColumns: ColumnDef<Brand>[] = [
     {
@@ -152,24 +152,24 @@ export function useColumns(): ColumnDef<Brand>[] {
     },
     {
       id: "logo",
-      header: "Logo", 
+      header: "Logo",
       cell: ({ row }) => {
         const logoUrl = row.original?.icon;
         return (
-          <div className="relative h-24 w-24 rounded-md overflow-hidden border border-border">
+          <div className="relative h-10 w-10 rounded-md overflow-hidden border border-border">
             {logoUrl ? (
-              <img 
-                src={logoUrl} 
+              <img
+                src={logoUrl}
                 alt={row.original?.title || 'Brand logo'}
                 className="h-full w-full object-contain"
               />
             ) : (
-              <div className="h-full w-full bg-muted flex items-center justify-center text-muted-foreground text-xs">No logo</div>
+              <div className="h-full w-full bg-muted flex items-center justify-center text-muted-foreground text-[10px]">No logo</div>
             )}
           </div>
         );
       },
-      size: 120,
+      size: 60,
     },
     {
       accessorKey: "title",
@@ -193,7 +193,7 @@ export function useColumns(): ColumnDef<Brand>[] {
       cell: ({ row }) => <BrandActionsCell row={row} />,
     },
   ];
-  
+
   // If user is not a shop manager, include the Published In Shops column
   if (!isShopManager) {
     // Insert the Published In Shops column before the actions column
@@ -216,7 +216,7 @@ export function useColumns(): ColumnDef<Brand>[] {
       },
     });
   }
-  
+
   return baseColumns;
 }
 

@@ -189,192 +189,254 @@ export function OrderCreation({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Create Purchase Order</h2>
-        <p className="text-gray-600">
+        <h2 className="text-xl font-semibold text-foreground mb-2">Create Purchase Order</h2>
+        <p className="text-muted-foreground">
           Enter customer details to complete the device purchase and create the order.
         </p>
       </div>
 
-      {/* Order Summary */}
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Order Summary</h3>
+      {/* Order Summary - Clean Flat Card */}
+      <div className="bg-card border border-border rounded-xl p-6 md:p-8 mb-8">
+        <h3 className="font-bold text-lg text-foreground mb-6 pb-4 border-b border-border">Order Summary</h3>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-8">
           {/* Device Info */}
           <div>
-            <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <FileText className="w-4 h-4" />
+            <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-muted-foreground" />
               Device Information
             </h4>
-            <div className="space-y-1 text-sm text-gray-600">
-              <div><span className="font-medium">Product:</span> {product.title}</div>
-              <div><span className="font-medium">Serial:</span> {testedDevice.serial}</div>
-              <div><span className="font-medium">IMEI:</span> {testedDevice.imei}</div>
-              <div><span className="font-medium">Final Price:</span> <span className="text-green-600 font-bold">€{finalPrice}</span></div>
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm py-1 border-b border-border/50 border-dashed">
+                <span className="text-muted-foreground">Product</span>
+                <span className="font-medium text-foreground">{product.title}</span>
+              </div>
+              <div className="flex justify-between text-sm py-1 border-b border-border/50 border-dashed">
+                <span className="text-muted-foreground">Serial</span>
+                <span className="font-mono text-foreground">{testedDevice.serial}</span>
+              </div>
+              <div className="flex justify-between text-sm py-1 border-b border-border/50 border-dashed">
+                <span className="text-muted-foreground">IMEI</span>
+                <span className="font-mono text-foreground">{testedDevice.imei}</span>
+              </div>
+              <div className="flex justify-between text-sm pt-2">
+                <span className="font-medium text-foreground">Final Price</span>
+                <span className="text-lg font-bold text-green-600">€{finalPrice.toFixed(2)}</span>
+              </div>
             </div>
           </div>
 
           {/* Test Results */}
           <div>
-            <h4 className="font-medium text-gray-700 mb-2">Test Results</h4>
-            <div className="space-y-1 text-sm text-gray-600">
-              <div><span className="font-medium">Tested:</span> {new Date(testedDevice.testedAt).toLocaleDateString()}</div>
-              <div><span className="font-medium">Warehouse:</span> {testedDevice.warehouseName || 'N/A'}</div>
+            <h4 className="font-semibold text-foreground mb-3">Test Status</h4>
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm py-1 border-b border-border/50 border-dashed">
+                <span className="text-muted-foreground">Tested Date</span>
+                <span className="text-foreground">{new Date(testedDevice.testedAt).toLocaleDateString()}</span>
+              </div>
+              <div className="flex justify-between text-sm py-1 border-b border-border/50 border-dashed">
+                <span className="text-muted-foreground">Warehouse</span>
+                <span className="text-foreground">{testedDevice.warehouseName || 'N/A'}</span>
+              </div>
               {testedDevice.testInfo?.failedResult ? (
-                <div><span className="font-medium text-red-600">Failed Tests:</span> {testedDevice.testInfo.failedResult}</div>
+                <div className="mt-2 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm border border-red-100 dark:border-red-900/50">
+                  <span className="font-semibold block mb-1">Failed Tests:</span>
+                  {testedDevice.testInfo.failedResult}
+                </div>
               ) : (
-                <div className="text-green-600 font-medium">All tests passed</div>
+                <div className="mt-2 bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400 p-3 rounded-lg text-sm font-medium border border-green-100 dark:border-green-900/50 text-center">
+                  All tests passed successfully
+                </div>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Customer Information Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <User className="w-5 h-5" />
-            Customer Information
-          </h3>
+      {/* Customer Information Form - Clean Sections */}
+      <form onSubmit={handleSubmit} className="space-y-10">
 
-          <div className="grid md:grid-cols-2 gap-4">
+        {/* Customer Info Section */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3 pb-2 border-b border-border">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <User className="w-5 h-5" />
+            </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                First Name *
+              <h3 className="text-lg font-semibold text-foreground">Customer Information</h3>
+              <p className="text-sm text-muted-foreground">Contact details for the seller</p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                First Name <span className="text-red-500">*</span>
               </label>
               <Input
                 type="text"
                 value={formData.firstName}
                 onChange={(e) => handleInputChange('firstName', e.target.value)}
                 required
+                className="h-11"
+                placeholder="John"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Last Name *
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Last Name <span className="text-red-500">*</span>
               </label>
               <Input
                 type="text"
                 value={formData.lastName}
                 onChange={(e) => handleInputChange('lastName', e.target.value)}
                 required
+                className="h-11"
+                placeholder="Doe"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email *
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Email <span className="text-red-500">*</span>
               </label>
               <Input
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 required
+                className="h-11"
+                placeholder="john.doe@example.com"
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone *
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Phone <span className="text-red-500">*</span>
               </label>
               <Input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 required
+                className="h-11"
+                placeholder="+31 6 12345678"
               />
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <MapPin className="w-5 h-5" />
-            Address Information
-          </h3>
-
-          <div className="space-y-4">
+        {/* Address Section */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3 pb-2 border-b border-border">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <MapPin className="w-5 h-5" />
+            </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Street Address *
+              <h3 className="text-lg font-semibold text-foreground">Address Information</h3>
+              <p className="text-sm text-muted-foreground">Shipping/Billing address (optional for in-store pickup)</p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Street Address <span className="text-red-500">*</span>
               </label>
               <Input
                 type="text"
                 value={formData.street}
                 onChange={(e) => handleInputChange('street', e.target.value)}
                 required
+                className="h-11"
+                placeholder="Main St 123"
               />
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  City *
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  City <span className="text-red-500">*</span>
                 </label>
                 <Input
                   type="text"
                   value={formData.city}
                   onChange={(e) => handleInputChange('city', e.target.value)}
                   required
+                  className="h-11"
+                  placeholder="Amsterdam"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Postal Code *
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Postal Code <span className="text-red-500">*</span>
                 </label>
                 <Input
                   type="text"
                   value={formData.postalCode}
                   onChange={(e) => handleInputChange('postalCode', e.target.value)}
                   required
+                  className="h-11"
+                  placeholder="1000 AA"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                   Country
                 </label>
                 <Input
                   type="text"
                   value={formData.country}
                   onChange={(e) => handleInputChange('country', e.target.value)}
+                  className="h-11"
+                  disabled
                 />
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Inventory Details</h3>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              SKU *
-            </label>
-            <Input
-              type="text"
-              value={formData.sku}
-              onChange={(e) => handleInputChange('sku', e.target.value)}
-              placeholder="Enter device SKU"
-              required
-            />
+        {/* Inventory Section */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3 pb-2 border-b border-border">
+            <h3 className="text-lg font-semibold text-foreground">Inventory Details</h3>
           </div>
-        </div>
+          <div className="grid md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                SKU <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="text"
+                value={formData.sku}
+                onChange={(e) => handleInputChange('sku', e.target.value)}
+                placeholder="Enter device SKU"
+                required
+                className="h-11 font-mono"
+              />
+            </div>
+          </div>
+        </section>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Additional Notes</h3>
+        {/* Notes Section */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3 pb-2 border-b border-border">
+            <h3 className="text-lg font-semibold text-foreground">Additional Notes</h3>
+          </div>
           <Textarea
             value={formData.notes}
             onChange={(e) => handleInputChange('notes', e.target.value)}
             placeholder="Any additional notes about this purchase..."
-            rows={3}
+            rows={4}
+            className="resize-none"
           />
-        </div>
+        </section>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+        <div className="flex items-center justify-between pt-6 border-t border-border">
           <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Price Confirmation

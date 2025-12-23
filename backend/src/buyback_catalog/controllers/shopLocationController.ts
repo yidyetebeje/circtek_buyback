@@ -1,8 +1,8 @@
 import { type Context } from 'elysia';
 import { shopLocationRepository } from '../repositories/shopLocationRepository';
-import { 
+import {
   TShopLocationCreateValidated,
-  TShopLocationUpdateValidated 
+  TShopLocationUpdateValidated
 } from '../types/shopTypes';
 import { JwtUser } from '../types/authTypes';
 
@@ -62,7 +62,7 @@ export class ShopLocationController {
   async getById(id: number, ctx: AuthenticatedContext) {
     try {
       const location = await shopLocationRepository.findById(id);
-      
+
       if (!location) {
         ctx.set.status = 404;
         return {
@@ -81,6 +81,35 @@ export class ShopLocationController {
       return {
         success: false,
         error: 'Failed to fetch shop location'
+      };
+    }
+  }
+
+  /**
+   * Get location by warehouse ID
+   */
+  async getByWarehouseId(warehouseId: number, ctx: AuthenticatedContext) {
+    try {
+      const location = await shopLocationRepository.findByWarehouseId(warehouseId);
+
+      if (!location) {
+        ctx.set.status = 404;
+        return {
+          success: false,
+          error: 'Location not found for this warehouse'
+        };
+      }
+
+      return {
+        success: true,
+        data: location
+      };
+    } catch (error) {
+      console.error('Error fetching location by warehouse ID:', error);
+      ctx.set.status = 500;
+      return {
+        success: false,
+        error: 'Failed to fetch location'
       };
     }
   }
@@ -143,7 +172,7 @@ export class ShopLocationController {
       // Ensure user has permission to create locations for this shop
 
       const location = await shopLocationRepository.create(data);
-      
+
       if (!location) {
         ctx.set.status = 500;
         return {
@@ -180,7 +209,7 @@ export class ShopLocationController {
       // Ensure user has permission to update locations for this shop
 
       const location = await shopLocationRepository.update(id, data);
-      
+
       if (!location) {
         ctx.set.status = 404;
         return {
@@ -212,7 +241,7 @@ export class ShopLocationController {
       // Ensure user has permission to delete locations for this shop
 
       const success = await shopLocationRepository.delete(id);
-      
+
       if (!success) {
         ctx.set.status = 404;
         return {
@@ -244,7 +273,7 @@ export class ShopLocationController {
       // TODO: Add authorization check here
 
       const location = await shopLocationRepository.toggleActive(id);
-      
+
       if (!location) {
         ctx.set.status = 404;
         return {

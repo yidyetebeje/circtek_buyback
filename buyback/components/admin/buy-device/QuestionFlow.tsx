@@ -39,23 +39,23 @@ interface ExtendedTranslation extends ItemTranslation {
 
 // Helper function to get translated content from catalog item translations
 const getTranslatedTitle = (
-  originalTitle: string, 
-  translations: ItemTranslation[] | undefined, 
+  originalTitle: string,
+  translations: ItemTranslation[] | undefined,
   locale: string
 ): string => {
   if (!translations || translations.length === 0) {
     return originalTitle;
   }
-  
+
   if (locale === 'en') {
     return originalTitle;
   }
-  
+
   const translation = translations.find((t) => {
     const extT = t as ExtendedTranslation;
     const tLanguageId = t.language_id || extT.languageId;
     return (
-      t.language?.code === locale || 
+      t.language?.code === locale ||
       tLanguageId === parseInt(locale) ||
       t.language?.id === parseInt(locale)
     );
@@ -109,7 +109,7 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
     }
 
     console.log('Processing questions for product:', product);
-    
+
     if (!product?.questionSetAssignments) {
       console.log('No questionSetAssignments found');
       return [];
@@ -126,9 +126,9 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
         }
         return acc;
       }, [] as CatalogQuestion[]);
-    
+
     console.log('All questions collected:', allQuestions.length);
-    
+
     return allQuestions.map((q: CatalogQuestion) => {
       console.log('Processing question:', {
         id: q.id,
@@ -137,10 +137,10 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
         translationsCount: q.translations?.length || 0,
         translations: q.translations
       });
-      
+
       const translatedTitle = getTranslatedTitle(q.title, q.translations, locale);
       console.log('Translated title:', translatedTitle);
-      
+
       return {
         id: q.key || q.id.toString(),
         text: translatedTitle as string,
@@ -153,10 +153,10 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
             translationsCount: opt.translations?.length || 0,
             translations: opt.translations
           });
-          
+
           const translatedOptionTitle = getTranslatedTitle(opt.title, opt.translations, locale);
           console.log('Translated option title:', translatedOptionTitle);
-          
+
           return {
             label: translatedOptionTitle as string,
             value: opt.key || opt.id.toString(),
@@ -175,7 +175,7 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
   const handleAnswer = (questionId: string, selectedOptionValue: string) => {
     const newAnswers = { ...answers, [questionId]: selectedOptionValue };
     setAnswers(newAnswers);
-    
+
     // Auto-advance to next question after answering
     if (currentQuestionIndex < processedQuestions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -187,7 +187,7 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
 
   const calculateEstimatedPrice = (finalAnswers: Record<string, string>) => {
     if (!product) return;
-    
+
     let totalModifier = 0;
     if (product.questionSetAssignments) {
       for (const qId in finalAnswers) {
@@ -206,7 +206,7 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
     }
     const estimatedPrice = (product.base_price || 0) + totalModifier;
     console.log(`Price calculation - Base: ${product.base_price}, Modifier: ${totalModifier}, Final: ${estimatedPrice}`);
-    
+
     onCompleted(finalAnswers, estimatedPrice, product);
   };
 
@@ -228,16 +228,16 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Product Questions</h2>
-            <p className="text-gray-600">Fetching product details and questions...</p>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Loading Product Questions</h2>
+            <p className="text-muted-foreground">Fetching product details and questions...</p>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <span className="ml-3 text-gray-600">Loading questions...</span>
+          <span className="ml-3 text-muted-foreground">Loading questions...</span>
         </div>
-        
+
         <div className="flex items-center justify-between pt-6 border-t border-gray-200">
           <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -254,16 +254,16 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Product</h2>
-            <p className="text-gray-600">Failed to load product details and questions.</p>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Error Loading Product</h2>
+            <p className="text-muted-foreground">Failed to load product details and questions.</p>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-center py-12">
           <AlertCircle className="w-8 h-8 text-red-600" />
           <span className="ml-3 text-red-600">Failed to load product information. Please try again.</span>
         </div>
-        
+
         <div className="flex items-center justify-between pt-6 border-t border-gray-200">
           <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -280,11 +280,11 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Product Not Found</h2>
-            <p className="text-gray-600">Could not find product information.</p>
+            <h2 className="text-xl font-semibold text-foreground mb-2">Product Not Found</h2>
+            <p className="text-muted-foreground">Could not find product information.</p>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between pt-6 border-t border-gray-200">
           <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -299,29 +299,29 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
   if (processedQuestions.length === 0) {
     const basePrice = product.base_price || 0;
     console.log('No questions for this product. Using base price:', basePrice);
-    
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No Questions Required</h2>
-            <p className="text-gray-600">
+            <h2 className="text-xl font-semibold text-foreground mb-2">No Questions Required</h2>
+            <p className="text-muted-foreground">
               This product doesn&apos;t require condition assessment questions.
             </p>
           </div>
         </div>
 
         {/* Product Info */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="font-medium text-gray-900 mb-2">Selected Product</h3>
-          <p className="text-gray-700">{product.title}</p>
+        <div className="bg-muted/40 rounded-lg p-4">
+          <h3 className="font-medium text-foreground mb-2">Selected Product</h3>
+          <p className="text-foreground/90">{product.title}</p>
           {product.base_price && (
-            <p className="text-sm text-gray-600 mt-1">Base Price: €{product.base_price}</p>
+            <p className="text-sm text-muted-foreground mt-1">Base Price: €{product.base_price}</p>
           )}
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-blue-800">
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+          <p className="text-blue-600">
             Since no questions are configured for this product, the estimated price will be the base price: €{basePrice}
           </p>
         </div>
@@ -332,7 +332,7 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
             <ArrowLeft className="w-4 h-4" />
             Back to Product Selection
           </Button>
-          
+
           <Button onClick={() => onCompleted({}, basePrice, product)} className="px-6">
             Continue with Base Price
           </Button>
@@ -347,9 +347,9 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { 
+    visible: {
       opacity: 1,
-      transition: { 
+      transition: {
         staggerChildren: 0.15,
         delayChildren: 0.1
       }
@@ -358,10 +358,10 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
 
   const itemVariants = {
     hidden: { opacity: 0, y: 10 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
-      transition: { 
+      transition: {
         type: "spring",
         stiffness: 300,
         damping: 24
@@ -373,30 +373,30 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Answer Questions</h2>
-          <p className="text-gray-600">
+          <h2 className="text-xl font-semibold text-foreground mb-2">Answer Questions</h2>
+          <p className="text-muted-foreground">
             Answer questions about the device condition to determine the price.
           </p>
         </div>
       </div>
 
       {/* Product Info */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="font-medium text-gray-900 mb-2">Selected Product</h3>
-        <p className="text-gray-700">{product.title}</p>
+      <div className="bg-muted/40 rounded-lg p-4">
+        <h3 className="font-medium text-foreground mb-2">Selected Product</h3>
+        <p className="text-foreground/90">{product.title}</p>
         {product.base_price && (
-          <p className="text-sm text-gray-600 mt-1">Base Price: €{product.base_price}</p>
+          <p className="text-sm text-muted-foreground mt-1">Base Price: €{product.base_price}</p>
         )}
       </div>
 
       {/* Progress Bar */}
       <div className="space-y-2">
-        <div className="flex justify-between text-sm text-gray-600">
+        <div className="flex justify-between text-sm text-muted-foreground">
           <span>Question {currentQuestionIndex + 1} of {processedQuestions.length}</span>
           <span>{Math.round(progress)}% Complete</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <motion.div 
+        <div className="w-full bg-secondary rounded-full h-2">
+          <motion.div
             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
             initial={{ width: "0%" }}
             animate={{ width: `${progress}%` }}
@@ -405,58 +405,55 @@ export function QuestionFlow({ productSefUrl, shopId, onCompleted, onBack, local
         </div>
       </div>
 
-      {/* Question Container - Similar to MinimalEstimationVariant */}
-      <motion.div 
-        className="bg-white rounded-lg shadow-lg border border-gray-200 p-6"
+      {/* Question Container - Clean Flat Design */}
+      <motion.div
+        className="bg-card rounded-xl border border-border p-6 md:p-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         style={{ minHeight: '400px' }}
       >
         {/* Question Text */}
-        <div className="min-h-[80px] flex items-center justify-center w-full mb-6">
-          <motion.h3 
-            className="text-xl md:text-2xl font-medium text-center text-gray-900"
+        <div className="min-h-[80px] flex items-center justify-center w-full mb-8">
+          <motion.h3
+            className="text-2xl md:text-3xl font-medium text-center text-foreground leading-tight"
             variants={itemVariants}
           >
             {currentQuestionIndex + 1}. {currentQuestion.text as string}
           </motion.h3>
         </div>
-        
+
         {/* Options */}
         {currentQuestion?.type === 'multiple-choice' && currentQuestion.options && (
-          <motion.div 
-            className="flex flex-wrap justify-center w-full min-h-[120px] mx-auto gap-3"
+          <motion.div
+            className="flex flex-wrap justify-center w-full min-h-[120px] mx-auto gap-4"
             variants={containerVariants}
           >
             {currentQuestion.options.map((option) => {
               const isSelected = answers[currentQuestion.id] === option.value;
-              
+
               return (
-                                 <motion.button
-                   key={option.value}
-                   onClick={() => handleAnswer(currentQuestion.id, option.value)}
-                   className="min-w-[120px] py-3 px-6 border bg-white rounded-md font-medium text-center relative overflow-hidden transition-all duration-200"
-                   style={{
-                     color: isSelected ? 'white' : '#374151',
-                     backgroundColor: isSelected ? '#3b82f6' : 'white',
-                     borderColor: isSelected ? '#3b82f6' : '#e5e7eb',
-                   }}
-                   whileHover={{ 
-                     boxShadow: '0 0 0 2px #3b82f6',
-                     borderColor: '#3b82f6',
-                     scale: 1.02
-                   }}
-                   whileTap={{ scale: 0.98 }}
-                   variants={itemVariants}
-                 >
-                   {option.label as string}
-                 </motion.button>
+                <motion.button
+                  key={option.value}
+                  onClick={() => handleAnswer(currentQuestion.id, option.value)}
+                  className={`min-w-[140px] py-4 px-8 border-2 rounded-xl font-medium text-lg text-center relative overflow-hidden transition-all duration-200 ${isSelected
+                    ? 'bg-primary border-primary text-primary-foreground shadow-none'
+                    : 'bg-card border-border text-foreground hover:border-primary/50 hover:bg-muted/30'
+                    }`}
+                  whileHover={{
+                    scale: 1.02,
+                    borderColor: isSelected ? undefined : 'currentColor'
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  variants={itemVariants}
+                >
+                  {option.label as string}
+                </motion.button>
               );
             })}
           </motion.div>
         )}
-        
+
         {/* Navigation Buttons */}
         <motion.div
           className="flex justify-between mt-8 w-full"

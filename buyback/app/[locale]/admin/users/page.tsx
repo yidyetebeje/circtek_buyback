@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-import { AdminHeader } from "@/components/admin/AdminHeader";
+
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/admin/catalog/data-table";
 import { useUsers } from "@/hooks/admin/useUsers";
 import { User } from "@/types/user";
-import { PlusCircle, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { ColumnDef } from "@tanstack/react-table";
 
 const UsersPage = () => {
@@ -98,18 +98,11 @@ const UsersPage = () => {
   if (error) return <div>Failed to load users. Error: {error.message}</div>;
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <AdminHeader title="Shop Managers" />
-        <Button onClick={() => router.push(`${pathname}/new?role=shop_manager`)}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Create Shop Manager
-        </Button>
-      </div>
+    <div className="space-y-6">
       {/* TODO: Add Search Input and connect it to searchQuery state and URL param */}
       {isLoading && <p className="text-center my-4">Loading users...</p>}
       <div className="flex flex-col gap-4">
-        <h2 className="text-2xl font-semibold tracking-tight">Shop Managers</h2>
-        <p className="text-muted-foreground">Manage shop managers and their shop access permissions</p>
+
         <DataTable<User, unknown>
           columns={columns}
           data={data}

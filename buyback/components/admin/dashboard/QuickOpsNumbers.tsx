@@ -8,9 +8,10 @@ import * as React from "react";
 
 interface QuickOpsNumbersProps {
   shopId: number;
+  className?: string;
 }
 
-export function QuickOpsNumbers({ shopId }: QuickOpsNumbersProps) {
+export function QuickOpsNumbers({ shopId, className }: QuickOpsNumbersProps) {
   const { data, isLoading, error } = useShopCatalogOverview(shopId);
 
   const statsItems = [
@@ -40,9 +41,9 @@ export function QuickOpsNumbers({ shopId }: QuickOpsNumbersProps) {
     },
   ];
 
-  const StatCard = ({ label, value, icon: Icon, iconColor, borderColor, description }: { 
-    label: string; 
-    value: number; 
+  const StatCard = ({ label, value, icon: Icon, iconColor, borderColor, description }: {
+    label: string;
+    value: number;
     icon: React.ElementType;
     iconColor: string;
     borderColor: string;
@@ -71,7 +72,7 @@ export function QuickOpsNumbers({ shopId }: QuickOpsNumbersProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${className || ''}`}>
         {Array.from({ length: 3 }).map((_, i) => (
           <Card key={i} className="border-2">
             <CardContent className="p-5">
@@ -101,12 +102,12 @@ export function QuickOpsNumbers({ shopId }: QuickOpsNumbersProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${className || ''}`}>
       {statsItems.map((item, index) => (
-        <StatCard 
+        <StatCard
           key={index}
-          label={item.label} 
-          value={item.value} 
+          label={item.label}
+          value={item.value}
           icon={item.icon}
           iconColor={item.iconColor}
           borderColor={item.borderColor}

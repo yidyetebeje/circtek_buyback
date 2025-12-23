@@ -756,6 +756,10 @@ export const sendcloud_config = mysqlTable('sendcloud_config', {
   default_shipping_option_code: varchar('default_shipping_option_code', { length: 255 }), // v3 shipping option code
   use_test_mode: boolean('use_test_mode').default(false), // Use mock server for testing
   is_active: boolean('is_active').default(true),
+  // HQ warehouse configuration for store transfers
+  hq_warehouse_id: bigint('hq_warehouse_id', { mode: 'number', unsigned: true })
+    .references(() => warehouses.id), // Default destination warehouse for store transfers
+  hq_delivery_address_id: int('hq_delivery_address_id'), // Sendcloud sender address ID for HQ delivery
   created_at: timestamp('created_at').default(sql`CURRENT_TIMESTAMP`),
 
   updated_at: timestamp('updated_at').default(sql`CURRENT_TIMESTAMP`),
@@ -788,7 +792,7 @@ export const tremendous_config = mysqlTable('tremendous_config', {
 ]);
 
 // Tremendous reward status enum
-export const tremendous_reward_status = mysqlEnum('tremendous_reward_status', [
+export const tremendous_reward_status = mysqlEnum('status', [
   'pending', 'sent', 'delivered', 'failed', 'cancelled'
 ]);
 

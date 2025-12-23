@@ -1,6 +1,6 @@
 import { shippingRepository, ShippingRepository } from './repository'
 import { createSendcloudClient, SendcloudClient } from './sendcloud/client'
-import type { SendcloudV3ShipmentInput, SendcloudV3Item, SendcloudV3Document } from './sendcloud/types'
+import type { SendcloudV3ShipmentInput, SendcloudV3Item, SendcloudV3Document, SendcloudSenderAddress } from './sendcloud/types'
 import type {
     ShipmentCreateInput,
     ShipmentUpdateInput,
@@ -259,8 +259,25 @@ export class ShippingController {
 
             const client = await this.getSendcloudClient(shop_id, tenant_id)
 
+            // Fetch sender address from Sendcloud for the 'from' address
+            let senderAddress: SendcloudSenderAddress | null = null
+            if (config.default_sender_address_id) {
+                senderAddress = await client.getSenderAddressById(config.default_sender_address_id)
+            }
+            if (!senderAddress) {
+                const addresses = await client.getSenderAddresses()
+                senderAddress = addresses[0] || null
+            }
+            if (!senderAddress) {
+                return {
+                    data: null,
+                    message: 'No sender address configured in Sendcloud. Please configure a sender address in your Sendcloud account.',
+                    status: 400,
+                }
+            }
+
             // Build shipment data and create
-            const shipmentData = this.buildShipment(shipment, config)
+            const shipmentData = this.buildShipment(shipment, config, senderAddress)
             const v3Response = await client.createShipment(shipmentData)
 
             // Get the first parcel from the response
@@ -349,17 +366,20 @@ export class ShippingController {
 
     /**
      * Build Sendcloud shipment input from shipment
+     * Uses actual sender address from Sendcloud configuration
      */
     private buildShipment(
         shipment: ShipmentWithDetails,
-        config: SendcloudConfigRecord
+        config: SendcloudConfigRecord,
+        senderAddress: SendcloudSenderAddress
     ): SendcloudV3ShipmentInput {
         // Convert items to Sendcloud V3 format
+        // Use actual unit values, with sensible fallback only if truly missing
         const items: SendcloudV3Item[] = shipment.items.map(item => ({
             description: item.description || item.model_name || 'Mobile Phone',
             quantity: item.quantity || 1,
             weight: item.weight_kg || '0.200',
-            value: item.unit_value || '100.00',
+            value: item.unit_value || String(parseFloat(shipment.total_value || '0') / (shipment.total_items || 1)),
             hs_code: item.hs_code || '851712',
             sku: item.sku || undefined,
         }))
@@ -367,14 +387,24 @@ export class ShippingController {
         // Parse weight as number for V3
         const weightValue = parseFloat(shipment.total_weight_kg || '0.5')
 
+        // Calculate total order value from shipment data
+        const totalValue = shipment.total_value || String(items.reduce((sum, item) => {
+            const itemValue = parseFloat(item.value) * (item.quantity || 1)
+            return sum + (isNaN(itemValue) ? 0 : itemValue)
+        }, 0))
+
         return {
-            // FROM: Source warehouse (where shipment originates)
+            // FROM: Source warehouse - use actual Sendcloud sender address
             from_address: {
-                name: 'Remarketed Warehouse', // TODO: Get from warehouse table
-                address_line_1: 'Warehouse Street 1',
-                city: 'Amsterdam',
-                postal_code: '1000AA',
-                country_code: 'NL',
+                name: senderAddress.contact_name || senderAddress.company_name,
+                company_name: senderAddress.company_name,
+                email: senderAddress.email,
+                phone_number: senderAddress.telephone,
+                address_line_1: senderAddress.street,
+                house_number: senderAddress.house_number,
+                city: senderAddress.city,
+                postal_code: senderAddress.postal_code,
+                country_code: senderAddress.country,
             },
             // TO: Destination (recipient or warehouse)
             to_address: {
@@ -401,7 +431,7 @@ export class ShippingController {
             request_label: true,
             order_number: shipment.shipment_number,
             external_reference: String(shipment.id),
-            total_order_value: shipment.total_value || '100.00',
+            total_order_value: totalValue,
             total_order_value_currency: 'EUR',
         }
     }
@@ -539,6 +569,9 @@ export class ShippingController {
                     default_shipping_option_code: config.default_shipping_option_code,
                     use_test_mode: config.use_test_mode,
                     is_active: config.is_active,
+                    // HQ warehouse configuration for store transfers
+                    hq_warehouse_id: config.hq_warehouse_id,
+                    hq_delivery_address_id: config.hq_delivery_address_id,
                     // Also include preview for display
                     public_key_preview: config.public_key.substring(0, 8) + '...',
                 },
@@ -549,6 +582,69 @@ export class ShippingController {
             return {
                 data: null,
                 message: 'Failed to retrieve Sendcloud configuration',
+                status: 500,
+                error: (error as Error).message,
+            }
+        }
+    }
+
+    /**
+     * Get HQ warehouse configuration for store transfers
+     * Returns the HQ warehouse and delivery address configured for this shop
+     */
+    async getHQConfig(shop_id: number, tenant_id: number): Promise<ControllerResponse> {
+        try {
+            const config = await this.repository.getSendcloudConfig(shop_id, tenant_id)
+
+            if (!config) {
+                return {
+                    data: {
+                        configured: false,
+                        shop_id,
+                        hq_warehouse_id: null,
+                        hq_delivery_address_id: null,
+                    },
+                    message: 'Sendcloud not configured for this shop',
+                    status: 200,
+                }
+            }
+
+            // If HQ is not configured, return appropriate response
+            if (!config.hq_warehouse_id && !config.hq_delivery_address_id) {
+                return {
+                    data: {
+                        configured: false,
+                        shop_id,
+                        hq_warehouse_id: null,
+                        hq_delivery_address_id: null,
+                    },
+                    message: 'HQ warehouse not configured. Stores will need to select destination manually.',
+                    status: 200,
+                }
+            }
+
+            // Get warehouse name if configured
+            let hq_warehouse_name: string | null = null
+            if (config.hq_warehouse_id) {
+                const warehouse = await this.repository.getWarehouseById(config.hq_warehouse_id, tenant_id)
+                hq_warehouse_name = warehouse?.name || null
+            }
+
+            return {
+                data: {
+                    configured: true,
+                    shop_id,
+                    hq_warehouse_id: config.hq_warehouse_id,
+                    hq_warehouse_name,
+                    hq_delivery_address_id: config.hq_delivery_address_id,
+                },
+                message: 'HQ configuration retrieved',
+                status: 200,
+            }
+        } catch (error) {
+            return {
+                data: null,
+                message: 'Failed to retrieve HQ configuration',
                 status: 500,
                 error: (error as Error).message,
             }

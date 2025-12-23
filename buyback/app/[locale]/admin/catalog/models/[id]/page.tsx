@@ -29,37 +29,37 @@ export default function ModelDetailPage() {
   const [languages, setLanguages] = useState<Language[]>([]);
   const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
   const [defaultLanguage, setDefaultLanguage] = useState<Language | null>(null);
-  
+
   // Fetch model data
-  const { 
-    data: modelResponse, 
-    isLoading: isLoadingModel, 
-    isError 
+  const {
+    data: modelResponse,
+    isLoading: isLoadingModel,
+    isError
   } = useModel(modelId);
   const [model, setModel] = useState<Model | null>(null);
   useEffect(() => {
-    if(modelResponse?.data) {
+    if (modelResponse?.data) {
       setModel(modelResponse.data);
     }
   }, [modelResponse]);
-  
+
   // Fetch translations
   const {
     data: translationsResponse,
     isLoading: isLoadingTranslations,
     refetch: refetchTranslations
   } = useModelTranslations(modelId);
-  
+
   // Fetch currently assigned question sets
   const {
     data: questionSetsResponse,
     isLoading: isLoadingQuestionSets
   } = useQuestionSetsForModel(modelId);
-  
+
   // Mutations for question set assignments
   const assignQuestionSet = useAssignQuestionSetToModel();
   const deleteAssignment = useDeleteAssignment();
-  
+
   // Fetch languages on component mount
   useEffect(() => {
     const fetchLanguages = async () => {
@@ -86,7 +86,7 @@ export default function ModelDetailPage() {
 
     fetchLanguages();
   }, []);
-  
+
   // Access the actual translations from the API response and map to compatible format
   const translations = (() => {
     const translationList = (translationsResponse?.data || []).map(translation => ({
@@ -97,12 +97,12 @@ export default function ModelDetailPage() {
       meta_title: translation.meta_title || '',
       meta_description: translation.meta_description || '',
       meta_keywords: translation.meta_keywords || '',
-      specifications: translation.specifications ? 
+      specifications: translation.specifications ?
         JSON.stringify(translation.specifications) : ''
     })) as TranslationWithSpecs[];
 
     // Check if there's already a translation for the default language
-    const hasDefaultLanguageTranslation = defaultLanguage && 
+    const hasDefaultLanguageTranslation = defaultLanguage &&
       translationList.some(t => t.language_id === defaultLanguage.id);
 
     // If no default language translation exists, use the main model data as fallback
@@ -117,19 +117,19 @@ export default function ModelDetailPage() {
         meta_keywords: model.meta_keywords || '',
         specifications: model.specifications ? JSON.stringify(model.specifications) : ''
       };
-      
+
       // Add the default translation to the beginning of the list
       translationList.unshift(defaultTranslation);
     }
 
     return translationList;
   })();
-  
+
   // Update and delete mutations
   const updateModel = useUpdateModel(modelId);
   const deleteModel = useDeleteModel();
   const { mutate: uploadImage, isPending: isUploading } = useUploadModelImage();
-  
+
   // Handle form submission for model update
   const handleSubmit = async (values: ModelFormValues) => {
     const seriesIdNumber = values.series_id ? parseInt(values.series_id, 10) : NaN;
@@ -150,7 +150,7 @@ export default function ModelDetailPage() {
         price_drop: parseFloat(pd.priceDrop) || 0
       })).filter(pd => pd.price_drop > 0)
     };
-    
+
     updateModel.mutate(updatedModelPayload, {
       onSuccess: async () => {
         let assignmentsDoneSuccessfully = true;
@@ -173,13 +173,13 @@ export default function ModelDetailPage() {
                 if (typeof qsId !== 'string' || !qsId.trim()) {
                   console.error(`Invalid questionSetId for removal: ${qsId}`);
                   assignmentsDoneSuccessfully = false;
-                  return; 
+                  return;
                 }
                 const numericQsId = parseInt(qsId, 10);
                 if (isNaN(numericQsId)) {
                   console.error(`Non-numeric questionSetId for removal: ${qsId}`);
                   assignmentsDoneSuccessfully = false;
-                  return; 
+                  return;
                 }
                 assignmentPromises.push(
                   deleteAssignment.mutateAsync({ modelId, questionSetId: numericQsId })
@@ -195,13 +195,13 @@ export default function ModelDetailPage() {
                 if (typeof qsId !== 'string' || !qsId.trim()) {
                   console.error(`Invalid questionSetId for addition: ${qsId}`);
                   assignmentsDoneSuccessfully = false;
-                  return; 
+                  return;
                 }
                 const numericQsId = parseInt(qsId, 10);
                 if (isNaN(numericQsId)) {
                   console.error(`Non-numeric questionSetId for addition: ${qsId}`);
                   assignmentsDoneSuccessfully = false;
-                  return; 
+                  return;
                 }
                 assignmentPromises.push(
                   assignQuestionSet.mutateAsync({ modelId, questionSetId: numericQsId, assignmentOrder: index })
@@ -212,25 +212,25 @@ export default function ModelDetailPage() {
                     })
                 );
               });
-              
+
               if (assignmentPromises.length > 0) {
-                  const results = await Promise.allSettled(assignmentPromises);
-                  // Ensure assignmentsDoneSuccessfully is false if any operation failed.
-                  // Individual .catch blocks already set this, but this is a safeguard.
-                  if (results.some(result => result.status === 'rejected')) {
-                      assignmentsDoneSuccessfully = false;
-                  }
+                const results = await Promise.allSettled(assignmentPromises);
+                // Ensure assignmentsDoneSuccessfully is false if any operation failed.
+                // Individual .catch blocks already set this, but this is a safeguard.
+                if (results.some(result => result.status === 'rejected')) {
+                  assignmentsDoneSuccessfully = false;
+                }
               }
 
             } catch (batchProcessingError) { // Catches errors from the setup of promises or other unexpected issues in this block
               console.error("Error during batch question set assignment processing:", batchProcessingError);
-              assignmentsDoneSuccessfully = false; 
+              assignmentsDoneSuccessfully = false;
               toast.error("An error occurred while processing question set changes.");
             } finally {
               setIsUpdatingAssignments(false);
             }
           }
-          
+
           if (imageFile) {
             try {
               await new Promise<void>((resolve, reject) => {
@@ -244,7 +244,7 @@ export default function ModelDetailPage() {
                     onError: (uploadError) => {
                       imageUploadedSuccessfully = false;
                       toast.error(`Model updated, but failed to upload new image: ${uploadError.message}`);
-                      reject(uploadError); 
+                      reject(uploadError);
                     },
                   }
                 );
@@ -260,17 +260,17 @@ export default function ModelDetailPage() {
             const warningMessages: string[] = [];
             if (!assignmentsDoneSuccessfully) warningMessages.push("some question set assignments failed");
             if (!imageUploadedSuccessfully && imageFile) warningMessages.push("image upload failed");
-            
+
             toast.warning(`Model details updated, but ${warningMessages.join(" and ")}.`);
           }
-          
-        } catch (outerError) { 
+
+        } catch (outerError) {
           console.error("Outer error in handleSubmit onSuccess:", outerError);
           toast.error(`An unexpected error occurred during update: ${(outerError as Error).message}`);
-          assignmentsDoneSuccessfully = false; 
-          imageUploadedSuccessfully = imageFile ? false : true; 
+          assignmentsDoneSuccessfully = false;
+          imageUploadedSuccessfully = imageFile ? false : true;
         } finally {
-          setIsUpdatingAssignments(false); 
+          setIsUpdatingAssignments(false);
           // Schedule navigation for the next tick to allow state updates to render
           setTimeout(() => {
             router.push('/admin/catalog/models');
@@ -280,11 +280,11 @@ export default function ModelDetailPage() {
       onError: (error) => {
         console.error("Error in handleSubmit onError:", error);
         toast.error(`Error updating model details: ${error.message}`);
-        setIsUpdatingAssignments(false); 
+        setIsUpdatingAssignments(false);
       }
     });
   };
-  
+
   // Handle model deletion
   const handleDelete = () => {
     setIsDeleting(true);
@@ -299,7 +299,7 @@ export default function ModelDetailPage() {
       }
     });
   };
-  
+
   // Handle translation saving
   const handleTranslationSave = async (updatedTranslations: TranslationWithSpecs[]) => {
     try {
@@ -335,25 +335,25 @@ export default function ModelDetailPage() {
       toast.error('An error occurred while saving translations.');
     }
   };
-  
+
   const isPageLoading = isLoadingModel || isLoadingLanguages || isUpdatingAssignments || isLoadingQuestionSets;
 
   if (isPageLoading) {
     return (
-      <div className="p-4 md:p-6 space-y-6 flex justify-center items-center py-10">
+      <div className="space-y-6 flex justify-center items-center py-10">
         <Loader2 className="h-8 w-8 animate-spin mr-2" />
         <span>Loading model details...</span>
       </div>
     );
   }
-  
+
   if (isError || !model) {
     return (
-      <div className="p-4 md:p-6 space-y-6">
+      <div className="space-y-6">
         <div className="p-6 bg-red-50 text-red-600 rounded-md flex flex-col">
           <p>Failed to load model. It might have been deleted or you don&apos;t have permission to view it.</p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => router.push('/admin/catalog/models')}
             className="mt-4 self-start"
           >
@@ -365,15 +365,15 @@ export default function ModelDetailPage() {
   }
 
   // Convert specifications to string if they exist
-  const specificationsString = model.specifications 
-    ? JSON.stringify(model.specifications, null, 2) 
+  const specificationsString = model.specifications
+    ? JSON.stringify(model.specifications, null, 2)
     : '';
-  
+
   // Get currently assigned question set IDs
-  const currentQuestionSetIds = (questionSetsResponse?.data || []).map(qs => 
+  const currentQuestionSetIds = (questionSetsResponse?.data || []).map(qs =>
     qs.id ? qs.id.toString() : ''
   ).filter(Boolean);
-  
+
   // Map model data to form values
   const initialValues: ModelFormValues = {
     id: modelId.toString(),
@@ -390,11 +390,11 @@ export default function ModelDetailPage() {
     seo_keywords: model.meta_keywords || '',
     questionSetIds: currentQuestionSetIds,
     priceDrops: model.testPriceDrops?.map(pd => ({
-        testName: pd.testName,
-        priceDrop: String(pd.priceDrop)
+      testName: pd.testName,
+      priceDrop: String(pd.priceDrop)
     }))
   };
-  
+
   // Delete button with confirmation dialog
   const deleteButton = (
     <AlertDialog>
@@ -411,7 +411,7 @@ export default function ModelDetailPage() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction 
+          <AlertDialogAction
             onClick={handleDelete}
             disabled={isDeleting}
             className="bg-red-600 hover:bg-red-700"
@@ -459,7 +459,7 @@ export default function ModelDetailPage() {
             Price Management
           </TabsTrigger>
         </TabsList>
-        
+
         {/* General Info Tab */}
         <TabsContent value="general" className="space-y-4">
           <div className=" p-6 rounded-md border">
@@ -472,7 +472,7 @@ export default function ModelDetailPage() {
             />
           </div>
         </TabsContent>
-        
+
         {/* Translations Tab */}
         <TabsContent value="translations" className="space-y-4">
           {isLoadingTranslations || isLoadingLanguages ? (
@@ -493,13 +493,13 @@ export default function ModelDetailPage() {
                   <div>
                     <h4 className="text-sm font-medium text-blue-900">AI Translation Available</h4>
                     <p className="text-sm text-blue-700 mt-1">
-                      Use the &ldquo;Generate with AI&rdquo; button to automatically translate content from {defaultLanguage.name} to other languages. 
+                      Use the &ldquo;Generate with AI&rdquo; button to automatically translate content from {defaultLanguage.name} to other languages.
                       The AI will maintain technical accuracy and SEO optimization while adapting the content for each target language.
                     </p>
                   </div>
                 </div>
               </div>
-              
+
               <TranslationManager
                 entityType="model"
                 entityId={modelId}
@@ -524,7 +524,7 @@ export default function ModelDetailPage() {
             </div>
           )}
         </TabsContent>
-        
+
         {/* Price Management Tab */}
         <TabsContent value="price" className="space-y-4">
           <ShopPriceManager

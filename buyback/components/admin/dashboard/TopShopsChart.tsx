@@ -14,10 +14,10 @@ interface TopShopsChartProps {
 
 export function TopShopsChart({ dateRange, limit = 5 }: TopShopsChartProps) {
   const { data, isLoading, error } = useTopShops(limit, 'orderCount', dateRange);
-  
+
   const chartData = useMemo(() => {
     if (!data?.topShops) return [];
-    
+
     return data.topShops.map(shop => ({
       name: shop.shopName,
       count: shop.orderCount,
@@ -25,7 +25,7 @@ export function TopShopsChart({ dateRange, limit = 5 }: TopShopsChartProps) {
       id: shop.shopId,
     })).sort((a, b) => b.count - a.count);
   }, [data]);
-  
+
   const chartConfig = useMemo(() => {
     const config: ChartConfig = {
       count: {
@@ -37,13 +37,13 @@ export function TopShopsChart({ dateRange, limit = 5 }: TopShopsChartProps) {
         color: "hsl(var(--chart-2))",
       },
     };
-    
+
     return config;
   }, []);
-  
+
   // Custom formatter for currency values
-  const formatCurrency = (value: number) => `$${value.toLocaleString()}`;
-  
+  const formatCurrency = (value: number) => `€${value.toLocaleString()}`;
+
   if (isLoading) {
     return (
       <Card>
@@ -59,7 +59,7 @@ export function TopShopsChart({ dateRange, limit = 5 }: TopShopsChartProps) {
       </Card>
     );
   }
-  
+
   if (error || !data) {
     return (
       <Card>
@@ -91,7 +91,7 @@ export function TopShopsChart({ dateRange, limit = 5 }: TopShopsChartProps) {
       </Card>
     );
   }
-  
+
   return (
     <Card>
       <CardHeader>
@@ -102,23 +102,23 @@ export function TopShopsChart({ dateRange, limit = 5 }: TopShopsChartProps) {
         <ChartContainer config={chartConfig}>
           <BarChart data={chartData} accessibilityLayer>
             <CartesianGrid vertical={false} />
-            <XAxis 
-              dataKey="name" 
-              tickFormatter={(value) => 
+            <XAxis
+              dataKey="name"
+              tickFormatter={(value) =>
                 value.length > 10 ? `${value.slice(0, 10)}...` : value
               }
             />
             <YAxis />
-            <Bar 
-              dataKey="count" 
+            <Bar
+              dataKey="count"
               fill="var(--color-count)"
-              radius={[4, 4, 0, 0]} 
+              radius={[4, 4, 0, 0]}
               name="Order Count"
             />
-            <ChartTooltip 
+            <ChartTooltip
               content={
                 <ChartTooltipContent labelKey="name" />
-              } 
+              }
             />
             <ChartLegend content={<ChartLegendContent />} />
           </BarChart>

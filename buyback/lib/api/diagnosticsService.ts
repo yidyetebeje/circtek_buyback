@@ -2,6 +2,7 @@ import { apiClient } from './base';
 import { PaginatedResponse } from './types';
 
 export interface TestedDevice {
+    deviceId: number;  // Unique device identifier for grouping
     deviceTransactionId: number;
     transactionSetId: number;
     testedAt: string;
@@ -39,7 +40,7 @@ export interface GetTestedDevicesParams {
     warehouseId?: number;
     sortBy?: 'newest' | 'oldest';
     shopId?: number;
-    shop_id?:number;
+    shop_id?: number;
 }
 
 // New types matching backend DiagnosticPublic interface
@@ -106,6 +107,7 @@ export interface DiagnosticsApiResponse {
 // Data mapper function to transform DiagnosticPublic to TestedDevice
 function mapDiagnosticToTestedDevice(diagnostic: DiagnosticPublic): TestedDevice {
     return {
+        deviceId: diagnostic.device_id,
         deviceTransactionId: diagnostic.id,
         transactionSetId: diagnostic.id, // Using same ID since transactionSetId doesn't exist in new structure
         testedAt: diagnostic.created_at ? new Date(diagnostic.created_at).toISOString() : '',
@@ -140,7 +142,7 @@ function mapDiagnosticToTestedDevice(diagnostic: DiagnosticPublic): TestedDevice
 const diagnosticsService = {
     async getTestedDevices(params: GetTestedDevicesParams = {}): Promise<PaginatedResponse<TestedDevice>> {
         const envShopId = process.env.NEXT_PUBLIC_SHOP_ID ? parseInt(process.env.NEXT_PUBLIC_SHOP_ID, 10) : undefined;
-        
+
         // Map frontend parameters to backend parameters
         const backendParams: Record<string, string | number | boolean | undefined> = {
             page: params.page || 1,
@@ -166,7 +168,7 @@ const diagnosticsService = {
         // Handle tenant_id from shopId or env
         if (params.shopId !== undefined) {
             backendParams.shop_id = params.shopId || envShopId;
-        } 
+        }
 
         // Filter out undefined values
         const filteredParams = Object.fromEntries(

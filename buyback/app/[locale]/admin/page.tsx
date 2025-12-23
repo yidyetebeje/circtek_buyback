@@ -5,9 +5,9 @@ export default function AdminRootPage() {
   // to /admin/dashboards if authenticated, or /admin/login if not.
   // If the middleware is correctly configured, this content might not be seen often.
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      <AdminHeader 
-        title="Admin" 
+    <div className="space-y-6">
+      <AdminHeader
+        title="Admin"
         breadcrumbs={[
           { label: 'Admin', isCurrentPage: true }
         ]}
