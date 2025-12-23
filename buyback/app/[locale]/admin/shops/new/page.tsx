@@ -14,7 +14,7 @@ import { shopCatalogService } from '@/lib/api/catalog/shopCatalogService';
 export default function CreateShopPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  
+
   useEffect(() => {
     if (session?.user?.roleSlug === 'shop_manager') {
       toast.error('Shop Managers cannot create new shops');
@@ -25,11 +25,11 @@ export default function CreateShopPage() {
       }
     }
   }, [session, router]);
-  
+
   // Use API mutation hooks
   const { mutateAsync: createShop, isPending: isCreating } = useCreateShop();
   const { mutate: uploadLogo } = useUploadShopLogo();
-  
+
   // Logo state management
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
@@ -55,7 +55,7 @@ export default function CreateShopPage() {
       owner_id: Number(session.user.id),
       logo: values.logo || '',
       icon: null,
-      active: values.active ?? true,
+      active: true,
       config: null,
     };
 
@@ -98,16 +98,16 @@ export default function CreateShopPage() {
       throw error;
     }
   };
-  
+
   const handleLogoUpload = async (file: File): Promise<string> => {
     setLogoFile(file);
     return URL.createObjectURL(file);
   };
-  
+
   const handleLogoRemove = () => {
     setLogoFile(null);
   };
-  
+
   const handleCancel = () => {
     router.push('/admin/shops');
   };
@@ -116,7 +116,7 @@ export default function CreateShopPage() {
     <div className="container mx-auto py-10 bg-white p-6 rounded-lg">
       <h1 className="text-2xl font-bold mb-6">Create New Shop</h1>
       <Separator className="mb-8" />
-      
+
       {status === 'loading' ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
@@ -127,8 +127,8 @@ export default function CreateShopPage() {
       ) : status === 'unauthenticated' ? (
         <div className="text-center py-12">
           <p className="text-muted-foreground mb-4">You must be logged in to create a shop.</p>
-          <button 
-            onClick={() => router.push('/admin/login')} 
+          <button
+            onClick={() => router.push('/admin/login')}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
           >
             Go to Login
@@ -141,12 +141,11 @@ export default function CreateShopPage() {
           isLoading={isCreating}
           onLogoUpload={handleLogoUpload}
           onLogoRemove={handleLogoRemove}
-          initialData={{ 
-            name: '', 
-            organization: '', 
-            phone: '', 
-            active: true 
-          }} 
+          initialData={{
+            name: '',
+            organization: '',
+            phone: '',
+          }}
         />
       )}
     </div>
