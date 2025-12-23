@@ -788,7 +788,7 @@ export const tremendous_config = mysqlTable('tremendous_config', {
 ]);
 
 // Tremendous reward status enum
-export const tremendous_reward_status = mysqlEnum('tremendous_reward_status', [
+export const tremendous_reward_status = mysqlEnum('status', [
   'pending', 'sent', 'delivered', 'failed', 'cancelled'
 ]);
 
