@@ -549,12 +549,12 @@ export default function OrderDetailPage() {
         {(currentStatus?.toUpperCase() === 'PAID' || order.status?.toUpperCase() === 'PAID') && tremendousConfig?.configured && tremendousConfig?.is_active && (
           <Card className={`border ${['SENT', 'DELIVERED'].includes(rewardStatus?.status?.toUpperCase() || '') ? 'border-green-200 bg-green-50/50' : rewardStatus?.status?.toUpperCase() === 'FAILED' ? 'border-red-200 bg-red-50/50' : 'border-amber-200 bg-amber-50/50'}`}>
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${['SENT', 'DELIVERED'].includes(rewardStatus?.status?.toUpperCase() || '') ? 'bg-green-100' : rewardStatus?.status?.toUpperCase() === 'FAILED' ? 'bg-red-100' : 'bg-amber-100'}`}>
+                  <div className={`p-2 rounded-lg shrink-0 ${['SENT', 'DELIVERED'].includes(rewardStatus?.status?.toUpperCase() || '') ? 'bg-green-100' : rewardStatus?.status?.toUpperCase() === 'FAILED' ? 'bg-red-100' : 'bg-amber-100'}`}>
                     <CreditCard className={`h-5 w-5 ${['SENT', 'DELIVERED'].includes(rewardStatus?.status?.toUpperCase() || '') ? 'text-green-600' : rewardStatus?.status?.toUpperCase() === 'FAILED' ? 'text-red-600' : 'text-amber-600'}`} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className={`text-sm font-medium ${['SENT', 'DELIVERED'].includes(rewardStatus?.status?.toUpperCase() || '') ? 'text-green-900' : rewardStatus?.status?.toUpperCase() === 'FAILED' ? 'text-red-900' : 'text-amber-900'}`}>
                       Tremendous Reward
                     </p>
@@ -586,7 +586,7 @@ export default function OrderDetailPage() {
                       });
                       setIsRewardModalOpen(true);
                     }}
-                    className="gap-2"
+                    className="gap-2 w-full"
                   >
                     <CreditCard className="h-4 w-4" />
                     {rewardStatus?.status?.toUpperCase() === 'FAILED' ? 'Retry Reward' : 'Send Reward'}
@@ -909,7 +909,7 @@ export default function OrderDetailPage() {
           }
         }
       }}>
-        <AlertDialogContent className="max-h-[90vh] overflow-y-auto max-w-7xl w-[90vw]">
+        <AlertDialogContent className="max-h-[90vh] overflow-y-auto w-[95vw] max-w-[1600px]">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5" />

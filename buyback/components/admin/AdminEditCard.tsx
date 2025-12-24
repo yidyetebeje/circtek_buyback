@@ -21,13 +21,11 @@ export const AdminEditCard: React.FC<AdminEditCardProps> = ({
   children,
   actionButtons
 }) => {
-  const displayTitle = title.length > 20 ? `${title.substring(0, 20)}...` : title;
-
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex justify-between items-start gap-4">
         <div className="flex-1 min-w-0">
-          <AdminHeader title={displayTitle} breadcrumbs={breadcrumbs} />
+          <AdminHeader title={title} breadcrumbs={breadcrumbs} />
         </div>
         {actionButtons && (
           <div className="flex shrink-0 items-center gap-2">
@@ -39,7 +37,7 @@ export const AdminEditCard: React.FC<AdminEditCardProps> = ({
       <div className='bg-card rounded-lg px-6 py-6'>
         {description && (
           <div className="mb-4">
-            <h2 className="text-lg font-semibold">{displayTitle}</h2>
+            <h2 className="text-lg font-semibold">{title}</h2>
             <p className="text-sm text-muted-foreground">{description}</p>
           </div>
         )}

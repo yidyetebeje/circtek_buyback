@@ -17,11 +17,8 @@ import { EmailTemplate } from "@/types/emailTemplates";
 const EMAIL_TEMPLATE_TYPES = {
   ORDER_CONFIRMATION: "Order Confirmation",
   SHIPMENT_RECEIVED: "Shipment Received",
-  INSPECTION_COMPLETED: "Inspection Completed", 
-  OFFER_ACCEPTED: "Offer Accepted",
   OFFER_REJECTED: "Offer Rejected",
   ORDER_COMPLETED: "Order Completed",
-  ORDER_CANCELLED: "Order Cancelled",
   CUSTOM: "Custom"
 };
 
@@ -51,7 +48,7 @@ const StatusBadge = ({ isActive }: { isActive: number }) => {
 // Component for template type badge
 const TypeBadge = ({ type }: { type: string }) => {
   const label = EMAIL_TEMPLATE_TYPES[type as keyof typeof EMAIL_TEMPLATE_TYPES] || type;
-  
+
   return (
     <Badge variant="outline" className="whitespace-nowrap">
       {label}
@@ -60,12 +57,12 @@ const TypeBadge = ({ type }: { type: string }) => {
 };
 
 // Action cell component
-const ActionsCell = ({ 
-  template, 
-  onEdit, 
-  onDelete 
-}: { 
-  template: EmailTemplate; 
+const ActionsCell = ({
+  template,
+  onEdit,
+  onDelete
+}: {
+  template: EmailTemplate;
   onEdit: (template: EmailTemplate) => void;
   onDelete: (id: string) => void;
 }) => {
@@ -92,75 +89,75 @@ const ActionsCell = ({
   );
 };
 
-export const emailTemplateColumns = ({ 
-  onEdit, 
-  onDelete 
+export const emailTemplateColumns = ({
+  onEdit,
+  onDelete
 }: {
   onEdit: (template: EmailTemplate) => void;
   onDelete: (id: string) => void;
 }): ColumnDef<EmailTemplate>[] => [
-  {
-    accessorKey: "name",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="font-semibold -ml-4"
-      >
-        Name
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("name")}</div>
-    ),
-  },
-  {
-    accessorKey: "subject",
-    header: "Subject",
-    cell: ({ row }) => (
-      <div className="max-w-xs truncate" title={row.getValue("subject")}>
-        {row.getValue("subject")}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "templateType",
-    header: "Type",
-    cell: ({ row }) => (
-      <TypeBadge type={row.getValue("templateType")} />
-    ),
-  },
-  {
-    accessorKey: "isActive",
-    header: "Status",
-    cell: ({ row }) => (
-      <StatusBadge isActive={row.getValue("isActive")} />
-    ),
-  },
-  {
-    accessorKey: "updatedAt",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="-ml-4"
-      >
-        Last Updated
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => formatDate(row.getValue("updatedAt")),
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => (
-      <ActionsCell
-        template={row.original}
-        onEdit={onEdit}
-        onDelete={onDelete}
-      />
-    ),
-  },
-]; 
+    {
+      accessorKey: "name",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="font-semibold -ml-4"
+        >
+          Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <div className="font-medium">{row.getValue("name")}</div>
+      ),
+    },
+    {
+      accessorKey: "subject",
+      header: "Subject",
+      cell: ({ row }) => (
+        <div className="max-w-xs truncate" title={row.getValue("subject")}>
+          {row.getValue("subject")}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "templateType",
+      header: "Type",
+      cell: ({ row }) => (
+        <TypeBadge type={row.getValue("templateType")} />
+      ),
+    },
+    {
+      accessorKey: "isActive",
+      header: "Status",
+      cell: ({ row }) => (
+        <StatusBadge isActive={row.getValue("isActive")} />
+      ),
+    },
+    {
+      accessorKey: "updatedAt",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="-ml-4"
+        >
+          Last Updated
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => formatDate(row.getValue("updatedAt")),
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => (
+        <ActionsCell
+          template={row.original}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      ),
+    },
+  ]; 

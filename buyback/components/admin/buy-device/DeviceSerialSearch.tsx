@@ -104,7 +104,7 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
 
   return (
     <div className="space-y-6">
-      <div className="max-w-2xl">
+      <div>
         <h2 className="text-2xl font-semibold text-foreground mb-2">Search Device</h2>
         <p className="text-muted-foreground text-lg">
           Enter the device serial number to find tested devices available for purchase.
@@ -112,7 +112,7 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
       </div>
 
       <form onSubmit={handleSearch} className="space-y-4">
-        <div className="flex gap-3 max-w-2xl">
+        <div className="flex gap-3">
           <div className="relative group flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
             <Input
@@ -199,7 +199,7 @@ export function DeviceSerialSearch({ onDeviceFound }: DeviceSerialSearchProps) {
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="flex flex-col gap-3">
                               <div className="space-y-1">
                                 <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Serial</span>
                                 <p className="font-mono text-sm text-foreground break-all">{device.serial}</p>
