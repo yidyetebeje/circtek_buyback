@@ -37,7 +37,7 @@ export default function EditShopLocationPage() {
 
     if (locationId) {
       // Location exists - update it
-      updateLocation(values, {
+      updateLocation({ ...values, locationId }, {
         onSuccess: () => {
           toast.success('Location updated successfully!');
           router.push(`/admin/shops/${shopId}/locations`);
@@ -75,10 +75,13 @@ export default function EditShopLocationPage() {
     return {
       name: location.name,
       address: location.address,
+      houseNumber: location.houseNumber || null,
       city: location.city,
       state: location.state || '',
       postalCode: location.postalCode || '',
       country: location.country,
+      email: location.email || null,
+      companyName: location.companyName || null,
       latitude: location.latitude,
       longitude: location.longitude,
       description: location.description || '',
@@ -102,10 +105,13 @@ export default function EditShopLocationPage() {
       description: warehouse?.description || '',
       // Address and other fields are empty - user needs to fill them
       address: '',
+      houseNumber: null,
       city: '',
       state: '',
       postalCode: '',
       country: '',
+      email: null,
+      companyName: null,
       latitude: 0,
       longitude: 0,
       isActive: true,

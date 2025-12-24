@@ -650,7 +650,83 @@ export class ShippingController {
             }
         }
     }
+
+    /**
+     * Get sender address configuration for store transfers
+     * Returns the configured sender address details for pickup shipments
+     */
+    async getSenderAddressConfig(shop_id: number, tenant_id: number): Promise<ControllerResponse> {
+        try {
+            const config = await this.repository.getSendcloudConfig(shop_id, tenant_id)
+
+            if (!config) {
+                return {
+                    data: {
+                        configured: false,
+                        shop_id,
+                        sender_address_id: null,
+                        sender_address: null,
+                    },
+                    message: 'Sendcloud not configured for this shop',
+                    status: 200,
+                }
+            }
+
+            // Check if sender address is configured
+            if (!config.default_sender_address_id) {
+                return {
+                    data: {
+                        configured: false,
+                        shop_id,
+                        sender_address_id: null,
+                        sender_address: null,
+                    },
+                    message: 'Sender warehouse address not configured. Please configure a sender address in Sendcloud settings.',
+                    status: 200,
+                }
+            }
+
+            // Fetch the actual sender address details from Sendcloud
+            let senderAddress: SendcloudSenderAddress | null = null
+            try {
+                const client = await this.getSendcloudClient(shop_id, tenant_id)
+                senderAddress = await client.getSenderAddressById(config.default_sender_address_id)
+            } catch (error) {
+                console.warn('[ShippingController] Failed to fetch sender address from Sendcloud:', error)
+            }
+
+            return {
+                data: {
+                    configured: !!senderAddress,
+                    shop_id,
+                    sender_address_id: config.default_sender_address_id,
+                    sender_address: senderAddress ? {
+                        id: senderAddress.id,
+                        company_name: senderAddress.company_name,
+                        contact_name: senderAddress.contact_name,
+                        street: senderAddress.street,
+                        house_number: senderAddress.house_number,
+                        city: senderAddress.city,
+                        postal_code: senderAddress.postal_code,
+                        country: senderAddress.country,
+                    } : null,
+                },
+                message: senderAddress
+                    ? 'Sender address configuration retrieved'
+                    : 'Sender address ID configured but address not found in Sendcloud',
+                status: 200,
+            }
+        } catch (error) {
+            return {
+                data: null,
+                message: 'Failed to retrieve sender address configuration',
+                status: 500,
+                error: (error as Error).message,
+            }
+        }
+    }
 }
 
 // Export singleton instance
 export const shippingController = new ShippingController(shippingRepository)
+

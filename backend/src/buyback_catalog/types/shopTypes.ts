@@ -34,10 +34,13 @@ export type TShopLocationCreate = {
   warehouseId?: number | null;
   name: string;
   address: string;
+  houseNumber?: string | null; // House/building number for shipment
   city: string;
   state?: string | null;
   postalCode?: string | null;
   country: string;
+  email?: string | null; // Contact email for shipment notifications
+  companyName?: string | null; // Company name for business shipments
   latitude: number;
   longitude: number;
   description?: string | null;
@@ -167,10 +170,13 @@ export const ShopLocationCreateSchema = t.Object({
   warehouseId: t.Optional(t.Nullable(t.Numeric())),
   name: t.String({ minLength: 1, maxLength: 255 }),
   address: t.String({ minLength: 1 }),
+  houseNumber: t.Optional(t.Nullable(t.String({ maxLength: 50 }))),
   city: t.String({ minLength: 1, maxLength: 100 }),
   state: t.Optional(t.String({ maxLength: 100 })),
   postalCode: t.Optional(t.String({ maxLength: 20 })),
   country: t.String({ minLength: 1, maxLength: 100 }),
+  email: t.Optional(t.Nullable(t.String({ maxLength: 255 }))),
+  companyName: t.Optional(t.Nullable(t.String({ maxLength: 255 }))),
   latitude: t.Numeric(),
   longitude: t.Numeric(),
   description: t.Optional(t.Nullable(t.String())),

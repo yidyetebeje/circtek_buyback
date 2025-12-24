@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -41,11 +41,8 @@ import { useDynamicFieldsGrouped } from "@/hooks/useEmailTemplates";
 const EMAIL_TEMPLATE_TYPES = {
   ORDER_CONFIRMATION: "Order Confirmation",
   SHIPMENT_RECEIVED: "Shipment Received",
-  INSPECTION_COMPLETED: "Inspection Completed", 
-  OFFER_ACCEPTED: "Offer Accepted",
   OFFER_REJECTED: "Offer Rejected",
   ORDER_COMPLETED: "Order Completed",
-  ORDER_CANCELLED: "Order Cancelled",
   CUSTOM: "Custom"
 };
 

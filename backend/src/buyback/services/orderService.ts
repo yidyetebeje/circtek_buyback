@@ -354,6 +354,7 @@ export class OrderService {
   ): Promise<void> {
     try {
       // Send email to customer if we have their email
+      console.log(orderId, "order details ", newStatus)
       if (customerEmail) {
         await notificationService.sendOrderStatusUpdateEmail(
           orderId,

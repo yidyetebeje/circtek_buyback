@@ -7,6 +7,9 @@ import { shippingRepository } from "../../shipping/repository";
 import { createSendcloudClient } from "../../shipping/sendcloud/client";
 import type { SendcloudV3ShipmentInput, SendcloudV3Item } from "../../shipping/sendcloud/types";
 import { BadRequestError, NotFoundError } from "../utils/errors";
+import { shopLocationRepository } from "../../buyback_catalog/repositories/shopLocationRepository";
+import { movementsController } from "../../stock/movements";
+import { TransfersRepository } from "../../stock/transfers/repository";
 
 interface GetCandidatesParams {
     days: number;
@@ -104,7 +107,9 @@ export const storeTransferService = {
     createStoreTransfer: async (params: CreateTransferParams) => {
         const { orderIds, createdByUserId, tenantId, shopManagerShopId, originAddressId } = params;
 
-        // Fetch the orders to transfer first to get the shop ID
+        // ─────────────────────────────────────────────────────────────────────
+        // STEP 1: Fetch and validate orders for transfer
+        // ─────────────────────────────────────────────────────────────────────
         const orderConditions: any[] = [
             inArray(orders.id, orderIds),
             eq(orders.tenant_id, tenantId),
@@ -136,7 +141,9 @@ export const storeTransferService = {
             );
         }
 
+        // ─────────────────────────────────────────────────────────────────────
         // Validate all orders are from the same warehouse
+        // ─────────────────────────────────────────────────────────────────────
         const warehouseIds = [...new Set(ordersToTransfer.map(o => o.warehouseId).filter(id => id !== null))];
         if (warehouseIds.length > 1) {
             throw new BadRequestError(
@@ -168,7 +175,9 @@ export const storeTransferService = {
             throw new NotFoundError("Source warehouse not found for this shop. Please configure a warehouse for the shop.");
         }
 
-        // Get Sendcloud config with decrypted secret key (includes HQ configuration)
+        // ─────────────────────────────────────────────────────────────────────
+        // STEP 2: Validate Sendcloud/HQ configuration
+        // ─────────────────────────────────────────────────────────────────────
         const sendcloudCfg = await shippingRepository.getSendcloudConfigDecrypted(shopId, tenantId);
 
         // Enforce HQ-only transfers - warehouse orders can only go to HQ
@@ -183,9 +192,27 @@ export const storeTransferService = {
             );
         }
 
+        // ─────────────────────────────────────────────────────────────────────
+        // STEP 3: Get sender address from source warehouse's shop_location
+        // ─────────────────────────────────────────────────────────────────────
+        const senderLocation = await shopLocationRepository.findByWarehouseId(sourceWarehouse.id);
+        if (!senderLocation) {
+            throw new BadRequestError(
+                "Source warehouse has no location configured. Please configure a location (with address) for this warehouse before creating transfers."
+            );
+        }
+
+        // Validate the sender location has required address fields
+        if (!senderLocation.address || !senderLocation.city || !senderLocation.country) {
+            throw new BadRequestError(
+                "Source warehouse location is missing required address fields. Please ensure the location has address, city, and country configured."
+            );
+        }
+
         const toWarehouseId = sendcloudCfg.hq_warehouse_id;
         const deliveryAddressId = sendcloudCfg.hq_delivery_address_id;
         console.log(`[StoreTransferService] Enforcing HQ-only transfer to warehouse: ${toWarehouseId}`);
+        console.log(`[StoreTransferService] Using sender location: ${senderLocation.name} (${senderLocation.city})`);
 
         // Validate destination warehouse exists
         const [destWarehouse] = await db
@@ -271,39 +298,32 @@ export const storeTransferService = {
                         };
                     });
 
-                    // Calculate total weight
-                    const totalWeight = 0.2 * ordersToTransfer.length;
+                    // Calculate total weight (rounded to avoid floating point precision issues)
+                    const totalWeight = Math.round(0.2 * ordersToTransfer.length * 100) / 100;
 
-                    // Fetch sender addresses from Sendcloud if user selected specific addresses
-                    let originAddress = null;
+                    // ─────────────────────────────────────────────────────────────────────
+                    // STEP 4: Fetch HQ delivery address from Sendcloud
+                    // ─────────────────────────────────────────────────────────────────────
                     let deliveryAddress = null;
 
-                    if (originAddressId || deliveryAddressId) {
+                    if (deliveryAddressId) {
                         try {
                             const senderAddresses = await client.getSenderAddresses();
-                            if (originAddressId) {
-                                originAddress = senderAddresses.find(a => a.id === originAddressId);
-                            }
-                            if (deliveryAddressId) {
-                                deliveryAddress = senderAddresses.find(a => a.id === deliveryAddressId);
-                            }
+                            deliveryAddress = senderAddresses.find(a => a.id === deliveryAddressId);
                         } catch (error) {
                             console.warn("[StoreTransferService] Failed to fetch sender addresses:", error);
                         }
                     }
 
-                    // Build V3 shipment data - shipping FROM origin TO delivery
-                    // Require proper address configuration - no fallback to invalid addresses
-                    if (!originAddress) {
-                        throw new BadRequestError(
-                            "Origin address not configured. Please select an origin address from your Sendcloud sender addresses."
-                        );
-                    }
+                    // Validate HQ delivery address is configured in Sendcloud
                     if (!deliveryAddress) {
                         throw new BadRequestError(
-                            "Delivery address not configured. Please select a delivery address from your Sendcloud sender addresses."
+                            "HQ delivery address not found in Sendcloud. Please verify the HQ delivery address is configured correctly."
                         );
                     }
+
+                    // Get phone number from sender location if available
+                    const senderPhone = senderLocation.phones?.[0]?.phone_number || "";
 
                     // Calculate total order value from actual order prices
                     const totalOrderValue = ordersToTransfer.reduce((sum, order) => {
@@ -311,17 +331,17 @@ export const storeTransferService = {
                     }, 0);
 
                     const shipmentData: SendcloudV3ShipmentInput = {
-                        // FROM: Use selected origin address
+                        // FROM: Use source warehouse's shop_location address
                         from_address: {
-                            name: originAddress.contact_name || originAddress.company_name,
-                            company_name: originAddress.company_name,
-                            email: originAddress.email,
-                            phone_number: originAddress.telephone,
-                            address_line_1: originAddress.street,
-                            house_number: originAddress.house_number,
-                            city: originAddress.city,
-                            postal_code: originAddress.postal_code,
-                            country_code: originAddress.country,
+                            name: senderLocation.name,
+                            company_name: senderLocation.company_name || senderLocation.name,
+                            email: senderLocation.email || "",
+                            phone_number: senderPhone,
+                            address_line_1: senderLocation.address,
+                            house_number: senderLocation.house_number || "",
+                            city: senderLocation.city,
+                            postal_code: senderLocation.postal_code || "",
+                            country_code: senderLocation.country,
                         },
                         // TO: Use selected delivery address
                         to_address: {
@@ -606,6 +626,70 @@ export const storeTransferService = {
         }
 
         const isCompleted = status === "completed";
+
+        // Prevent reverting a completed transfer back to pending
+        if (transfer.status === true && !isCompleted) {
+            throw new BadRequestError(
+                "Cannot change a completed transfer back to pending. Stock has already been moved."
+            );
+        }
+
+        // If completing the transfer, move stock using the stock system
+        if (isCompleted) {
+            // Get the transfer items
+            const transferItemsList = await db
+                .select()
+                .from(transfer_items)
+                .where(eq(transfer_items.transfer_id, transferId));
+
+            const transfersRepo = new TransfersRepository(db);
+
+            for (const item of transferItemsList) {
+                const quantity = item.quantity || 1;
+
+                // Movement 1: Stock Out from Source Warehouse
+                await movementsController.create({
+                    sku: item.sku,
+                    warehouse_id: transfer.from_warehouse_id,
+                    delta: -quantity, // Negative delta for outbound
+                    reason: 'transfer_out',
+                    ref_type: 'transfers',
+                    ref_id: transfer.id,
+                    actor_id: completedByUserId,
+                    is_part: item.is_part || false,
+                }, tenantId, true); // Update stock
+
+                // Movement 2: Stock In to Destination Warehouse
+                await movementsController.create({
+                    sku: item.sku,
+                    warehouse_id: transfer.to_warehouse_id,
+                    delta: quantity, // Positive delta for inbound
+                    reason: 'transfer_in',
+                    ref_type: 'transfers',
+                    ref_id: transfer.id,
+                    actor_id: completedByUserId,
+                    is_part: item.is_part || false,
+                }, tenantId, true); // Update stock
+
+                // Move device stock mapping if this has a device_id
+                if (!item.is_part && item.device_id) {
+                    try {
+                        await transfersRepo.moveDeviceStockMapping(
+                            item.device_id,
+                            item.sku,
+                            transfer.from_warehouse_id,
+                            transfer.to_warehouse_id,
+                            tenantId
+                        );
+                    } catch (error) {
+                        console.error(`[StoreTransferService] Failed to move device stock mapping for device ${item.device_id}:`, error);
+                        // Don't fail the transfer if mapping fails, but log it
+                    }
+                }
+            }
+
+            console.log(`[StoreTransferService] Completed stock transfer: ${transferItemsList.length} items from warehouse ${transfer.from_warehouse_id} to warehouse ${transfer.to_warehouse_id}`);
+        }
 
         // Update the transfer status
         await db

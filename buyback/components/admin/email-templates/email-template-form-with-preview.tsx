@@ -72,11 +72,8 @@ import { useDynamicFieldsGrouped, usePopulateEmailTemplate } from "@/hooks/useEm
 const EMAIL_TEMPLATE_TYPES = {
   ORDER_CONFIRMATION: "Order Confirmation",
   SHIPMENT_RECEIVED: "Shipment Received",
-  INSPECTION_COMPLETED: "Inspection Completed",
-  OFFER_ACCEPTED: "Offer Accepted",
   OFFER_REJECTED: "Offer Rejected",
   ORDER_COMPLETED: "Order Completed",
-  ORDER_CANCELLED: "Order Cancelled",
   CUSTOM: "Custom"
 };
 

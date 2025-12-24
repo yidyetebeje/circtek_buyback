@@ -114,6 +114,9 @@ export default function StoreTransferPage() {
     const hqConfig = hqConfigResponse?.data;
     const isHQConfigured = hqConfig?.configured && hqConfig?.hq_warehouse_id;
 
+    // Note: Sender address is validated on backend using source warehouse's shop_location
+    // The backend will return an error if the source warehouse has no location configured
+
     // Fetch warehouses for filter dropdown
     const { data: warehousesResponse } = useWarehouses({});
     const warehouses = warehousesResponse?.data ?? [];
@@ -182,7 +185,7 @@ export default function StoreTransferPage() {
                             status: value as "pending" | "completed",
                         });
                     }}
-                    disabled={updateStatus.isPending}
+                    disabled={updateStatus.isPending || row.original.isCompleted}
                 >
                     <SelectTrigger className="w-[130px]">
                         <SelectValue>
@@ -202,12 +205,14 @@ export default function StoreTransferPage() {
                         </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="pending">
-                            <div className="flex items-center gap-2">
-                                <Clock className="h-3 w-3 text-yellow-600" />
-                                Pending
-                            </div>
-                        </SelectItem>
+                        {!row.original.isCompleted && (
+                            <SelectItem value="pending">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-3 w-3 text-yellow-600" />
+                                    Pending
+                                </div>
+                            </SelectItem>
+                        )}
                         <SelectItem value="completed">
                             <div className="flex items-center gap-2">
                                 <CheckCircle className="h-3 w-3 text-green-600" />
@@ -276,6 +281,8 @@ export default function StoreTransferPage() {
             toast.error("HQ warehouse is not configured. Please contact your administrator to configure the HQ warehouse in Sendcloud settings.");
             return;
         }
+
+        // Note: Source warehouse location validation happens on backend
 
         try {
             // With HQ configured, we don't need to pass destination - backend will use HQ defaults
@@ -401,6 +408,8 @@ export default function StoreTransferPage() {
                                         </p>
                                     </div>
                                 )}
+
+                                {/* Note: Source warehouse location is validated on backend */}
 
                                 <Button
                                     onClick={handleCreateTransfer}
