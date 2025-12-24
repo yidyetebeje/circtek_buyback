@@ -114,6 +114,9 @@ export default function StoreTransferPage() {
     const hqConfig = hqConfigResponse?.data;
     const isHQConfigured = hqConfig?.configured && hqConfig?.hq_warehouse_id;
 
+    // Note: Sender address is validated on backend using source warehouse's shop_location
+    // The backend will return an error if the source warehouse has no location configured
+
     // Fetch warehouses for filter dropdown
     const { data: warehousesResponse } = useWarehouses({});
     const warehouses = warehousesResponse?.data ?? [];
@@ -277,6 +280,8 @@ export default function StoreTransferPage() {
             return;
         }
 
+        // Note: Source warehouse location validation happens on backend
+
         try {
             // With HQ configured, we don't need to pass destination - backend will use HQ defaults
             const result = await createTransfer.mutateAsync({
@@ -401,6 +406,8 @@ export default function StoreTransferPage() {
                                         </p>
                                     </div>
                                 )}
+
+                                {/* Note: Source warehouse location is validated on backend */}
 
                                 <Button
                                     onClick={handleCreateTransfer}

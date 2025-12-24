@@ -57,16 +57,27 @@ export const useCreateShopLocation = (shopId: number) => {
 /**
  * Hook for updating a shop location
  */
-export const useUpdateShopLocation = (shopId: number, locationId: number) => {
+export const useUpdateShopLocation = (shopId: number, locationId: number | undefined) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (location: Partial<ShopLocation>) =>
-      shopLocationService.updateShopLocation(shopId, locationId, location),
+    mutationFn: (location: Partial<ShopLocation> & { locationId?: number }) => {
+      const id = location.locationId ?? locationId;
+      if (!id) {
+        throw new Error('Location ID is required for update');
+      }
+      // Remove locationId from the payload before sending
+      const { locationId: _, ...locationData } = location;
+      return shopLocationService.updateShopLocation(shopId, id, locationData);
+    },
     onSuccess: () => {
       // Invalidate both the locations list and the individual location query
       queryClient.invalidateQueries({ queryKey: ['shopLocations', shopId] });
-      queryClient.invalidateQueries({ queryKey: ['shopLocation', shopId, locationId] });
+      if (locationId) {
+        queryClient.invalidateQueries({ queryKey: ['shopLocation', shopId, locationId] });
+      }
+      // Also invalidate warehouse-based queries
+      queryClient.invalidateQueries({ queryKey: ['shopLocationByWarehouse', shopId] });
     },
   });
 };

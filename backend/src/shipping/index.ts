@@ -232,6 +232,19 @@ export const shipping_routes = new Elysia({ prefix: '/shipping' })
         },
     })
 
+    // Get sender address configuration for store transfers (origin/pickup address)
+    .get('/shops/:shop_id/sender-config', async (ctx) => {
+        const { currentTenantId } = ctx as any
+        const shop_id = Number(ctx.params.shop_id)
+        return shippingController.getSenderAddressConfig(shop_id, currentTenantId)
+    }, {
+        detail: {
+            tags: ['Shipping', 'Store Transfers'],
+            summary: 'Get sender address configuration',
+            description: 'Get the configured sender/origin address for store transfers (used as pickup location)',
+        },
+    })
+
 // Re-export for use in main app
 export { shippingController } from './controller'
 export { shippingRepository } from './repository'

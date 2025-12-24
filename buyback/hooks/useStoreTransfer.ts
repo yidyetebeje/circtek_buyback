@@ -105,6 +105,39 @@ export const useHQConfig = (shopId: number) => {
     });
 };
 
+// ============ Sender Address Configuration ============
+
+export interface SenderAddressConfig {
+    configured: boolean;
+    shop_id: number;
+    sender_address_id: number | null;
+    sender_address?: {
+        id: number;
+        company_name: string;
+        contact_name: string;
+        street: string;
+        house_number: string;
+        city: string;
+        postal_code: string;
+        country: string;
+    } | null;
+}
+
+/**
+ * Hook to fetch sender address configuration for store transfers (pickup location)
+ */
+export const useSenderAddressConfig = (shopId: number) => {
+    return useQuery<{ data: SenderAddressConfig }, Error>({
+        queryKey: ["sender-address-config", shopId],
+        queryFn: async () => {
+            return apiClient.get<{ data: SenderAddressConfig }>(`/shipping/shops/${shopId}/sender-config`, {
+                isProtected: true,
+            });
+        },
+        enabled: shopId > 0,
+    });
+};
+
 /**
  * Hook to create a store-to-warehouse transfer
  * Transfers always go to the configured HQ warehouse

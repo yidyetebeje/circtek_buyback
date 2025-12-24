@@ -49,10 +49,13 @@ export const shop_locations = mysqlTable("shop_locations", {
 	warehouse_id: bigint("warehouse_id", { mode: 'number', unsigned: true }).references(() => warehouses.id),
 	name: varchar("name", { length: 255 }).notNull(),
 	address: text("address").notNull(),
+	house_number: varchar("house_number", { length: 50 }), // House/building number for shipment
 	city: varchar("city", { length: 100 }).notNull(),
 	state: varchar("state", { length: 100 }),
 	postal_code: varchar("postal_code", { length: 20 }),
 	country: varchar("country", { length: 100 }).notNull(),
+	email: varchar("email", { length: 255 }), // Contact email for shipment notifications
+	company_name: varchar("company_name", { length: 255 }), // Company name for business shipments
 	latitude: double("latitude").notNull(),
 	longitude: double("longitude").notNull(),
 	description: text("description"),

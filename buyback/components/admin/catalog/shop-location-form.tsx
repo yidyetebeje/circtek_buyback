@@ -19,6 +19,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { TrashIcon, PlusCircle, MapPin, Building2 } from 'lucide-react';
+import { countries } from '@/utils/countries';
 
 // Define phone type
 type Phone = {
@@ -32,10 +33,13 @@ type Phone = {
 export type LocationFormValues = {
   name: string;
   address: string;
+  houseNumber: string | null; // House/building number for shipment
   city: string;
   state: string | null;
   postalCode: string | null;
   country: string;
+  email: string | null; // Contact email for shipment notifications
+  companyName: string | null; // Company name for business shipments
   latitude: number;
   longitude: number;
   description: string | null;
@@ -49,10 +53,13 @@ export type LocationFormValues = {
 const locationFormSchema = z.object({
   name: z.string().trim().min(1, { message: "Name is required" }).max(255, { message: "Name must be 255 characters or less." }),
   address: z.string().trim().min(1, { message: "Address is required" }),
+  houseNumber: z.string().trim().max(50, { message: "House number must be 50 characters or less." }).nullable(),
   city: z.string().trim().min(1, { message: "City is required" }),
   state: z.string().trim().nullable(),
   postalCode: z.string().trim().nullable(),
   country: z.string().trim().min(1, { message: "Country is required" }),
+  email: z.string().trim().email({ message: "Invalid email address" }).max(255).nullable().or(z.literal('')),
+  companyName: z.string().trim().max(255, { message: "Company name must be 255 characters or less." }).nullable(),
   latitude: z.coerce.number({
     required_error: "Latitude is required",
     invalid_type_error: "Latitude must be a number",
@@ -89,10 +96,13 @@ export function ShopLocationForm({ initialData, onSubmit, onCancel, isLoading = 
   const defaultValues: LocationFormValues = {
     name: initialData?.name || '',
     address: initialData?.address || '',
+    houseNumber: initialData?.houseNumber || null,
     city: initialData?.city || '',
     state: initialData?.state || null,
     postalCode: initialData?.postalCode || null,
     country: initialData?.country || '',
+    email: initialData?.email || null,
+    companyName: initialData?.companyName || null,
     latitude: initialData?.latitude || 0,
     longitude: initialData?.longitude || 0,
     description: initialData?.description || null,
@@ -248,19 +258,35 @@ export function ShopLocationForm({ initialData, onSubmit, onCancel, isLoading = 
             <CardContent className="pt-6">
               <h3 className="text-lg font-semibold mb-4">Address</h3>
 
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Street Address *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="123 Main St" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-3">
+                      <FormLabel>Street Address *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Main Street" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="houseNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>House Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <FormField
@@ -313,8 +339,62 @@ export function ShopLocationForm({ initialData, onSubmit, onCancel, isLoading = 
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country *</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select country" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="max-h-[300px]">
+                          {countries.map((country) => (
+                            <SelectItem key={country.code} value={country.code}>
+                              {country.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Contact Information for Shipment */}
+          <Card>
+            <CardContent className="pt-6">
+              <h3 className="text-lg font-semibold mb-4">Contact for Shipment</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                These details are used for shipping label generation and carrier notifications.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="USA" {...field} />
+                        <Input type="email" placeholder="contact@example.com" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Company Inc." {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -405,10 +405,13 @@ export interface ShopLocation {
   warehouseId?: number | null;
   name: string;
   address: string;
+  houseNumber?: string | null; // House/building number for shipment
   city: string;
   state?: string | null;
   postalCode?: string | null;
   country: string;
+  email?: string | null; // Contact email for shipment notifications
+  companyName?: string | null; // Company name for business shipments
   latitude: number;
   longitude: number;
   description?: string | null;
@@ -445,10 +448,13 @@ export interface OperatingHours {
 export interface ShopLocationFormValues {
   name: string;
   address: string;
+  houseNumber: string | null; // House/building number for shipment
   city: string;
   state: string | null;
   postalCode: string | null;
   country: string;
+  email: string | null; // Contact email for shipment notifications
+  companyName: string | null; // Company name for business shipments
   latitude: number;
   longitude: number;
   description: string | null;
