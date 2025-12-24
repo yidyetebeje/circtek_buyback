@@ -185,7 +185,7 @@ export default function StoreTransferPage() {
                             status: value as "pending" | "completed",
                         });
                     }}
-                    disabled={updateStatus.isPending}
+                    disabled={updateStatus.isPending || row.original.isCompleted}
                 >
                     <SelectTrigger className="w-[130px]">
                         <SelectValue>
@@ -205,12 +205,14 @@ export default function StoreTransferPage() {
                         </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="pending">
-                            <div className="flex items-center gap-2">
-                                <Clock className="h-3 w-3 text-yellow-600" />
-                                Pending
-                            </div>
-                        </SelectItem>
+                        {!row.original.isCompleted && (
+                            <SelectItem value="pending">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-3 w-3 text-yellow-600" />
+                                    Pending
+                                </div>
+                            </SelectItem>
+                        )}
                         <SelectItem value="completed">
                             <div className="flex items-center gap-2">
                                 <CheckCircle className="h-3 w-3 text-green-600" />

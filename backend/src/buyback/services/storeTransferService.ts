@@ -627,6 +627,13 @@ export const storeTransferService = {
 
         const isCompleted = status === "completed";
 
+        // Prevent reverting a completed transfer back to pending
+        if (transfer.status === true && !isCompleted) {
+            throw new BadRequestError(
+                "Cannot change a completed transfer back to pending. Stock has already been moved."
+            );
+        }
+
         // If completing the transfer, move stock using the stock system
         if (isCompleted) {
             // Get the transfer items
